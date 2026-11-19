@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { rm, symlink } from "node:fs/promises";
+import { chmod, rm, symlink } from "node:fs/promises";
 import path from "node:path";
 
 import { BASE, planPaths, withRepo } from "./repo-bench.ts";
@@ -101,6 +101,56 @@ test("in a git repository, ignored and deleted files are not picked up, unless n
     expect(planPaths(workspace)).toEqual(["a.md", "untracked.md"]);
     const named = await run("explain", ["ignored.md"], { json: true });
     expect(planPaths(named)).toEqual(["ignored.md"]);
+  });
+});
+
+test("a directory name is that directory, even when it looks like a pathspec", async () => {
+  const tree = {
+    ":magic/e.md": "# E\n",
+    "[id]/d.md": "# D\n",
+    "cinch.toml": 'pilot = 0\ninclude = ["**/*"]\n',
+    "foo*/a.md": "# A\n",
+    "foo?/c.md": "# C\n",
+    "foox/b.md": "# B\n",
+    fooy: "y\n",
+    i: "i\n",
+  };
+  await withRepo(tree, {}, async ({ root, run }) => {
+    await git(root, "init", "--quiet");
+    await git(root, "add", "-A");
+    const selected = await Promise.all(
+      ["foo*", "foo?", "[id]", ":magic"].map((dir) =>
+        run("explain", [dir], { json: true })
+      )
+    );
+    expect(selected.map(planPaths)).toEqual([
+      ["foo*/a.md"],
+      ["foo?/c.md"],
+      ["[id]/d.md"],
+      [":magic/e.md"],
+    ]);
+  });
+});
+
+test("when git cannot answer, skipped directories are not opened", async () => {
+  const tree = {
+    ".jj/repo/note.md": "# jj\n",
+    "a.md": "# A\n",
+    "docs/b.md": "# B\n",
+    "node_modules/readme.md": "# modules\n",
+    "src/node_modules/readme.md": "# nested\n",
+  };
+  await withRepo(tree, {}, async ({ root, run }) => {
+    const locked = [".jj", "node_modules", "src/node_modules"].map((dir) =>
+      path.join(root, dir)
+    );
+    await Promise.all(locked.map((dir) => chmod(dir, 0)));
+    try {
+      const workspace = await run("explain", [], { json: true });
+      expect(planPaths(workspace)).toEqual(["a.md", "docs/b.md"]);
+    } finally {
+      await Promise.all(locked.map((dir) => chmod(dir, 0o755)));
+    }
   });
 });
 

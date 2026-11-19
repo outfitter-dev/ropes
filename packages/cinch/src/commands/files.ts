@@ -1,7 +1,5 @@
-import { realpath } from "node:fs/promises";
+import { readdir, realpath } from "node:fs/promises";
 import path from "node:path";
-
-import { Glob } from "bun";
 
 const SKIPPED_DIRS = new Set([".git", ".jj", "node_modules"]);
 
@@ -37,7 +35,9 @@ const fromGit = async (
     if (top === null || (await realpath(top.trim())) !== vcsRoot) {
       return null;
     }
-    const scope = ["--", dir === "" ? "." : dir];
+    // A directory name is a literal pathspec, so `*`, `?`, `[` and a leading
+    // `:` stay characters in that name.
+    const scope = ["--", `:(literal)${dir === "" ? "." : dir}`];
     const [present, deleted] = await Promise.all([
       git(root, [
         "ls-files",
@@ -60,18 +60,34 @@ const fromGit = async (
   }
 };
 
-/** Every file under `dir`, apart from version-control data and `node_modules`. */
-const fromWalk = async (root: string, dir: string): Promise<string[]> => {
-  const found = await Array.fromAsync(
-    new Glob("**/*").scan({
-      cwd: path.join(root, dir),
-      dot: true,
-      onlyFiles: true,
+/**
+ * Root-relative files under `directory`. `prefix` is that directory's own
+ * root-relative path. `.git`, `.jj` and `node_modules` are not opened.
+ * A symlink is left untouched.
+ */
+const walk = async (directory: string, prefix: string): Promise<string[]> => {
+  const children = await readdir(directory, { withFileTypes: true });
+  const groups = await Promise.all(
+    children.map(async (entry) => {
+      if (entry.isSymbolicLink() || SKIPPED_DIRS.has(entry.name)) {
+        return [];
+      }
+      const relative = prefix === "" ? entry.name : `${prefix}/${entry.name}`;
+      if (entry.isDirectory()) {
+        return await walk(path.join(directory, entry.name), relative);
+      }
+      return entry.isFile() ? [relative] : [];
     })
   );
-  return found
-    .map((file) => path.posix.join(dir, file.split(path.sep).join("/")))
-    .filter((file) => !file.split("/").some((part) => SKIPPED_DIRS.has(part)));
+  return groups.flat();
+};
+
+/** Every file under `dir`, apart from version-control data and `node_modules`. */
+const fromWalk = async (root: string, dir: string): Promise<string[]> => {
+  if (dir.split("/").some((part) => SKIPPED_DIRS.has(part))) {
+    return [];
+  }
+  return await walk(path.join(root, dir), dir);
 };
 
 /**
