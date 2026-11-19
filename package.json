@@ -1,0 +1,33 @@
+{
+  "name": "outfitter-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Workspace for the outfitter CLI (Fit) and @outfitter/cinch.",
+  "workspaces": [
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "bootstrap": "bash scripts/bootstrap.sh",
+    "check": "bun run lint && bun run format:check && bun run typecheck && bun run test",
+    "cinch": "bun packages/cinch/src/cli.ts",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "lint": "oxlint --deny-warnings .",
+    "test": "bun test",
+    "typecheck": "bun check --no-script"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "lefthook": "2.2.2",
+    "oxfmt": "0.78.0",
+    "oxlint": "1.93.0",
+    "typescript": "7.0.2",
+    "ultracite": "8.1.1"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "packageManager": "bun@1.4.4",
+  "trustedDependencies": []
+}

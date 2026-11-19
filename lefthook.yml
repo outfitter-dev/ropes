@@ -1,0 +1,29 @@
+# Git hooks for plain-Git use of this repository.
+#
+# jj does not run Git hooks. In a jj workspace, run `bun run check` before
+# pushing. `climb commit` runs the same command through climb.yaml.
+#
+# Every command sets GIT_PAGER=cat. lefthook runs hooks in a PTY, and a
+# configured Git pager makes pager-triggering Git commands hang. Hook-level env
+# does not reach command children, so it is set per command.
+
+pre-commit:
+  commands:
+    format:
+      glob: "*.{ts,js,mjs,cjs,json,jsonc,md,yml,yaml,toml}"
+      run: bunx oxfmt --write --no-error-on-unmatched-pattern {staged_files}
+      stage_fixed: true
+      env:
+        GIT_PAGER: cat
+    lint:
+      glob: "*.{ts,js,mjs,cjs}"
+      run: bunx oxlint --deny-warnings --no-error-on-unmatched-pattern {staged_files}
+      env:
+        GIT_PAGER: cat
+
+pre-push:
+  commands:
+    check:
+      run: bun run check
+      env:
+        GIT_PAGER: cat
