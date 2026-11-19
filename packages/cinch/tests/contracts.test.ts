@@ -58,9 +58,27 @@ test("a malformed document reports where it went wrong", () => {
   expect(JSON.stringify(parsed)).toContain("severity");
 });
 
-test("the fixture's outcome agrees with its steps", () => {
+test("a result whose outcome contradicts its steps is invalid", () => {
+  for (const outcome of ["clean", "findings"]) {
+    const parsed = parseResult({ ...result, outcome });
+    expect(parsed.ok ? [] : parsed.error).toMatchObject({ kind: "invalid" });
+    expect(JSON.stringify(parsed)).toContain("outcome");
+  }
+});
+
+test("every step in the result fixture is a step its plan schedules", () => {
   const parsed = parseResult(result);
-  expect(parsed.ok && outcomeOf(parsed.value.steps)).toBe("incomplete");
+  if (!parsed.ok) {
+    throw new Error("the result fixture did not parse");
+  }
+  const planned = new Set(
+    parsed.value.plan.paths.flatMap((entry) =>
+      entry.steps.map((planStep) => `${entry.path}:${planStep.adapter}`)
+    )
+  );
+  for (const ran of parsed.value.steps) {
+    expect(planned.has(`${ran.path}:${ran.adapter}`)).toBe(true);
+  }
 });
 
 test("incomplete beats findings, and findings beat clean", () => {

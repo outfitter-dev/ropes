@@ -5,7 +5,9 @@
       "policy": [
         {
           "key": "markdown.enabled",
-          "source": { "kind": "default" },
+          "source": {
+            "kind": "default"
+          },
           "value": true
         },
         {
@@ -24,11 +26,20 @@
           "tool": "rumdl",
           "versionRange": ">=0.1.0",
           "writes": true
+        },
+        {
+          "adapter": "bun-fence",
+          "tool": "bun",
+          "versionRange": "1.4.4",
+          "writes": true
         }
       ]
     }
   ],
   "root": "/repo",
   "schemaVersion": 0,
-  "selection": { "kind": "paths", "paths": ["docs/guide.md"] }
+  "selection": {
+    "kind": "paths",
+    "paths": ["docs/guide.md"]
+  }
 }

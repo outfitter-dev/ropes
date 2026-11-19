@@ -26,17 +26,6 @@ export type StepResult = z.infer<typeof StepResultSchema>;
 export const OutcomeSchema = z.enum(["clean", "findings", "incomplete"]);
 export type Outcome = z.infer<typeof OutcomeSchema>;
 
-/** Provisional and unstable. What a run did, next to the plan it ran. */
-export const ResultSchema = z
-  .object({
-    outcome: OutcomeSchema,
-    plan: PlanSchema,
-    schemaVersion: z.literal(SCHEMA_VERSION),
-    steps: z.array(StepResultSchema).readonly(),
-  })
-  .readonly();
-export type Result = z.infer<typeof ResultSchema>;
-
 /** Incomplete beats findings, and findings beat clean. */
 export const outcomeOf = (steps: readonly StepResult[]): Outcome => {
   if (steps.some((step) => step.status === "incomplete")) {
@@ -47,6 +36,21 @@ export const outcomeOf = (steps: readonly StepResult[]): Outcome => {
   }
   return "clean";
 };
+
+/** Provisional and unstable. What a run did, next to the plan it ran. */
+export const ResultSchema = z
+  .object({
+    outcome: OutcomeSchema,
+    plan: PlanSchema,
+    schemaVersion: z.literal(SCHEMA_VERSION),
+    steps: z.array(StepResultSchema).readonly(),
+  })
+  .refine((result) => result.outcome === outcomeOf(result.steps), {
+    message: "outcome does not agree with the step statuses",
+    path: ["outcome"],
+  })
+  .readonly();
+export type Result = z.infer<typeof ResultSchema>;
 
 /** 0 clean, 1 findings remain, 2 incomplete or unusable. */
 export const EXIT_CODE = { clean: 0, findings: 1, incomplete: 2 } as const;
