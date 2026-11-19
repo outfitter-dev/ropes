@@ -51,6 +51,9 @@ const innerLink = async (
       !path.isAbsolute(target) &&
       !path.isAbsolute(reached) &&
       !under("..", reached) &&
+      // The path the link names counts as well as where it ends up: a
+      // dependency can itself be a link to somewhere else in the checkout.
+      !under(MODULES, reached) &&
       !(await reachesModules(root, file));
     return inside ? target : null;
   } catch {
