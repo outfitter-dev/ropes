@@ -21,7 +21,9 @@ If mise refuses to read `mise.toml` because the file is not trusted, which its p
 
 ## How a Cinch adapter learns its engine's version
 
-An adapter reads the required version from the `[tools]` table of `mise.toml`. The file is plain TOML, so reading it does not need mise installed. The adapter compares that with the version the binary on `PATH` reports. Cinch does not install tools. A required tool that is missing or at the wrong version makes the step incomplete, never passed.
+`adapters/pins.ts` reads the `[tools]` table of `mise.toml`, and the registry hands each adapter the version pinned for its tool. The file is plain TOML, so reading it does not need mise installed. Only an exact three-part version counts as a pin. The runner compares the pin with the version the binary on `PATH` reports. Cinch does not install tools. A required tool that is missing or at the wrong version makes the step incomplete, never passed.
+
+When a repository does not pin a tool, the adapter falls back to the range of versions it was checked against, which it states in its own folder.
 
 ## Dependency versions across packages
 

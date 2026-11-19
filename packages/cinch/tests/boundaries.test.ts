@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import path from "node:path";
 
 import { Glob } from "bun";
 
@@ -33,7 +34,7 @@ const IO_MODULES = new Set([
 const PURE_LAYERS = new Set(["contracts", "policy", "render"]);
 
 const IMPORT = /from\s+"(?<specifier>[^"]+)"/gu;
-const LAYER_IMPORT = /^\.\.\/(?<layer>[^/]+)\//u;
+const ENGINE_FOLDER = /^adapters\/(?<engine>[^/]+)\//u;
 const CONCRETE_ADAPTER = /\/adapters\/[^/]+\//u;
 const BUN_GLOBAL = /\bBun\./u;
 
@@ -43,6 +44,18 @@ interface Source {
   readonly text: string;
   readonly imports: readonly string[];
 }
+
+/**
+ * The layer a relative import lands in, wherever the importing file sits.
+ * Undefined for a package import and for a file at the top of `src/`.
+ */
+const targetLayer = (file: string, specifier: string): string | undefined => {
+  if (!specifier.startsWith(".")) {
+    return undefined;
+  }
+  const target = path.posix.join(path.posix.dirname(file), specifier);
+  return target.includes("/") ? target.split("/")[0] : undefined;
+};
 
 const read = async (file: string): Promise<Source> => {
   const text = await Bun.file(`${SRC}${file}`).text();
@@ -67,7 +80,7 @@ test("every layer imports only from the layers it is allowed to", () => {
     }
     return source.imports
       .filter((specifier) => {
-        const target = LAYER_IMPORT.exec(specifier)?.groups?.layer;
+        const target = targetLayer(source.file, specifier);
         return target !== undefined && !allowed.includes(target);
       })
       .map((specifier) => `${source.file} imports ${specifier}`);
@@ -105,6 +118,26 @@ test("only the registry and an adapter's own folder name a concrete adapter", ()
         .filter((specifier) => CONCRETE_ADAPTER.test(specifier))
         .map((specifier) => `${source.file} imports ${specifier}`)
     );
+  expect(offenders).toEqual([]);
+});
+
+test("only the registry and an engine's own folder mention the engine", () => {
+  const engines = new Set(
+    sources.flatMap((source) => {
+      const engine = ENGINE_FOLDER.exec(source.file)?.groups?.engine;
+      return engine === undefined ? [] : [engine];
+    })
+  );
+  const offenders = [...engines].flatMap((engine) =>
+    sources
+      .filter(
+        (source) =>
+          source.file !== "adapters/registry.ts" &&
+          !source.file.startsWith(`adapters/${engine}/`) &&
+          source.text.toLowerCase().includes(engine)
+      )
+      .map((source) => `${source.file} mentions ${engine}`)
+  );
   expect(offenders).toEqual([]);
 });
 

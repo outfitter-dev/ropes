@@ -1,0 +1,21 @@
+[
+  {
+    "file": "docs/a.md",
+    "line": 3,
+    "column": 3,
+    "rule": "MD025",
+    "message": "Multiple top-level headings (level 1) in the same document",
+    "severity": "error",
+    "fixable": true,
+    "fix": { "range": { "start": 5, "end": 8 }, "replacement": "## A" }
+  },
+  {
+    "file": "docs/a.md",
+    "line": 7,
+    "column": 1,
+    "rule": "MD033",
+    "message": "Inline HTML found: <b>",
+    "severity": "warning",
+    "fixable": false
+  }
+]
