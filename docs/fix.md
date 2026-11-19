@@ -24,7 +24,7 @@ The exit code follows [the usual rule](exit-codes.md): 0 when nothing remains, 1
 
 `cinch fix --dry-run` does the same work on a temporary copy of the root and prints the change as a unified diff. The checkout is not touched. Because the same steps run on the same content, the diff is the change a real `fix` would write.
 
-The copy holds what git would let you commit: tracked files and untracked files that no ignore rule covers. An engine finds its own config there. A file you name is copied even when git ignores it. Other ignored files are not, so an engine config that is ignored does not apply in a dry run. A link that stays inside the root is kept as a link. A link that leads out of it is copied as the content it reaches. Without git, the tree is copied as it is, apart from version-control data and `node_modules`. On a large repository the copy takes time.
+The copy holds what git would let you commit: tracked files and untracked files that no ignore rule covers. An engine finds its own config there. A file you name is copied even when git ignores it. Other ignored files are not, so an engine config that is ignored does not apply in a dry run. Dependencies installed at the root are the exception: the copy links to the root's `node_modules`, because an engine's config may import from it. Nothing in it is copied. A link that stays inside the root is kept as a link. A link that leads out of it is copied as the content it reaches. Without git, the tree is copied as it is, apart from version-control data and `node_modules`. On a large repository the copy takes time.
 
 ## JSON
 

@@ -36,6 +36,13 @@ const partial = async (input: StepInput): Promise<StepOutcome> => {
   return FINDINGS;
 };
 
+/** A fixer that only works when it can read an installed dependency. */
+const withDep = async (input: StepInput): Promise<StepOutcome> => {
+  const rule = Bun.file(path.join(input.root, "node_modules/dep/rule.txt"));
+  const found = await rule.exists();
+  return found ? await rewrite(input) : FINDINGS;
+};
+
 const reportOf = (output: string | undefined): FixReport =>
   FixReportSchema.parse(JSON.parse(output ?? "null"));
 
@@ -150,5 +157,18 @@ test("a dry run keeps a link inside the root a link, as a real fix sees it", asy
     const dry = reportOf(preview.output);
     expect(dry.result).toEqual(reportOf(applied.output).result);
     expect(dry.diff).toBe(reportOf(applied.output).diff);
+  });
+});
+
+test("a dry run can read the dependencies installed at the root", async () => {
+  const tree = { ...TREE, "node_modules/dep/rule.txt": "DONE" };
+  await withRepo(tree, { fix: withDep }, async ({ root, run }) => {
+    Bun.spawnSync(["git", "init", "-q"], { cwd: root });
+    await Bun.write(path.join(root, ".gitignore"), "node_modules\n");
+    const before = await snapshot(root);
+    const preview = await run("fix", [], { dryRun: true, json: true });
+    expect(await snapshot(root)).toEqual(before);
+    expect(preview.exitCode).toBe(0);
+    expect(reportOf(preview.output).changed).toEqual(["a.md", "docs/b.md"]);
   });
 });

@@ -58,6 +58,7 @@ An adapter takes a root and a path and returns data. It does not read arguments,
 - rumdl reads its own config, such as `.rumdl.toml`, from the repository root. Running rumdl by hand and running it through Cinch therefore apply the same rules. Cinch does not yet pass policy of its own to rumdl, because the only Markdown setting today is `markdown.enabled`.
 - Cinch does not install rumdl. The binary must be on `PATH`. A repository pins the version in `mise.toml`, and `mise install` provides it. Without a pin the adapter accepts the 0.3 releases from 0.3.5, the version its output mapping was checked against.
 - rumdl exits 0 when clean, 1 when findings remain and 2 when it could not run, for example on a config file it cannot parse. Exit 2, output that is not the expected JSON, and exit 1 with no finding all make the step incomplete.
+- rumdl can run other tools on fenced code. When one of them is missing or fails on a block, rumdl reports it under the rule `code-block-tools` and stops reading that file. The rest of the file was not checked, so the step is incomplete and the reason names the line. See [the Markdown standard](markdown-standard.md).
 - rumdl's cache is switched off, so a run leaves no `.rumdl_cache` folder behind.
 
 ## Testing

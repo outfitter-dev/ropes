@@ -51,3 +51,22 @@ test("output that is not JSON, or not the expected shape, is an error", () => {
   expect(parseOutput('{"file":"a.md"}', context).ok).toBe(false);
   expect(parseOutput('[{"line":0,"column":1}]', context).ok).toBe(false);
 });
+
+test("a fenced block a tool could not handle makes the output unusable", () => {
+  const stopped = JSON.stringify([
+    {
+      column: 1,
+      file: "a.md",
+      fixable: false,
+      line: 3,
+      message: "Tool 'bun' failed: Exit code 2: error: '}' expected.\n  at 2:1",
+      rule: "code-block-tools",
+      severity: "error",
+    },
+  ]);
+  expect(parseOutput(stopped, context)).toEqual({
+    message:
+      "it could not check the fenced block at line 3: Tool 'bun' failed: Exit code 2: error: '}' expected.",
+    ok: false,
+  });
+});

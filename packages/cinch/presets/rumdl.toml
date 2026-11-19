@@ -1,0 +1,59 @@
+# The Outfitter Markdown standard for rumdl. A repository adopts it with one
+# line at the top of its own `.rumdl.toml`:
+#
+#   extends = "<path to this file>"
+#
+# Anything the repository sets after that line wins over this file. To switch
+# off one more rule without replacing the list below, use `extend-disable`.
+
+[global]
+# MD013 line length: prose stays on one line per paragraph.
+# MD026 trailing punctuation in headings, MD033 inline HTML, MD036 emphasis as
+# a heading and MD041 first-line H1 are allowed.
+disable = ["MD013", "MD026", "MD033", "MD036", "MD041"]
+
+[MD003]
+style = "atx"
+
+[MD004]
+style = "dash"
+
+[MD007]
+indent = 2
+
+[MD024]
+siblings_only = true
+
+[MD029]
+# Each list is either all `1.` or counts up. This is rumdl's default, pinned
+# here on purpose.
+style = "one-or-ordered"
+
+[MD040]
+# Code blocks need a language, and each language uses one alias throughout a
+# document.
+style = "consistent"
+
+[MD046]
+style = "fenced"
+
+[MD049]
+style = "asterisk"
+
+[MD076]
+style = "tight"
+allow-loose-continuation = true
+
+# Fenced code is formatted by the Bun formatter, which reads the repository's
+# own formatter config. `check` reports a block that is not formatted, and
+# `check --fix` rewrites it.
+[code-block-tools]
+enabled = true
+# A missing formatter is a failure, never a silent pass.
+on-missing-tool-binary = "fail"
+
+[code-block-tools.languages]
+typescript = { lint = ["bun-fmt:ts"], format = ["bun-fmt:ts"] }
+tsx = { lint = ["bun-fmt:tsx"], format = ["bun-fmt:tsx"] }
+javascript = { lint = ["bun-fmt"], format = ["bun-fmt"] }
+jsx = { lint = ["bun-fmt:jsx"], format = ["bun-fmt:jsx"] }

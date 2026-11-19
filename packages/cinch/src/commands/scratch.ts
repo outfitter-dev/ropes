@@ -70,11 +70,29 @@ const place = async (root: string, copy: string, file: string) => {
   }
 };
 
+const MODULES = "node_modules";
+
+/**
+ * Installed dependencies are not copied, but an engine's config may import
+ * from them. The copy gets a link to the root's own folder instead.
+ */
+const linkModules = async (root: string, copy: string) => {
+  try {
+    const found = await stat(path.join(root, MODULES));
+    if (found.isDirectory()) {
+      await symlink(path.join(root, MODULES), path.join(copy, MODULES));
+    }
+  } catch {
+    // Nothing is installed, or a copied file already has that name.
+  }
+};
+
 /**
  * Runs `body` against a temporary copy of the root and removes it afterwards.
  * The copy holds what git would let you commit, plus every path in `also`, so
  * an engine finds its own config there and a file the caller named is present
- * even when git ignores it. Other ignored files are not copied.
+ * even when git ignores it. Other ignored files are not copied. Installed
+ * dependencies at the root are linked, not copied.
  */
 export const withCopy = async <T>(
   root: { readonly root: string; readonly vcsRoot: string },
@@ -89,6 +107,7 @@ export const withCopy = async <T>(
       [...dirs].map((dir) => mkdir(path.join(copy, dir), { recursive: true }))
     );
     await Promise.all(files.map((file) => place(root.root, copy, file)));
+    await linkModules(root.root, copy);
     return await body(copy);
   } finally {
     await rm(copy, { force: true, recursive: true });
