@@ -37,7 +37,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
     process.stdout.write(HELP);
     return EXIT_CODE.clean;
   }
-  const command = commands[name];
+  const command = Object.hasOwn(commands, name) ? commands[name] : undefined;
   if (!command) {
     process.stderr.write(
       `cinch: unknown command "${name}". Run cinch --help.\n`

@@ -44,3 +44,13 @@ test("an unknown command exits 2", async () => {
   const result = await run("nope");
   expect(result.exitCode).toBe(2);
 });
+
+test("an unknown command exits 2, including names Object.prototype has", async () => {
+  const results = await Promise.all(
+    ["nope", "constructor", "__proto__", "toString"].map((name) => run(name))
+  );
+  for (const result of results) {
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("unknown command");
+  }
+});
