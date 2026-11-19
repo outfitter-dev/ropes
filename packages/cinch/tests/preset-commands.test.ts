@@ -65,17 +65,33 @@ test("init shows what it would write and writes nothing", async () => {
   expect(report.diff).toContain("+width = 80");
   expect(await textOf("cinch.toml")).toBeNull();
   expect(await textOf(KEPT)).toBeNull();
-  const text = await run("init", { json: false });
-  expect(text.output).toEndWith("Run `cinch init --apply` to write this.");
 });
 
-test("init --apply writes the config and the preset, once", async () => {
-  const first = await run("init", { apply: true });
+test("init offers to write, and --dry-run only shows", async () => {
+  const plain = await run("init", { json: false });
+  expect(plain.confirm).toEqual({
+    otherwise: "Run `cinch init --yes` to write this.",
+    question: "Write these files?",
+  });
+  const dry = await run("init", { dryRun: true, json: false });
+  expect(dry.confirm).toBeUndefined();
+  expect(dry.output).toEndWith("Dry run: nothing was written.");
+  const both = await run("init", { dryRun: true, yes: true });
+  expect(both.confirm).toBeUndefined();
+  expect(await textOf("cinch.toml")).toBeNull();
+  await run("init", { yes: true });
+  const settled = await run("init", { json: false });
+  expect(settled.confirm).toBeUndefined();
+  expect(settled.output).toEndWith("Nothing to set up.");
+});
+
+test("init --yes writes the config and the preset, once", async () => {
+  const first = await run("init", { yes: true });
   expect(first.exitCode).toBe(0);
   expect(await textOf("cinch.toml")).toBe(STARTER_CONFIG);
   expect(await textOf(KEPT)).toBe(SHIPPED);
   expect(await run("check")).toMatchObject({ exitCode: 0 });
-  const again = await run("init", { apply: true });
+  const again = await run("init", { yes: true });
   const report = FixReportSchema.parse(JSON.parse(again.output ?? "null"));
   expect(report.changed).toEqual([]);
 });
@@ -83,7 +99,7 @@ test("init --apply writes the config and the preset, once", async () => {
 test("init keeps a config that is already there", async () => {
   const mine = 'pilot = 0\nexclude = ["vendor/**"]\n';
   await Bun.write(path.join(root, "cinch.toml"), mine);
-  const response = await run("init", { apply: true });
+  const response = await run("init", { yes: true });
   const report = FixReportSchema.parse(JSON.parse(response.output ?? "null"));
   expect(report.changed).toEqual([KEPT]);
   expect(await textOf("cinch.toml")).toBe(mine);
@@ -153,7 +169,7 @@ test("a file the config leaves out is blocked, and nothing is written past it", 
 
 test("init that cannot plan writes nothing, not even the config", async () => {
   await Bun.write(path.join(root, "mise.toml"), "[tools\n");
-  const response = await run("init", { apply: true });
+  const response = await run("init", { yes: true });
   expect(response.exitCode).toBe(2);
   expect(await textOf("cinch.toml")).toBeNull();
   expect(await textOf(KEPT)).toBeNull();

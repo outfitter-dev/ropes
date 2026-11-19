@@ -10,13 +10,14 @@ The first preset is `markdown`. See [markdown-standard.md](markdown-standard.md)
 cinch init
 ```
 
-This prints what Cinch would write and changes nothing. With no Cinch config it proposes a starting `cinch.toml`. It then proposes every preset that is switched on.
+This prints what Cinch would write, then asks before it writes anything. With no Cinch config it proposes a starting `cinch.toml`. It then proposes every preset that is switched on. Running it again changes nothing, and a config that is already there is never rewritten.
 
-```sh
-cinch init --apply
-```
+| Flag        | What it does                                           |
+| ----------- | ------------------------------------------------------ |
+| `--yes`     | Writes without asking. Use this in scripts and from CI |
+| `--dry-run` | Shows the change and stops. It never asks or writes    |
 
-This writes the files and names each one. Running it again changes nothing. A config that is already there is never rewritten.
+Cinch only asks a person at a terminal. When the output is piped, or with `--json`, plain `cinch init` shows the change and writes nothing. It then says to run `cinch init --yes`. With `--json` that line goes to stderr, so stdout stays one JSON report. `--dry-run` wins when both flags are given.
 
 ## See what a repository has
 
@@ -41,7 +42,7 @@ markdown
 
 The exit code is 0 when every file is current or off, 1 when one is stale, missing or blocked, and 2 when one is unknown.
 
-Each file is judged by itself. A file that `exclude` covers is `blocked`, because Cinch cannot keep a file the config tells it to leave alone. `cinch preset add` and `cinch preset update` then write nothing and exit 2, naming the file and the setting, so a preset is never half written. `cinch init --apply` plans first for the same reason: when the plan cannot be made, it writes no config either.
+Each file is judged by itself. A file that `exclude` covers is `blocked`, because Cinch cannot keep a file the config tells it to leave alone. `cinch preset add` and `cinch preset update` then write nothing and exit 2, naming the file and the setting, so a preset is never half written. `cinch init` plans first for the same reason: when the plan cannot be made, it writes no config either.
 
 ## Add or update a preset
 
