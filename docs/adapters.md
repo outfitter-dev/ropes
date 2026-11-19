@@ -8,7 +8,9 @@ An adapter is the only code that knows about one engine, such as a linter or a f
 2. Export an `Adapter` from it. The interface is in `adapters/adapter.ts`.
 3. Add it to the list in `adapters/registry.ts`. Order in that list is the order steps run on a file.
 
-No other file changes. `tests/boundaries.test.ts` fails if anything outside `adapters/` imports from an adapter's folder.
+No other file changes. `tests/boundaries.test.ts` fails if anything outside `adapters/` imports from an adapter's folder, or if any source file other than the registry and the engine's own folder mentions the engine by name.
+
+The registry is a function, `adaptersFor(pins)`. It hands each adapter the version the repository pins for its tool in `mise.toml`, and the adapter puts that in its `versionRange`. `adapters/pins.ts` reads the file. See [tool versions](tool-versions.md).
 
 ## The descriptor
 
@@ -29,7 +31,7 @@ The descriptor is plain data. It is all the resolver sees.
 
 - `probe()` reports whether the tool is installed and at which version. Return the version as plain semver, such as `0.1.2`, with no tool name in front. The runner calls it at most once per run.
 - `check(input)` inspects one path and returns findings with a status of `passed` or `findings`. It must not write.
-- `fix(input)` may write, and returns `fixed`, or `findings` when something remains that it could not fix.
+- `fix(input)` may write. It returns `fixed` when it changed the file and nothing remains, `findings` when something remains that it could not fix, and `passed` when there was nothing to do.
 
 Any operation may return `incomplete` with a reason when it could not do its work.
 
@@ -49,6 +51,15 @@ An adapter never has to guard against these itself, and a step that could not ru
 
 An adapter takes a root and a path and returns data. It does not read arguments, print, or set an exit code. That keeps the interface usable from `outfitter`, and from a different command layer later.
 
+## rumdl
+
+`adapters/rumdl/` lints Markdown with [rumdl](https://github.com/rvben/rumdl). It runs `rumdl check --output-format json` on one file at a time from the repository root, and `fix` adds `--fix`.
+
+- rumdl reads its own config, such as `.rumdl.toml`, from the repository root. Running rumdl by hand and running it through Cinch therefore apply the same rules. Cinch does not yet pass policy of its own to rumdl, because the only Markdown setting today is `markdown.enabled`.
+- Cinch does not install rumdl. The binary must be on `PATH`. A repository pins the version in `mise.toml`, and `mise install` provides it. Without a pin the adapter accepts the 0.3 releases from 0.3.5, the version its output mapping was checked against.
+- rumdl exits 0 when clean, 1 when findings remain and 2 when it could not run, for example on a config file it cannot parse. Exit 2, output that is not the expected JSON, and exit 1 with no finding all make the step incomplete.
+- rumdl's cache is switched off, so a run leaves no `.rumdl_cache` folder behind.
+
 ## Testing
 
-`packages/cinch/tests/fake-adapter.ts` is an in-memory adapter that records the calls made to it. Use it for anything that tests the runner or the resolver. A test for a real adapter that needs the engine installed skips with a visible reason when the engine is absent.
+`packages/cinch/tests/fake-adapter.ts` is an in-memory adapter that records the calls made to it. Use it for anything that tests the runner or the resolver. A test for a real adapter that needs the engine installed skips with a visible reason when the engine is absent. CI installs every pinned tool, so those tests always run there. Locally, `mise exec -- bun run check` runs them when the tools are not on your `PATH`.
