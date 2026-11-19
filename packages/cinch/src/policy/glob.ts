@@ -9,7 +9,7 @@
  */
 export type Matcher = (path: string) => boolean;
 
-const SPECIAL = /[.+^$()|\\]/gu;
+const SPECIAL = /[.+^$()|\\\]}]/gu;
 
 const escape = (text: string): string => text.replaceAll(SPECIAL, "\\$&");
 
@@ -53,7 +53,7 @@ const brackets = (pattern: string, index: number): Piece => {
   }
   const body = pattern.slice(index + 1, end);
   const negated = body.startsWith("!") || body.startsWith("^");
-  const members = escape(negated ? body.slice(1) : body).replaceAll("]", "\\]");
+  const members = escape(negated ? body.slice(1) : body);
   return {
     next: end + 1,
     source: negated ? `[^/${members}]` : `(?!/)[${members}]`,

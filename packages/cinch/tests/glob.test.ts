@@ -57,6 +57,12 @@ test("an unclosed brace or bracket is matched literally", () => {
   expect(compileGlob("a[b")("a[b")).toBe(true);
 });
 
+test("a stray closing bracket or brace is matched literally", () => {
+  expect(compileGlob("docs/report].md")("docs/report].md")).toBe(true);
+  expect(compileGlob("docs/a}b.md")("docs/a}b.md")).toBe(true);
+  expect(compileGlob("docs/a}b.md")("docs/ab.md")).toBe(false);
+});
+
 test("no patterns match nothing", () => {
   expect(compileGlobs([])("README.md")).toBe(false);
 });
