@@ -1,0 +1,7 @@
+// A deliberate typed-lint violation, kept as .txt so normal lint skips it.
+// tests/tooling.test.ts copies it to a .ts file and lints that copy.
+const later = async (): Promise<number> => await Promise.resolve(1);
+
+export const forget = (): void => {
+  later();
+};

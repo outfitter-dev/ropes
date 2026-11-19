@@ -25,8 +25,8 @@ const runStep = async (
     return incomplete(probe.reason ?? `${step.tool} is not available`);
   }
   return mode === "fix" && step.writes
-    ? adapter.fix(input)
-    : adapter.check(input);
+    ? await adapter.fix(input)
+    : await adapter.check(input);
 };
 
 /**
