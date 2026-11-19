@@ -26,6 +26,13 @@ The descriptor is plain data. It is all the resolver sees.
 | `platforms` | Where the tool can run, from `darwin`, `linux` and `win32`. |
 | `extensions` | The file extensions, with the dot, that get a step from this adapter. |
 | `enabledBy` | The policy key that switches the adapter. A path whose policy sets it to `false` gets no step. |
+| `owns` | Optional. Exact root-relative files the adapter keeps. They get a step whatever their extension and whatever `include` says, and they join a workspace run before they exist. |
+
+## Kept files
+
+Some files in a repository belong to Cinch, such as the copy of a shared config preset. `adapters/managed.ts` builds an adapter for them from a list of paths and, for each, a function that says what the file should hold. `check` reports a file that is missing or differs, and `fix` writes it. There is no engine to install, so the probe always succeeds.
+
+An engine's preset lives in the engine's own folder and is listed in the registry like any adapter. `adapters/rumdl/preset.ts` is the first one. Kept files go in `.outfitter/configs/`, and the repository's own config stays at the root and extends the kept one. See [the Markdown standard](markdown-standard.md).
 
 ## The operations
 
@@ -55,7 +62,7 @@ An adapter takes a root and a path and returns data. It does not read arguments,
 
 `adapters/rumdl/` lints Markdown with [rumdl](https://github.com/rvben/rumdl). It runs `rumdl check --output-format json` on one file at a time from the repository root, and `fix` adds `--fix`.
 
-- rumdl reads its own config, such as `.rumdl.toml`, from the repository root. Running rumdl by hand and running it through Cinch therefore apply the same rules. Cinch does not yet pass policy of its own to rumdl, because the only Markdown setting today is `markdown.enabled`.
+- rumdl reads its own config, such as `.rumdl.toml`, from the repository root. Running rumdl by hand and running it through Cinch therefore apply the same rules. Cinch passes no policy of its own to rumdl. It keeps the shared config that rumdl reads.
 - Cinch does not install rumdl. The binary must be on `PATH`. A repository pins the version in `mise.toml`, and `mise install` provides it. Without a pin the adapter accepts the 0.3 releases from 0.3.5, the version its output mapping was checked against.
 - rumdl exits 0 when clean, 1 when findings remain and 2 when it could not run, for example on a config file it cannot parse. Exit 2, output that is not the expected JSON, and exit 1 with no finding all make the step incomplete.
 - rumdl can run other tools on fenced code. When one of them is missing or fails on a block, rumdl reports it under the rule `code-block-tools` and stops reading that file. The rest of the file was not checked, so the step is incomplete and the reason names the line. See [the Markdown standard](markdown-standard.md).

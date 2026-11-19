@@ -42,6 +42,8 @@ exclude = ["vendor/**"]
 
 [markdown]
 enabled = true
+# Keep the shared Markdown standard in the repository. On unless set to false.
+preset = true
 
 [[overrides]]
 paths = ["docs/legacy/**"]

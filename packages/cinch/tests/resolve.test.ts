@@ -180,3 +180,40 @@ test("every plan the resolver makes passes the plan contract", () => {
   const plan = resolve(["docs/guide.md", "vendor/a.md", "src/a.ts"]);
   expect(parsePlan(structuredClone(plan))).toEqual({ ok: true, value: plan });
 });
+
+const keeper = describeFake({
+  enabledBy: "markdown.preset",
+  extensions: [],
+  id: "fake-keeper",
+  owns: [".tool.toml"],
+});
+
+test("a file an adapter keeps is planned without an include entry", () => {
+  const kept = only(".tool.toml", { descriptors: [markdown, keeper] });
+  expect(kept.skipped).toBeUndefined();
+  expect(kept.steps.map((step) => step.adapter)).toEqual(["fake-keeper"]);
+  const other = only("other.toml", { descriptors: [markdown, keeper] });
+  expect(other.skipped?.reason).toBe("not-included");
+});
+
+test("a kept file is still left out when excluded or switched off", () => {
+  const off: PolicyValue = {
+    key: "markdown.preset",
+    source: file("markdown.preset"),
+    value: false,
+  };
+  const descriptors = [markdown, keeper];
+  const switched = only(".tool.toml", {
+    config: { ...config, settings: [...config.settings, off] },
+    descriptors,
+  });
+  expect(switched.skipped?.reason).toBe("not-included");
+  const excluded = only(".tool.toml", {
+    config: {
+      ...config,
+      exclude: { source: file("exclude"), value: [".tool.toml"] },
+    },
+    descriptors,
+  });
+  expect(excluded.skipped?.reason).toBe("excluded");
+});

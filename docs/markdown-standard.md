@@ -1,16 +1,36 @@
 # The Markdown standard
 
-Outfitter repositories share one set of Markdown rules. It lives in `packages/cinch/presets/rumdl.toml`, in the format [rumdl](https://rumdl.dev) reads, so rumdl applies it with or without Cinch.
+Outfitter repositories share one set of Markdown rules. It lives in `packages/cinch/presets/rumdl.toml`, in the format [rumdl](https://rumdl.dev) reads, and ships inside Cinch. A Cinch version is therefore also a version of the standard.
 
-## Adopt it
+## How a repository gets it
 
-Put one line at the top of the repository's `.rumdl.toml`:
+Cinch keeps two files in the repository. Both are committed.
+
+- `.outfitter/configs/rumdl.toml` is a copy of the standard. Cinch owns it. Do not edit it, because `cinch fix` rewrites it.
+- `.rumdl.toml` is the repository's own config. Its first line extends the copy, and everything after that line is the repository's to change.
 
 ```toml
-extends = "packages/cinch/presets/rumdl.toml"
+extends = ".outfitter/configs/rumdl.toml"
 ```
 
-rumdl resolves a relative path from the config file's own directory. It also accepts `~/`, an absolute path, and `$VAR` or `${VAR}`. It makes no network requests, so the file must be on disk. How other repositories will reach the file is not settled yet. This repository uses the path above.
+`cinch check` reports the copy when it is missing or differs from what this Cinch ships, and reports `.rumdl.toml` when it does not extend the copy. `cinch fix` writes the copy, creates `.rumdl.toml` when there is none, and adds the `extends` line to one that has none. `cinch explain` lists both files like any other. The copy is on disk, so running rumdl by hand applies the same rules.
+
+Cinch leaves a `.rumdl.toml` that already extends something else alone and reports it. Change the line by hand, or opt out. It also will not write `.rumdl.toml` when the repository configures rumdl in `rumdl.toml`, `.config/rumdl.toml` or `pyproject.toml`, because rumdl reads only one of them and the new file would hide those settings. Move them into `.rumdl.toml` first.
+
+A fix writes these two files before it touches any Markdown, so the first run already uses the standard.
+
+## Take a newer standard
+
+Update Cinch, run `cinch fix`, and review the diff of `.outfitter/configs/rumdl.toml`. Until then `cinch check` fails, so a repository cannot drift from the Cinch it pins without someone seeing it.
+
+## Opt out
+
+```toml
+[markdown]
+preset = false
+```
+
+With that in the Cinch config, Cinch keeps neither file and rumdl uses whatever config the repository has.
 
 ## Change it for one repository
 
@@ -20,7 +40,7 @@ Whatever the repository sets after the `extends` line wins over the standard.
 - `disable` replaces the standard's list. To switch off one more rule and keep the rest, use `extend-disable`.
 
 ```toml
-extends = "packages/cinch/presets/rumdl.toml"
+extends = ".outfitter/configs/rumdl.toml"
 
 [global]
 extend-disable = ["MD024"]

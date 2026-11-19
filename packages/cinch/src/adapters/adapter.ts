@@ -27,6 +27,12 @@ export interface AdapterDescriptor {
    * sets the key to `false` gets no step from it.
    */
   readonly enabledBy: string;
+  /**
+   * Root-relative files this adapter keeps, whatever their extension and
+   * whatever `include` says. They are planned even before they exist, so a
+   * check can report a missing one and a fix can write it.
+   */
+  readonly owns?: readonly string[];
 }
 
 export interface ProbeResult {

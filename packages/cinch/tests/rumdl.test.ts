@@ -65,9 +65,12 @@ const planFor = (root: string, adapter = rumdlAdapter()): Plan => ({
   selection: { kind: "workspace" },
 });
 
+const lint = (pins: Record<string, string>) =>
+  adaptersFor(pins).find((adapter) => adapter.descriptor.id === "rumdl");
+
 test("the registry hands the adapter the pinned version", () => {
-  const [pinned] = adaptersFor({ rumdl: "0.3.5" });
-  const [unpinned] = adaptersFor({});
+  const pinned = lint({ rumdl: "0.3.5" });
+  const unpinned = lint({});
   expect(pinned?.descriptor.versionRange).toBe("0.3.5");
   expect(unpinned?.descriptor.versionRange).toBe(SUPPORTED_RANGE);
 });

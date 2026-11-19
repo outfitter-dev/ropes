@@ -84,11 +84,24 @@ const stepsFor = (
         // A step is one file. A package or workspace adapter gets none until
         // the plan can describe a step of that size.
         descriptor.unit === "file" &&
-        descriptor.extensions.includes(extension) &&
+        (descriptor.extensions.includes(extension) ||
+          descriptor.owns?.includes(path) === true) &&
         !off.has(descriptor.enabledBy)
     )
     .map(toStep);
 };
+
+/** Whether an adapter that policy leaves on keeps this exact file. */
+const isKept = (
+  path: string,
+  policy: readonly PolicyValue[],
+  descriptors: readonly AdapterDescriptor[]
+): boolean =>
+  stepsFor(
+    path,
+    policy,
+    descriptors.filter((descriptor) => descriptor.owns?.includes(path) === true)
+  ).length > 0;
 
 const plan = (path: string, input: ResolveInput, scope: Scope): PlannedPath => {
   if (scope.excluded(path)) {
@@ -99,7 +112,10 @@ const plan = (path: string, input: ResolveInput, scope: Scope): PlannedPath => {
       steps: [],
     };
   }
-  if (!scope.included(path)) {
+  const policy = policyFor(path, input.config, scope);
+  // A kept file needs no `include` entry. When policy switches its adapter
+  // off, the path is treated like any other.
+  if (!isKept(path, policy, input.descriptors) && !scope.included(path)) {
     return {
       path,
       policy: [],
@@ -107,7 +123,6 @@ const plan = (path: string, input: ResolveInput, scope: Scope): PlannedPath => {
       steps: [],
     };
   }
-  const policy = policyFor(path, input.config, scope);
   return { path, policy, steps: stepsFor(path, policy, input.descriptors) };
 };
 
@@ -125,10 +140,17 @@ export const resolvePlan = (input: ResolveInput): Plan => {
       compileGlobs(override.paths)
     ),
   };
+  const kept = new Set(
+    input.descriptors.flatMap((descriptor) => descriptor.owns ?? [])
+  );
+  const paths = [...new Set(input.paths)].toSorted();
   return {
-    paths: [...new Set(input.paths)]
-      .toSorted()
-      .map((path) => plan(path, input, scope)),
+    // A kept file is often the config another step reads, so a fix has to
+    // write it before that step runs.
+    paths: [
+      ...paths.filter((path) => kept.has(path)),
+      ...paths.filter((path) => !kept.has(path)),
+    ].map((path) => plan(path, input, scope)),
     root: input.root,
     schemaVersion: SCHEMA_VERSION,
     selection: input.selection,

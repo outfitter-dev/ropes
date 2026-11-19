@@ -74,7 +74,13 @@ export const prepare = async (
   // out, so `explain` can say why. A file that only turned up while expanding
   // a directory does not: the first pass finds those, the second drops them.
   const keep = new Set(named);
-  const candidates = resolve([...named, ...walked])
+  // A file an adapter keeps is part of the workspace before it exists, so a
+  // check can report that it is missing.
+  const kept =
+    selection.kind === "workspace"
+      ? adapters.flatMap((adapter) => adapter.descriptor.owns ?? [])
+      : [];
+  const candidates = resolve([...named, ...walked, ...kept])
     .paths.filter(
       (entry) => entry.skipped === undefined || keep.has(entry.path)
     )

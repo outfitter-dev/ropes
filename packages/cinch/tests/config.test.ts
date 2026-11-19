@@ -207,3 +207,17 @@ test("this repository's own cinch.toml loads", async () => {
   const loaded = await loadConfig(REPO_ROOT);
   expect(loaded.ok && loaded.value.file).toBe("cinch.toml");
 });
+
+test("the preset switch is read, and the defaults it does not state remain", async () => {
+  const loaded = await load({
+    "cinch.toml": "pilot = 0\n[markdown]\npreset = false\n",
+  });
+  expect(loaded.ok && loaded.value.settings).toEqual([
+    { key: "markdown.enabled", source: { kind: "default" }, value: true },
+    {
+      key: "markdown.preset",
+      source: { file: "cinch.toml", key: "markdown.preset", kind: "file" },
+      value: false,
+    },
+  ]);
+});
