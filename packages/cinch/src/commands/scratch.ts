@@ -13,9 +13,32 @@ import path from "node:path";
 
 import { filesUnder } from "./files.ts";
 
+const MODULES = "node_modules";
+
+const under = (dir: string, file: string): boolean =>
+  file === dir || file.startsWith(`${dir}${path.sep}`);
+
 /**
- * The target of a link that is relative and stays inside the root. Such a
- * link means the same thing in the copy. Any other path gets null.
+ * Whether a path ends up in the root's installed dependencies. The copy links
+ * to that folder, so a link kept into it would let a step write to the
+ * checkout.
+ */
+const reachesModules = async (root: string, file: string) => {
+  try {
+    const [base, real] = await Promise.all([
+      realpath(root),
+      realpath(path.join(root, file)),
+    ]);
+    return under(MODULES, path.relative(base, real));
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * The target of a link that is relative, stays inside the root and does not
+ * lead into the installed dependencies. Such a link means the same thing in
+ * the copy. Any other path gets null.
  */
 const innerLink = async (
   root: string,
@@ -27,8 +50,8 @@ const innerLink = async (
     const inside =
       !path.isAbsolute(target) &&
       !path.isAbsolute(reached) &&
-      reached !== ".." &&
-      !reached.startsWith(`..${path.sep}`);
+      !under("..", reached) &&
+      !(await reachesModules(root, file));
     return inside ? target : null;
   } catch {
     return null;
@@ -69,8 +92,6 @@ const place = async (root: string, copy: string, file: string) => {
     }
   }
 };
-
-const MODULES = "node_modules";
 
 /**
  * Installed dependencies are not copied, but an engine's config may import

@@ -172,3 +172,19 @@ test("a dry run can read the dependencies installed at the root", async () => {
     expect(reportOf(preview.output).changed).toEqual(["a.md", "docs/b.md"]);
   });
 });
+
+test("a dry run never writes through a link into the dependencies", async () => {
+  const tree = { ...TREE, "node_modules/dep/README.md": "TODO dep\n" };
+  await withRepo(tree, { fix: rewrite }, async ({ root, run }) => {
+    Bun.spawnSync(["git", "init", "-q"], { cwd: root });
+    await Bun.write(path.join(root, ".gitignore"), "node_modules\n");
+    await symlink(
+      "../node_modules/dep/README.md",
+      path.join(root, "docs/shared.md")
+    );
+    const dep = Bun.file(path.join(root, "node_modules/dep/README.md"));
+    const preview = await run("fix", [], { dryRun: true, json: true });
+    expect(await dep.text()).toBe("TODO dep\n");
+    expect(reportOf(preview.output).changed).toContain("docs/shared.md");
+  });
+});
