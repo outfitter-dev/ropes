@@ -135,3 +135,26 @@ test("preset rejects a name or an action it does not know", async () => {
   const action = await run("preset", { action: "remove" });
   expect(action.error).toContain('unknown preset action "remove"');
 });
+
+test("a file the config leaves out is blocked, and nothing is written past it", async () => {
+  await Bun.write(
+    path.join(root, "cinch.toml"),
+    `pilot = 0\nexclude = ["${KEPT}"]\n`
+  );
+  const listed = await run("preset");
+  expect(statesOf(listed.output)).toEqual(["notes blocked"]);
+  expect(listed.exitCode).toBe(1);
+  const response = await run("preset", { action: "update" });
+  expect(response.exitCode).toBe(2);
+  expect(response.error).toContain(KEPT);
+  expect(response.error).toContain("exclude");
+  expect(await textOf(KEPT)).toBeNull();
+});
+
+test("init that cannot plan writes nothing, not even the config", async () => {
+  await Bun.write(path.join(root, "mise.toml"), "[tools\n");
+  const response = await run("init", { apply: true });
+  expect(response.exitCode).toBe(2);
+  expect(await textOf("cinch.toml")).toBeNull();
+  expect(await textOf(KEPT)).toBeNull();
+});

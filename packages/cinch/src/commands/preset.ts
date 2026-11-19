@@ -11,6 +11,7 @@ import type { Command, CommandRequest, CommandResponse } from "./command.ts";
 import { runFix } from "./fix.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
+import { describeGap, gapOf, gapsOf } from "./preset-gaps.ts";
 import { locate, pick } from "./presets.ts";
 import type { Preset } from "./presets.ts";
 
@@ -22,22 +23,17 @@ const unusable = (message: string): CommandResponse => ({
 const filesOf = (presets: readonly Preset[]): string[] =>
   presets.flatMap((preset) => preset.files);
 
-/** Whether the plan gives this preset's adapter a step on any of its files. */
-const isOn = (preset: Preset, result: Pick<Result, "plan">): boolean =>
-  result.plan.paths.some(
-    (entry) =>
-      preset.files.includes(entry.path) &&
-      entry.steps.some((step) => step.adapter === preset.adapter)
-  );
-
 const stateOf = async (
   root: string,
   preset: Preset,
   file: string,
   result: Result
 ): Promise<PresetFile> => {
-  if (!isOn(preset, result)) {
-    return { path: file, state: "off" };
+  const gap = gapOf(preset, file, result.plan);
+  if (gap) {
+    return gap.why === "off"
+      ? { path: file, state: "off" }
+      : { message: describeGap(gap), path: file, state: "blocked" };
   }
   const step = result.steps.find(
     (ran) => ran.adapter === preset.adapter && ran.path === file
@@ -104,10 +100,6 @@ const list = async (
   };
 };
 
-/** Why a preset that is switched off was not written. */
-const offMessage = (preset: Preset): string =>
-  `the ${preset.name} preset is switched off: the Cinch config sets \`${preset.enabledBy}\` to false. Remove that line, then run this again.`;
-
 const exitOf = (report: FixReport): ExitCode =>
   EXIT_CODE[report.result.outcome];
 
@@ -117,16 +109,20 @@ const write = async (
   root: string,
   presets: readonly Preset[]
 ): Promise<CommandResponse> => {
-  const ran = await runFix(
-    { ...request, cwd: root, paths: filesOf(presets) },
-    deps
-  );
+  // Every file is settled before any is written: a preset the config
+  // switches off, or a file it leaves out, stops the whole write.
+  const paths = filesOf(presets);
+  const prepared = await prepare({ cwd: root, paths }, deps);
+  if (!prepared.ok) {
+    return unusable(prepared.error);
+  }
+  const gaps = gapsOf(presets, prepared.value.plan);
+  if (gaps.length > 0) {
+    return unusable(gaps.map(describeGap).join("\ncinch: "));
+  }
+  const ran = await runFix({ ...request, cwd: root, paths }, deps);
   if (!ran.ok) {
     return ran.response;
-  }
-  const off = presets.find((preset) => !isOn(preset, ran.report.result));
-  if (off) {
-    return unusable(offMessage(off));
   }
   return {
     exitCode: exitOf(ran.report),

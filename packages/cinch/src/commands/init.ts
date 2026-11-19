@@ -8,6 +8,7 @@ import { renderFix, renderFixJson } from "../render/fix.ts";
 import { renderInitHint } from "../render/preset.ts";
 import type { Command } from "./command.ts";
 import { runFix } from "./fix.ts";
+import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { locate } from "./presets.ts";
 
@@ -49,17 +50,22 @@ export const init =
     }
     const { root } = located.root;
     const apply = request.apply === true;
+    const paths = located.presets.flatMap((preset) => preset.files);
+    // Plan before writing anything, so a setup that cannot be planned does
+    // not leave a config behind with no presets beside it.
+    const planned = await prepare({ cwd: root, paths }, deps);
+    if (!planned.ok) {
+      return {
+        error: `cinch: ${planned.error}`,
+        exitCode: EXIT_CODE.incomplete,
+      };
+    }
     const starting = (await configFileIn(root)) === null;
     if (starting && apply) {
       await Bun.write(path.join(root, STANDALONE_FILE), STARTER_CONFIG);
     }
     const ran = await runFix(
-      {
-        cwd: root,
-        dryRun: !apply,
-        json: request.json,
-        paths: located.presets.flatMap((preset) => preset.files),
-      },
+      { cwd: root, dryRun: !apply, json: request.json, paths },
       deps
     );
     if (!ran.ok) {

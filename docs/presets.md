@@ -41,6 +41,8 @@ markdown
 
 The exit code is 0 when every file is current or off, 1 when one is stale, missing or blocked, and 2 when one is unknown.
 
+Each file is judged by itself. A file that `exclude` covers is `blocked`, because Cinch cannot keep a file the config tells it to leave alone. `cinch preset add` and `cinch preset update` then write nothing and exit 2, naming the file and the setting, so a preset is never half written. `cinch init --apply` plans first for the same reason: when the plan cannot be made, it writes no config either.
+
 ## Add or update a preset
 
 ```sh
