@@ -1,0 +1,3 @@
+# No local files need copying: development here is credential-free.
+# Tracked configuration arrives through Git; bootstrap installs dependencies.
+# Never share node_modules, credentials, logs, caches, or agent runtime state.
