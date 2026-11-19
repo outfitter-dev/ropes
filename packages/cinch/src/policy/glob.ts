@@ -13,6 +13,52 @@ const SPECIAL = /[.+^$()|\\\]}]/gu;
 
 const escape = (text: string): string => text.replaceAll(SPECIAL, "\\$&");
 
+/** `-` is literal in a class except where `classMembers` emits a range. */
+const escapeClass = (char: string): string =>
+  char === "-" ? "\\-" : escape(char);
+
+interface Glyph {
+  readonly char: string;
+  readonly code: number;
+  readonly next: number;
+}
+
+const glyphAt = (text: string, index: number): Glyph | undefined => {
+  const code = text.codePointAt(index);
+  if (code === undefined) {
+    return undefined;
+  }
+  const size = code > 0xff_ff ? 2 : 1;
+  return { char: text.slice(index, index + size), code, next: index + size };
+};
+
+/**
+ * A hyphen with a character on each side is a range. An inverted range adds
+ * nothing, so the class stays a legal unicode regular expression.
+ */
+const classMembers = (body: string): string => {
+  let source = "";
+  let index = 0;
+  while (index < body.length) {
+    const start = glyphAt(body, index);
+    if (!start) {
+      break;
+    }
+    const dash = body[start.next];
+    const end = glyphAt(body, start.next + 1);
+    if (dash === "-" && end) {
+      if (start.code <= end.code) {
+        source += `${escapeClass(start.char)}-${escapeClass(end.char)}`;
+      }
+      index = end.next;
+      continue;
+    }
+    source += escapeClass(start.char);
+    index = start.next;
+  }
+  return source;
+};
+
 const closing = (pattern: string, from: number, close: string): number =>
   pattern.indexOf(close, from + 1);
 
@@ -53,7 +99,7 @@ const brackets = (pattern: string, index: number): Piece => {
   }
   const body = pattern.slice(index + 1, end);
   const negated = body.startsWith("!") || body.startsWith("^");
-  const members = escape(negated ? body.slice(1) : body);
+  const members = classMembers(negated ? body.slice(1) : body);
   return {
     next: end + 1,
     source: negated ? `[^/${members}]` : `(?!/)[${members}]`,

@@ -61,6 +61,29 @@ test("an unclosed brace or bracket is matched literally", () => {
   expect(compileGlob("a[b")("a[b")).toBe(true);
 });
 
+test("an inverted character range matches nothing", () => {
+  const patterns = [
+    "[z-a]",
+    "[a-Z]",
+    "[az-a]",
+    "[a--]",
+    "[a--b]",
+    "[b-a-c]",
+    "[--a]",
+    "[!z-a]",
+    "{a,[z-a]}",
+  ];
+  const paths = ["a", "b", "c", "z", "Z", "-", "README.md"];
+  const disagreements = patterns.flatMap((pattern) => {
+    const mine = compileGlob(pattern);
+    const reference = new Glob(pattern);
+    return paths
+      .filter((path) => mine(path) !== reference.match(path))
+      .map((path) => `${pattern} on ${path}: got ${mine(path)}`);
+  });
+  expect(disagreements).toEqual([]);
+});
+
 test("a stray closing bracket or brace is matched literally", () => {
   expect(compileGlob("docs/report].md")("docs/report].md")).toBe(true);
   expect(compileGlob("docs/a}b.md")("docs/a}b.md")).toBe(true);

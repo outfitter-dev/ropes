@@ -147,6 +147,28 @@ test("exclude wins over include", () => {
   expect(only("vendor/a.md").skipped?.reason).toBe("excluded");
 });
 
+test("an inverted range in a glob still resolves a plan", () => {
+  const plan = resolve(["README.md", "docs/keep/a.md"], {
+    config: {
+      ...config,
+      exclude: { source: file("exclude"), value: ["[z-a]"] },
+      include: { source: file("include"), value: ["[a-Z]*.md", "**/*.md"] },
+      overrides: [
+        ...config.overrides,
+        {
+          paths: ["[a--]"],
+          settings: [enabled(false, "overrides.2.markdown.enabled")],
+        },
+      ],
+    },
+  });
+  expect(plan.paths.map((planned) => planned.path)).toEqual([
+    "README.md",
+    "docs/keep/a.md",
+  ]);
+  expect(plan.paths[0]?.skipped).toBeUndefined();
+});
+
 test("an empty selection gives a plan with no paths", () => {
   const plan = resolve([], { selection: { kind: "paths", paths: [] } });
   expect(plan.paths).toEqual([]);
