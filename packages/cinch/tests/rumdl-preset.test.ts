@@ -50,6 +50,26 @@ withEngines("the preset applies its list marker rule", async () => {
   ]);
 });
 
+withEngines("the preset turns on the rules rumdl leaves off", async () => {
+  const text = [
+    "# T\n\nText.\n\n## Same\n\n## Same\n\nBody.\n\n",
+    "## A **bold** `code` one\n\nBody\n  indented.\n\n",
+    "<!-- rumdl-disable-next-line MD001 -->\nFine.\n\n",
+    "## Parent\n\n### Child\n\nBody.\n",
+  ].join("");
+  const outcome = await inRepo(text, (root) =>
+    rumdlAdapter().check(input(root))
+  );
+  expect(outcome.findings.map((finding) => finding.rule)).toEqual([
+    "MD082",
+    "MD024",
+    "MD080",
+    "MD093",
+    "MD085",
+    "MD087",
+  ]);
+});
+
 withEngines("the preset allows what it switches off", async () => {
   const text = "Intro, with no first heading.\n\n## Done!\n\n<b>hi</b>\n";
   const outcome = await inRepo(text, (root) =>

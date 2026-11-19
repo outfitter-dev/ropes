@@ -36,6 +36,12 @@ extend-disable = ["MD024"]
 - Every code block names a language, and a document uses one spelling for each language.
 - List items are tight, and a continuation paragraph may stand apart.
 - Two headings may share text unless they are siblings.
+- Heading anchors are unique across H1 to H3, compared the way GitHub builds them.
+- A heading has content before the next heading. A heading followed by its own subheading counts.
+- A heading carries no bold or emphasis. Inline code in a heading is fine.
+- A code block that shows a fence uses a longer fence of its own.
+- Continuation lines of a paragraph are not indented.
+- A rumdl disable comment has to suppress something, and a link destination holds no look-alike non-ASCII characters.
 
 ## Fenced code
 
