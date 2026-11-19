@@ -2,7 +2,7 @@ import type { Adapter } from "../adapters/adapter.ts";
 import { readPins } from "../adapters/pins.ts";
 import type { Pins, PinsResult } from "../adapters/pins.ts";
 import { loadConfig } from "../config/load.ts";
-import { discoverRoot } from "../config/root.ts";
+import { discoverRoot, toRootRelative } from "../config/root.ts";
 import type { Plan } from "../contracts/plan.ts";
 import type { RepoRoot } from "../contracts/root.ts";
 import { resolvePlan } from "../policy/resolve.ts";
@@ -74,11 +74,22 @@ export const prepare = async (
   // out, so `explain` can say why. A file that only turned up while expanding
   // a directory does not: the first pass finds those, the second drops them.
   const keep = new Set(named);
-  const everything = resolve([...named, ...walked]);
-  const plan = resolve(
-    everything.paths
-      .filter((entry) => entry.skipped === undefined || keep.has(entry.path))
-      .map((entry) => entry.path)
+  const candidates = resolve([...named, ...walked])
+    .paths.filter(
+      (entry) => entry.skipped === undefined || keep.has(entry.path)
+    )
+    .map((entry) => entry.path);
+  // Naming a path outside the root is an error. Expanding a directory must
+  // not reach one either, so a symlink that leads out of the root is dropped.
+  const inside = await Promise.all(
+    candidates.map(async (candidate) => {
+      if (keep.has(candidate)) {
+        return true;
+      }
+      const located = await toRootRelative(root.root, root.root, candidate);
+      return located.ok;
+    })
   );
+  const plan = resolve(candidates.filter((_, index) => inside[index] === true));
   return { ok: true, value: { adapters, plan, root } };
 };

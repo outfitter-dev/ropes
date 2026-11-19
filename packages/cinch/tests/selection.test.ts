@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { rm } from "node:fs/promises";
+import { rm, symlink } from "node:fs/promises";
 import path from "node:path";
 
 import { BASE, planPaths, withRepo } from "./repo-bench.ts";
@@ -101,5 +101,19 @@ test("in a git repository, ignored and deleted files are not picked up, unless n
     expect(planPaths(workspace)).toEqual(["a.md", "untracked.md"]);
     const named = await run("explain", ["ignored.md"], { json: true });
     expect(planPaths(named)).toEqual(["ignored.md"]);
+  });
+});
+
+test("expanding a directory does not follow a symlink out of the root", async () => {
+  const tree = { "outside.md": "# Outside\n", "repo/a.md": "# A\n" };
+  await withRepo(tree, {}, async ({ root, run }) => {
+    const repo = path.join(root, "repo");
+    await git(repo, "init", "--quiet");
+    await symlink("../outside.md", path.join(repo, "link.md"));
+    await symlink("a.md", path.join(repo, "inside.md"));
+    const workspace = await run("explain", [], { cwd: "repo", json: true });
+    expect(planPaths(workspace)).toEqual(["a.md", "inside.md"]);
+    const named = await run("explain", ["link.md"], { cwd: "repo" });
+    expect(named.exitCode).toBe(2);
   });
 });

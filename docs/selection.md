@@ -20,6 +20,7 @@ When Cinch expands a directory or the workspace, it keeps a file only if all of 
 
 - Git would let you commit it. Tracked files and new untracked files count. Files that an ignore rule covers do not, and neither does a tracked file you have deleted.
 - The config includes it and does not exclude it.
+- It is inside the root. A symlink that leads out of the root is not followed.
 
 When git cannot answer, for example in a jj workspace with no git directory, Cinch walks the tree itself. It then skips `.git`, `.jj` and `node_modules`, and ignore rules do not apply.
 
