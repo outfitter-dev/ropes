@@ -9,6 +9,8 @@
 3. For Bun only, update the three places in `package.json` that repeat the version: `packageManager`, `engines.bun` and `@types/bun`. Then run `bun install`.
 4. Run `bun run check`. `tests/pins.test.ts` fails if any of those files disagree with `mise.toml`.
 
+If mise refuses to read `mise.toml` because the file is not trusted, which its paranoid mode does, run `mise trust` once in the checkout.
+
 ## Why Bun appears twice
 
 `package.json` has to state the Bun version for tools that read `packageManager` and `engines`, and `@types/bun` is an npm package that tracks the runtime. Those entries are copies. The test keeps them equal to the pin, so a copy cannot drift without CI failing.

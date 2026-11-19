@@ -58,12 +58,23 @@ export const PlanStepSchema = z
   .readonly();
 export type PlanStep = z.infer<typeof PlanStepSchema>;
 
+/** Why the config leaves a path out, and the setting that decided it. */
+export const SkippedSchema = z
+  .object({
+    reason: z.enum(["excluded", "not-included"]),
+    source: ProvenanceSchema,
+  })
+  .readonly();
+export type Skipped = z.infer<typeof SkippedSchema>;
+
 export const PlannedPathSchema = z
   .object({
     /** Root-relative path. */
     path: z.string().min(1),
     /** The resolved policy for this path, each value with its origin. */
     policy: z.array(PolicyValueSchema).readonly(),
+    /** Present when the config leaves the path out. Then nothing runs. */
+    skipped: SkippedSchema.optional(),
     /** In execution order. Empty means nothing applies to the path. */
     steps: z.array(PlanStepSchema).readonly(),
   })
