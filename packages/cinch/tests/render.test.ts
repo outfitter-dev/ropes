@@ -120,3 +120,12 @@ test("the JSON form is the result itself and parses back unchanged", () => {
   const parsed: unknown = JSON.parse(renderJson(result));
   expect(parseResult(parsed)).toEqual({ ok: true, value: result });
 });
+
+test("a finding sits under the file it names, not the file its step ran on", () => {
+  const elsewhere: Finding = { ...finding, path: "docs/b.md" };
+  const step: StepResult = { ...withFinding, findings: [finding, elsewhere] };
+  const text = renderHuman(resultOf([step]));
+  expect(text).toContain(
+    "docs/a.md\n  14:1  error  MD024  Duplicate heading  [fake]  (fixable)\n\ndocs/b.md\n  14:1"
+  );
+});

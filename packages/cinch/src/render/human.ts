@@ -1,5 +1,5 @@
 import type { Finding } from "../contracts/finding.ts";
-import { EXIT_CODE, outcomeOf } from "../contracts/result.ts";
+import { exitCodeOf, outcomeOf } from "../contracts/result.ts";
 import type { Outcome, Result, StepResult } from "../contracts/result.ts";
 
 const plural = (count: number, one: string, many = `${one}s`): string =>
@@ -11,26 +11,32 @@ const findingLine = (finding: Finding): string => {
   return `  ${line}:${column}  ${finding.severity}  ${finding.rule}  ${finding.message}  [${finding.source}]${fixable}`;
 };
 
-const stepLines = (step: StepResult): string[] => {
-  const lines = step.findings.map(findingLine);
+/** Step-level notices. They belong to the file the step ran on. */
+const noticeLines = (step: StepResult): string[] => {
   if (step.status === "incomplete") {
-    lines.push(
-      `  incomplete  ${step.adapter}: ${step.reason ?? "no reason given"}`
-    );
+    return [
+      `  incomplete  ${step.adapter}: ${step.reason ?? "no reason given"}`,
+    ];
   }
-  if (step.status === "fixed") {
-    lines.push(`  fixed  ${step.adapter}`);
-  }
-  return lines;
+  return step.status === "fixed" ? [`  fixed  ${step.adapter}`] : [];
 };
 
-/** One block per path that has something to say, in plan order. */
+/**
+ * One block per path that has something to say, in the order paths first
+ * appear. A finding sits under the file it names, which is not always the
+ * file its step ran on.
+ */
 const pathBlocks = (result: Result): string[] => {
   const byPath = new Map<string, string[]>();
+  const add = (path: string, line: string) => {
+    byPath.set(path, [...(byPath.get(path) ?? []), line]);
+  };
   for (const step of result.steps) {
-    const lines = stepLines(step);
-    if (lines.length > 0) {
-      byPath.set(step.path, [...(byPath.get(step.path) ?? []), ...lines]);
+    for (const finding of step.findings) {
+      add(finding.path, findingLine(finding));
+    }
+    for (const notice of noticeLines(step)) {
+      add(step.path, notice);
     }
   }
   return [...byPath].map(([path, lines]) => [path, ...lines].join("\n"));
@@ -77,10 +83,10 @@ const summary = (result: Result): string => {
  * verdict from the steps the same way the exit code does.
  */
 export const renderHuman = (result: Result): string => {
-  const outcome = outcomeOf(result.steps);
+  const verdict = VERDICT[outcomeOf(result.steps)];
   return [
     ...pathBlocks(result),
     summary(result),
-    `${VERDICT[outcome]} Exit code ${EXIT_CODE[outcome]}.`,
+    `${verdict} Exit code ${exitCodeOf(result)}.`,
   ].join("\n\n");
 };
