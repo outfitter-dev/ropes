@@ -73,22 +73,20 @@ export const init =
       return ran.response;
     }
     const report = starting ? withConfig(ran.report) : ran.report;
+    const exitCode = EXIT_CODE[report.result.outcome];
+    const changes = report.changed.length;
+    const asks = !apply && changes > 0 && request.dryRun !== true;
+    const offer = asks ? { confirm: INIT_CONFIRM } : {};
     if (request.json) {
-      return {
-        exitCode: EXIT_CODE[report.result.outcome],
-        output: renderFixJson(report),
-      };
+      return { ...offer, exitCode, output: renderFixJson(report) };
     }
     const text = renderFix(report);
-    const exitCode = EXIT_CODE[report.result.outcome];
     if (apply) {
       return { exitCode, output: text };
     }
-    const changes = report.changed.length;
-    const asks = changes > 0 && request.dryRun !== true;
     const hint = renderInitHint(changes, request.dryRun === true);
     return {
-      ...(asks ? { confirm: INIT_CONFIRM } : {}),
+      ...offer,
       exitCode,
       output: hint === "" ? text : `${text}\n\n${hint}`,
     };

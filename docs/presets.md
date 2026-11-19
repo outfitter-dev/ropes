@@ -17,7 +17,7 @@ This prints what Cinch would write, then asks before it writes anything. With no
 | `--yes`     | Writes without asking. Use this in scripts and from CI |
 | `--dry-run` | Shows the change and stops. It never asks or writes    |
 
-Cinch only asks a person at a terminal. When the output is piped, or with `--json`, plain `cinch init` shows the change and writes nothing. `--dry-run` wins when both flags are given.
+Cinch only asks a person at a terminal. When the output is piped, or with `--json`, plain `cinch init` shows the change and writes nothing. It then says to run `cinch init --yes`. With `--json` that line goes to stderr, so stdout stays one JSON report. `--dry-run` wins when both flags are given.
 
 ## See what a repository has
 

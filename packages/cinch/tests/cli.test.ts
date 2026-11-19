@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import manifest from "../package.json" with { type: "json" };
+import { FixReportSchema } from "../src/contracts/fix.ts";
 
 const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
 /** The repository root, so a relative path means the same from any start. */
@@ -90,5 +91,18 @@ test("init without a terminal shows the change and writes nothing", async () => 
   ]);
   expect(stdout).toContain("Run `cinch init --yes` to write this.");
   expect(await Bun.file(path.join(root, "cinch.toml")).exists()).toBe(false);
+  const json = Bun.spawn(["bun", CLI, "init", "--json"], {
+    cwd: root,
+    stderr: "pipe",
+    stdin: "ignore",
+    stdout: "pipe",
+  });
+  const [report, hint] = await Promise.all([
+    new Response(json.stdout).text(),
+    new Response(json.stderr).text(),
+    json.exited,
+  ]);
+  expect(FixReportSchema.parse(JSON.parse(report)).dryRun).toBe(true);
+  expect(hint).toContain("Run `cinch init --yes` to write this.");
   await rm(root, { force: true, recursive: true });
 });

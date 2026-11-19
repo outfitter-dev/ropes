@@ -91,9 +91,9 @@ const main = async (argv: readonly string[]): Promise<number> => {
   // Only a person at a terminal is asked. Anything else is told what to run.
   const canAsk = process.stdin.isTTY && process.stdout.isTTY && !request.json;
   if (!canAsk) {
-    if (!request.json) {
-      process.stdout.write(`\n${shown.confirm.otherwise}\n`);
-    }
+    // JSON keeps stdout for the report, so the line to run goes to stderr.
+    const stream = request.json ? process.stderr : process.stdout;
+    stream.write(`\n${shown.confirm.otherwise}\n`);
     return shown.exitCode;
   }
   if (!(await ask(shown.confirm.question))) {
