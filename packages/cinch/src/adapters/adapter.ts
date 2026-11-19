@@ -9,6 +9,11 @@ export interface AdapterDescriptor {
   readonly writes: boolean;
   /** File extensions, with the dot, that this adapter handles. */
   readonly extensions: readonly string[];
+  /**
+   * The policy key that switches this adapter. A path whose resolved policy
+   * sets the key to `false` gets no step from it.
+   */
+  readonly enabledBy: string;
 }
 
 export interface ProbeResult {

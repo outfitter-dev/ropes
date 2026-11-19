@@ -49,6 +49,8 @@ paths = ["docs/legacy/**"]
 enabled = false
 ```
 
+Overrides apply in file order. When more than one matches a path, the later one wins for each setting it states, and the plan names the override each value came from. A path that `exclude` matches, or that `include` does not, stays in the plan marked as skipped, with the setting that decided it.
+
 This repository's own `cinch.toml` is the first user of the format.
 
 ## Layout

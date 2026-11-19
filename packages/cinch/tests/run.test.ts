@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
 import type { Adapter, StepOutcome } from "../src/adapters/adapter.ts";
+import { DEFAULT_CONFIG } from "../src/contracts/config.ts";
 import { EXIT_CODE } from "../src/contracts/result.ts";
 import { resolvePlan } from "../src/policy/resolve.ts";
 import { exitCodeOf, runPlan } from "../src/runner/run.ts";
@@ -27,6 +28,7 @@ const fake = (options: {
 }): Adapter => ({
   check: () => Promise.resolve(options.outcome),
   descriptor: {
+    enabledBy: "markdown.enabled",
     extensions: [".md"],
     id: "fake",
     tool: "fake-tool",
@@ -44,6 +46,7 @@ const fake = (options: {
 
 const planFor = (adapter: Adapter) =>
   resolvePlan({
+    config: DEFAULT_CONFIG,
     descriptors: [adapter.descriptor],
     paths: ["a.md"],
     root: "/repo",
