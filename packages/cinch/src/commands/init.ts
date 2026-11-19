@@ -5,7 +5,7 @@ import type { FixReport } from "../contracts/fix.ts";
 import { EXIT_CODE } from "../contracts/result.ts";
 import { unifiedDiff } from "../render/diff.ts";
 import { renderFix, renderFixJson } from "../render/fix.ts";
-import { renderInitHint } from "../render/preset.ts";
+import { INIT_CONFIRM, renderInitHint } from "../render/preset.ts";
 import type { Command } from "./command.ts";
 import { runFix } from "./fix.ts";
 import { prepare } from "./prepare.ts";
@@ -35,8 +35,9 @@ const withConfig = (report: FixReport): FixReport => ({
 
 /**
  * Sets a repository up: a starting config when there is none, then every
- * preset that is switched on. Without `apply` it shows the change and writes
- * nothing. A config that is already there is never rewritten.
+ * preset that is switched on. With `yes` it writes. With `dryRun` it only
+ * shows the change. With neither it shows the change and offers to write it,
+ * which the caller confirms. A config that is already there is never rewritten.
  */
 export const init =
   (deps: CommandDeps): Command =>
@@ -49,7 +50,7 @@ export const init =
       };
     }
     const { root } = located.root;
-    const apply = request.apply === true;
+    const apply = request.yes === true && request.dryRun !== true;
     const paths = located.presets.flatMap((preset) => preset.files);
     // Plan before writing anything, so a setup that cannot be planned does
     // not leave a config behind with no presets beside it.
@@ -79,10 +80,16 @@ export const init =
       };
     }
     const text = renderFix(report);
+    const exitCode = EXIT_CODE[report.result.outcome];
+    if (apply) {
+      return { exitCode, output: text };
+    }
+    const changes = report.changed.length;
+    const asks = changes > 0 && request.dryRun !== true;
+    const hint = renderInitHint(changes, request.dryRun === true);
     return {
-      exitCode: EXIT_CODE[report.result.outcome],
-      output: apply
-        ? text
-        : `${text}\n\n${renderInitHint(report.changed.length)}`,
+      ...(asks ? { confirm: INIT_CONFIRM } : {}),
+      exitCode,
+      output: hint === "" ? text : `${text}\n\n${hint}`,
     };
   };

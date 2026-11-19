@@ -1,4 +1,7 @@
 import { expect, test } from "bun:test";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 import manifest from "../package.json" with { type: "json" };
 
@@ -70,4 +73,22 @@ test("an unknown command exits 2, including names Object.prototype has", async (
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain("unknown command");
   }
+});
+
+test("init without a terminal shows the change and writes nothing", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "cinch-init-"));
+  await mkdir(path.join(root, ".git"));
+  const child = Bun.spawn(["bun", CLI, "init"], {
+    cwd: root,
+    stderr: "pipe",
+    stdin: "ignore",
+    stdout: "pipe",
+  });
+  const [stdout] = await Promise.all([
+    new Response(child.stdout).text(),
+    child.exited,
+  ]);
+  expect(stdout).toContain("Run `cinch init --yes` to write this.");
+  expect(await Bun.file(path.join(root, "cinch.toml")).exists()).toBe(false);
+  await rm(root, { force: true, recursive: true });
 });
