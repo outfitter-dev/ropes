@@ -61,37 +61,49 @@ const respond = (
   output: request.json ? renderFixJson(report) : renderFix(report),
 });
 
+export type FixRun =
+  | { readonly ok: true; readonly report: FixReport }
+  | { readonly ok: false; readonly response: CommandResponse };
+
+const failed = (message: string): FixRun => ({
+  ok: false,
+  response: { error: `cinch: ${message}`, exitCode: EXIT_CODE.incomplete },
+});
+
 /**
- * Applies what the plan allows. A dry run does the same work on a temporary
- * copy, so what it shows is what a real run would write.
+ * Applies what the plan allows and returns the report. A dry run does the
+ * same work on a temporary copy, so what it shows is what a real run would
+ * write. `init` and `preset` call this with the files Cinch keeps.
  */
+export const runFix = async (
+  request: CommandRequest,
+  deps: CommandDeps
+): Promise<FixRun> => {
+  const prepared = await prepare(request, deps);
+  if (!prepared.ok) {
+    return failed(prepared.error);
+  }
+  const { plan, root } = prepared.value;
+  if (request.dryRun !== true) {
+    return { ok: true, report: await apply(prepared.value, root.root, false) };
+  }
+  try {
+    const paths = plan.paths.map((entry) => entry.path);
+    const report = await withCopy(root, paths, (copy) =>
+      apply(prepared.value, copy, true)
+    );
+    return { ok: true, report };
+  } catch (error) {
+    if (error instanceof CopyError) {
+      return failed(error.message);
+    }
+    throw error;
+  }
+};
+
 export const fix =
   (deps: CommandDeps): Command =>
   async (request) => {
-    const prepared = await prepare(request, deps);
-    if (!prepared.ok) {
-      return {
-        error: `cinch: ${prepared.error}`,
-        exitCode: EXIT_CODE.incomplete,
-      };
-    }
-    const { plan, root } = prepared.value;
-    if (request.dryRun !== true) {
-      return respond(request, await apply(prepared.value, root.root, false));
-    }
-    try {
-      const paths = plan.paths.map((entry) => entry.path);
-      return respond(
-        request,
-        await withCopy(root, paths, (copy) => apply(prepared.value, copy, true))
-      );
-    } catch (error) {
-      if (error instanceof CopyError) {
-        return {
-          error: `cinch: ${error.message}`,
-          exitCode: EXIT_CODE.incomplete,
-        };
-      }
-      throw error;
-    }
+    const ran = await runFix(request, deps);
+    return ran.ok ? respond(request, ran.report) : ran.response;
   };

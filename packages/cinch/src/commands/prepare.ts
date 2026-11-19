@@ -46,10 +46,9 @@ export const prepare = async (
     return { error: describeRootError(found.error), ok: false };
   }
   const root = found.value;
-  const [config, pins, selected] = await Promise.all([
+  const [config, pins] = await Promise.all([
     loadConfig(root.root),
     pinsFor(root),
-    select(root, request.cwd, request.paths),
   ]);
   if (!config.ok) {
     return { error: describeConfigError(config.error), ok: false };
@@ -57,10 +56,12 @@ export const prepare = async (
   if (!pins.ok) {
     return { error: pins.message, ok: false };
   }
+  const adapters = deps.adapters(pins.pins);
+  const owned = adapters.flatMap((adapter) => adapter.descriptor.owns ?? []);
+  const selected = await select(root, request.cwd, request.paths, owned);
   if (!selected.ok) {
     return { error: selected.error, ok: false };
   }
-  const adapters = deps.adapters(pins.pins);
   const { found: walked, named, selection } = selected.value;
   const resolve = (paths: readonly string[]): Plan =>
     resolvePlan({
@@ -76,10 +77,7 @@ export const prepare = async (
   const keep = new Set(named);
   // A file an adapter keeps is part of the workspace before it exists, so a
   // check can report that it is missing.
-  const kept =
-    selection.kind === "workspace"
-      ? adapters.flatMap((adapter) => adapter.descriptor.owns ?? [])
-      : [];
+  const kept = selection.kind === "workspace" ? owned : [];
   const candidates = resolve([...named, ...walked, ...kept])
     .paths.filter(
       (entry) => entry.skipped === undefined || keep.has(entry.path)

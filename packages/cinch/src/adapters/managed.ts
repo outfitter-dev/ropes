@@ -28,6 +28,8 @@ export interface ManagedOptions {
   /** The policy key that switches these files off when it is `false`. */
   readonly enabledBy: string;
   readonly files: readonly ManagedFile[];
+  /** The name a person uses for this set of files, when it is a preset. */
+  readonly preset?: string;
 }
 
 /** The rule every finding about a kept file is reported under. */
@@ -46,13 +48,14 @@ const read = async (file: string): Promise<string | null> => {
  * to install.
  */
 export const managedAdapter = (options: ManagedOptions): Adapter => {
-  const { enabledBy, files, id } = options;
+  const { enabledBy, files, id, preset } = options;
   const descriptor: AdapterDescriptor = {
     enabledBy,
     extensions: [],
     id,
     owns: files.map((file) => file.path),
     platforms: ["darwin", "linux", "win32"],
+    ...(preset === undefined ? {} : { preset }),
     tool: TOOL,
     unit: "file",
     versionRange: "*",

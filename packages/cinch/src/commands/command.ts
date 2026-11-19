@@ -6,6 +6,10 @@ export interface CommandRequest {
   readonly json: boolean;
   /** `fix` only: run on a copy and show the change without writing it. */
   readonly dryRun?: boolean;
+  /** `init` only: write the files. Without it `init` shows what it would do. */
+  readonly apply?: boolean;
+  /** `preset` only: `list`, `add` or `update`. The names follow in `paths`. */
+  readonly action?: string;
 }
 
 export interface CommandResponse {

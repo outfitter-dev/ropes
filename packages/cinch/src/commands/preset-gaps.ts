@@ -1,0 +1,44 @@
+import type { Plan, Skipped } from "../contracts/plan.ts";
+import type { Preset } from "./presets.ts";
+
+/** Why the plan has no step that keeps one of a preset's files. */
+export type Gap =
+  | { readonly file: string; readonly preset: Preset; readonly why: "off" }
+  | {
+      readonly file: string;
+      readonly preset: Preset;
+      readonly skipped: Skipped | undefined;
+      readonly why: "left-out";
+    };
+
+/**
+ * A preset is judged a file at a time: the config can exclude one file while
+ * the preset's adapter still keeps the others. A kept file needs no `include`
+ * entry while its adapter is on, so one that is in the plan with no step from
+ * that adapter, or left out as not included, has had the preset switched off.
+ */
+export const gapOf = (preset: Preset, file: string, plan: Plan): Gap | null => {
+  const entry = plan.paths.find((planned) => planned.path === file);
+  if (!entry || entry.skipped?.reason === "excluded") {
+    return { file, preset, skipped: entry?.skipped, why: "left-out" };
+  }
+  return entry.steps.some((step) => step.adapter === preset.adapter)
+    ? null
+    : { file, preset, why: "off" };
+};
+
+export const gapsOf = (presets: readonly Preset[], plan: Plan): Gap[] =>
+  presets.flatMap((preset) =>
+    preset.files.flatMap((file) => gapOf(preset, file, plan) ?? [])
+  );
+
+const settingOf = (skipped: Skipped | undefined): string =>
+  skipped?.source.kind === "file"
+    ? `\`${skipped.source.key}\` in ${skipped.source.file}`
+    : "its defaults";
+
+/** What a person reads when a preset file cannot be kept. */
+export const describeGap = (gap: Gap): string =>
+  gap.why === "off"
+    ? `the ${gap.preset.name} preset is switched off: the Cinch config sets \`${gap.preset.enabledBy}\` to false. Remove that line, then run this again.`
+    : `the Cinch config leaves ${gap.file} out (${settingOf(gap.skipped)}), so the ${gap.preset.name} preset cannot be kept there. Take the file out of that setting, then run this again.`;

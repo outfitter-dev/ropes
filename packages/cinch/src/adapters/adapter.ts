@@ -33,6 +33,11 @@ export interface AdapterDescriptor {
    * check can report a missing one and a fix can write it.
    */
   readonly owns?: readonly string[];
+  /**
+   * The name a person uses for the shared config this adapter keeps in its
+   * `owns` files, such as `markdown`. Adapters that keep none leave it out.
+   */
+  readonly preset?: string;
 }
 
 export interface ProbeResult {
