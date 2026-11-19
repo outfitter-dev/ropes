@@ -55,3 +55,11 @@ export type Result = z.infer<typeof ResultSchema>;
 /** 0 clean, 1 findings remain, 2 incomplete or unusable. */
 export const EXIT_CODE = { clean: 0, findings: 1, incomplete: 2 } as const;
 export type ExitCode = (typeof EXIT_CODE)[Outcome];
+
+/**
+ * The one place a result becomes an exit code. It reads the steps, not the
+ * recorded outcome, so a result that was edited or built by hand cannot exit
+ * with a code its steps do not support.
+ */
+export const exitCodeOf = (result: Pick<Result, "steps">): ExitCode =>
+  EXIT_CODE[outcomeOf(result.steps)];
