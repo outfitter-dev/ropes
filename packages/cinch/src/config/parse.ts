@@ -10,7 +10,11 @@ import type {
 import type { PolicyValue, Provenance } from "../contracts/plan.ts";
 
 const Globs = z.array(z.string().min(1));
-const ProfileSchema = z.strictObject({ enabled: z.boolean().optional() });
+const ProfileSchema = z.strictObject({
+  enabled: z.boolean().optional(),
+  /** Whether Cinch keeps the shared Markdown standard in the repository. */
+  preset: z.boolean().optional(),
+});
 const OverrideSchema = z.strictObject({
   markdown: ProfileSchema.optional(),
   paths: Globs.min(1),
@@ -46,28 +50,48 @@ const sourced = <T>(
   source: Provenance
 ): Sourced<T> => (value === undefined ? fallback : { source, value });
 
-const markdownSetting = (
+const KEYS: readonly (keyof Profile)[] = ["enabled", "preset"];
+
+/** One setting per key the profile states, sourced under `prefix`. */
+const markdownSettings = (
   profile: Profile | undefined,
-  source: Provenance
+  origin: TableOrigin,
+  prefix: string
 ): PolicyValue[] =>
-  profile?.enabled === undefined
-    ? []
-    : [{ key: "markdown.enabled", source, value: profile.enabled }];
+  KEYS.flatMap((key) => {
+    const value = profile?.[key];
+    return value === undefined
+      ? []
+      : [
+          {
+            key: `markdown.${key}`,
+            source: from(origin, `${prefix}markdown.${key}`),
+            value,
+          },
+        ];
+  });
+
+/** The defaults, with every key the file states replacing its default. */
+const overDefaults = (stated: readonly PolicyValue[]): PolicyValue[] => {
+  const keys = new Set(stated.map((setting) => setting.key));
+  return [
+    ...DEFAULT_CONFIG.settings.filter((setting) => !keys.has(setting.key)),
+    ...stated,
+  ];
+};
 
 const build = (
   table: z.infer<typeof FileSchema>,
   origin: TableOrigin
 ): CinchConfig => {
-  const base = markdownSetting(
-    table.markdown,
-    from(origin, "markdown.enabled")
-  );
+  const base = markdownSettings(table.markdown, origin, "");
   const overrides: ConfigOverride[] = (table.overrides ?? []).map(
     (override, index) => ({
       paths: override.paths,
-      settings: markdownSetting(
+      settings: markdownSettings(
         override.markdown,
-        from(origin, `overrides.${index}.markdown.enabled`)
+        origin,
+        `overrides.${index}.`
       ),
     })
   );
@@ -84,7 +108,7 @@ const build = (
       from(origin, "include")
     ),
     overrides,
-    settings: base.length > 0 ? base : DEFAULT_CONFIG.settings,
+    settings: overDefaults(base),
   };
 };
 

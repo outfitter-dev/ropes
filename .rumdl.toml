@@ -1,3 +1,1 @@
-# rumdl reads this file itself. Cinch runs rumdl from the repository root, so
-# running rumdl by hand and running it through Cinch apply the same rules.
-extends = "packages/cinch/presets/rumdl.toml"
+extends = ".outfitter/configs/rumdl.toml"

@@ -1,10 +1,8 @@
-# The Outfitter Markdown standard for rumdl. A repository adopts it with one
-# line at the top of its own `.rumdl.toml`:
+# The Outfitter Markdown standard for rumdl.
 #
-#   extends = "<path to this file>"
-#
-# Anything the repository sets after that line wins over this file. To switch
-# off one more rule without replacing the list below, use `extend-disable`.
+# A repository's own `.rumdl.toml` extends this file and wins over it. To
+# switch off one more rule without replacing the list below, use
+# `extend-disable`.
 
 [global]
 # MD013 line length: prose stays on one line per paragraph.

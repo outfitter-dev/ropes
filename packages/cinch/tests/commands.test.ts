@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { FINDINGS } from "./fake-adapter.ts";
-import { BASE, CONFIG, snapshot, withRepo } from "./repo-bench.ts";
+import { BASE, CONFIG, planPaths, snapshot, withRepo } from "./repo-bench.ts";
 
 test("check exits 0 when every step passes, and never asks an adapter to write", async () => {
   await withRepo(BASE, {}, async ({ adapter, root, run }) => {
@@ -93,5 +93,15 @@ test("an override shows up in explain with the key that set it", async () => {
     expect(explained.output).toContain("no step applies to this file");
     await run("check", ["docs/b.md"]);
     expect(adapter.calls).not.toContain("check");
+  });
+});
+
+test("a kept file joins the workspace before it exists, and only the workspace", async () => {
+  const keeps = { descriptor: { extensions: [], owns: [".kept.toml"] } };
+  await withRepo(BASE, keeps, async ({ run }) => {
+    const all = await run("explain", [], { json: true });
+    expect(planPaths(all)).toEqual([".kept.toml", "a.md", "docs/b.md"]);
+    const named = await run("explain", ["a.md"], { json: true });
+    expect(planPaths(named)).toEqual(["a.md"]);
   });
 });
