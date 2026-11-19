@@ -1,12 +1,12 @@
-import { realpath } from "node:fs/promises";
+import { readdir, realpath } from "node:fs/promises";
 import path from "node:path";
-
-import { Glob } from "bun";
 
 const SKIPPED_DIRS = new Set([".git", ".jj", "node_modules"]);
 
 const git = async (cwd: string, args: readonly string[]) => {
-  const child = Bun.spawn(["git", "-C", cwd, ...args], {
+  // Literal pathspecs: a directory named `*` means itself, not a
+  // pattern that also matches its neighbours.
+  const child = Bun.spawn(["git", "--literal-pathspecs", "-C", cwd, ...args], {
     stderr: "ignore",
     stdout: "pipe",
   });
@@ -60,18 +60,22 @@ const fromGit = async (
   }
 };
 
-/** Every file under `dir`, apart from version-control data and `node_modules`. */
+/**
+ * Every file under `dir`, apart from version-control data and `node_modules`.
+ * Those directories are never opened, so their size costs nothing.
+ */
 const fromWalk = async (root: string, dir: string): Promise<string[]> => {
-  const found = await Array.fromAsync(
-    new Glob("**/*").scan({
-      cwd: path.join(root, dir),
-      dot: true,
-      onlyFiles: true,
+  const listing = await readdir(path.join(root, dir), { withFileTypes: true });
+  const nested = await Promise.all(
+    listing.map(async (entry): Promise<string[]> => {
+      const file = path.posix.join(dir, entry.name);
+      if (!entry.isDirectory()) {
+        return [file];
+      }
+      return SKIPPED_DIRS.has(entry.name) ? [] : await fromWalk(root, file);
     })
   );
-  return found
-    .map((file) => path.posix.join(dir, file.split(path.sep).join("/")))
-    .filter((file) => !file.split("/").some((part) => SKIPPED_DIRS.has(part)));
+  return nested.flat().toSorted();
 };
 
 /**

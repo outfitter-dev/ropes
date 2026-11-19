@@ -117,3 +117,12 @@ test("expanding a directory does not follow a symlink out of the root", async ()
     expect(named.exitCode).toBe(2);
   });
 });
+
+test("a directory whose name looks like a pattern means only itself", async () => {
+  const tree = { ...BASE, "*/in.md": "# In\n" };
+  await withRepo(tree, {}, async ({ root, run }) => {
+    await git(root, "init", "--quiet");
+    const scoped = await run("explain", ["*"], { json: true });
+    expect(planPaths(scoped)).toEqual(["*/in.md"]);
+  });
+});
