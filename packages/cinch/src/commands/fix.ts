@@ -70,7 +70,11 @@ export const fix =
     const { root } = prepared.value;
     const report =
       request.dryRun === true
-        ? await withCopy(root, (copy) => apply(prepared.value, copy, true))
+        ? await withCopy(
+            root,
+            prepared.value.plan.paths.map((entry) => entry.path),
+            (copy) => apply(prepared.value, copy, true)
+          )
         : await apply(prepared.value, root.root, false);
     return {
       exitCode: exitCodeOf(report.result),

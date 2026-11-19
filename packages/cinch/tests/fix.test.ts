@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { symlink } from "node:fs/promises";
 import path from "node:path";
 
 import type { StepInput, StepOutcome } from "../src/adapters/adapter.ts";
@@ -121,4 +122,33 @@ test("a step that does not write is checked, not fixed", async () => {
       expect(await snapshot(root)).toEqual(before);
     }
   );
+});
+
+test("a dry run previews a named file that git ignores", async () => {
+  const tree = { ...TREE, ".gitignore": "notes.md\n", "notes.md": "TODO\n" };
+  await withRepo(tree, { fix: rewrite }, async ({ root, run }) => {
+    Bun.spawnSync(["git", "init", "-q"], { cwd: root });
+    const preview = await run("fix", ["notes.md"], {
+      dryRun: true,
+      json: true,
+    });
+    const applied = await run("fix", ["notes.md"], { json: true });
+    expect(reportOf(preview.output).changed).toEqual(["notes.md"]);
+    expect(reportOf(preview.output).result).toEqual(
+      reportOf(applied.output).result
+    );
+  });
+});
+
+test("a dry run keeps a link inside the root a link, as a real fix sees it", async () => {
+  await withRepo(TREE, { fix: rewrite }, async ({ root, run }) => {
+    await symlink("a.md", path.join(root, "alias.md"));
+    const before = await snapshot(root);
+    const preview = await run("fix", [], { dryRun: true, json: true });
+    expect(await snapshot(root)).toEqual(before);
+    const applied = await run("fix", [], { json: true });
+    const dry = reportOf(preview.output);
+    expect(dry.result).toEqual(reportOf(applied.output).result);
+    expect(dry.diff).toBe(reportOf(applied.output).diff);
+  });
 });
