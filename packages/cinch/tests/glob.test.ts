@@ -15,6 +15,8 @@ const PATHS = [
   ".github/workflows/ci.yml",
   "a+b.md",
   "notes(1).md",
+  "docs/[draft].md",
+  "docs/report].md",
 ];
 
 const PATTERNS = [
@@ -34,6 +36,8 @@ const PATTERNS = [
   "a+b.md",
   "notes(1).md",
   ".github/**",
+  "docs/[[]draft].md",
+  "docs/report].md",
 ];
 
 test("the matcher agrees with Bun.Glob on every pattern and path", () => {
