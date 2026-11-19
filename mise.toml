@@ -1,0 +1,6 @@
+# The one place tool versions are pinned. Local runs, CI and Cinch read this file.
+# After changing a version, run `mise lock` to refresh mise.lock, then `bun run check`.
+# See docs/tool-versions.md.
+[tools]
+bun = "1.4.4"
+rumdl = "0.3.5"

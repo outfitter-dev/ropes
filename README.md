@@ -74,4 +74,4 @@ bun run check
 bun run cinch --help
 ```
 
-Bun is pinned in `.bun-version`. See AGENTS.md for the working rules.
+Tool versions are pinned in `mise.toml`, and [docs/tool-versions.md](docs/tool-versions.md) says how to change one. See AGENTS.md for the working rules.

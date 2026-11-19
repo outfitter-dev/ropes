@@ -10,23 +10,39 @@ if [[ $# -ne 0 ]]; then
   exit 2
 fi
 
-if [[ ! -f .bun-version ]]; then
-  echo "Error: missing .bun-version in $REPO_ROOT" >&2
+# mise.toml is the one place tool versions are pinned. See docs/tool-versions.md.
+if [[ ! -f mise.toml ]]; then
+  echo "Error: missing mise.toml in $REPO_ROOT" >&2
   exit 1
 fi
-PINNED_VERSION="$(tr -d '[:space:]' < .bun-version)"
+PINNED_VERSION="$(sed -n 's/^bun = "\([0-9][0-9.]*\)"$/\1/p' mise.toml)"
 if [[ ! "$PINNED_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "Error: .bun-version must contain a three-part version." >&2
+  echo "Error: mise.toml must pin bun to a three-part version." >&2
   exit 1
 fi
-if ! command -v bun >/dev/null 2>&1; then
-  echo "Error: install Bun $PINNED_VERSION and put it on PATH, then rerun bootstrap." >&2
-  exit 1
-fi
-ACTUAL_VERSION="$(bun --version)"
-if [[ "$ACTUAL_VERSION" != "$PINNED_VERSION" ]]; then
-  echo "Error: expected Bun $PINNED_VERSION; found $ACTUAL_VERSION. Select the pinned runtime on PATH." >&2
-  exit 1
+
+# With mise, every pinned tool is installed at its exact version. Without it,
+# a Bun at or above the pin is accepted, because a newer runtime on the host is
+# not a reason to stop. External tools such as rumdl are then the host's to supply.
+if command -v mise >/dev/null 2>&1; then
+  mise install
+  BUN=(mise exec -- bun)
+else
+  if ! command -v bun >/dev/null 2>&1; then
+    echo "Error: install mise (https://mise.jdx.dev) or Bun $PINNED_VERSION, then rerun bootstrap." >&2
+    exit 1
+  fi
+  ACTUAL_VERSION="$(bun --version)"
+  OLDEST="$(printf '%s\n%s\n' "$PINNED_VERSION" "$ACTUAL_VERSION" | sort -V | head -n 1)"
+  if [[ "$OLDEST" != "$PINNED_VERSION" ]]; then
+    echo "Error: Bun $ACTUAL_VERSION is older than the pinned $PINNED_VERSION. Install mise or a newer Bun." >&2
+    exit 1
+  fi
+  if [[ "$ACTUAL_VERSION" != "$PINNED_VERSION" ]]; then
+    echo "Warning: using Bun $ACTUAL_VERSION; the pin is $PINNED_VERSION. CI runs the pin." >&2
+  fi
+  echo "Warning: mise is not installed, so tools other than Bun were not installed." >&2
+  BUN=(bun)
 fi
 
 # Shared dependencies allow one worktree's install to mutate another's toolchain.
@@ -35,13 +51,13 @@ if [[ -L node_modules ]]; then
   exit 1
 fi
 
-bun install --frozen-lockfile
+"${BUN[@]}" install --frozen-lockfile
 
 # Git hooks cover plain-Git use. CI runs the same checks directly.
 # lefthook refuses to install when core.hooksPath is set. That setting is the
 # contributor's own, so warn and carry on instead of aborting the bootstrap.
 if [[ -z "${CI:-}" ]]; then
-  if ! bunx lefthook install; then
+  if ! "${BUN[@]}" x lefthook install; then
     echo "Warning: Git hooks were not installed. Run bun run check before pushing." >&2
   fi
 fi
