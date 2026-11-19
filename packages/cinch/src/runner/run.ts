@@ -2,7 +2,8 @@ import type { Adapter, StepOutcome } from "../adapters/adapter.ts";
 import type { Plan, PlanStep } from "../contracts/plan.ts";
 import { EXIT_CODE, outcomeOf } from "../contracts/result.ts";
 import type { ExitCode, Result, StepResult } from "../contracts/result.ts";
-import { notReady, threw } from "./ready.ts";
+import { probeAdapter, threw, versionProblem } from "./ready.ts";
+import type { Readiness } from "./ready.ts";
 
 export type RunMode = "check" | "fix";
 
@@ -23,13 +24,13 @@ const readiness = (adapters: readonly Adapter[], platform: string) => {
   const byId = new Map(
     adapters.map((adapter) => [adapter.descriptor.id, adapter])
   );
-  const problems = new Map<string, Promise<string | undefined>>();
+  const probes = new Map<string, Promise<Readiness>>();
   return (id: string) => {
     const adapter = byId.get(id);
-    if (adapter && !problems.has(id)) {
-      problems.set(id, notReady(adapter, platform));
+    if (adapter && !probes.has(id)) {
+      probes.set(id, probeAdapter(adapter, platform));
     }
-    return { adapter, problem: problems.get(id) };
+    return { adapter, probe: probes.get(id) };
   };
 };
 
@@ -39,11 +40,14 @@ const runStep = async (
   input: { root: string; path: string },
   mode: RunMode
 ): Promise<StepOutcome> => {
-  const { adapter, problem } = ready(step.adapter);
+  const { adapter, probe } = ready(step.adapter);
   if (!adapter) {
     return incomplete(`no adapter registered for "${step.adapter}"`);
   }
-  const reason = await problem;
+  const found = await probe;
+  const reason =
+    found?.problem ??
+    versionProblem(step.tool, found?.version, step.versionRange);
   if (reason !== undefined) {
     return incomplete(reason);
   }

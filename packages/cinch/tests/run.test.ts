@@ -5,6 +5,7 @@ import { DEFAULT_CONFIG } from "../src/contracts/config.ts";
 import { EXIT_CODE, ResultSchema } from "../src/contracts/result.ts";
 import { resolvePlan } from "../src/policy/resolve.ts";
 import { exitCodeOf, runPlan } from "../src/runner/run.ts";
+import type { RunOptions } from "../src/runner/run.ts";
 import { FINDINGS, fakeAdapter } from "./fake-adapter.ts";
 
 const planFor = (adapter: Adapter, paths: readonly string[] = ["a.md"]) =>
@@ -16,8 +17,8 @@ const planFor = (adapter: Adapter, paths: readonly string[] = ["a.md"]) =>
     selection: { kind: "workspace" },
   });
 
-const check = { mode: "check", platform: "linux" } as const;
-const fix = { mode: "fix", platform: "linux" } as const;
+const check: RunOptions = { mode: "check", platform: "linux" };
+const fix: RunOptions = { mode: "fix", platform: "linux" };
 
 test("a clean run exits 0 and is a valid result", async () => {
   const adapter = fakeAdapter();
@@ -129,4 +130,16 @@ test("an adapter is probed once per run, however many files it handles", async (
   const plan = planFor(adapter, ["a.md", "b.md", "c.md"]);
   await runPlan(plan, [adapter], check);
   expect(adapter.calls).toEqual(["probe", "check", "check", "check"]);
+});
+
+test("a run holds the tool to the range in the plan, not the registry", async () => {
+  const planned = fakeAdapter({ descriptor: { versionRange: ">=2.0.0" } });
+  const registered = fakeAdapter({
+    probe: () => Promise.resolve({ available: true, version: "1.0.0" }),
+  });
+  const result = await runPlan(planFor(planned), [registered], check);
+  expect(result.steps[0]?.reason).toBe(
+    "fake-tool 1.0.0 does not satisfy >=2.0.0"
+  );
+  expect(registered.calls).toEqual(["probe"]);
 });

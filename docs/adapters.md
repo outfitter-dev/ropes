@@ -20,7 +20,7 @@ The descriptor is plain data. It is all the resolver sees.
 | `tool` | The external tool the adapter drives. It appears in messages. |
 | `versionRange` | A semver range the installed tool must satisfy. `*` accepts any version. |
 | `writes` | Whether `fix` may change files. When it is `false`, `fix` runs `check` instead. |
-| `unit` | What one step works on: `file`, `package` or `workspace`. Only `file` steps are planned today. |
+| `unit` | What one step works on: `file`, `package` or `workspace`. Only `file` steps are planned today, so an adapter with another unit gets no steps yet. |
 | `platforms` | Where the tool can run, from `darwin`, `linux` and `win32`. |
 | `extensions` | The file extensions, with the dot, that get a step from this adapter. |
 | `enabledBy` | The policy key that switches the adapter. A path whose policy sets it to `false` gets no step. |
@@ -40,7 +40,7 @@ A step is `incomplete`, and the run exits 2, when any of these is true:
 - The plan names an adapter that is not registered.
 - The current platform is not in `platforms`. The tool is not probed.
 - `probe()` says the tool is not available.
-- The reported version does not satisfy `versionRange`, or a range is set and no version is reported.
+- The reported version does not satisfy the `versionRange` in the plan step, or a range is set and no version is reported. The plan's range is the one that counts, so a saved plan holds the tool to what it showed.
 - `probe()`, `check()` or `fix()` throws. The run continues with the next step.
 
 An adapter never has to guard against these itself, and a step that could not run is never reported as passed.

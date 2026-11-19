@@ -152,6 +152,15 @@ test("an included path no adapter handles has policy and no steps", () => {
   expect(planned.steps).toEqual([]);
 });
 
+test("an adapter that works on a package or a workspace gets no file step", () => {
+  const descriptors = [
+    describeFake({ id: "whole-package", unit: "package" }),
+    describeFake({ id: "whole-workspace", unit: "workspace" }),
+    markdown,
+  ];
+  expect(adaptersOf("README.md", { descriptors })).toEqual(["fake-markdown"]);
+});
+
 test("steps follow the order the adapters were given in", () => {
   expect(adaptersOf("README.md", { descriptors: [fence, markdown] })).toEqual([
     "fake-fence",

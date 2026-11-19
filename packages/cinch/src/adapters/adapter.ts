@@ -6,7 +6,7 @@ export type Platform = "darwin" | "linux" | "win32";
 /**
  * What one step works on. Only `file` steps are planned today. `package` and
  * `workspace` are named now so an engine that cannot work file by file does
- * not have to pretend it can.
+ * not have to pretend it can. The resolver gives such an adapter no steps.
  */
 export type Unit = "file" | "package" | "workspace";
 
