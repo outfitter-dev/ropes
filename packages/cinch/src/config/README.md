@@ -12,4 +12,4 @@ Nothing in this folder may import from `adapters/`, `runner/` or `commands/`.
 
 An `outfitter.toml` counts only when it has a `[cinch]` table, so a nested one that configures other tools does not hide the config above it. Each linked worktree and each jj workspace is its own root.
 
-`toRootRelative(root, cwd, selected)` turns a selected path into the root-relative, forward-slash form the plan uses. A path outside the root is an error.
+`toRootRelative(root, cwd, selected)` turns a selected path into the root-relative, forward-slash form the plan uses. A path outside the root is an error. Symlinks are resolved on both sides, so a checkout reached through a symlink still matches.
