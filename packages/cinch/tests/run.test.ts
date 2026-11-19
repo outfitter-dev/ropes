@@ -9,12 +9,13 @@ const clean: StepOutcome = { findings: [], status: "passed" };
 const dirty: StepOutcome = {
   findings: [
     {
-      column: 1,
       fixable: true,
-      line: 1,
       message: "bad",
       path: "a.md",
+      range: { start: { column: 1, line: 1 } },
       rule: "fake/rule",
+      severity: "error",
+      source: "fake",
     },
   ],
   status: "findings",
@@ -46,6 +47,7 @@ const planFor = (adapter: Adapter) =>
     descriptors: [adapter.descriptor],
     paths: ["a.md"],
     root: "/repo",
+    selection: { kind: "workspace" },
   });
 
 test("a clean run exits 0", async () => {

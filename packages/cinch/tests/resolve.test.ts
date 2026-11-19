@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 
 import type { AdapterDescriptor } from "../src/adapters/adapter.ts";
 import { resolvePlan } from "../src/policy/resolve.ts";
+import type { ResolveInput } from "../src/policy/resolve.ts";
 
 const markdown: AdapterDescriptor = {
   extensions: [".md"],
@@ -16,6 +17,7 @@ test("a path gets the steps of the adapters that handle its extension", () => {
     descriptors: [markdown],
     paths: ["src/a.ts", "README.md"],
     root: "/repo",
+    selection: { kind: "workspace" },
   });
   expect(plan.paths.map((planned) => planned.path)).toEqual([
     "README.md",
@@ -28,10 +30,11 @@ test("a path gets the steps of the adapters that handle its extension", () => {
 });
 
 test("the same input gives the same plan", () => {
-  const input = {
+  const input: ResolveInput = {
     descriptors: [markdown],
     paths: ["b.md", "a.md"],
     root: "/repo",
+    selection: { kind: "workspace" },
   };
   expect(resolvePlan(input)).toEqual(resolvePlan(input));
 });

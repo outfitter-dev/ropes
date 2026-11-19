@@ -1,10 +1,12 @@
 import type { AdapterDescriptor } from "../adapters/adapter.ts";
 import { SCHEMA_VERSION } from "../contracts/plan.ts";
-import type { Plan, PlanStep } from "../contracts/plan.ts";
+import type { Plan, PlanStep, Selection } from "../contracts/plan.ts";
 
 export interface ResolveInput {
   readonly root: string;
-  /** Root-relative paths. */
+  /** What the caller asked for. */
+  readonly selection: Selection;
+  /** The root-relative paths the selection expanded to. */
   readonly paths: readonly string[];
   readonly descriptors: readonly AdapterDescriptor[];
 }
@@ -29,10 +31,12 @@ const toStep = (descriptor: AdapterDescriptor): PlanStep => ({
 export const resolvePlan = (input: ResolveInput): Plan => ({
   paths: input.paths.toSorted().map((path) => ({
     path,
+    policy: [],
     steps: input.descriptors
       .filter((descriptor) => descriptor.extensions.includes(extensionOf(path)))
       .map(toStep),
   })),
   root: input.root,
   schemaVersion: SCHEMA_VERSION,
+  selection: input.selection,
 });

@@ -1,0 +1,45 @@
+{
+  "paths": [
+    {
+      "path": "docs/guide.md",
+      "policy": [
+        {
+          "key": "markdown.enabled",
+          "source": {
+            "kind": "default"
+          },
+          "value": true
+        },
+        {
+          "key": "markdown.fences.typescript",
+          "source": {
+            "file": "cinch.toml",
+            "key": "overrides.0.markdown.fences.typescript",
+            "kind": "file"
+          },
+          "value": false
+        }
+      ],
+      "steps": [
+        {
+          "adapter": "rumdl",
+          "tool": "rumdl",
+          "versionRange": ">=0.1.0",
+          "writes": true
+        },
+        {
+          "adapter": "bun-fence",
+          "tool": "bun",
+          "versionRange": "1.4.4",
+          "writes": true
+        }
+      ]
+    }
+  ],
+  "root": "/repo",
+  "schemaVersion": 0,
+  "selection": {
+    "kind": "paths",
+    "paths": ["docs/guide.md"]
+  }
+}
