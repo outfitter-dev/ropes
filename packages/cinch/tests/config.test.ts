@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdtemp, rm } from "node:fs/promises";
+import { chmod, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -173,6 +173,24 @@ test("malformed TOML is reported with the file", async () => {
   expect(loaded.ok ? {} : loaded.error).toMatchObject({
     file: "cinch.toml",
     kind: "malformed",
+  });
+});
+
+test("a config file that cannot be read is an error, not a throw", async () => {
+  if (process.getuid?.() === 0) {
+    console.warn("skipped: root can read any file, so nothing is unreadable");
+    return;
+  }
+  const loaded = await withFiles(
+    { "cinch.toml": "pilot = 0\n" },
+    async (root) => {
+      await chmod(path.join(root, "cinch.toml"), 0o000);
+      return await loadConfig(root);
+    }
+  );
+  expect(loaded.ok ? {} : loaded.error).toMatchObject({
+    file: "cinch.toml",
+    kind: "unreadable",
   });
 });
 

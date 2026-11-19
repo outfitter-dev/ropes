@@ -31,6 +31,12 @@ export interface CinchConfig {
 }
 
 export type ConfigError =
+  /** The file exists but could not be read. */
+  | {
+      readonly kind: "unreadable";
+      readonly file: string;
+      readonly message: string;
+    }
   | {
       readonly kind: "malformed";
       readonly file: string;

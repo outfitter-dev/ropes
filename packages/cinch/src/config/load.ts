@@ -14,16 +14,30 @@ type Read =
   | { readonly kind: "table"; readonly table: unknown }
   | { readonly kind: "error"; readonly error: ConfigError };
 
+const messageOf = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
 const readToml = async (root: string, name: string): Promise<Read> => {
-  const file = Bun.file(path.join(root, name));
-  if (!(await file.exists())) {
-    return { kind: "absent" };
+  let text = "";
+  try {
+    const file = Bun.file(path.join(root, name));
+    if (!(await file.exists())) {
+      return { kind: "absent" };
+    }
+    text = await file.text();
+  } catch (error) {
+    return {
+      error: { file: name, kind: "unreadable", message: messageOf(error) },
+      kind: "error",
+    };
   }
   try {
-    return { kind: "table", table: Bun.TOML.parse(await file.text()) };
+    return { kind: "table", table: Bun.TOML.parse(text) };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { error: { file: name, kind: "malformed", message }, kind: "error" };
+    return {
+      error: { file: name, kind: "malformed", message: messageOf(error) },
+      kind: "error",
+    };
   }
 };
 
