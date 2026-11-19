@@ -3,9 +3,12 @@ import { expect, test } from "bun:test";
 import manifest from "../package.json" with { type: "json" };
 
 const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
+/** The repository root, so a relative path means the same from any start. */
+const REPO = new URL("../../../", import.meta.url).pathname;
 
 const run = async (...args: string[]) => {
   const child = Bun.spawn(["bun", CLI, ...args], {
+    cwd: REPO,
     stderr: "pipe",
     stdout: "pipe",
   });
@@ -31,13 +34,19 @@ test("--help lists the three verbs", async () => {
 });
 
 test("a verb that is not built yet exits 2, never 0", async () => {
-  const results = await Promise.all(
-    ["explain", "check", "fix"].map((verb) => run(verb, "README.md"))
-  );
-  for (const result of results) {
-    expect(result.exitCode).toBe(2);
-    expect(result.stderr).toContain("not built yet");
-  }
+  const result = await run("fix", "README.md");
+  expect(result.exitCode).toBe(2);
+  expect(result.stderr).toContain("not built yet");
+});
+
+test("explain prints a versioned plan as JSON on stdout", async () => {
+  const result = await run("explain", "README.md", "--json");
+  expect(result.exitCode).toBe(0);
+  expect(JSON.parse(result.stdout)).toMatchObject({
+    paths: [{ path: "README.md" }],
+    schemaVersion: 0,
+    selection: { kind: "paths", paths: ["README.md"] },
+  });
 });
 
 test("an unknown command exits 2", async () => {

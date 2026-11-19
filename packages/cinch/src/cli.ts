@@ -2,7 +2,7 @@
 import { parseArgs } from "node:util";
 
 import manifest from "../package.json" with { type: "json" };
-import { commands } from "./commands/command.ts";
+import { commands } from "./commands/registry.ts";
 import { EXIT_CODE } from "./contracts/result.ts";
 
 const HELP = `cinch ${manifest.version}
