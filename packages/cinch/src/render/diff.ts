@@ -105,6 +105,24 @@ const printed = (op: Op): string =>
     ? `${op.kind}${op.line}`
     : `${op.kind}${op.line}\n${NO_EOL}\n`;
 
+const ESCAPES: Readonly<Record<string, string>> = {
+  "\t": "\\t",
+  "\n": "\\n",
+  "\r": "\\r",
+  '"': '\\"',
+  "\\": "\\\\",
+};
+
+/** A header path as git writes it: quoted when a character needs escaping. */
+const header = (prefix: string, path: string): string => {
+  const plain = `${prefix}/${path}`;
+  const escaped = plain.replaceAll(
+    /[\t\n\r"\\]/gu,
+    (character) => ESCAPES[character] ?? character
+  );
+  return escaped === plain ? plain : `"${escaped}"`;
+};
+
 /**
  * A unified diff of one file, in the form `git diff` prints. Empty when the
  * two texts are the same.
@@ -121,8 +139,8 @@ export const unifiedDiff = (
   const hunks = hunkRanges(ops).map(([start, end]) => {
     const lead = ops.slice(0, start);
     const body = ops.slice(start, end);
-    const header = `@@ -${span(count(lead, "+"), count(body, "+"))} +${span(count(lead, "-"), count(body, "-"))} @@\n`;
-    return header + body.map(printed).join("");
+    const range = `@@ -${span(count(lead, "+"), count(body, "+"))} +${span(count(lead, "-"), count(body, "-"))} @@\n`;
+    return range + body.map(printed).join("");
   });
-  return `--- a/${path}\n+++ b/${path}\n${hunks.join("")}`;
+  return `--- ${header("a", path)}\n+++ ${header("b", path)}\n${hunks.join("")}`;
 };

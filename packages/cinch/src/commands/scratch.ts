@@ -5,6 +5,7 @@ import {
   readlink,
   realpath,
   rm,
+  stat,
   symlink,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -34,16 +35,38 @@ const innerLink = async (
   }
 };
 
-const place = async (root: string, copy: string, file: string) => {
+/** Thrown when a file that exists could not be copied. */
+export class CopyError extends Error {
+  constructor(file: string) {
+    super(`the dry run could not copy ${file}, so it did not run`);
+    this.name = "CopyError";
+  }
+}
+
+const isFile = async (file: string): Promise<boolean> => {
   try {
-    const target = await innerLink(root, file);
+    const found = await stat(file);
+    return found.isFile();
+  } catch {
+    return false;
+  }
+};
+
+const place = async (root: string, copy: string, file: string) => {
+  const target = await innerLink(root, file);
+  try {
     // A link that leads elsewhere is copied as the content it reaches, so a
     // step in the copy can never write through it.
     await (target === null
       ? copyFile(path.join(root, file), path.join(copy, file))
       : symlink(target, path.join(copy, file)));
   } catch {
-    // A broken link or a path that is not a file. No step can read it.
+    // A broken link or a directory is left out: no step can read it. A file
+    // that is there but did not copy would make the copy tell a different
+    // story from the checkout, for example by losing an engine's config.
+    if (await isFile(path.join(root, file))) {
+      throw new CopyError(file);
+    }
   }
 };
 

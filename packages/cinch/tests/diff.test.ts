@@ -56,3 +56,9 @@ test("adding the final newline is a change", () => {
     "--- a/a.md\n+++ b/a.md\n@@ -1,1 +1,1 @@\n-one\n\\ No newline at end of file\n+one\n"
   );
 });
+
+test("a path that would break the header is quoted the way git quotes it", () => {
+  expect(unifiedDiff('a\tb "c".md', "x\n", "y\n")).toStartWith(
+    '--- "a/a\\tb \\"c\\".md"\n+++ "b/a\\tb \\"c\\".md"\n@@'
+  );
+});

@@ -6,10 +6,10 @@ import { EXIT_CODE, exitCodeOf } from "../contracts/result.ts";
 import { unifiedDiff } from "../render/diff.ts";
 import { renderFix, renderFixJson } from "../render/fix.ts";
 import { runPlan } from "../runner/run.ts";
-import type { Command } from "./command.ts";
+import type { Command, CommandRequest, CommandResponse } from "./command.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps, Prepared } from "./prepare.ts";
-import { withCopy } from "./scratch.ts";
+import { CopyError, withCopy } from "./scratch.ts";
 
 /** The text of each file a step may write. Null when it cannot be read. */
 const snapshot = (root: string, plan: Plan): Promise<(string | null)[]> =>
@@ -53,6 +53,14 @@ const apply = async (
   };
 };
 
+const respond = (
+  request: CommandRequest,
+  report: FixReport
+): CommandResponse => ({
+  exitCode: exitCodeOf(report.result),
+  output: request.json ? renderFixJson(report) : renderFix(report),
+});
+
 /**
  * Applies what the plan allows. A dry run does the same work on a temporary
  * copy, so what it shows is what a real run would write.
@@ -67,17 +75,23 @@ export const fix =
         exitCode: EXIT_CODE.incomplete,
       };
     }
-    const { root } = prepared.value;
-    const report =
-      request.dryRun === true
-        ? await withCopy(
-            root,
-            prepared.value.plan.paths.map((entry) => entry.path),
-            (copy) => apply(prepared.value, copy, true)
-          )
-        : await apply(prepared.value, root.root, false);
-    return {
-      exitCode: exitCodeOf(report.result),
-      output: request.json ? renderFixJson(report) : renderFix(report),
-    };
+    const { plan, root } = prepared.value;
+    if (request.dryRun !== true) {
+      return respond(request, await apply(prepared.value, root.root, false));
+    }
+    try {
+      const paths = plan.paths.map((entry) => entry.path);
+      return respond(
+        request,
+        await withCopy(root, paths, (copy) => apply(prepared.value, copy, true))
+      );
+    } catch (error) {
+      if (error instanceof CopyError) {
+        return {
+          error: `cinch: ${error.message}`,
+          exitCode: EXIT_CODE.incomplete,
+        };
+      }
+      throw error;
+    }
   };
