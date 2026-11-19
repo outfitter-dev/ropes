@@ -11,7 +11,7 @@ The Outfitter CLI and the quality tool it is built around.
 
 ## Status
 
-Early. `cinch explain` and `cinch check` work on Markdown. `cinch fix` is registered and exits 2 until it is built. The `outfitter` package does not exist yet. Nothing is published.
+Early. `cinch explain`, `cinch check` and `cinch fix` work on Markdown. The `outfitter` package does not exist yet. Nothing is published.
 
 ## What Cinch does
 
@@ -21,7 +21,7 @@ Given a path, Cinch resolves one plan: which policy applies, where each value ca
 | --- | --- |
 | `cinch explain [path...]` | Show the plan without running anything |
 | `cinch check [path...]` | Run the plan read-only and report findings |
-| `cinch fix [path...]` | Apply what the plan allows. `--dry-run` previews without touching the checkout |
+| `cinch fix [path...]` | Apply what the plan allows. `--dry-run` previews without touching the checkout. See [docs/fix.md](docs/fix.md) |
 
 Every command takes `--json`. Exit codes are 0 for clean, 1 when findings remain, and 2 when the run is incomplete or unusable. A check that could not run never counts as a pass. [Outcomes and exit codes](docs/exit-codes.md) has the full contract, and [Selecting files](docs/selection.md) says which files a command looks at.
 

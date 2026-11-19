@@ -28,7 +28,7 @@ export interface Bench {
   readonly run: (
     verb: string,
     paths?: readonly string[],
-    options?: { json?: boolean; cwd?: string }
+    options?: { json?: boolean; cwd?: string; dryRun?: boolean }
   ) => Promise<CommandResponse>;
 }
 
@@ -51,12 +51,16 @@ export const withRepo = async <T>(
     return await body({
       adapter,
       root,
-      run: (verb, paths = [], { cwd = "", json = false } = {}) => {
+      run: (
+        verb,
+        paths = [],
+        { cwd = "", dryRun = false, json = false } = {}
+      ) => {
         const command = commands[verb];
         if (!command) {
           throw new Error(`no command ${verb}`);
         }
-        return command({ cwd: path.join(root, cwd), json, paths });
+        return command({ cwd: path.join(root, cwd), dryRun, json, paths });
       },
     });
   } finally {

@@ -33,10 +33,18 @@ test("--help lists the three verbs", async () => {
   }
 });
 
-test("a verb that is not built yet exits 2, never 0", async () => {
-  const result = await run("fix", "README.md");
-  expect(result.exitCode).toBe(2);
-  expect(result.stderr).toContain("not built yet");
+test("fix --dry-run reports a dry run and leaves the file alone", async () => {
+  const before = await Bun.file(
+    new URL("../../../README.md", import.meta.url)
+  ).text();
+  const result = await run("fix", "README.md", "--dry-run", "--json");
+  expect(JSON.parse(result.stdout)).toMatchObject({
+    dryRun: true,
+    schemaVersion: 0,
+  });
+  expect(
+    await Bun.file(new URL("../../../README.md", import.meta.url)).text()
+  ).toBe(before);
 });
 
 test("explain prints a versioned plan as JSON on stdout", async () => {
