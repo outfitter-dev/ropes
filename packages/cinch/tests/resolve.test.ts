@@ -1,26 +1,19 @@
 import { expect, test } from "bun:test";
 
-import type { AdapterDescriptor } from "../src/adapters/adapter.ts";
 import type { CinchConfig } from "../src/contracts/config.ts";
 import { DEFAULT_CONFIG } from "../src/contracts/config.ts";
 import { parsePlan } from "../src/contracts/parse.ts";
 import type { PolicyValue, Provenance } from "../src/contracts/plan.ts";
 import { resolvePlan } from "../src/policy/resolve.ts";
 import type { ResolveInput } from "../src/policy/resolve.ts";
+import { describeFake } from "./fake-adapter.ts";
 
-const markdown: AdapterDescriptor = {
-  enabledBy: "markdown.enabled",
-  extensions: [".md"],
-  id: "fake-markdown",
-  tool: "fake",
-  versionRange: "*",
-  writes: true,
-};
-const fence: AdapterDescriptor = {
-  ...markdown,
+const markdown = describeFake({ id: "fake-markdown", tool: "fake" });
+const fence = describeFake({
   enabledBy: "markdown.fences",
   id: "fake-fence",
-};
+  tool: "fake",
+});
 
 const file = (key: string): Provenance => ({
   file: "cinch.toml",

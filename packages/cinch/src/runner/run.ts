@@ -2,8 +2,15 @@ import type { Adapter, StepOutcome } from "../adapters/adapter.ts";
 import type { Plan, PlanStep } from "../contracts/plan.ts";
 import { EXIT_CODE, outcomeOf } from "../contracts/result.ts";
 import type { ExitCode, Result, StepResult } from "../contracts/result.ts";
+import { notReady, threw } from "./ready.ts";
 
 export type RunMode = "check" | "fix";
+
+export interface RunOptions {
+  readonly mode: RunMode;
+  /** Defaults to the platform this process runs on. */
+  readonly platform?: string;
+}
 
 const incomplete = (reason: string): StepOutcome => ({
   findings: [],
@@ -11,22 +18,42 @@ const incomplete = (reason: string): StepOutcome => ({
   status: "incomplete",
 });
 
+/** Probes each adapter at most once per run, however many steps use it. */
+const readiness = (adapters: readonly Adapter[], platform: string) => {
+  const byId = new Map(
+    adapters.map((adapter) => [adapter.descriptor.id, adapter])
+  );
+  const problems = new Map<string, Promise<string | undefined>>();
+  return (id: string) => {
+    const adapter = byId.get(id);
+    if (adapter && !problems.has(id)) {
+      problems.set(id, notReady(adapter, platform));
+    }
+    return { adapter, problem: problems.get(id) };
+  };
+};
+
 const runStep = async (
-  adapter: Adapter | undefined,
+  ready: ReturnType<typeof readiness>,
   step: PlanStep,
   input: { root: string; path: string },
   mode: RunMode
 ): Promise<StepOutcome> => {
+  const { adapter, problem } = ready(step.adapter);
   if (!adapter) {
     return incomplete(`no adapter registered for "${step.adapter}"`);
   }
-  const probe = await adapter.probe();
-  if (!probe.available) {
-    return incomplete(probe.reason ?? `${step.tool} is not available`);
+  const reason = await problem;
+  if (reason !== undefined) {
+    return incomplete(reason);
   }
-  return mode === "fix" && step.writes
-    ? await adapter.fix(input)
-    : await adapter.check(input);
+  try {
+    return mode === "fix" && step.writes
+      ? await adapter.fix(input)
+      : await adapter.check(input);
+  } catch (error) {
+    return incomplete(threw(step.tool, error));
+  }
 };
 
 /**
@@ -36,11 +63,9 @@ const runStep = async (
 export const runPlan = async (
   plan: Plan,
   adapters: readonly Adapter[],
-  mode: RunMode
+  options: RunOptions
 ): Promise<Result> => {
-  const byId = new Map(
-    adapters.map((adapter) => [adapter.descriptor.id, adapter])
-  );
+  const ready = readiness(adapters, options.platform ?? process.platform);
   const steps: StepResult[] = [];
   for (const planned of plan.paths) {
     for (const step of planned.steps) {
@@ -48,10 +73,10 @@ export const runPlan = async (
       // earlier one wrote.
       // oxlint-disable-next-line no-await-in-loop
       const outcome = await runStep(
-        byId.get(step.adapter),
+        ready,
         step,
         { path: planned.path, root: plan.root },
-        mode
+        options.mode
       );
       steps.push({ adapter: step.adapter, path: planned.path, ...outcome });
     }
