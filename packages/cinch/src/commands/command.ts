@@ -4,6 +4,8 @@ export interface CommandRequest {
   readonly cwd: string;
   readonly paths: readonly string[];
   readonly json: boolean;
+  /** `fix` only: run on a copy and show the change without writing it. */
+  readonly dryRun?: boolean;
 }
 
 export interface CommandResponse {

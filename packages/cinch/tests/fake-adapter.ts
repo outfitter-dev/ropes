@@ -2,6 +2,7 @@ import type {
   Adapter,
   AdapterDescriptor,
   ProbeResult,
+  StepInput,
   StepOutcome,
 } from "../src/adapters/adapter.ts";
 
@@ -40,7 +41,7 @@ export interface FakeOptions {
   readonly descriptor?: Partial<AdapterDescriptor>;
   readonly probe?: () => Promise<ProbeResult>;
   readonly check?: () => Promise<StepOutcome>;
-  readonly fix?: () => Promise<StepOutcome>;
+  readonly fix?: (input: StepInput) => Promise<StepOutcome>;
 }
 
 export interface FakeAdapter extends Adapter {
@@ -52,10 +53,10 @@ export interface FakeAdapter extends Adapter {
 export const fakeAdapter = (options: FakeOptions = {}): FakeAdapter => {
   const calls: string[] = [];
   const record =
-    <T>(name: string, run: () => Promise<T>) =>
-    () => {
+    <A extends unknown[], T>(name: string, run: (...args: A) => Promise<T>) =>
+    (...args: A) => {
       calls.push(name);
-      return run();
+      return run(...args);
     };
   return {
     calls,

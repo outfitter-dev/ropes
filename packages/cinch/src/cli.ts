@@ -7,7 +7,7 @@ import { EXIT_CODE } from "./contracts/result.ts";
 
 const HELP = `cinch ${manifest.version}
 
-Usage: cinch <command> [path...] [--json]
+Usage: cinch <command> [path...] [--json] [--dry-run]
 
 Commands:
   explain   Show the plan for a path without running anything
@@ -22,6 +22,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
     allowPositionals: true,
     args: [...argv],
     options: {
+      "dry-run": { type: "boolean" },
       help: { short: "h", type: "boolean" },
       json: { type: "boolean" },
       version: { short: "v", type: "boolean" },
@@ -46,6 +47,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
   }
   const response = await command({
     cwd: process.cwd(),
+    dryRun: values["dry-run"] === true,
     json: values.json === true,
     paths,
   });
