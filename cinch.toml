@@ -1,0 +1,9 @@
+# Cinch's own configuration for this repository.
+# The pilot format is unstable and will change without notice.
+pilot = 0
+
+include = ["**/*.md"]
+exclude = ["packages/cinch/tests/fixtures/**"]
+
+[markdown]
+enabled = true

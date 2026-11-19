@@ -31,6 +31,26 @@ The first profile is Markdown.
 
 The plan, result and finding that `--json` prints are provisional. They carry `schemaVersion: 0` and will change without notice until they are ratified. `parsePlan` and `parseResult` reject a document whose schema version they do not know, and a consumer should do the same. Golden examples live in `packages/cinch/tests/fixtures/`.
 
+## Configuration is a pilot
+
+Cinch reads the `[cinch]` table in `outfitter.toml`, or a standalone `cinch.toml`, at the repository root. Having both is an error, because one repository gets one source. With neither, the defaults apply. The file must state `pilot = 0`, and a missing or unknown marker stops the run. The format is unstable and will change without notice.
+
+```toml
+pilot = 0
+include = ["**/*.md"]
+exclude = ["vendor/**"]
+
+[markdown]
+enabled = true
+
+[[overrides]]
+paths = ["docs/legacy/**"]
+[overrides.markdown]
+enabled = false
+```
+
+This repository's own `cinch.toml` is the first user of the format.
+
 ## Layout
 
 ```text
