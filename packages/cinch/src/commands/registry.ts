@@ -3,7 +3,9 @@ import { check } from "./check.ts";
 import type { Command } from "./command.ts";
 import { explain } from "./explain.ts";
 import { fix } from "./fix.ts";
+import { init } from "./init.ts";
 import type { CommandDeps } from "./prepare.ts";
+import { preset } from "./preset.ts";
 
 /**
  * Commands take a typed request and return data. They never parse arguments
@@ -15,6 +17,8 @@ export const createCommands = (
   check: check(deps),
   explain: explain(deps),
   fix: fix(deps),
+  init: init(deps),
+  preset: preset(deps),
 });
 
 export const commands = createCommands({ adapters: adaptersFor });

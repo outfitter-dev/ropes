@@ -13,6 +13,10 @@ Commands:
   explain   Show the plan for a path without running anything
   check     Run the plan read-only and report findings
   fix       Apply what the plan allows (--dry-run to preview)
+  init      Show the config and presets a repository needs (--apply to write)
+  preset    List the shared configs Cinch keeps here and their state
+            preset add <name>      Write one preset's files
+            preset update [name]   Rewrite copies that are behind
 
 Exit codes: 0 clean, 1 findings remain, 2 incomplete or unusable.
 `;
@@ -22,6 +26,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
     allowPositionals: true,
     args: [...argv],
     options: {
+      apply: { type: "boolean" },
       "dry-run": { type: "boolean" },
       help: { short: "h", type: "boolean" },
       json: { type: "boolean" },
@@ -45,11 +50,15 @@ const main = async (argv: readonly string[]): Promise<number> => {
     );
     return EXIT_CODE.incomplete;
   }
+  // `preset` takes an action before its names. Every other command takes paths.
+  const [action, ...names] = name === "preset" ? paths : [];
   const response = await command({
+    ...(action === undefined ? {} : { action }),
+    apply: values.apply === true,
     cwd: process.cwd(),
     dryRun: values["dry-run"] === true,
     json: values.json === true,
-    paths,
+    paths: name === "preset" ? names : paths,
   });
   if (response.output !== undefined) {
     process.stdout.write(`${response.output}\n`);

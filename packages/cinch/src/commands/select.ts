@@ -28,7 +28,8 @@ type Expanded =
 const expand = async (
   root: RepoRoot,
   cwd: string,
-  selected: string
+  selected: string,
+  kept: readonly string[]
 ): Promise<Expanded> => {
   const relative = await toRootRelative(root.root, cwd, selected);
   if (!relative.ok) {
@@ -44,19 +45,25 @@ const expand = async (
         }
       : { kind: "file", path: relative.value };
   } catch {
-    return { error: `${selected} does not exist.`, kind: "error" };
+    // A file an adapter keeps can be named before it exists: writing it is
+    // what the caller is asking for.
+    return kept.includes(relative.value)
+      ? { kind: "file", path: relative.value }
+      : { error: `${selected} does not exist.`, kind: "error" };
   }
 };
 
 /**
  * Turns the paths a caller typed into root-relative files. No paths means the
  * whole workspace. A directory means the files under it. A path that does not
- * exist or sits outside the root is an error, never a silent skip.
+ * exist or sits outside the root is an error, never a silent skip. The one
+ * exception is a file in `kept`, which an adapter writes when it is missing.
  */
 export const select = async (
   root: RepoRoot,
   cwd: string,
-  paths: readonly string[]
+  paths: readonly string[],
+  kept: readonly string[] = []
 ): Promise<SelectResult> => {
   if (paths.length === 0) {
     return {
@@ -69,7 +76,7 @@ export const select = async (
     };
   }
   const expanded = await Promise.all(
-    paths.map((selected) => expand(root, cwd, selected))
+    paths.map((selected) => expand(root, cwd, selected, kept))
   );
   const failed = expanded.find((entry) => entry.kind === "error");
   if (failed?.kind === "error") {

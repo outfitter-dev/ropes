@@ -21,7 +21,7 @@ A fix writes these two files before it touches any Markdown, so the first run al
 
 ## Take a newer standard
 
-Update Cinch, run `cinch fix`, and review the diff of `.outfitter/configs/rumdl.toml`. Until then `cinch check` fails, so a repository cannot drift from the Cinch it pins without someone seeing it.
+Update Cinch, run `cinch preset update` or `cinch fix`, and review the diff of `.outfitter/configs/rumdl.toml`. Until then `cinch check` fails, so a repository cannot drift from the Cinch it pins without someone seeing it.
 
 ## Opt out
 

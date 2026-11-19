@@ -118,4 +118,5 @@ export const rumdlPresetAdapter = (): Adapter =>
       { path: CONFIG_PATH, want: config },
     ],
     id: "rumdl-preset",
+    preset: "markdown",
   });
