@@ -53,6 +53,23 @@ const sharedTable = (read: Read): Read => {
 };
 
 /**
+ * Names the file in `dir` that configures Cinch, or null. An `outfitter.toml`
+ * counts only when it has a `[cinch]` table, so a nested one written for
+ * another tool does not hide the config above it. A file that cannot be read
+ * still counts: the loader is where its error gets reported.
+ */
+export const configFileIn = async (dir: string): Promise<string | null> => {
+  const [sharedFile, standalone] = await Promise.all([
+    readToml(dir, SHARED_FILE),
+    readToml(dir, STANDALONE_FILE),
+  ]);
+  if (sharedTable(sharedFile).kind !== "absent") {
+    return SHARED_FILE;
+  }
+  return standalone.kind === "absent" ? null : STANDALONE_FILE;
+};
+
+/**
  * Reads the pilot config under `root`. The `[cinch]` table in `outfitter.toml`
  * and a standalone `cinch.toml` are alternatives: having both is an error,
  * never a merge. With neither, the defaults apply. Errors come back as data.
