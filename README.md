@@ -77,4 +77,6 @@ bun run check
 bun run cinch --help
 ```
 
+`bun run check` ends with `cinch check` on this repository, reading the root `cinch.toml`. That step needs the pinned rumdl on `PATH`. With mise activated in your shell it is. Otherwise run `mise exec -- bun run check`. Without rumdl the step is incomplete and the check fails, which is the point: a check that could not run is not a pass.
+
 Tool versions are pinned in `mise.toml`, and [docs/tool-versions.md](docs/tool-versions.md) says how to change one. See AGENTS.md for the working rules.
