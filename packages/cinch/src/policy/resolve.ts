@@ -81,6 +81,9 @@ const stepsFor = (
   return descriptors
     .filter(
       (descriptor) =>
+        // A step is one file. A package or workspace adapter gets none until
+        // the plan can describe a step of that size.
+        descriptor.unit === "file" &&
         descriptor.extensions.includes(extension) &&
         !off.has(descriptor.enabledBy)
     )

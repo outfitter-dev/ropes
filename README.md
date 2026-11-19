@@ -66,7 +66,7 @@ packages/cinch/src/
   cli.ts       The only file that parses arguments or prints.
 ```
 
-A test enforces which layer may import from which. That keeps engines swappable and leaves the command layer free to change later.
+A test enforces which layer may import from which. That keeps engines swappable and leaves the command layer free to change later. [docs/adapters.md](docs/adapters.md) explains how to add an engine.
 
 ## Develop
 

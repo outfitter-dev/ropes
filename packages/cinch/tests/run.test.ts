@@ -1,88 +1,145 @@
 import { expect, test } from "bun:test";
 
-import type { Adapter, StepOutcome } from "../src/adapters/adapter.ts";
+import type { Adapter } from "../src/adapters/adapter.ts";
 import { DEFAULT_CONFIG } from "../src/contracts/config.ts";
-import { EXIT_CODE } from "../src/contracts/result.ts";
+import { EXIT_CODE, ResultSchema } from "../src/contracts/result.ts";
 import { resolvePlan } from "../src/policy/resolve.ts";
 import { exitCodeOf, runPlan } from "../src/runner/run.ts";
+import type { RunOptions } from "../src/runner/run.ts";
+import { FINDINGS, fakeAdapter } from "./fake-adapter.ts";
 
-const clean: StepOutcome = { findings: [], status: "passed" };
-const dirty: StepOutcome = {
-  findings: [
-    {
-      fixable: true,
-      message: "bad",
-      path: "a.md",
-      range: { start: { column: 1, line: 1 } },
-      rule: "fake/rule",
-      severity: "error",
-      source: "fake",
-    },
-  ],
-  status: "findings",
-};
-
-const fake = (options: {
-  available: boolean;
-  outcome: StepOutcome;
-}): Adapter => ({
-  check: () => Promise.resolve(options.outcome),
-  descriptor: {
-    enabledBy: "markdown.enabled",
-    extensions: [".md"],
-    id: "fake",
-    tool: "fake-tool",
-    versionRange: "*",
-    writes: true,
-  },
-  fix: () => Promise.resolve({ findings: [], status: "fixed" }),
-  probe: () =>
-    Promise.resolve(
-      options.available
-        ? { available: true }
-        : { available: false, reason: "fake-tool missing" }
-    ),
-});
-
-const planFor = (adapter: Adapter) =>
+const planFor = (adapter: Adapter, paths: readonly string[] = ["a.md"]) =>
   resolvePlan({
     config: DEFAULT_CONFIG,
     descriptors: [adapter.descriptor],
-    paths: ["a.md"],
+    paths,
     root: "/repo",
     selection: { kind: "workspace" },
   });
 
-test("a clean run exits 0", async () => {
-  const adapter = fake({ available: true, outcome: clean });
-  const result = await runPlan(planFor(adapter), [adapter], "check");
+const check: RunOptions = { mode: "check", platform: "linux" };
+const fix: RunOptions = { mode: "fix", platform: "linux" };
+
+test("a clean run exits 0 and is a valid result", async () => {
+  const adapter = fakeAdapter();
+  const result = await runPlan(planFor(adapter), [adapter], check);
   expect(exitCodeOf(result)).toBe(EXIT_CODE.clean);
+  expect(ResultSchema.safeParse(result).success).toBe(true);
 });
 
 test("findings exit 1", async () => {
-  const adapter = fake({ available: true, outcome: dirty });
-  const result = await runPlan(planFor(adapter), [adapter], "check");
+  const adapter = fakeAdapter({ check: () => Promise.resolve(FINDINGS) });
+  const result = await runPlan(planFor(adapter), [adapter], check);
+  expect(result.steps[0]?.findings).toHaveLength(1);
   expect(exitCodeOf(result)).toBe(EXIT_CODE.findings);
 });
 
+test("check never calls fix, and fix does", async () => {
+  const adapter = fakeAdapter();
+  const checked = await runPlan(planFor(adapter), [adapter], check);
+  const fixed = await runPlan(planFor(adapter), [adapter], fix);
+  expect(checked.steps[0]?.status).toBe("passed");
+  expect(fixed.steps[0]?.status).toBe("fixed");
+  expect(adapter.calls).toEqual(["probe", "check", "probe", "fix"]);
+});
+
+test("fix only checks with an adapter that does not write", async () => {
+  const adapter = fakeAdapter({ descriptor: { writes: false } });
+  await runPlan(planFor(adapter), [adapter], fix);
+  expect(adapter.calls).toEqual(["probe", "check"]);
+});
+
 test("a missing tool is incomplete and can never pass", async () => {
-  const adapter = fake({ available: false, outcome: clean });
-  const result = await runPlan(planFor(adapter), [adapter], "check");
+  const adapter = fakeAdapter({
+    probe: () =>
+      Promise.resolve({ available: false, reason: "fake-tool missing" }),
+  });
+  const result = await runPlan(planFor(adapter), [adapter], check);
   expect(result.steps[0]?.status).toBe("incomplete");
   expect(result.steps[0]?.reason).toBe("fake-tool missing");
+  expect(adapter.calls).toEqual(["probe"]);
   expect(exitCodeOf(result)).toBe(EXIT_CODE.incomplete);
+});
+
+test("a tool at the wrong version is incomplete", async () => {
+  const adapter = fakeAdapter({
+    descriptor: { versionRange: ">=2.0.0" },
+    probe: () => Promise.resolve({ available: true, version: "1.9.0" }),
+  });
+  const result = await runPlan(planFor(adapter), [adapter], check);
+  expect(result.steps[0]?.reason).toBe(
+    "fake-tool 1.9.0 does not satisfy >=2.0.0"
+  );
+  expect(adapter.calls).toEqual(["probe"]);
+  expect(exitCodeOf(result)).toBe(EXIT_CODE.incomplete);
+});
+
+test("a tool at an acceptable version runs", async () => {
+  const adapter = fakeAdapter({
+    descriptor: { versionRange: ">=2.0.0" },
+    probe: () => Promise.resolve({ available: true, version: "2.1.0" }),
+  });
+  const result = await runPlan(planFor(adapter), [adapter], check);
+  expect(exitCodeOf(result)).toBe(EXIT_CODE.clean);
+});
+
+test("a required version that the tool does not report is incomplete", async () => {
+  const adapter = fakeAdapter({ descriptor: { versionRange: ">=2.0.0" } });
+  const result = await runPlan(planFor(adapter), [adapter], check);
+  expect(result.steps[0]?.status).toBe("incomplete");
+  expect(adapter.calls).toEqual(["probe"]);
+});
+
+test("an unsupported platform is incomplete and the tool is not probed", async () => {
+  const adapter = fakeAdapter({ descriptor: { platforms: ["darwin"] } });
+  const result = await runPlan(planFor(adapter), [adapter], check);
+  expect(result.steps[0]?.reason).toBe("fake-tool does not run on linux");
+  expect(adapter.calls).toEqual([]);
+});
+
+test("an adapter that throws is incomplete, and the run continues", async () => {
+  const adapter = fakeAdapter({
+    check: () => Promise.reject(new Error("boom")),
+  });
+  const plan = planFor(adapter, ["a.md", "b.md"]);
+  const result = await runPlan(plan, [adapter], check);
+  expect(result.steps.map((step) => step.status)).toEqual([
+    "incomplete",
+    "incomplete",
+  ]);
+  expect(result.steps[0]?.reason).toBe("fake-tool threw: boom");
+  expect(exitCodeOf(result)).toBe(EXIT_CODE.incomplete);
+});
+
+test("a probe that throws is incomplete", async () => {
+  const adapter = fakeAdapter({
+    probe: () => Promise.reject(new Error("no PATH")),
+  });
+  const result = await runPlan(planFor(adapter), [adapter], check);
+  expect(result.steps[0]?.reason).toBe("probing fake-tool threw: no PATH");
 });
 
 test("a planned adapter that is not registered is incomplete", async () => {
-  const adapter = fake({ available: true, outcome: clean });
-  const result = await runPlan(planFor(adapter), [], "check");
+  const adapter = fakeAdapter();
+  const result = await runPlan(planFor(adapter), [], check);
   expect(exitCodeOf(result)).toBe(EXIT_CODE.incomplete);
 });
 
-test("check never calls fix, and fix does", async () => {
-  const adapter = fake({ available: true, outcome: clean });
-  const checked = await runPlan(planFor(adapter), [adapter], "check");
-  const fixed = await runPlan(planFor(adapter), [adapter], "fix");
-  expect(checked.steps[0]?.status).toBe("passed");
-  expect(fixed.steps[0]?.status).toBe("fixed");
+test("an adapter is probed once per run, however many files it handles", async () => {
+  const adapter = fakeAdapter();
+  const plan = planFor(adapter, ["a.md", "b.md", "c.md"]);
+  await runPlan(plan, [adapter], check);
+  expect(adapter.calls).toEqual(["probe", "check", "check", "check"]);
+});
+
+test("a run holds the tool to the range in the plan, not the registry", async () => {
+  const planned = fakeAdapter({ descriptor: { versionRange: ">=2.0.0" } });
+  const registered = fakeAdapter({
+    probe: () => Promise.resolve({ available: true, version: "1.0.0" }),
+  });
+  const result = await runPlan(planFor(planned), [registered], check);
+  expect(result.steps[0]?.reason).toBe(
+    "fake-tool 1.0.0 does not satisfy >=2.0.0"
+  );
+  expect(registered.calls).toEqual(["probe"]);
 });

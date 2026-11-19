@@ -1,12 +1,25 @@
 import type { Finding } from "../contracts/finding.ts";
 import type { StepStatus } from "../contracts/result.ts";
 
+export type Platform = "darwin" | "linux" | "win32";
+
+/**
+ * What one step works on. Only `file` steps are planned today. `package` and
+ * `workspace` are named now so an engine that cannot work file by file does
+ * not have to pretend it can. The resolver gives such an adapter no steps.
+ */
+export type Unit = "file" | "package" | "workspace";
+
 /** The data the resolver needs about an adapter. It carries no behavior. */
 export interface AdapterDescriptor {
   readonly id: string;
   readonly tool: string;
+  /** A semver range the installed tool must satisfy. `*` accepts any. */
   readonly versionRange: string;
   readonly writes: boolean;
+  readonly unit: Unit;
+  /** Where the tool can run. Elsewhere its steps are incomplete. */
+  readonly platforms: readonly Platform[];
   /** File extensions, with the dot, that this adapter handles. */
   readonly extensions: readonly string[];
   /**
@@ -18,6 +31,7 @@ export interface AdapterDescriptor {
 
 export interface ProbeResult {
   readonly available: boolean;
+  /** The installed version as plain semver, with no tool name or prefix. */
   readonly version?: string;
   readonly reason?: string;
 }
@@ -39,6 +53,7 @@ export interface StepInput {
  */
 export interface Adapter {
   readonly descriptor: AdapterDescriptor;
+  /** Reports whether the tool is installed, and at which version. */
   readonly probe: () => Promise<ProbeResult>;
   readonly check: (input: StepInput) => Promise<StepOutcome>;
   readonly fix: (input: StepInput) => Promise<StepOutcome>;
