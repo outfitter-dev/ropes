@@ -27,11 +27,15 @@ Every command takes `--json`. Exit codes are 0 for clean, 1 when findings remain
 
 The first profile is Markdown.
 
+## The JSON shapes are unstable
+
+The plan, result and finding that `--json` prints are provisional. They carry `schemaVersion: 0` and will change without notice until they are ratified. `parsePlan` and `parseResult` reject a document whose schema version they do not know, and a consumer should do the same. Golden examples live in `packages/cinch/tests/fixtures/`.
+
 ## Layout
 
 ```text
 packages/cinch/src/
-  contracts/   Plan, result and finding types. Types only.
+  contracts/   Plan, result and finding schemas and parsers. No I/O.
   config/      Pilot config loader.
   policy/      The resolver. Pure: config and selection in, plan out.
   adapters/    One folder per engine, plus the registry that lists them.

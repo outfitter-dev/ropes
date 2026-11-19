@@ -1,32 +1,53 @@
-import type { Plan, SCHEMA_VERSION } from "./plan.ts";
+import { z } from "zod";
 
-/** Provisional and unstable. FIT-6 defines the real shape. */
-export type StepStatus = "passed" | "findings" | "fixed" | "incomplete";
+import { FindingSchema } from "./finding.ts";
+import { PlanSchema, SCHEMA_VERSION } from "./plan.ts";
 
-export interface Finding {
-  readonly path: string;
-  readonly line: number;
-  readonly column: number;
-  readonly rule: string;
-  readonly message: string;
-  readonly fixable: boolean;
-}
+export const StepStatusSchema = z.enum([
+  "passed",
+  "findings",
+  "fixed",
+  "incomplete",
+]);
+export type StepStatus = z.infer<typeof StepStatusSchema>;
 
-export interface StepResult {
-  readonly adapter: string;
-  readonly path: string;
-  readonly status: StepStatus;
-  readonly findings: readonly Finding[];
-  /** Why the step is incomplete, when it is. */
-  readonly reason?: string;
-}
+export const StepResultSchema = z
+  .object({
+    adapter: z.string().min(1),
+    findings: z.array(FindingSchema).readonly(),
+    path: z.string().min(1),
+    /** Why the step is incomplete, when it is. */
+    reason: z.string().optional(),
+    status: StepStatusSchema,
+  })
+  .readonly();
+export type StepResult = z.infer<typeof StepResultSchema>;
 
-export interface Result {
-  readonly schemaVersion: typeof SCHEMA_VERSION;
-  readonly plan: Plan;
-  readonly steps: readonly StepResult[];
-}
+export const OutcomeSchema = z.enum(["clean", "findings", "incomplete"]);
+export type Outcome = z.infer<typeof OutcomeSchema>;
 
-/** 0 clean, 1 findings remain, 2 incomplete or unusable. Incomplete wins. */
+/** Provisional and unstable. What a run did, next to the plan it ran. */
+export const ResultSchema = z
+  .object({
+    outcome: OutcomeSchema,
+    plan: PlanSchema,
+    schemaVersion: z.literal(SCHEMA_VERSION),
+    steps: z.array(StepResultSchema).readonly(),
+  })
+  .readonly();
+export type Result = z.infer<typeof ResultSchema>;
+
+/** Incomplete beats findings, and findings beat clean. */
+export const outcomeOf = (steps: readonly StepResult[]): Outcome => {
+  if (steps.some((step) => step.status === "incomplete")) {
+    return "incomplete";
+  }
+  if (steps.some((step) => step.status === "findings")) {
+    return "findings";
+  }
+  return "clean";
+};
+
+/** 0 clean, 1 findings remain, 2 incomplete or unusable. */
 export const EXIT_CODE = { clean: 0, findings: 1, incomplete: 2 } as const;
-export type ExitCode = (typeof EXIT_CODE)[keyof typeof EXIT_CODE];
+export type ExitCode = (typeof EXIT_CODE)[Outcome];

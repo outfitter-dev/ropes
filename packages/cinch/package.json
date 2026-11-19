@@ -7,6 +7,9 @@
     "cinch": "./src/cli.ts"
   },
   "type": "module",
+  "dependencies": {
+    "zod": "4.6.7"
+  },
   "engines": {
     "bun": ">=1.4.4"
   }

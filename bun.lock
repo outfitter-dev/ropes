@@ -19,6 +19,9 @@
       "bin": {
         "cinch": "./src/cli.ts",
       },
+      "dependencies": {
+        "zod": "4.6.7",
+      },
     },
   },
   "trustedDependencies": [],

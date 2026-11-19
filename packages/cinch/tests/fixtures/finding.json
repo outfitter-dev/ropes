@@ -1,0 +1,12 @@
+{
+  "fixable": true,
+  "message": "Multiple headings with the same content",
+  "path": "docs/guide.md",
+  "range": {
+    "end": { "column": 12, "line": 14 },
+    "start": { "column": 1, "line": 14 }
+  },
+  "rule": "MD024",
+  "severity": "error",
+  "source": "rumdl"
+}

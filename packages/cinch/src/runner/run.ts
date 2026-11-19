@@ -1,6 +1,6 @@
 import type { Adapter, StepOutcome } from "../adapters/adapter.ts";
 import type { Plan, PlanStep } from "../contracts/plan.ts";
-import { EXIT_CODE } from "../contracts/result.ts";
+import { EXIT_CODE, outcomeOf } from "../contracts/result.ts";
 import type { ExitCode, Result, StepResult } from "../contracts/result.ts";
 
 export type RunMode = "check" | "fix";
@@ -56,16 +56,13 @@ export const runPlan = async (
       steps.push({ adapter: step.adapter, path: planned.path, ...outcome });
     }
   }
-  return { plan, schemaVersion: plan.schemaVersion, steps };
+  return {
+    outcome: outcomeOf(steps),
+    plan,
+    schemaVersion: plan.schemaVersion,
+    steps,
+  };
 };
 
-/** Incomplete beats findings, and findings beat clean. */
-export const exitCodeOf = (result: Result): ExitCode => {
-  if (result.steps.some((step) => step.status === "incomplete")) {
-    return EXIT_CODE.incomplete;
-  }
-  if (result.steps.some((step) => step.status === "findings")) {
-    return EXIT_CODE.findings;
-  }
-  return EXIT_CODE.clean;
-};
+export const exitCodeOf = (result: Result): ExitCode =>
+  EXIT_CODE[result.outcome];

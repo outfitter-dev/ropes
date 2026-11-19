@@ -1,4 +1,5 @@
-import type { Finding, StepStatus } from "../contracts/result.ts";
+import type { Finding } from "../contracts/finding.ts";
+import type { StepStatus } from "../contracts/result.ts";
 
 /** The data the resolver needs about an adapter. It carries no behavior. */
 export interface AdapterDescriptor {
