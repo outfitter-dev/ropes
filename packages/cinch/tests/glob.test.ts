@@ -38,6 +38,10 @@ const PATTERNS = [
   ".github/**",
   "docs/[[]draft].md",
   "docs/report].md",
+  "docs/[z-a]*.md",
+  "docs/[a-]*.md",
+  "docs/[\\]r]eport].md",
+  "[a.b]*.md",
 ];
 
 test("the matcher agrees with Bun.Glob on every pattern and path", () => {
@@ -65,6 +69,12 @@ test("a stray closing bracket or brace is matched literally", () => {
   expect(compileGlob("docs/report].md")("docs/report].md")).toBe(true);
   expect(compileGlob("docs/a}b.md")("docs/a}b.md")).toBe(true);
   expect(compileGlob("docs/a}b.md")("docs/ab.md")).toBe(false);
+});
+
+test("a backwards range matches nothing instead of failing to compile", () => {
+  const matches = compileGlob("docs/[z-a].md");
+  expect(matches("docs/b.md")).toBe(false);
+  expect(matches("docs/[z-a].md")).toBe(false);
 });
 
 test("no patterns match nothing", () => {

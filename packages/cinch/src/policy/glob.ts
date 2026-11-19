@@ -46,17 +46,77 @@ const braces = (pattern: string, index: number, convert: Convert): Piece => {
   return { next: end + 1, source: `(?:${alternatives.join("|")})` };
 };
 
+interface Member {
+  readonly char: string;
+  readonly escaped: boolean;
+}
+
+interface CharacterClass {
+  readonly members: readonly Member[];
+  readonly negated: boolean;
+  readonly next: number;
+}
+
+/** Reads `[...]` from `index`. A backslash makes the next character literal. */
+const readClass = (
+  pattern: string,
+  index: number
+): CharacterClass | undefined => {
+  let cursor = index + 1;
+  const negated = pattern[cursor] === "!" || pattern[cursor] === "^";
+  cursor += negated ? 1 : 0;
+  const members: Member[] = [];
+  while (cursor < pattern.length) {
+    const escaped = pattern[cursor] === "\\" && cursor + 1 < pattern.length;
+    cursor += escaped ? 1 : 0;
+    const char = String.fromCodePoint(pattern.codePointAt(cursor) ?? 0);
+    if (char === "]" && !escaped) {
+      return { members, negated, next: cursor + 1 };
+    }
+    members.push({ char, escaped });
+    cursor += char.length;
+  }
+  return undefined;
+};
+
+const code = (member: Member | undefined): number =>
+  member?.char.codePointAt(0) ?? 0;
+
+const point = (value: number): string => `\\u{${value.toString(16)}}`;
+
+/**
+ * Every member is written as a code point escape, so nothing a user types can
+ * be read as regular expression syntax. A range that runs backwards matches
+ * nothing instead of failing to compile.
+ */
+const classSource = (members: readonly Member[]): string => {
+  let source = "";
+  let index = 0;
+  while (index < members.length) {
+    const dash = members[index + 1];
+    const isRange =
+      dash?.char === "-" && !dash.escaped && index + 2 < members.length;
+    const low = code(members[index]);
+    const high = isRange ? code(members[index + 2]) : low;
+    source += low < high ? `${point(low)}-${point(high)}` : "";
+    source += low === high ? point(low) : "";
+    index += isRange ? 3 : 1;
+  }
+  return source;
+};
+
 const brackets = (pattern: string, index: number): Piece => {
-  const end = closing(pattern, index + 1, "]");
-  if (end === -1) {
+  const parsed = readClass(pattern, index);
+  if (parsed === undefined) {
     return { next: index + 1, source: "\\[" };
   }
-  const body = pattern.slice(index + 1, end);
-  const negated = body.startsWith("!") || body.startsWith("^");
-  const members = escape(negated ? body.slice(1) : body);
+  const source = classSource(parsed.members);
+  if (parsed.negated) {
+    return { next: parsed.next, source: `[^/${source}]` };
+  }
   return {
-    next: end + 1,
-    source: negated ? `[^/${members}]` : `(?!/)[${members}]`,
+    next: parsed.next,
+    source: source === "" ? "(?!)" : `(?!/)[${source}]`,
   };
 };
 
