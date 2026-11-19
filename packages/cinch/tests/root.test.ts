@@ -180,7 +180,7 @@ test("a real linked worktree made by git resolves to itself", async () => {
     const env = {
       GIT_CONFIG_GLOBAL: "/dev/null",
       GIT_CONFIG_NOSYSTEM: "1",
-      PATH: process.env["PATH"] ?? "",
+      PATH: process.env.PATH ?? "",
     };
     const identity = [
       "-c",

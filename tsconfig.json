@@ -19,6 +19,8 @@
   "include": [
     "packages/*/src/**/*.ts",
     "packages/*/tests/**/*.ts",
+    "tests/*.ts",
+    "tests/fixtures/typed-lint/*.ts",
     "*.config.ts"
   ],
   "exclude": ["node_modules", "dist"]

@@ -11,7 +11,7 @@ pre-commit:
   commands:
     format:
       glob: "*.{ts,js,mjs,cjs,json,jsonc,md,yml,yaml,toml}"
-      run: bunx oxfmt --write --no-error-on-unmatched-pattern {staged_files}
+      run: bun fmt --no-script {staged_files}
       stage_fixed: true
       env:
         GIT_PAGER: cat

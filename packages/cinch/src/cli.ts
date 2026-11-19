@@ -28,12 +28,12 @@ const main = async (argv: readonly string[]): Promise<number> => {
     },
     strict: false,
   });
-  if (values.version) {
+  if (values.version === true) {
     process.stdout.write(`${manifest.version}\n`);
     return EXIT_CODE.clean;
   }
   const [name, ...paths] = positionals;
-  if (values.help || name === undefined) {
+  if (values.help === true || name === undefined) {
     process.stdout.write(HELP);
     return EXIT_CODE.clean;
   }
