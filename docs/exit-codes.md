@@ -1,0 +1,43 @@
+# Outcomes and exit codes
+
+Every run ends in one of three outcomes, and each outcome has one exit code.
+
+| Outcome | Exit code | Meaning |
+| --- | --- | --- |
+| `clean` | 0 | Every planned step ran and nothing is left to report. |
+| `findings` | 1 | Every planned step ran and at least one finding remains. |
+| `incomplete` | 2 | At least one step could not run, or the run was unusable. |
+
+Incomplete beats findings, and findings beat clean. A run with one missing tool and no findings exits 2, not 0, because a step that did not run tells you nothing about the file it was meant to check.
+
+## How a step counts
+
+| Step status  | Counts as  |
+| ------------ | ---------- |
+| `passed`     | clean      |
+| `fixed`      | clean      |
+| `findings`   | findings   |
+| `incomplete` | incomplete |
+
+A `fix` step that repairs some problems and leaves others reports `findings`, not `fixed`.
+
+Exit code 2 also covers problems that stop a run before any step: an unknown command, a config file that does not parse, or an unknown schema or config version.
+
+## One function decides
+
+`outcomeOf` and `exitCodeOf` in `packages/cinch/src/contracts/result.ts` are the only place a result becomes an outcome or an exit code. Commands call them and never apply a rule of their own. `exitCodeOf` reads the steps, not the `outcome` field, so a result built or edited by hand cannot exit with a code its steps do not support.
+
+## Empty selections
+
+Running with no paths checks the configured workspace. An explicitly empty selection is different: it means zero files, and Cinch does not widen it to the workspace. A hook runner that forwards an empty file list gets a clean result and exit code 0, and the output says that nothing ran.
+
+A run where files were selected but no step applied to them is also clean. The output states how many steps ran and how many files the config left out, so "0 steps ran" is visible and is never mistaken for a full check.
+
+This is provisional. The specification leaves the exact empty-input syntax and the full per-command exit table open until the plan and result shapes are ratified.
+
+## Output
+
+Both renderers take a result and nothing else.
+
+- The default output is text for a person: findings grouped by file, one summary line, and the verdict with its exit code.
+- `--json` prints the result itself. A consumer should read `schemaVersion` first and stop on a version it does not know.

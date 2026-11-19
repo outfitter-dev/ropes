@@ -7,21 +7,30 @@ const SRC = new URL("../src/", import.meta.url).pathname;
 /** Which layers each layer may import from. `cli.ts` sits above all of them. */
 const ALLOWED: Readonly<Record<string, readonly string[]>> = {
   adapters: ["adapters", "contracts"],
-  commands: ["adapters", "commands", "config", "contracts", "policy", "runner"],
+  commands: [
+    "adapters",
+    "commands",
+    "config",
+    "contracts",
+    "policy",
+    "render",
+    "runner",
+  ],
   config: ["config", "contracts"],
   contracts: ["contracts"],
   policy: ["adapters", "contracts", "policy"],
+  render: ["contracts", "render"],
   runner: ["adapters", "contracts", "runner"],
 };
 
-/** Modules that perform I/O. The resolver and the contracts must stay pure. */
+/** Modules that perform I/O. The resolver, contracts and renderers stay pure. */
 const IO_MODULES = new Set([
   "node:fs",
   "node:child_process",
   "node:process",
   "bun",
 ]);
-const PURE_LAYERS = new Set(["contracts", "policy"]);
+const PURE_LAYERS = new Set(["contracts", "policy", "render"]);
 
 const IMPORT = /from\s+"(?<specifier>[^"]+)"/gu;
 const LAYER_IMPORT = /^\.\.\/(?<layer>[^/]+)\//u;
@@ -76,7 +85,7 @@ test("only cli.ts parses arguments", () => {
   expect(offenders).toEqual([]);
 });
 
-test("the resolver and the contracts perform no I/O", () => {
+test("the resolver, the contracts and the renderers perform no I/O", () => {
   const offenders = sources
     .filter((source) => PURE_LAYERS.has(source.layer))
     .filter(
@@ -106,6 +115,7 @@ test("the layout has the layers the boundary rules describe", () => {
     "commands",
     "contracts",
     "policy",
+    "render",
     "runner",
   ]) {
     expect(layers.has(layer)).toBe(true);

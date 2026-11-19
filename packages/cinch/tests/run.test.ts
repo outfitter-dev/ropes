@@ -2,9 +2,13 @@ import { expect, test } from "bun:test";
 
 import type { Adapter } from "../src/adapters/adapter.ts";
 import { DEFAULT_CONFIG } from "../src/contracts/config.ts";
-import { EXIT_CODE, ResultSchema } from "../src/contracts/result.ts";
+import {
+  EXIT_CODE,
+  ResultSchema,
+  exitCodeOf,
+} from "../src/contracts/result.ts";
 import { resolvePlan } from "../src/policy/resolve.ts";
-import { exitCodeOf, runPlan } from "../src/runner/run.ts";
+import { runPlan } from "../src/runner/run.ts";
 import type { RunOptions } from "../src/runner/run.ts";
 import { FINDINGS, fakeAdapter } from "./fake-adapter.ts";
 

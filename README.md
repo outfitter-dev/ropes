@@ -23,7 +23,7 @@ Given a path, Cinch resolves one plan: which policy applies, where each value ca
 | `cinch check [path...]` | Run the plan read-only and report findings |
 | `cinch fix [path...]` | Apply what the plan allows. `--dry-run` previews without touching the checkout |
 
-Every command takes `--json`. Exit codes are 0 for clean, 1 when findings remain, and 2 when the run is incomplete or unusable. A check that could not run never counts as a pass.
+Every command takes `--json`. Exit codes are 0 for clean, 1 when findings remain, and 2 when the run is incomplete or unusable. A check that could not run never counts as a pass. [Outcomes and exit codes](docs/exit-codes.md) has the full contract.
 
 The first profile is Markdown.
 
@@ -62,6 +62,7 @@ packages/cinch/src/
   policy/      The resolver. Pure: config and selection in, plan out.
   adapters/    One folder per engine, plus the registry that lists them.
   runner/      Runs a plan through adapters. Knows only the adapter interface.
+  render/      Turns a result into text or JSON. Pure, and takes only a result.
   commands/    explain, check and fix as functions that take and return data.
   cli.ts       The only file that parses arguments or prints.
 ```

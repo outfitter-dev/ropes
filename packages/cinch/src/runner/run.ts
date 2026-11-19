@@ -1,7 +1,7 @@
 import type { Adapter, StepOutcome } from "../adapters/adapter.ts";
 import type { Plan, PlanStep } from "../contracts/plan.ts";
-import { EXIT_CODE, outcomeOf } from "../contracts/result.ts";
-import type { ExitCode, Result, StepResult } from "../contracts/result.ts";
+import { outcomeOf } from "../contracts/result.ts";
+import type { Result, StepResult } from "../contracts/result.ts";
 import { probeAdapter, threw, versionProblem } from "./ready.ts";
 import type { Readiness } from "./ready.ts";
 
@@ -92,6 +92,3 @@ export const runPlan = async (
     steps,
   };
 };
-
-export const exitCodeOf = (result: Result): ExitCode =>
-  EXIT_CODE[result.outcome];
