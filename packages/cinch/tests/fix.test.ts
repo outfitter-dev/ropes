@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { symlink } from "node:fs/promises";
+import { mkdir, symlink } from "node:fs/promises";
 import path from "node:path";
 
 import type { StepInput, StepOutcome } from "../src/adapters/adapter.ts";
@@ -34,6 +34,13 @@ const flaky = (input: StepInput): Promise<StepOutcome> => {
 const partial = async (input: StepInput): Promise<StepOutcome> => {
   await rewrite(input);
   return FINDINGS;
+};
+
+/** A fixer that only works when it can read an installed dependency. */
+const withDep = async (input: StepInput): Promise<StepOutcome> => {
+  const rule = Bun.file(path.join(input.root, "node_modules/dep/rule.txt"));
+  const found = await rule.exists();
+  return found ? await rewrite(input) : FINDINGS;
 };
 
 const reportOf = (output: string | undefined): FixReport =>
@@ -150,5 +157,52 @@ test("a dry run keeps a link inside the root a link, as a real fix sees it", asy
     const dry = reportOf(preview.output);
     expect(dry.result).toEqual(reportOf(applied.output).result);
     expect(dry.diff).toBe(reportOf(applied.output).diff);
+  });
+});
+
+test("a dry run can read the dependencies installed at the root", async () => {
+  const tree = { ...TREE, "node_modules/dep/rule.txt": "DONE" };
+  await withRepo(tree, { fix: withDep }, async ({ root, run }) => {
+    Bun.spawnSync(["git", "init", "-q"], { cwd: root });
+    await Bun.write(path.join(root, ".gitignore"), "node_modules\n");
+    const before = await snapshot(root);
+    const preview = await run("fix", [], { dryRun: true, json: true });
+    expect(await snapshot(root)).toEqual(before);
+    expect(preview.exitCode).toBe(0);
+    expect(reportOf(preview.output).changed).toEqual(["a.md", "docs/b.md"]);
+  });
+});
+
+test("a dry run never writes through a link into the dependencies", async () => {
+  const tree = { ...TREE, "node_modules/dep/README.md": "TODO dep\n" };
+  await withRepo(tree, { fix: rewrite }, async ({ root, run }) => {
+    Bun.spawnSync(["git", "init", "-q"], { cwd: root });
+    await Bun.write(path.join(root, ".gitignore"), "node_modules\n");
+    await symlink(
+      "../node_modules/dep/README.md",
+      path.join(root, "docs/shared.md")
+    );
+    const dep = Bun.file(path.join(root, "node_modules/dep/README.md"));
+    const preview = await run("fix", [], { dryRun: true, json: true });
+    expect(await dep.text()).toBe("TODO dep\n");
+    expect(reportOf(preview.output).changed).toContain("docs/shared.md");
+  });
+});
+
+test("a dry run never writes through a dependency that is itself a link", async () => {
+  const tree = { ...TREE, "packages/dep/README.md": "TODO dep\n" };
+  await withRepo(tree, { fix: rewrite }, async ({ root, run }) => {
+    Bun.spawnSync(["git", "init", "-q"], { cwd: root });
+    await Bun.write(path.join(root, ".gitignore"), "node_modules\n");
+    await mkdir(path.join(root, "node_modules"));
+    await symlink("../packages/dep", path.join(root, "node_modules/dep"));
+    await symlink(
+      "../node_modules/dep/README.md",
+      path.join(root, "docs/shared.md")
+    );
+    const dep = Bun.file(path.join(root, "packages/dep/README.md"));
+    const preview = await run("fix", [], { dryRun: true, json: true });
+    expect(await dep.text()).toBe("TODO dep\n");
+    expect(reportOf(preview.output).changed).toContain("docs/shared.md");
   });
 });

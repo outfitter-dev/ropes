@@ -1,5 +1,3 @@
 # rumdl reads this file itself. Cinch runs rumdl from the repository root, so
 # running rumdl by hand and running it through Cinch apply the same rules.
-[global]
-# Prose is not hard-wrapped in this repository, so line length is not checked.
-disable = ["MD013"]
+extends = "packages/cinch/presets/rumdl.toml"

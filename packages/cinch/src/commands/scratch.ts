@@ -13,9 +13,32 @@ import path from "node:path";
 
 import { filesUnder } from "./files.ts";
 
+const MODULES = "node_modules";
+
+const under = (dir: string, file: string): boolean =>
+  file === dir || file.startsWith(`${dir}${path.sep}`);
+
 /**
- * The target of a link that is relative and stays inside the root. Such a
- * link means the same thing in the copy. Any other path gets null.
+ * Whether a path ends up in the root's installed dependencies. The copy links
+ * to that folder, so a link kept into it would let a step write to the
+ * checkout.
+ */
+const reachesModules = async (root: string, file: string) => {
+  try {
+    const [base, real] = await Promise.all([
+      realpath(root),
+      realpath(path.join(root, file)),
+    ]);
+    return under(MODULES, path.relative(base, real));
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * The target of a link that is relative, stays inside the root and does not
+ * lead into the installed dependencies. Such a link means the same thing in
+ * the copy. Any other path gets null.
  */
 const innerLink = async (
   root: string,
@@ -27,8 +50,11 @@ const innerLink = async (
     const inside =
       !path.isAbsolute(target) &&
       !path.isAbsolute(reached) &&
-      reached !== ".." &&
-      !reached.startsWith(`..${path.sep}`);
+      !under("..", reached) &&
+      // The path the link names counts as well as where it ends up: a
+      // dependency can itself be a link to somewhere else in the checkout.
+      !under(MODULES, reached) &&
+      !(await reachesModules(root, file));
     return inside ? target : null;
   } catch {
     return null;
@@ -71,10 +97,26 @@ const place = async (root: string, copy: string, file: string) => {
 };
 
 /**
+ * Installed dependencies are not copied, but an engine's config may import
+ * from them. The copy gets a link to the root's own folder instead.
+ */
+const linkModules = async (root: string, copy: string) => {
+  try {
+    const found = await stat(path.join(root, MODULES));
+    if (found.isDirectory()) {
+      await symlink(path.join(root, MODULES), path.join(copy, MODULES));
+    }
+  } catch {
+    // Nothing is installed, or a copied file already has that name.
+  }
+};
+
+/**
  * Runs `body` against a temporary copy of the root and removes it afterwards.
  * The copy holds what git would let you commit, plus every path in `also`, so
  * an engine finds its own config there and a file the caller named is present
- * even when git ignores it. Other ignored files are not copied.
+ * even when git ignores it. Other ignored files are not copied. Installed
+ * dependencies at the root are linked, not copied.
  */
 export const withCopy = async <T>(
   root: { readonly root: string; readonly vcsRoot: string },
@@ -89,6 +131,7 @@ export const withCopy = async <T>(
       [...dirs].map((dir) => mkdir(path.join(copy, dir), { recursive: true }))
     );
     await Promise.all(files.map((file) => place(root.root, copy, file)));
+    await linkModules(root.root, copy);
     return await body(copy);
   } finally {
     await rm(copy, { force: true, recursive: true });
