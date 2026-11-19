@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import type { Adapter } from "../adapter.ts";
 import { managedAdapter } from "../managed.ts";
 import type { Wanted } from "../managed.ts";
@@ -31,34 +33,77 @@ const extendsOf = (text: string): unknown => {
     : undefined;
 };
 
+const SIBLINGS = ["rumdl.toml", ".config/rumdl.toml"];
+const PYPROJECT = "pyproject.toml";
+
+const namesTool = (text: string): boolean => {
+  try {
+    const table: unknown = Bun.TOML.parse(text);
+    if (typeof table !== "object" || table === null || !("tool" in table)) {
+      return false;
+    }
+    const { tool } = table;
+    return typeof tool === "object" && tool !== null && "rumdl" in tool;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * The engine reads its config from several places and uses only the first it
+ * finds, so writing `CONFIG_PATH` beside another one would silently replace
+ * the repository's settings. Returns the file that already holds them.
+ */
+const configuredElsewhere = async (root: string): Promise<string | null> => {
+  const found = await Promise.all(
+    SIBLINGS.map((name) => Bun.file(path.join(root, name)).exists())
+  );
+  const sibling = SIBLINGS.find((_, index) => found[index] === true);
+  if (sibling !== undefined) {
+    return sibling;
+  }
+  const project = Bun.file(path.join(root, PYPROJECT));
+  const named = (await project.exists()) && namesTool(await project.text());
+  return named ? PYPROJECT : null;
+};
+
 /**
  * The repository's config must extend the copy. A missing file is written,
  * and a file with no `extends` gets the line at the top, where TOML needs a
  * top-level key to be. A file that extends something else is left alone.
  */
-const config = (current: string | null): Promise<Wanted> => {
+const config = async (
+  current: string | null,
+  root: string
+): Promise<Wanted> => {
   if (current === null) {
-    return Promise.resolve({ ok: true, text: EXTENDS });
+    const other = await configuredElsewhere(root);
+    return other === null
+      ? { ok: true, text: EXTENDS }
+      : {
+          message: `This repository configures Markdown in ${other}, and a new ${CONFIG_PATH} would hide it. Move those settings into ${CONFIG_PATH}, or set \`preset = false\` under \`[markdown]\` in the Cinch config.`,
+          ok: false,
+        };
   }
   let found: unknown;
   try {
     found = extendsOf(current);
   } catch {
-    return Promise.resolve({
+    return {
       message: "This file is not valid TOML, so Cinch cannot read it.",
       ok: false,
-    });
+    };
   }
   if (found === PRESET_PATH) {
-    return Promise.resolve({ ok: true, text: current });
+    return { ok: true, text: current };
   }
   if (found === undefined) {
-    return Promise.resolve({ ok: true, text: `${EXTENDS}\n${current}` });
+    return { ok: true, text: `${EXTENDS}\n${current}` };
   }
-  return Promise.resolve({
+  return {
     message: `This file extends ${JSON.stringify(found)}, not the Markdown standard at ${PRESET_PATH}. Change the line, or set \`preset = false\` under \`[markdown]\` in the Cinch config.`,
     ok: false,
-  });
+  };
 };
 
 /**

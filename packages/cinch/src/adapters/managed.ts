@@ -16,8 +16,11 @@ export type Wanted =
 export interface ManagedFile {
   /** Root-relative. */
   readonly path: string;
-  /** Given what the file holds now, or null when it is missing. */
-  readonly want: (current: string | null) => Promise<Wanted>;
+  /**
+   * Given what the file holds now, or null when it is missing, and the root
+   * it sits in, for a file whose content depends on what is beside it.
+   */
+  readonly want: (current: string | null, root: string) => Promise<Wanted>;
 }
 
 export interface ManagedOptions {
@@ -79,7 +82,7 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
     }
     const target = path.join(input.root, input.path);
     const current = await read(target);
-    const wanted = await managed.want(current);
+    const wanted = await managed.want(current, input.root);
     if (!wanted.ok) {
       return {
         findings: [finding(input, wanted.message, false)],

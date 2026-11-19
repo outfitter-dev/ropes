@@ -15,7 +15,9 @@ extends = ".outfitter/configs/rumdl.toml"
 
 `cinch check` reports the copy when it is missing or differs from what this Cinch ships, and reports `.rumdl.toml` when it does not extend the copy. `cinch fix` writes the copy, creates `.rumdl.toml` when there is none, and adds the `extends` line to one that has none. `cinch explain` lists both files like any other. The copy is on disk, so running rumdl by hand applies the same rules.
 
-Cinch leaves a `.rumdl.toml` that already extends something else alone and reports it. Change the line by hand, or opt out.
+Cinch leaves a `.rumdl.toml` that already extends something else alone and reports it. Change the line by hand, or opt out. It also will not write `.rumdl.toml` when the repository configures rumdl in `rumdl.toml`, `.config/rumdl.toml` or `pyproject.toml`, because rumdl reads only one of them and the new file would hide those settings. Move them into `.rumdl.toml` first.
+
+A fix writes these two files before it touches any Markdown, so the first run already uses the standard.
 
 ## Take a newer standard
 
