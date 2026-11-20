@@ -51,7 +51,36 @@ test("a marked fragment is no finding, and other findings stay", () => {
 
 test("a marker in a list or a quote is read where it is", () => {
   const text = `- item\n\n  ${MARKER}\n  \`\`\`ts\n  foo: 1,\n  \`\`\`\n\n> ${MARKER}\n> \`\`\`ts\n> a: 1,\n> \`\`\`\n`;
-  expect(read(text, [at(4, PARSE)])).toEqual([]);
+  expect(read(text, [at(4, PARSE), at(9, PARSE)])).toEqual([]);
+  expect(read(`> ${MARKER}\n> \`\`\`ts\n> a;\n> \`\`\`\n`, [])).toEqual([
+    `1 ${UNUSED_RULE}`,
+  ]);
+  expect(read("> <!-- cinch-typo -->\n", [])).toEqual([`1 ${UNKNOWN_RULE}`]);
+});
+
+test("a blank line between the marker and the fence is fine, text is not", () => {
+  expect(read(`${MARKER}\n\n${FRAGMENT}`, [at(3, PARSE)])).toEqual([]);
+  expect(
+    read(`> ${MARKER}\n>\n> \`\`\`ts\n> a: 1,\n> \`\`\`\n`, [at(3, PARSE)])
+  ).toEqual([]);
+  expect(read(`${MARKER}\nText.\n\n${FRAGMENT}`, [at(4, PARSE)])).toEqual([
+    `1 ${UNUSED_RULE}`,
+    `4 ${PARSE}`,
+  ]);
+});
+
+test("a fence on a list item's own line is a fence", () => {
+  const text = `- \`\`\`md\n  ${MARKER}\n  \`\`\`\n\n${MARKER}\n${FRAGMENT}`;
+  expect(read(text, [at(6, PARSE)])).toEqual([]);
+});
+
+test("backticks that open no fence do not hide the markers after them", () => {
+  const span = `\`\`\`hello\`\`\`\n\n${MARKER}\n${FRAGMENT}`;
+  expect(read(span, [at(4, PARSE)])).toEqual([]);
+  const indented = `Text.\n\n        \`\`\`\n\n${MARKER}\n${FRAGMENT}`;
+  expect(read(indented, [at(6, PARSE)])).toEqual([]);
+  const nested = `- a\n  - b\n\n    ${MARKER}\n    \`\`\`ts\n    a: 1,\n    \`\`\`\n`;
+  expect(read(nested, [at(5, PARSE)])).toEqual([]);
 });
 
 test("a marker above a block that parses is a finding on the marker's line", () => {
@@ -66,13 +95,13 @@ test("a marker above a block that parses is a finding on the marker's line", () 
 });
 
 test("a marker that is not right above a fence is a finding, and excuses nothing", () => {
-  const text = `${MARKER}\n\n${FRAGMENT}\n${MARKER}\nText.\n`;
+  const text = `${MARKER}\nText.\n${FRAGMENT}\n${MARKER}\nText.\n`;
   const found = withMarkers(text, [at(3, PARSE)], CONTEXT);
   expect(found.map(({ range, rule }) => `${range.start.line} ${rule}`)).toEqual(
     [`1 ${UNUSED_RULE}`, `3 ${PARSE}`, `7 ${UNUSED_RULE}`]
   );
   expect(found[0]?.message).toBe(
-    "This comment does nothing: it is not on the line above a fenced code block. Move or remove it."
+    "This comment does nothing: it is not right above a fenced code block. Move or remove it."
   );
 });
 
@@ -127,6 +156,7 @@ test("on the real engine a fragment passes with the marker and fails without it"
     };
     expect(await check(`# A\n\n${FRAGMENT}`)).toEqual([`3 ${PARSE}`]);
     expect(await check(`# A\n\n${MARKER}\n${FRAGMENT}`)).toEqual([]);
+    expect(await check(`# A\n\n${MARKER}\n\n${FRAGMENT}`)).toEqual([]);
     expect(
       await check(`# A\n\n${MARKER}\n\`\`\`ts\nconst a = 1;\n\`\`\`\n`)
     ).toEqual([`3 ${UNUSED_RULE}`]);

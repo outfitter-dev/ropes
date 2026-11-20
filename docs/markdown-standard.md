@@ -38,7 +38,7 @@ A repository set up by an older Cinch has the standard at `.outfitter/configs/ru
 
 ## A fenced block that is a fragment
 
-The standard formats fenced TypeScript and JavaScript. A block that does not parse cannot be formatted, and is a finding under `code-block-parse`. Documentation sometimes shows a fragment on purpose: one object member, or a line with `...` in it. Put this comment on the line right above the fence to say so:
+The standard formats fenced TypeScript and JavaScript. A block that does not parse cannot be formatted, and is a finding under `code-block-parse`. Documentation sometimes shows a fragment on purpose: one object member, or a line with `...` in it. Put this comment right above the fence to say so. A blank line between the two is fine, and is what the formatter writes:
 
 ````md
 <!-- cinch-disable-next-line code-block-parse -->
@@ -52,7 +52,7 @@ The comment is Cinch's, not rumdl's. rumdl 0.3.5 has no way to leave one block o
 
 Cinch checks that the comment is used correctly:
 
-- Above a block that parses, or anywhere but the line right above a fence, it does nothing. That is a finding under `cinch/unused-disable`, on the comment's line.
+- Above a block that parses, or anywhere but right above a fence, it does nothing. That is a finding under `cinch/unused-disable`, on the comment's line.
 - A comment that starts with `cinch-` and is spelled any other way is a finding under `cinch/unknown-disable`, which names the right spelling. It excuses nothing.
 - A comment inside a fenced block is that block's text, as in the example above.
 

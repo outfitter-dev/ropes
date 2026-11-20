@@ -1,4 +1,5 @@
 import type { Finding } from "../../contracts/finding.ts";
+import { linesOf } from "./blocks.ts";
 import { PARSE_RULE } from "./fences.ts";
 
 /**
@@ -12,52 +13,44 @@ export const MARKER = `<!-- cinch-disable-next-line ${PARSE_RULE} -->`;
 export const UNUSED_RULE = "cinch/unused-disable";
 export const UNKNOWN_RULE = "cinch/unknown-disable";
 
-const COMMENT = /^\s*<!--\s*(?<body>cinch-\S*(?:\s+\S+)*?)\s*-->\s*$/u;
-const FENCE = /^\s*(?:>\s?)*\s*(?<ticks>`{3,}|~{3,})(?<info>.*)$/u;
+const COMMENT = /^<!--\s*(?<body>cinch-\S*(?:\s+\S+)*?)\s*-->$/u;
 const WORDS = MARKER.slice(4, -3).trim();
 
 interface Marker {
   /** The one-based line the comment is on. */
   readonly line: number;
   readonly body: string;
-  /** Whether a fenced block opens on the next line. */
-  readonly aboveFence: boolean;
+  /**
+   * The one-based line of the fence the comment is above, when the next line
+   * that is not blank opens one. A formatter puts a blank line between a
+   * comment and a fence, so one is allowed.
+   */
+  readonly fence: number | null;
 }
 
 /**
  * The Cinch comments of a Markdown file. A comment inside a fenced block is
  * that block's text, so a document can show the marker without using it.
  */
-const closes = (
-  open: string,
-  fence: Record<string, string> | undefined
-): boolean =>
-  fence !== undefined &&
-  fence.ticks?.startsWith(open) === true &&
-  fence.info?.trim() === "";
-
 const markersIn = (text: string): Marker[] => {
-  const lines = text.split("\n");
-  const found: Marker[] = [];
-  let open: string | null = null;
-  for (const [index, line] of lines.entries()) {
-    const fence = FENCE.exec(line)?.groups;
-    if (open !== null) {
-      open = closes(open, fence) ? null : open;
-    } else if (fence === undefined) {
-      const body = COMMENT.exec(line)?.groups?.body;
-      if (body !== undefined) {
-        found.push({
-          aboveFence: FENCE.test(lines[index + 1] ?? ""),
-          body: body.replaceAll(/\s+/gu, " "),
-          line: index + 1,
-        });
-      }
-    } else {
-      open = fence.ticks ?? null;
+  const lines = linesOf(text);
+  return lines.flatMap((line, index): Marker[] => {
+    const body =
+      line.kind === "text" ? COMMENT.exec(line.text)?.groups?.body : undefined;
+    if (body === undefined) {
+      return [];
     }
-  }
-  return found;
+    const next = lines.findIndex(
+      (later, at) => at > index && later.text !== ""
+    );
+    return [
+      {
+        body: body.replaceAll(/\s+/gu, " "),
+        fence: lines[next]?.kind === "open" ? next + 1 : null,
+        line: index + 1,
+      },
+    ];
+  });
 };
 
 /**
@@ -99,17 +92,17 @@ export const withMarkers = (
         ),
       ];
     }
-    if (marker.aboveFence && fragments.has(marker.line + 1)) {
-      excused.add(marker.line + 1);
+    if (marker.fence !== null && fragments.has(marker.fence)) {
+      excused.add(marker.fence);
       return [];
     }
     return [
       own(
         marker.line,
         UNUSED_RULE,
-        marker.aboveFence
-          ? "This comment does nothing: the code block below it parses. Remove it."
-          : "This comment does nothing: it is not on the line above a fenced code block. Move or remove it."
+        marker.fence === null
+          ? "This comment does nothing: it is not right above a fenced code block. Move or remove it."
+          : "This comment does nothing: the code block below it parses. Remove it."
       ),
     ];
   });
