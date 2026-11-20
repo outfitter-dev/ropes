@@ -72,7 +72,8 @@ const start = async (
   if (!fences.ok) {
     return allIncomplete(input, `${ID} ran, but ${fences.message}`);
   }
-  const reported = [...parsed.files.values()].some(
+  // A fence warning is a report too: it comes on stderr, not in the JSON.
+  const reported = [...parsed.files.values(), ...fences.files.values()].some(
     (file) => !file.ok || file.findings.length > 0
   );
   if (exitCode === 1 && !reported) {
