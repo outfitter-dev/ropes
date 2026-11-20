@@ -8,8 +8,9 @@ import {
   exitCodeOf,
   fix,
   previewMigration,
+  trace,
 } from "@ropes/core";
-import type { MigrationPreview } from "@ropes/core";
+import type { MigrationPreview, ReadRequest } from "@ropes/core";
 import {
   renderFailureJson,
   renderFix,
@@ -18,6 +19,7 @@ import {
   renderJson,
   renderPlan,
   renderPlanJson,
+  renderTrace,
 } from "@ropes/core/render";
 
 import manifest from "../package.json" with { type: "json" };
@@ -26,6 +28,7 @@ const HELP = `rope ${manifest.version}
 
 Usage: rope <explain|check|fix> [path...] [--json] [--strict]
        rope fix [path...] --dry-run
+       rope explain [path...] --trace [--json]
        rope migrate [--dry-run] [--json]
 
   explain   Show which checks apply and where the policy comes from
@@ -86,6 +89,30 @@ const migrate = async (
   return EXIT_CODE.clean;
 };
 
+const showExplanation = async (
+  request: ReadRequest,
+  json: boolean,
+  detailed: boolean
+): Promise<number> => {
+  if (detailed) {
+    const traced = await trace(request);
+    if (!traced.ok) {
+      return fail(traced.error, json);
+    }
+    print(
+      json ? JSON.stringify(traced.value, null, 2) : renderTrace(traced.value)
+    );
+    return EXIT_CODE.clean;
+  }
+  const ran = await explain(request, !json);
+  if (!ran.ok) {
+    return fail(ran.error, json);
+  }
+  const { plan } = ran.value;
+  print(json ? renderPlanJson(plan) : renderPlan(plan, ran.value));
+  return EXIT_CODE.clean;
+};
+
 const main = async (argv: readonly string[]): Promise<number> => {
   const { values, positionals } = parseArgs({
     allowPositionals: true,
@@ -95,6 +122,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
       help: { short: "h", type: "boolean" },
       json: { type: "boolean" },
       strict: { type: "boolean" },
+      trace: { type: "boolean" },
       version: { short: "v", type: "boolean" },
     },
   });
@@ -111,6 +139,9 @@ const main = async (argv: readonly string[]): Promise<number> => {
   if (values["dry-run"] === true && verb !== "fix" && verb !== "migrate") {
     return fail("--dry-run is only for fix and migrate.", json);
   }
+  if (values.trace === true && verb !== "explain") {
+    return fail("--trace is only for explain.", json);
+  }
   const request = {
     cwd: process.cwd(),
     paths,
@@ -118,13 +149,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
   };
   switch (verb) {
     case "explain": {
-      const ran = await explain(request, !json);
-      if (!ran.ok) {
-        return fail(ran.error, json);
-      }
-      const { plan } = ran.value;
-      print(json ? renderPlanJson(plan) : renderPlan(plan, ran.value));
-      return EXIT_CODE.clean;
+      return await showExplanation(request, json, values.trace === true);
     }
     case "check": {
       const ran = await check(request);

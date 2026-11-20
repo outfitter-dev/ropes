@@ -1,12 +1,11 @@
-import path from "node:path";
-
 import type { FileOutcome, StepInput } from "../adapter.ts";
 import { allIncomplete, inChunks } from "../batch.ts";
 import { exec } from "../exec.ts";
+import { existingPaths, inlineRules, scanInvocation } from "./invocation.ts";
 import { readLocal, refusedFile } from "./local.ts";
 import type { LocalRules, RuleFolder } from "./local.ts";
 import { parseOutput } from "./output.ts";
-import { shippedIds, shippedRules } from "./rules.ts";
+import { shippedIds } from "./rules.ts";
 
 type Local = Extract<LocalRules, { ok: true }>;
 
@@ -56,12 +55,14 @@ const start = async (
   if (known !== null) {
     return allIncomplete(input, known);
   }
-  const rules = [shippedRules(input.rules), ...local.texts]
-    .filter((text) => text !== "")
-    .join("\n---\n");
+  const invocation = scanInvocation(
+    binary,
+    input,
+    inlineRules(input, local.texts)
+  );
   const { exitCode, stderr, stdout } = await exec(
-    [binary, "scan", "--inline-rules", rules, "--json=compact", ...input.paths],
-    input.root
+    invocation.argv,
+    invocation.cwd
   );
   const said = errorCount(exitCode, stderr);
   if (said === null) {
@@ -110,10 +111,7 @@ export const scanBatch = async (
   if (!local.ok) {
     return allIncomplete(input, local.message);
   }
-  const present = await Promise.all(
-    input.paths.map((file) => Bun.file(path.join(input.root, file)).exists())
-  );
-  const paths = input.paths.filter((_, index) => present[index] === true);
+  const paths = await existingPaths(input);
   const asked: Asked = { refused: null };
   const scanned =
     paths.length === 0 ||
