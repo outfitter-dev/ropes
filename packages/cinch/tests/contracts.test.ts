@@ -66,6 +66,27 @@ test("a result whose outcome contradicts its steps is invalid", () => {
   }
 });
 
+test("a result step the plan does not schedule is invalid", () => {
+  const parsed = parseResult(result);
+  if (!parsed.ok) {
+    throw new Error("the result fixture did not parse");
+  }
+  const extra = parseResult({
+    ...parsed.value,
+    steps: [
+      ...parsed.value.steps,
+      {
+        adapter: "rumdl",
+        findings: [],
+        path: ".",
+        status: "incomplete",
+      },
+    ],
+  });
+  expect(extra.ok ? [] : extra.error).toMatchObject({ kind: "invalid" });
+  expect(JSON.stringify(extra)).toContain("steps");
+});
+
 test("every step in the result fixture is a step its plan schedules", () => {
   const parsed = parseResult(result);
   if (!parsed.ok) {

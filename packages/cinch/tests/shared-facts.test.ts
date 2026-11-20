@@ -84,6 +84,9 @@ test("a plan with no adapter that has such settings compares nothing", () => {
 test("a value that differs from the config is one finding with both sources", async () => {
   const adapter = reporter("one", { facts: [width(120)], ok: true });
   const result = await runPlan(planFor([adapter]), [adapter], check);
+  expect(result.steps).toMatchObject([
+    { adapter: "one", path: "a.md", status: "findings" },
+  ]);
   const findings = result.steps.flatMap((step) => step.findings);
   expect(findings).toEqual([
     {
@@ -139,15 +142,18 @@ test("a fact the adapter was not asked for is not compared", async () => {
 test("a tool that could not say what it resolves leaves the run incomplete", async () => {
   const adapter = reporter("one", { ok: false, reason: "config is broken" });
   const result = await runPlan(planFor([adapter]), [adapter], check);
-  expect(result.steps.at(-1)).toEqual({
-    adapter: "one",
-    findings: [],
-    path: ".",
-    reason:
-      "could not read the settings one-tool resolves, so they were not compared: config is broken",
-    status: "incomplete",
-  });
+  expect(result.steps).toEqual([
+    {
+      adapter: "one",
+      findings: [],
+      path: "a.md",
+      reason:
+        "could not read the settings one-tool resolves, so they were not compared: config is broken",
+      status: "incomplete",
+    },
+  ]);
   expect(exitCodeOf(result)).toBe(EXIT_CODE.incomplete);
+  expect(ResultSchema.safeParse(result).success).toBe(true);
 });
 
 test("a tool that cannot run is not asked, since its steps already say so", async () => {
@@ -159,6 +165,44 @@ test("a tool that cannot run is not asked, since its steps already say so", asyn
   const result = await runPlan(planFor([adapter]), [adapter], check);
   expect(adapter.calls).not.toContain("facts");
   expect(result.steps).toHaveLength(1);
+});
+
+test("a tool outside the plan's version range is not asked", async () => {
+  const adapter = fakeAdapter({
+    descriptor: { reports: ["line_width"], versionRange: ">=2.0.0" },
+    facts: () => Promise.resolve({ facts: [width(1)], ok: true }),
+    probe: () => Promise.resolve({ available: true, version: "1.0.0" }),
+  });
+  const result = await runPlan(planFor([adapter]), [adapter], check);
+  expect(adapter.calls).not.toContain("facts");
+  expect(result.steps).toEqual([
+    {
+      adapter: "fake",
+      findings: [],
+      path: "a.md",
+      reason: "fake-tool 1.0.0 does not satisfy >=2.0.0",
+      status: "incomplete",
+    },
+  ]);
+});
+
+test("a tool inside the plan's version range is still compared", async () => {
+  const adapter = fakeAdapter({
+    descriptor: {
+      id: "one",
+      reports: ["line_width"],
+      tool: "one-tool",
+      versionRange: ">=2.0.0",
+    },
+    facts: () => Promise.resolve({ facts: [width(120)], ok: true }),
+    probe: () => Promise.resolve({ available: true, version: "2.1.0" }),
+  });
+  const result = await runPlan(planFor([adapter]), [adapter], check);
+  expect(adapter.calls).toContain("facts");
+  expect(result.steps).toMatchObject([
+    { adapter: "one", path: "a.md", status: "findings" },
+  ]);
+  expect(ResultSchema.safeParse(result).success).toBe(true);
 });
 
 test("explain shows what is compared, and says when an adapter cannot report", () => {

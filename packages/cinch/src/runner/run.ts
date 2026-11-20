@@ -131,15 +131,29 @@ export const runPlan = async (
   // Reported file by file, in the order the plan lists them.
   const ran = plan.paths.flatMap((planned) => byPath.get(planned.path) ?? []);
   // Compared last, so a config a step of this run wrote is the one read.
-  const compared =
+  // The same version gate as a file step: a binary outside the plan's range
+  // has already left its steps incomplete, and its dump is not one this
+  // range describes.
+  const steps =
     plan.facts === undefined
-      ? []
-      : await compareFacts(plan.facts, plan.root, async (id) => {
+      ? ran
+      : await compareFacts(plan.facts, plan.root, ran, async (id) => {
           const { adapter, probe } = ready(id);
           const found = await probe;
-          return found?.problem === undefined ? adapter : undefined;
+          const held = plan.batches.filter((batch) => batch.adapter === id);
+          const wrongVersion = held.some(
+            (batch) =>
+              versionProblem(batch.tool, found?.version, batch.versionRange) !==
+              undefined
+          );
+          return adapter !== undefined &&
+            probe !== undefined &&
+            found?.problem === undefined &&
+            held.length > 0 &&
+            !wrongVersion
+            ? adapter
+            : undefined;
         });
-  const steps = [...ran, ...compared];
   return {
     outcome: outcomeOf(steps),
     plan,

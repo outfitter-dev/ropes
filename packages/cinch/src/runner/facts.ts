@@ -4,9 +4,6 @@ import type { Finding } from "../contracts/finding.ts";
 import type { StepResult } from "../contracts/result.ts";
 import { threw } from "./ready.ts";
 
-/** The path a step about the whole workspace is reported under. */
-const WORKSPACE = ".";
-
 export const DRIFT_RULE = "shared-fact";
 
 /** A statement of a fact, and the adapter that reported it, if one did. */
@@ -53,7 +50,7 @@ export const driftOf = (
 
 type Asked =
   | { readonly facts: readonly Required<Statement>[] }
-  | { readonly step: StepResult };
+  | { readonly reason: string };
 
 const ask = async (
   reporter: FactReporter,
@@ -61,13 +58,7 @@ const ask = async (
   root: string
 ): Promise<Asked> => {
   const failed = (reason: string): Asked => ({
-    step: {
-      adapter: reporter.adapter,
-      findings: [],
-      path: WORKSPACE,
-      reason: `could not read the settings ${reporter.tool} resolves, so they were not compared: ${reason}`,
-      status: "incomplete",
-    },
+    reason: `could not read the settings ${reporter.tool} resolves, so they were not compared: ${reason}`,
   });
   if (adapter?.facts === undefined) {
     return failed("the adapter does not report them");
@@ -89,15 +80,41 @@ const ask = async (
 };
 
 /**
- * Asks each reporter the plan names what its tool resolves and compares the
- * answers. `usable` says whether an adapter's tool can run here: one that
- * cannot has already left its own steps incomplete. A difference is a
- * finding on the file that states the differing value. A reporter that
- * could not answer is incomplete, never passed.
+ * Puts a comparison on a step the plan already scheduled for that adapter.
+ * A finding may name another file. The step stays the one that was listed.
+ */
+const recorded = (
+  step: StepResult,
+  added: readonly Finding[],
+  failure: string | undefined
+): StepResult => {
+  const findings =
+    added.length === 0 ? step.findings : [...step.findings, ...added];
+  if (failure !== undefined && step.status !== "incomplete") {
+    return { ...step, findings, reason: failure, status: "incomplete" };
+  }
+  if (
+    added.length > 0 &&
+    step.status !== "incomplete" &&
+    step.status !== "findings"
+  ) {
+    return { ...step, findings, status: "findings" };
+  }
+  return { ...step, findings };
+};
+
+/**
+ * Asks each reporter the plan names what its tool resolves, and records the
+ * comparison on the steps that plan already scheduled. `usable` says whether
+ * an adapter's tool can run here: one that cannot has already left its own
+ * steps incomplete. A difference is a finding on the file that states the
+ * differing value, carried by one of that adapter's steps. A reporter that
+ * could not answer leaves one of those steps incomplete, never passed.
  */
 export const compareFacts = async (
   shared: SharedFacts,
   root: string,
+  steps: readonly StepResult[],
   usable: (adapter: string) => Promise<Adapter | undefined>
 ): Promise<StepResult[]> => {
   const reporters = shared.reporters.filter(
@@ -106,7 +123,13 @@ export const compareFacts = async (
   const asked = await Promise.all(
     reporters.map(async (reporter) => {
       const adapter = await usable(reporter.adapter);
-      return adapter === undefined ? null : await ask(reporter, adapter, root);
+      if (adapter === undefined) {
+        return null;
+      }
+      const report = await ask(reporter, adapter, root);
+      return "facts" in report
+        ? { adapter: reporter.adapter, facts: report.facts }
+        : { adapter: reporter.adapter, reason: report.reason };
     })
   );
   const answers = asked.filter((answer) => answer !== null);
@@ -114,13 +137,32 @@ export const compareFacts = async (
     shared.stated,
     answers.flatMap((answer) => ("facts" in answer ? answer.facts : []))
   );
-  return [
-    ...answers.flatMap((answer) => ("step" in answer ? [answer.step] : [])),
-    ...findings.map((finding): StepResult => ({
-      adapter: finding.source,
-      findings: [finding],
-      path: finding.path,
-      status: "findings",
-    })),
-  ];
+  const failures = new Map<string, string>();
+  const extra = new Map<string, Finding[]>();
+  for (const finding of findings) {
+    const list = extra.get(finding.source);
+    if (list === undefined) {
+      extra.set(finding.source, [finding]);
+    } else {
+      list.push(finding);
+    }
+  }
+  for (const answer of answers) {
+    if ("reason" in answer) {
+      failures.set(answer.adapter, answer.reason);
+    }
+  }
+  const used = new Set<string>();
+  return steps.map((step) => {
+    const added = extra.get(step.adapter);
+    const failure = failures.get(step.adapter);
+    if (
+      used.has(step.adapter) ||
+      (added === undefined && failure === undefined)
+    ) {
+      return step;
+    }
+    used.add(step.adapter);
+    return recorded(step, added ?? [], failure);
+  });
 };

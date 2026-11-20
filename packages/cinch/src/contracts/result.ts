@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { FindingSchema } from "./finding.ts";
 import { PlanSchema, SCHEMA_VERSION } from "./plan.ts";
+import type { Plan } from "./plan.ts";
 
 export const StepStatusSchema = z.enum([
   "passed",
@@ -26,6 +27,17 @@ export type StepResult = z.infer<typeof StepResultSchema>;
 export const OutcomeSchema = z.enum(["clean", "findings", "incomplete"]);
 export type Outcome = z.infer<typeof OutcomeSchema>;
 
+/** True when this path and adapter is a step the plan lists. */
+const scheduled = (
+  plan: Plan,
+  step: { readonly adapter: string; readonly path: string }
+): boolean =>
+  plan.paths.some(
+    (entry) =>
+      entry.path === step.path &&
+      entry.steps.some((planned) => planned.adapter === step.adapter)
+  );
+
 /** Incomplete beats findings, and findings beat clean. */
 export const outcomeOf = (steps: readonly StepResult[]): Outcome => {
   if (steps.some((step) => step.status === "incomplete")) {
@@ -49,6 +61,13 @@ export const ResultSchema = z
     message: "outcome does not agree with the step statuses",
     path: ["outcome"],
   })
+  .refine(
+    (result) => result.steps.every((step) => scheduled(result.plan, step)),
+    {
+      message: "a step is not one the plan schedules",
+      path: ["steps"],
+    }
+  )
   .readonly();
 export type Result = z.infer<typeof ResultSchema>;
 
