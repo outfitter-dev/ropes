@@ -1,5 +1,5 @@
 import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { devNull, tmpdir } from "node:os";
 import path from "node:path";
 
 import { snapshot } from "./repo-bench.ts";
@@ -49,12 +49,17 @@ export interface Checkout {
 
 /**
  * A Git hook exports `GIT_DIR` and friends, which would point the fixture's
- * Git commands at the checkout running the tests. They are left out.
+ * Git commands at the checkout running the tests. They are left out, and
+ * Git is told to read no global or system config, so a developer's ignore
+ * file, hooks path or init template cannot change what the fixture holds.
  */
-const cleanEnv = (): Record<string, string | undefined> =>
-  Object.fromEntries(
+const cleanEnv = (): Record<string, string | undefined> => ({
+  ...Object.fromEntries(
     Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_"))
-  );
+  ),
+  GIT_CONFIG_GLOBAL: devNull,
+  GIT_CONFIG_NOSYSTEM: "1",
+});
 
 const spawn = async (
   command: readonly string[],
