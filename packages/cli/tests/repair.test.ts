@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { mkdtemp, readdir, realpath, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { devNull, tmpdir } from "node:os";
 import path from "node:path";
 
 import { check, readRepairs } from "@ropes/core";
@@ -10,6 +10,18 @@ import { FILES, RATIONALE } from "./trace-fixture.ts";
 
 const HOOK = new URL("repair-hook.ts", import.meta.url);
 const READER = new URL("repair-reader.ts", import.meta.url);
+
+// A hook's `GIT_DIR` or a developer's Git config must not reach the fixture.
+const fixtureEnv = (
+  extra: Record<string, string>
+): Record<string, string | undefined> => ({
+  ...Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_"))
+  ),
+  ...extra,
+  GIT_CONFIG_GLOBAL: devNull,
+  GIT_CONFIG_NOSYSTEM: "1",
+});
 
 test("a fresh offline reader recovers the failed attempt and verified repair", async () => {
   if (Bun.which("ast-grep") === null) {
@@ -62,11 +74,10 @@ test("a fresh offline reader recovers the failed attempt and verified repair", a
       const hook = async (id: string, directory = records) => {
         const child = Bun.spawn([process.execPath, HOOK.pathname], {
           cwd: main.root,
-          env: {
-            ...process.env,
+          env: fixtureEnv({
             ROPES_REPAIR_BASELINE: baseline,
             ROPES_REPAIR_DIR: directory,
-          },
+          }),
           stderr: "pipe",
           stdin: "pipe",
           stdout: "pipe",
@@ -166,7 +177,7 @@ test("a fresh offline reader recovers the failed attempt and verified repair", a
     );
     const child = Bun.spawn([process.execPath, READER.pathname, records], {
       cwd: history,
-      env: { ...process.env, PATH: "" },
+      env: fixtureEnv({ PATH: "" }),
       stderr: "pipe",
       stdout: "pipe",
     });

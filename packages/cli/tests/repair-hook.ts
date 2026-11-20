@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { devNull } from "node:os";
 import path from "node:path";
 
 import {
@@ -10,6 +11,15 @@ import {
 } from "@ropes/core";
 
 import { RATIONALE } from "./trace-fixture.ts";
+
+// A hook's `GIT_DIR` or a developer's Git config must not reach the fixture.
+const ENV = {
+  ...Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_"))
+  ),
+  GIT_CONFIG_GLOBAL: devNull,
+  GIT_CONFIG_NOSYSTEM: "1",
+};
 
 const directory = process.env.ROPES_REPAIR_DIR;
 const baseline = process.env.ROPES_REPAIR_BASELINE;
@@ -42,6 +52,7 @@ const result = checked.value;
 const git = async (...args: string[]): Promise<string> => {
   const child = Bun.spawn(["git", ...args], {
     cwd: result.plan.root,
+    env: ENV,
     stderr: "pipe",
     stdout: "pipe",
   });
