@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 
-import { render } from "../src/adapters/rumdl/markdownlint-render.ts";
-import { translate } from "../src/adapters/rumdl/markdownlint-translate.ts";
-import type { Sections } from "../src/adapters/rumdl/markdownlint-translate.ts";
+import { render } from "../src/adapters/rumdl/migrate/markdownlint/render.ts";
+import { translate } from "../src/adapters/rumdl/migrate/markdownlint/translate.ts";
+import type { Sections } from "../src/adapters/rumdl/migrate/markdownlint/translate.ts";
 
 const known = [
   { aliases: [], code: "MD001", name: "heading-increment" },

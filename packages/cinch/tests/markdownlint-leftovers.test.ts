@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { leftovers } from "../src/adapters/rumdl/markdownlint-leftovers.ts";
+import { leftovers } from "../src/adapters/rumdl/migrate/markdownlint/leftovers.ts";
 import { rumdlPresetAdapter } from "../src/adapters/rumdl/preset.ts";
 
 const inRoot = async <T>(
@@ -104,7 +104,7 @@ test("leftovers are reported even when no config file is left", async () => {
   const preset = rumdlPresetAdapter();
   const result = await inRoot(
     { ".husky/pre-commit": "npx markdownlint-cli2\n" },
-    async (root) => (await preset.retires?.(root)) ?? null
+    async (root) => (await preset.migrates?.[0]?.retires?.(root)) ?? null
   );
   expect(result).toEqual({
     files: [],

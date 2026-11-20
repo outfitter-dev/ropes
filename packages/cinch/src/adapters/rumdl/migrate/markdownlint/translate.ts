@@ -1,6 +1,6 @@
-import type { Rules } from "./markdownlint-source.ts";
-import { lookup, option, stated } from "./markdownlint-stated.ts";
-import type { KnownRule, Option, Stated } from "./markdownlint-stated.ts";
+import type { Rules } from "./source.ts";
+import { lookup, option, stated } from "./stated.ts";
+import type { KnownRule, Option, Stated } from "./stated.ts";
 
 export type Sections = Readonly<
   Record<string, Readonly<Record<string, unknown>>>

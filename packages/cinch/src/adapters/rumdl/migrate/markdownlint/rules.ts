@@ -4,15 +4,15 @@ import path from "node:path";
 
 import { z } from "zod";
 
-import { exec } from "../exec.ts";
-import type { Wanted } from "../managed.ts";
-import { render } from "./markdownlint-render.ts";
-import { findSource } from "./markdownlint-source.ts";
-import type { Rules } from "./markdownlint-source.ts";
-import { option } from "./markdownlint-stated.ts";
-import type { KnownRule } from "./markdownlint-stated.ts";
-import { translate } from "./markdownlint-translate.ts";
-import type { Leftover, Renames, Sections } from "./markdownlint-translate.ts";
+import { exec } from "../../../exec.ts";
+import type { Wanted } from "../../../managed.ts";
+import { render } from "./render.ts";
+import { findSource } from "./source.ts";
+import type { Rules } from "./source.ts";
+import { option } from "./stated.ts";
+import type { KnownRule } from "./stated.ts";
+import { translate } from "./translate.ts";
+import type { Leftover, Renames, Sections } from "./translate.ts";
 
 const COMMAND = "rumdl";
 

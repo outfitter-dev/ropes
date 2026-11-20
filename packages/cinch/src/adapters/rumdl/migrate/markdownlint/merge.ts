@@ -1,8 +1,8 @@
-import { leftOff, leftOn } from "./markdownlint-off.ts";
-import { comment, render } from "./markdownlint-render.ts";
-import { lookup, option } from "./markdownlint-stated.ts";
-import type { KnownRule } from "./markdownlint-stated.ts";
-import type { Sections } from "./markdownlint-translate.ts";
+import { leftOff, leftOn } from "./off.ts";
+import { comment, render } from "./render.ts";
+import { lookup, option } from "./stated.ts";
+import type { KnownRule } from "./stated.ts";
+import type { Sections } from "./translate.ts";
 
 const GLOBAL = "global";
 

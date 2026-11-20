@@ -101,6 +101,28 @@ export interface Retired {
 }
 
 /**
+ * One config an adapter can take over from: the tool it replaces, or a
+ * hand-written config of its own tool. A source reads, and never writes. The
+ * adapter's own steps do the writing.
+ */
+export interface MigrationSource {
+  /** A name for the source that is stable across releases. */
+  readonly id: string;
+  /**
+   * The file choices the source made, for a Cinch config that is about to be
+   * written. Null when it made none.
+   */
+  readonly inherits?: (root: string) => Promise<Inherited | null>;
+  /**
+   * What the source holds: its files, what cannot be carried over and why,
+   * and whether the files can go once the adapter's own are written. It is
+   * judged before the first write: `init` asks, writes, and then removes.
+   * Null when the repository has none of it.
+   */
+  readonly retires?: (root: string) => Promise<Retired | null>;
+}
+
+/**
  * The one seam engines plug into. The runner knows only this interface, and
  * nothing outside an adapter's own folder and the registry names an engine.
  */
@@ -115,13 +137,8 @@ export interface Adapter {
   readonly check: (input: StepInput) => Promise<readonly FileOutcome[]>;
   readonly fix: (input: StepInput) => Promise<readonly FileOutcome[]>;
   /**
-   * The file choices in a config this adapter takes over from, for a Cinch
-   * config that is about to be written. Null when there are none.
+   * The configs this adapter can take over from. `init` asks each one what
+   * it found and never learns which tool it reads.
    */
-  readonly inherits?: (root: string) => Promise<Inherited | null>;
-  /**
-   * The old tool's config, judged before this adapter's files are written:
-   * `init` asks first, writes, and then removes. Null when there is none.
-   */
-  readonly retires?: (root: string) => Promise<Retired | null>;
+  readonly migrates?: readonly MigrationSource[];
 }

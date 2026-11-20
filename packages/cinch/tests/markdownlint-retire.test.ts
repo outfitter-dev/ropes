@@ -48,7 +48,10 @@ const inRoot = async <T>(
 
 const preset = rumdlPresetAdapter();
 const asked = (files: Readonly<Record<string, string>>) =>
-  inRoot(files, (root) => preset.retires?.(root) ?? Promise.resolve(null));
+  inRoot(
+    files,
+    (root) => preset.migrates?.[0]?.retires?.(root) ?? Promise.resolve(null)
+  );
 
 test("a repository with no old config has nothing to retire", async () => {
   expect(await asked({ "README.md": "# Title\n" })).toBeNull();

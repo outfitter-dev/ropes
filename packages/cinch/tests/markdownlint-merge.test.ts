@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { merge } from "../src/adapters/rumdl/markdownlint-merge.ts";
+import { merge } from "../src/adapters/rumdl/migrate/markdownlint/merge.ts";
 import {
   CONFIG_PATH,
   PRESET_PATH,

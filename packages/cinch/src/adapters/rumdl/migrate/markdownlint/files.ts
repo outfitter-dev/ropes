@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { DEFAULT_CONFIG } from "../../contracts/config.ts";
-import type { Inherited } from "../adapter.ts";
-import { runnerIn } from "./markdownlint-source.ts";
+import { DEFAULT_CONFIG } from "../../../../contracts/config.ts";
+import type { Inherited } from "../../../adapter.ts";
+import { runnerIn } from "./source.ts";
 
 const Globs = z.array(z.string());
 

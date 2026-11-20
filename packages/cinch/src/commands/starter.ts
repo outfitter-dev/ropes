@@ -78,14 +78,15 @@ const withOtherKinds = (one: Inherited): Inherited =>
         ],
       };
 
-/** What each adapter found to carry over, in adapter order. */
+/** What each source found to carry over, in adapter order. */
 export const inheritedBy = async (
   adapters: readonly Adapter[],
   root: string
 ): Promise<Inherited[]> => {
+  const sources = adapters.flatMap((adapter) => adapter.migrates ?? []);
   const found = await Promise.all(
-    adapters.map(async (adapter) => {
-      const one = (await adapter.inherits?.(root)) ?? null;
+    sources.map(async (source) => {
+      const one = (await source.inherits?.(root)) ?? null;
       return one === null ? null : withOtherKinds(one);
     })
   );

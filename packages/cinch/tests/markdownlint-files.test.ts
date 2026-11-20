@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { chosenFiles } from "../src/adapters/rumdl/markdownlint-files.ts";
+import { chosenFiles } from "../src/adapters/rumdl/migrate/markdownlint/files.ts";
 import { rumdlPresetAdapter } from "../src/adapters/rumdl/preset.ts";
 import {
   inheritedBy,
@@ -174,7 +174,9 @@ test("a carried include keeps the default for every other kind of file", async (
   };
   const adapter = {
     ...fakeAdapter({ descriptor: { extensions: [] } }),
-    inherits: () => Promise.resolve({ ...carried, notes: [] }),
+    migrates: [
+      { id: "old", inherits: () => Promise.resolve({ ...carried, notes: [] }) },
+    ],
   };
   const [found] = await inheritedBy([adapter], root);
   expect(found?.include).toEqual(["docs/**/*.md", "**/*.toml"]);
@@ -182,13 +184,18 @@ test("a carried include keeps the default for every other kind of file", async (
     [
       {
         ...adapter,
-        inherits: () =>
-          Promise.resolve({
-            ...carried,
-            include: [],
-            kinds: [".md"],
-            notes: [],
-          }),
+        migrates: [
+          {
+            id: "old",
+            inherits: () =>
+              Promise.resolve({
+                ...carried,
+                include: [],
+                kinds: [".md"],
+                notes: [],
+              }),
+          },
+        ],
       },
     ],
     root
