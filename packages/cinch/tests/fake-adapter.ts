@@ -7,6 +7,7 @@ import type {
 } from "../src/adapters/adapter.ts";
 import { eachFile } from "../src/adapters/batch.ts";
 import type { FileInput } from "../src/adapters/batch.ts";
+import type { FactReport } from "../src/contracts/facts.ts";
 
 export const PASSED: StepOutcome = { findings: [], status: "passed" };
 export const FIXED: StepOutcome = { findings: [], status: "fixed" };
@@ -45,6 +46,8 @@ export interface FakeOptions {
   /** Asked once for each file of a batch. */
   readonly check?: (file: FileInput) => Promise<StepOutcome>;
   readonly fix?: (file: FileInput) => Promise<StepOutcome>;
+  /** What the tool resolves for shared facts, when the fake reports any. */
+  readonly facts?: (root: string) => Promise<FactReport>;
 }
 
 export interface FakeAdapter extends Adapter {
@@ -77,6 +80,9 @@ export const fakeAdapter = (options: FakeOptions = {}): FakeAdapter => {
       each(options.check ?? (() => Promise.resolve(PASSED)))
     ),
     descriptor: describeFake(options.descriptor),
+    ...(options.facts === undefined
+      ? {}
+      : { facts: record("facts", options.facts) }),
     fix: record("fix", each(options.fix ?? (() => Promise.resolve(FIXED)))),
     probe: record(
       "probe",

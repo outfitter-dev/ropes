@@ -149,6 +149,7 @@ const build = (
       from(origin, "include")
     ),
     overrides,
+    ...(origin.prefix === "" ? {} : { prefix: origin.prefix }),
     settings: overDefaults(base),
     tools: table.tools ?? {},
   };

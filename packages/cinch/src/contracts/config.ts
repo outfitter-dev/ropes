@@ -39,6 +39,11 @@ export interface CinchConfig {
   readonly include: Sourced<readonly string[]>;
   /** In file order. */
   readonly overrides: readonly ConfigOverride[];
+  /**
+   * What comes before a key of the config inside its file, when its tables
+   * are nested there: `cinch.` in the shared file. Absent when they are not.
+   */
+  readonly prefix?: string;
   readonly settings: readonly PolicyValue[];
   /**
    * What the file states for each tool. An adapter copies its table into the

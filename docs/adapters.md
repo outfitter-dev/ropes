@@ -29,6 +29,7 @@ The descriptor is plain data. It is all the resolver sees.
 | `enabledBy` | The policy key that switches the adapter. A path whose policy sets it to `false` gets no step. |
 | `table` | Optional. The table under `tools` in the Cinch config that the adapter copies into a file it keeps. The registry hands the adapter that table. A table no adapter names is an error. |
 | `layers` | Optional. For each kept file, the part it plays in the tool's config: `preset`, `generated` or `root`. `explain` prints it. |
+| `reports` | Optional. The [shared facts](shared-facts.md) the adapter can report its tool's value for, by the names the `[editor]` table uses. An empty list says the tool has such settings and the adapter cannot report them, and `explain` says so. |
 | `owns` | Optional. Exact root-relative files the adapter keeps. They get a step whatever their extension and whatever `include` says, and they join a workspace run before they exist. |
 
 ## Kept files
@@ -44,6 +45,8 @@ An engine's preset lives in the engine's own folder and is listed in the registr
 - `fix(input)` may write. For each file it returns `fixed` when it changed the file and nothing remains, `findings` when something remains that it could not fix, and `passed` when there was nothing to do.
 
 Any file may come back `incomplete` with a reason when the adapter could not do its work on it.
+
+An adapter that lists `reports` also has `facts(root)`. It returns what the tool resolves for those facts, each with the file and the setting that state it, and leaves out a value that is only the tool's default. It reads and never writes. The runner compares the answers, so an adapter never sees another tool's value or the Cinch config's.
 
 ## Taking over from another tool
 

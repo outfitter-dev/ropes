@@ -8,6 +8,7 @@ import type {
   StepInput,
 } from "../adapter.ts";
 import { exec } from "../exec.ts";
+import { REPORTS, readFacts } from "./facts.ts";
 import { runBatch } from "./run.ts";
 
 const ID = "rumdl";
@@ -53,6 +54,7 @@ export const rumdlAdapter = (options: RumdlOptions = {}): Adapter => {
     extensions: [".md"],
     id: ID,
     platforms: ["darwin", "linux", "win32"],
+    reports: REPORTS,
     tool: ID,
     unit: "file",
     versionRange: options.version ?? SUPPORTED_RANGE,
@@ -89,6 +91,7 @@ export const rumdlAdapter = (options: RumdlOptions = {}): Adapter => {
   return {
     check: (input) => runBatch(command, input, []),
     descriptor,
+    facts: (root) => readFacts(command, root),
     fix,
     probe,
   };

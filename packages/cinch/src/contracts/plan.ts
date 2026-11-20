@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { SharedFactsSchema } from "./facts.ts";
+
 /**
  * Provisional and unstable. The schema version covers the plan, the result
  * and the finding together until the shapes are ratified. A consumer that
@@ -117,6 +119,11 @@ export const PlanSchema = z
   .object({
     /** In execution order. Each step of each path is in exactly one. */
     batches: z.array(PlanBatchSchema).readonly(),
+    /**
+     * Present when a tool in the plan has settings of its own for facts the
+     * Cinch config can state. A run then compares them.
+     */
+    facts: SharedFactsSchema.optional(),
     paths: z.array(PlannedPathSchema).readonly(),
     root: z.string().min(1),
     schemaVersion: z.literal(SCHEMA_VERSION),
