@@ -95,12 +95,15 @@ const onlyExtends = (text: string): boolean => {
   }
 };
 
-/** Whether the root config is missing, or a pointer Cinch wrote and owns. */
+/**
+ * Whether the root config is missing, or holds nothing a move could lose:
+ * a pointer Cinch wrote, or the `extends` line alone with no comment beside
+ * it, whatever its line endings or blank lines.
+ */
 export const isPointer = (current: string | null): boolean =>
   current === null ||
-  current === POINTER ||
-  current === EXTENDS ||
-  (current.startsWith(MARK) && onlyExtends(current));
+  (onlyExtends(current) &&
+    (current.startsWith(MARK) || !current.includes("#")));
 
 /** Whether the file says Cinch generated it, whatever else it holds. */
 export const isMarked = (current: string): boolean => current.startsWith(MARK);
