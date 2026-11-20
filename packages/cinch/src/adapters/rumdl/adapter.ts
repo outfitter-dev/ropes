@@ -8,6 +8,7 @@ import type {
   StepOutcome,
 } from "../adapter.ts";
 import { exec } from "./exec.ts";
+import { readFences } from "./fences.ts";
 import { parseOutput } from "./output.ts";
 
 const ID = "rumdl";
@@ -37,7 +38,8 @@ const firstLine = (text: string): string => text.trim().split("\n")[0] ?? "";
 
 /**
  * rumdl exits 0 when clean, 1 when findings remain and 2 when it could not
- * run. Anything it could not report on is incomplete.
+ * run. Anything it could not report on is incomplete, except a fenced block
+ * that is not valid code: that block is a finding.
  */
 const run = async (
   command: string,
@@ -65,13 +67,17 @@ const run = async (
   if (!parsed.ok) {
     return incomplete(`${ID} ran, but ${parsed.message}`);
   }
+  const fences = readFences(stderr, { path: input.path, source: ID });
+  if (!fences.ok) {
+    return incomplete(`${ID} ran, but ${fences.message}`);
+  }
   if (exitCode === 1 && parsed.findings.length === 0) {
     return incomplete(`${ID} exited 1 without reporting a finding`);
   }
-  return {
-    findings: parsed.findings,
-    status: parsed.findings.length > 0 ? "findings" : "passed",
-  };
+  const findings = [...parsed.findings, ...fences.findings].toSorted(
+    (a, b) => a.range.start.line - b.range.start.line
+  );
+  return { findings, status: findings.length > 0 ? "findings" : "passed" };
 };
 
 /**

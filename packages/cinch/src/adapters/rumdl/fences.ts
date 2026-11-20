@@ -1,0 +1,91 @@
+import type { Finding } from "../../contracts/finding.ts";
+
+/**
+ * What rumdl 0.3.5 prints on stderr, with `on-error = "warn"`, when a tool it
+ * ran on a fenced block failed: `Warning: <file>:<line>: [<tool>] <output>`.
+ * The tool's output may run over several lines.
+ */
+const HEADER = /^Warning: .+:(?<line>\d+): \[[^\]]+\] (?<rest>.*)$/u;
+
+/**
+ * The formatter read the block from stdin under the name `_`, so an error
+ * placed in `_.ts` or `_.jsx` is an error in the block itself: it does not
+ * parse. An error placed anywhere else is the formatter failing to run.
+ */
+const IN_BLOCK = /^\s*at _\.[a-z]+:\d+:\d+\s*$/mu;
+const ERROR = /^error: (?<text>.+)$/mu;
+/**
+ * The formatter's own message, at the start of a line. A line of the block
+ * that holds the same words is printed behind a `N |` gutter and is not it.
+ */
+const CONFIG = /^error: Cannot load the configuration file/mu;
+
+/**
+ * The rule a block that does not parse is reported under. It is Cinch's own
+ * name: rumdl prints a warning for such a block and gives it no rule.
+ */
+export const PARSE_RULE = "code-block-parse";
+
+export type Fences =
+  | { readonly ok: true; readonly findings: readonly Finding[] }
+  | { readonly ok: false; readonly message: string };
+
+interface Warned {
+  readonly line: number;
+  readonly body: string;
+}
+
+/** Splits stderr into one entry per fence warning. Other text is left out. */
+const warnings = (stderr: string): Warned[] => {
+  const found: { line: number; body: string[] }[] = [];
+  let open = false;
+  for (const text of stderr.split("\n")) {
+    const header = HEADER.exec(text)?.groups;
+    if (header !== undefined) {
+      found.push({ body: [header.rest ?? ""], line: Number(header.line) });
+      open = true;
+    } else if (text.startsWith("Warning: ")) {
+      open = false;
+    } else if (open) {
+      found.at(-1)?.body.push(text);
+    }
+  }
+  return found.map(({ body, line }) => ({ body: body.join("\n"), line }));
+};
+
+const detailOf = (warned: Warned): string =>
+  ERROR.exec(warned.body)?.groups?.text ?? "no message";
+
+const problem = (warned: Warned): string => {
+  if (CONFIG.test(warned.body)) {
+    return `the formatter's config did not load, so the fenced block at line ${warned.line} was not checked. Are the repository's dependencies installed?`;
+  }
+  return `it could not check the fenced block at line ${warned.line}: ${detailOf(warned)}`;
+};
+
+/**
+ * Reads the fence warnings of one run. A block that does not parse is a
+ * finding at the line the block starts on. Any other failure means the
+ * formatter did not do its work, so the run is not usable as a result.
+ */
+export const readFences = (
+  stderr: string,
+  context: { readonly path: string; readonly source: string }
+): Fences => {
+  const byLine = new Map<number, Finding>();
+  for (const warned of warnings(stderr)) {
+    if (CONFIG.test(warned.body) || !IN_BLOCK.test(warned.body)) {
+      return { message: problem(warned), ok: false };
+    }
+    byLine.set(warned.line, {
+      fixable: false,
+      message: `Code block does not parse, so it was not formatted: ${detailOf(warned)}`,
+      path: context.path,
+      range: { start: { column: 1, line: warned.line } },
+      rule: PARSE_RULE,
+      severity: "error",
+      source: context.source,
+    });
+  }
+  return { findings: [...byLine.values()], ok: true };
+};
