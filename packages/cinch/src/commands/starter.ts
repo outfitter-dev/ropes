@@ -32,7 +32,10 @@ const list = (key: string, globs: readonly string[]): string[] =>
 const unique = (globs: readonly string[]): string[] => [...new Set(globs)];
 
 /** The top-level lines for file choices. A key is written once at most. */
-const carried = (inherited: readonly Inherited[]): string[] => {
+const carried = (found: readonly Inherited[]): string[] => {
+  const inherited = found.filter(
+    (one) => one.include.length + one.exclude.length + one.notes.length > 0
+  );
   if (inherited.length === 0) {
     return [];
   }
@@ -58,7 +61,12 @@ const carried = (inherited: readonly Inherited[]): string[] => {
  * old tool covered and no others.
  */
 export const starterConfig = (inherited: readonly Inherited[]): string =>
-  [...HEAD, ...carried(inherited), ...PROFILE].join("\n");
+  [
+    ...HEAD,
+    ...carried(inherited),
+    ...PROFILE,
+    ...inherited.flatMap((one) => one.tables ?? []),
+  ].join("\n");
 
 /**
  * An old tool chose only its own kinds of file. A carried `include` replaces

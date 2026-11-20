@@ -71,6 +71,9 @@ export const oldConfigs = async (
   };
 };
 
+const choseFiles = (one: Inherited): boolean =>
+  one.include.length + one.exclude.length + one.notes.length > 0;
+
 /**
  * Why file choices keep the old config in place. `written` is what went into
  * a new Cinch config. With a config already there, nothing was carried.
@@ -80,10 +83,12 @@ export const choiceReasons = (
   written: readonly Inherited[] | null
 ): string[] =>
   written === null
-    ? found.map(
-        (one) =>
-          `The files ${one.from} chose were not carried over, because a Cinch config is already here. Add them to it by hand.`
-      )
+    ? found
+        .filter(choseFiles)
+        .map(
+          (one) =>
+            `The files ${one.from} chose were not carried over, because a Cinch config is already here. Add them to it by hand.`
+        )
     : written.flatMap((one) => one.notes.map((note) => `${one.from}: ${note}`));
 
 const UNFINISHED =

@@ -123,6 +123,11 @@ export interface Inherited {
   readonly kinds: readonly string[];
   /** One line for each choice that could not be carried over. */
   readonly notes: readonly string[];
+  /**
+   * Whole lines for the Cinch config that state what the replaced config
+   * stated, beyond its file choices. They go in as they are, after the rest.
+   */
+  readonly tables?: readonly string[];
 }
 
 /** What is left of a tool an adapter takes over from. */
