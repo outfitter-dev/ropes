@@ -4,7 +4,8 @@ import type { Adapter } from "../adapter.ts";
 import { managedAdapter } from "../managed.ts";
 import type { Wanted } from "../managed.ts";
 import { chosenFiles } from "./markdownlint-files.ts";
-import { carriedOver } from "./markdownlint.ts";
+import { merge } from "./markdownlint-merge.ts";
+import { carriedOver, gathered } from "./markdownlint.ts";
 
 /** The copy of the standard that Cinch keeps in a repository. */
 export const PRESET_PATH = ".outfitter/configs/rumdl.toml";
@@ -91,9 +92,32 @@ const fresh = async (root: string, command?: string): Promise<Wanted> => {
 };
 
 /**
+ * A config that is already there gets the `extends` line, and the old
+ * linter's rules with it: this is the moment the file becomes the one Cinch
+ * keeps. An old config Cinch cannot read is passed over, since the engine
+ * was not reading it beside this file either.
+ */
+const adopted = async (
+  current: string,
+  root: string,
+  command?: string
+): Promise<Wanted> => {
+  const carried = await gathered(root, await standard(), command);
+  if (carried === null || (!carried.ok && carried.unknown !== true)) {
+    return { ok: true, text: `${EXTENDS}\n${current}` };
+  }
+  if (!carried.ok) {
+    return carried;
+  }
+  const merged = merge({ ...carried, current });
+  return merged.ok ? { ok: true, text: `${EXTENDS}\n${merged.text}` } : merged;
+};
+
+/**
  * The repository's config must extend the copy. A missing file is written,
  * and a file with no `extends` gets the line at the top, where TOML needs a
- * top-level key to be. A file that extends something else is left alone.
+ * top-level key to be, along with what the old linter's config says. A file
+ * that extends something else is left alone.
  */
 const config = async (
   current: string | null,
@@ -116,7 +140,7 @@ const config = async (
     return { ok: true, text: current };
   }
   if (found === undefined) {
-    return { ok: true, text: `${EXTENDS}\n${current}` };
+    return await adopted(current, root, command);
   }
   return {
     message: `This file extends ${JSON.stringify(found)}, not the Markdown standard at ${PRESET_PATH}. Change the line, or set \`preset = false\` under \`[markdown]\` in the Cinch config.`,
