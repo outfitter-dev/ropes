@@ -45,13 +45,15 @@ It never overwrites anything else in a file a person wrote. A config that extend
 
 `cinch check` still reports a broken setup and exits non-zero for it, so CI needs no second command. Each finding says to run `cinch doctor --fix`. `cinch fix` checks the setup before it writes and [stops when it needs repair](fix.md#when-the-setup-needs-repair).
 
-`cinch init` is first-time setup: it writes a starting config and takes over from an older tool. `cinch doctor --fix` keeps an existing setup right, including after a Cinch upgrade. `cinch preset add` and `preset update` write the same files for one preset by name.
+`cinch init` is first-time setup: it writes a starting config, which names the rule packs that apply to the repository, and takes over from an older tool. `cinch doctor --fix` keeps an existing setup right, including after a Cinch upgrade. `cinch preset add` and `preset update` write the same files for one preset by name.
 
 ## How this fits the plan
 
 Doctor has no way of its own to write a file. The files Cinch keeps are steps in the plan, marked `setup`, so `cinch explain` lists them and says which verb writes them. Doctor runs those steps and no others.
 
 ## JSON
+
+`cinch doctor` also lists each rule pack that applies to the repository and that the config neither names nor turns off, under `Rule packs not adopted`. That is a note: it does not change the exit code, and `--fix` does not adopt a pack, because which rules run is the repository's choice. `cinch rules adopt` shows the change and `--yes` writes it. A config that states `enabled = false` under `[rules]` gets no such note. In `--json` the names are in `notAdopted`.
 
 `cinch doctor --json` prints one report. It is provisional and carries `schemaVersion: 1`.
 
@@ -61,6 +63,7 @@ Doctor has no way of its own to write a file. The files Cinch keeps are steps in
 | `diff` | Unified diff of every changed file |
 | `dryRun` | `true` when the steps ran on a copy |
 | `fix` | `true` when the run was asked to repair |
+| `notAdopted` | The names of the rule packs that apply here and that the config neither names nor turns off |
 | `result` | The setup steps and their findings, in the shape `check --json` prints |
 | `schemaVersion` | `1` |
 | `tools` | One entry per tool: `tool`, `versionRange`, the installed `version` when known, and `problem` when it cannot run |

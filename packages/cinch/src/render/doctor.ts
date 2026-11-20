@@ -40,6 +40,17 @@ const written = (report: DoctorReport): string[] => {
     : [["Changed:", ...changed.map((path) => `  ${path}`)].join("\n")];
 };
 
+const packs = ({ notAdopted }: DoctorReport): string[] =>
+  notAdopted.length === 0
+    ? []
+    : [
+        [
+          "Rule packs not adopted",
+          ...notAdopted.map((name) => `  ${name}`),
+          "Run `cinch rules adopt` to see the change, and add `--yes` to write it.",
+        ].join("\n"),
+      ];
+
 /** Text for a person: what was written, what is still wrong, and the tools. */
 export const renderDoctor = (report: DoctorReport): string =>
   [
@@ -48,6 +59,7 @@ export const renderDoctor = (report: DoctorReport): string =>
     ...(report.tools.length === 0
       ? []
       : [["Tools", ...report.tools.map(toolLine)].join("\n")]),
+    ...packs(report),
     `${verdict(report)} Exit code ${EXIT_CODE[doctorOutcome(report)]}.`,
   ].join("\n\n");
 

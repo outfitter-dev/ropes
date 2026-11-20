@@ -31,23 +31,37 @@ const list = (key: string, globs: readonly string[]): string[] =>
 
 const unique = (globs: readonly string[]): string[] => [...new Set(globs)];
 
-/** The top-level lines for file choices. A key is written once at most. */
-const carried = (found: readonly Inherited[]): string[] => {
+/**
+ * The top-level lines for file choices. A key is written once at most. The
+ * files a named rule pack reads are added to `include`, because a pack never
+ * runs on a file the config leaves out.
+ */
+const carried = (
+  found: readonly Inherited[],
+  read: readonly string[]
+): string[] => {
   const inherited = found.filter(
     (one) => one.include.length + one.exclude.length + one.notes.length > 0
   );
-  if (inherited.length === 0) {
+  if (inherited.length === 0 && read.length === 0) {
     return [];
   }
-  const from = inherited.map((one) => one.from).join(" and ");
+  const chose = unique(inherited.flatMap((one) => one.include));
+  const base = chose.length > 0 ? chose : DEFAULT_CONFIG.include.value;
   const lists = [
-    ...list("include", unique(inherited.flatMap((one) => one.include))),
+    ...list("include", read.length > 0 ? unique([...base, ...read]) : chose),
     ...list("exclude", unique(inherited.flatMap((one) => one.exclude))),
   ];
+  const from = inherited.map((one) => one.from).join(" and ");
+  const wasChosen = inherited.some(
+    (one) => one.include.length + one.exclude.length > 0
+  );
   return [
-    ...(lists.length > 0
-      ? [`# The files ${from} chose, carried over by Cinch.`, ...lists]
+    ...(wasChosen ? [`# The files ${from} chose, carried over by Cinch.`] : []),
+    ...(read.length > 0
+      ? ["# The files the rule packs named below read are included too."]
       : []),
+    ...lists,
     ...inherited.flatMap((one) =>
       one.notes.map((note) => `# From ${one.from}: ${note}`)
     ),
@@ -55,16 +69,34 @@ const carried = (found: readonly Inherited[]): string[] => {
   ];
 };
 
+/** The table that runs the rule packs the repository has files for. */
+const rules = (packs: readonly string[]): string[] =>
+  packs.length === 0
+    ? []
+    : [
+        "[rules]",
+        "enabled = true",
+        `packs = [${packs.map((name) => JSON.stringify(name)).join(", ")}]`,
+        "",
+      ];
+
 /**
  * The first Cinch config for a repository. The file choices of a config that
  * an adapter takes over from go in, so the first check covers the files the
- * old tool covered and no others.
+ * old tool covered and no others. The rule packs that apply to the
+ * repository are named and the files they read are included, so a new setup
+ * starts with the defaults running.
  */
-export const starterConfig = (inherited: readonly Inherited[]): string =>
+export const starterConfig = (
+  inherited: readonly Inherited[],
+  packs: readonly string[] = [],
+  read: readonly string[] = []
+): string =>
   [
     ...HEAD,
-    ...carried(inherited),
+    ...carried(inherited, packs.length === 0 ? [] : read),
     ...PROFILE,
+    ...rules(packs),
     ...inherited.flatMap((one) => one.tables ?? []),
   ].join("\n");
 
