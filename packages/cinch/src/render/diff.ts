@@ -127,9 +127,11 @@ const header = (prefix: string, path: string): string => {
 
 /**
  * The one-based lines of the new text a hunk changes. A removed line counts
- * as the line that now sits where it was.
+ * as the line that now sits where it was, or as the last line left when it
+ * was removed from the end.
  */
 const touched = (ops: readonly Op[], start: number, end: number): number[] => {
+  const last = Math.max(count(ops, "-"), 1);
   let line = count(ops.slice(0, start), "-");
   const lines: number[] = [];
   for (const op of ops.slice(start, end)) {
@@ -137,7 +139,7 @@ const touched = (ops: readonly Op[], start: number, end: number): number[] => {
       line += 1;
     }
     if (op.kind !== " ") {
-      lines.push(op.kind === "+" ? line : line + 1);
+      lines.push(op.kind === "+" ? line : Math.min(line + 1, last));
     }
   }
   return lines;

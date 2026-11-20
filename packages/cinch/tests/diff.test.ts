@@ -97,3 +97,13 @@ test("a removed line counts as the line that took its place", () => {
   expect(at(3)).toContain("-line 3");
   expect(at(2)).toBe("");
 });
+
+test("a line removed from the end counts as the last line left", () => {
+  const before = lines(6);
+  const after = before.slice(0, 4);
+  const at = (line: number) =>
+    changeAt("a.md", text(before), text(after), { from: line, to: line });
+  expect(at(4)).toContain("-line 6");
+  expect(at(3)).toBe("");
+  expect(changeAt("a.md", "only\n", "", { from: 1, to: 1 })).toContain("-only");
+});
