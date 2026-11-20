@@ -25,6 +25,7 @@ Given a path, Cinch resolves one plan: which policy applies, where each value ca
 | `cinch doctor` | Check the Cinch setup: the files Cinch keeps, and the pinned tools. `--fix` repairs it, and `--fix --dry-run` previews that. See [docs/doctor.md](docs/doctor.md) |
 | `cinch init` | First-time setup. Set up the config and presets a repository needs. It only shows the change. `--yes` writes it. See [docs/presets.md](docs/presets.md) |
 | `cinch preset` | List the shared configs Cinch keeps in the repository and whether each is current. `preset add <name>` and `preset update [name]` write them. `preset adopt <name>` and `preset eject <name>` move a tool's settings between its own config and the Cinch config |
+| `cinch rules` | List the rule packs Cinch ships and how each stands in the repository: on, off, not relevant, or waiting for rules to be switched on. It writes nothing |
 | `cinch schema [command]` | Print the JSON Schema of a command's `--json` output, to write a jq filter against. `cinch schema config` prints the schema of the config file |
 
 Every command prints plain text that can be piped, or one JSON document with `--json`. [Output](docs/output.md) has the contract and jq examples. Exit codes are 0 for clean, 1 when findings remain, and 2 when the run is incomplete or unusable. A check that could not run never counts as a pass.

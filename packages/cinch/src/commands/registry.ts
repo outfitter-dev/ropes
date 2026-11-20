@@ -7,6 +7,7 @@ import { fix } from "./fix.ts";
 import { init } from "./init.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { preset } from "./preset.ts";
+import { rules } from "./rules.ts";
 import { schema } from "./schema.ts";
 
 /**
@@ -22,6 +23,7 @@ export const createCommands = (
   fix: fix(deps),
   init: init(deps),
   preset: preset(deps),
+  rules: rules(deps),
   schema,
 });
 

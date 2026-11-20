@@ -3,7 +3,7 @@ import { readPins } from "../adapters/pins.ts";
 import type { Pins, PinsResult } from "../adapters/pins.ts";
 import { loadConfig } from "../config/load.ts";
 import { discoverRoot, toRootRelative } from "../config/root.ts";
-import type { ToolTables } from "../contracts/config.ts";
+import type { CinchConfig, ToolTables } from "../contracts/config.ts";
 import type { EditorSettings } from "../contracts/editor.ts";
 import type { Plan } from "../contracts/plan.ts";
 import type { RepoRoot } from "../contracts/root.ts";
@@ -27,7 +27,10 @@ export interface CommandDeps {
 
 export interface Prepared {
   readonly adapters: readonly Adapter[];
+  readonly config: CinchConfig;
   readonly plan: Plan;
+  /** Every root-relative file the repository has, as rule packs see it. */
+  readonly present: readonly string[];
   readonly root: RepoRoot;
 }
 
@@ -149,5 +152,8 @@ export const prepare = async (
     })
   );
   const plan = resolve(candidates.filter((_, index) => inside[index] === true));
-  return { ok: true, value: { adapters, plan, root } };
+  return {
+    ok: true,
+    value: { adapters, config: config.value, plan, present, root },
+  };
 };

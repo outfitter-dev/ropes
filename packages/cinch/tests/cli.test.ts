@@ -128,6 +128,8 @@ test("schema prints the JSON Schema of a command's --json output", async () => {
       "preset eject",
       "preset list",
       "preset update",
+      "rules",
+      "rules list",
     ],
     files: ["config"],
     schemaVersion: 1,
