@@ -19,6 +19,7 @@ const finding: Finding = {
 };
 
 const planned = (path: string): PlannedPath => ({
+  package: ".",
   path,
   policy: [],
   steps: [{ adapter: "fake", tool: "fake", versionRange: "*", writes: true }],
@@ -30,12 +31,13 @@ const resultOf = (
 ): Result => ({
   outcome: outcomeOf(steps),
   plan: {
+    batches: [],
     paths,
     root: "/repo",
-    schemaVersion: 0,
+    schemaVersion: 1,
     selection: { kind: "workspace" },
   },
-  schemaVersion: 0,
+  schemaVersion: 1,
   steps,
 });
 
@@ -105,6 +107,7 @@ test("an empty selection is clean and says nothing ran", () => {
 
 test("files the config leaves out are counted, and zero steps is visible", () => {
   const skipped: PlannedPath = {
+    package: ".",
     path: "vendor/a.md",
     policy: [],
     skipped: { reason: "excluded", source: { kind: "default" } },

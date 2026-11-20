@@ -2,7 +2,8 @@ import { expect, test } from "bun:test";
 import { mkdir, symlink } from "node:fs/promises";
 import path from "node:path";
 
-import type { StepInput, StepOutcome } from "../src/adapters/adapter.ts";
+import type { StepOutcome } from "../src/adapters/adapter.ts";
+import type { FileInput } from "../src/adapters/batch.ts";
 import { FixReportSchema } from "../src/contracts/fix.ts";
 import type { FixReport } from "../src/contracts/fix.ts";
 import { FINDINGS, FIXED, PASSED } from "./fake-adapter.ts";
@@ -16,7 +17,7 @@ const TREE: Tree = {
 };
 
 /** A fixer that rewrites TODO to DONE, and is a no-op the second time. */
-const rewrite = async (input: StepInput): Promise<StepOutcome> => {
+const rewrite = async (input: FileInput): Promise<StepOutcome> => {
   const file = Bun.file(path.join(input.root, input.path));
   const before = await file.text();
   const after = before.replaceAll("TODO", "DONE");
@@ -24,20 +25,20 @@ const rewrite = async (input: StepInput): Promise<StepOutcome> => {
   return after === before ? PASSED : FIXED;
 };
 
-const flaky = (input: StepInput): Promise<StepOutcome> => {
+const flaky = (input: FileInput): Promise<StepOutcome> => {
   if (input.path === "docs/b.md") {
     throw new Error("boom");
   }
   return rewrite(input);
 };
 
-const partial = async (input: StepInput): Promise<StepOutcome> => {
+const partial = async (input: FileInput): Promise<StepOutcome> => {
   await rewrite(input);
   return FINDINGS;
 };
 
 /** A fixer that only works when it can read an installed dependency. */
-const withDep = async (input: StepInput): Promise<StepOutcome> => {
+const withDep = async (input: FileInput): Promise<StepOutcome> => {
   const rule = Bun.file(path.join(input.root, "node_modules/dep/rule.txt"));
   const found = await rule.exists();
   return found ? await rewrite(input) : FINDINGS;

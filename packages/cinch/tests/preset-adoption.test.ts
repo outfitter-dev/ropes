@@ -10,6 +10,7 @@ import {
 import { DEFAULT_CONFIG } from "../src/contracts/config.ts";
 import { resolvePlan } from "../src/policy/resolve.ts";
 import { describeFake } from "./fake-adapter.ts";
+import { fixOne } from "./one-file.ts";
 
 const inRoot = async <T>(
   files: Readonly<Record<string, string>>,
@@ -40,7 +41,7 @@ const ELSEWHERE: readonly (readonly [string, string])[] = [
 for (const [name, text] of ELSEWHERE) {
   test(`a repository configured in ${name} is not given a config that hides it`, async () => {
     await inRoot({ [name]: text }, async (root) => {
-      const outcome = await preset.fix({ path: CONFIG_PATH, root });
+      const outcome = await fixOne(preset, { path: CONFIG_PATH, root });
       expect(outcome.status).toBe("findings");
       expect(outcome.findings[0]).toMatchObject({ fixable: false });
       expect(outcome.findings[0]?.message).toContain(name);
@@ -52,7 +53,7 @@ for (const [name, text] of ELSEWHERE) {
 test("a pyproject.toml that says nothing about the engine does not block the config", async () => {
   const files = { "pyproject.toml": '[project]\nname = "x"\n' };
   await inRoot(files, async (root) => {
-    const outcome = await preset.fix({ path: CONFIG_PATH, root });
+    const outcome = await fixOne(preset, { path: CONFIG_PATH, root });
     expect(outcome.status).toBe("fixed");
   });
 });
@@ -60,7 +61,7 @@ test("a pyproject.toml that says nothing about the engine does not block the con
 test("a config that is already there wins over one elsewhere", async () => {
   const files = { [CONFIG_PATH]: OWN, "rumdl.toml": OWN };
   await inRoot(files, async (root) => {
-    const outcome = await preset.fix({ path: CONFIG_PATH, root });
+    const outcome = await fixOne(preset, { path: CONFIG_PATH, root });
     expect(outcome.status).toBe("fixed");
   });
 });
@@ -75,6 +76,7 @@ test("the files an adapter keeps are planned before the files that read them", (
   const plan = resolvePlan({
     config: DEFAULT_CONFIG,
     descriptors: [markdown, keeper],
+    packages: [],
     paths: [
       "z.md",
       ".tool.toml",

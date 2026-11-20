@@ -1,12 +1,9 @@
 import path from "node:path";
 
 import type { Finding } from "../contracts/finding.ts";
-import type {
-  Adapter,
-  AdapterDescriptor,
-  StepInput,
-  StepOutcome,
-} from "./adapter.ts";
+import type { Adapter, AdapterDescriptor, StepOutcome } from "./adapter.ts";
+import { eachFile } from "./batch.ts";
+import type { FileInput } from "./batch.ts";
 
 /** What a kept file should hold, or why Cinch will not decide that itself. */
 export type Wanted =
@@ -74,7 +71,7 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
     writes: true,
   };
   const finding = (
-    input: StepInput,
+    input: FileInput,
     message: string,
     fixable: boolean
   ): Finding => ({
@@ -86,7 +83,7 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
     severity: "error",
     source: id,
   });
-  const inspect = async (input: StepInput, write: boolean) => {
+  const inspect = async (input: FileInput, write: boolean) => {
     const managed = files.find((file) => file.path === input.path);
     if (!managed) {
       return {
@@ -128,9 +125,9 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
     } satisfies StepOutcome;
   };
   return {
-    check: (input): Promise<StepOutcome> => inspect(input, false),
+    check: (input) => eachFile(input, (file) => inspect(file, false)),
     descriptor,
-    fix: (input): Promise<StepOutcome> => inspect(input, true),
+    fix: (input) => eachFile(input, (file) => inspect(file, true)),
     ...(inherits === undefined ? {} : { inherits }),
     ...(retires === undefined ? {} : { retires }),
     probe: () => Promise.resolve({ available: true }),

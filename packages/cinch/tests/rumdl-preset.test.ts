@@ -5,6 +5,7 @@ import path from "node:path";
 
 import { rumdlAdapter } from "../src/adapters/rumdl/adapter.ts";
 import type { Finding } from "../src/contracts/finding.ts";
+import { checkOne, fixOne } from "./one-file.ts";
 
 const PRESET = path.join(import.meta.dir, "..", "presets", "rumdl.toml");
 const CONFIG = `extends = ${JSON.stringify(PRESET)}\n`;
@@ -43,7 +44,7 @@ const input = (root: string) => ({ path: "a.md", root });
 
 withEngines("the preset applies its list marker rule", async () => {
   const outcome = await inRepo("# A\n\n* one\n* two\n", (root) =>
-    rumdlAdapter().check(input(root))
+    checkOne(rumdlAdapter(), input(root))
   );
   expect(outcome.findings.map((finding) => finding.rule)).toEqual([
     "MD004",
@@ -59,7 +60,7 @@ withEngines("the preset turns on the rules rumdl leaves off", async () => {
     "## Parent\n\n### Child\n\nBody.\n",
   ].join("");
   const outcome = await inRepo(text, (root) =>
-    rumdlAdapter().check(input(root))
+    checkOne(rumdlAdapter(), input(root))
   );
   expect(outcome.findings.map((finding) => finding.rule)).toEqual([
     "MD082",
@@ -74,7 +75,7 @@ withEngines("the preset turns on the rules rumdl leaves off", async () => {
 withEngines("the preset allows what it switches off", async () => {
   const text = "Intro, with no first heading.\n\n## Done!\n\n<b>hi</b>\n";
   const outcome = await inRepo(text, (root) =>
-    rumdlAdapter().check(input(root))
+    checkOne(rumdlAdapter(), input(root))
   );
   expect(outcome).toEqual({ findings: [], status: "passed" });
 });
@@ -84,7 +85,7 @@ withEngines(
   async () => {
     const text = fence("const   x = {a:1}");
     const [outcome, after] = await inRepo(text, async (root, read) => [
-      await rumdlAdapter().check(input(root)),
+      await checkOne(rumdlAdapter(), input(root)),
       await read(),
     ]);
     expect(after).toBe(text);
@@ -110,9 +111,9 @@ withEngines(
     const [first, after, second] = await inRepo(
       fence("const   x = {a:1}"),
       async (root, read) => [
-        await rumdlAdapter().fix(input(root)),
+        await fixOne(rumdlAdapter(), input(root)),
         await read(),
-        await rumdlAdapter().fix(input(root)),
+        await fixOne(rumdlAdapter(), input(root)),
       ]
     );
     expect(first).toEqual({ findings: [], status: "fixed" });
@@ -126,8 +127,8 @@ withEngines(
   async () => {
     const text = `${fence("const x = {")}\n\`\`\`ts\nconst   y=1\n\`\`\`\n`;
     const [checked, fixed, after] = await inRepo(text, async (root, read) => [
-      await rumdlAdapter().check(input(root)),
-      await rumdlAdapter().fix(input(root)),
+      await checkOne(rumdlAdapter(), input(root)),
+      await fixOne(rumdlAdapter(), input(root)),
       await read(),
     ]);
     const broken: Finding = {
@@ -155,7 +156,7 @@ withEngines(
   async () => {
     const outcome = await inRepo(fence("const x = 1;"), async (root) => {
       await Bun.write(path.join(root, "oxfmt.config.ts"), "export default {");
-      return await rumdlAdapter().check(input(root));
+      return await checkOne(rumdlAdapter(), input(root));
     });
     expect(outcome.status).toBe("incomplete");
     expect(outcome.reason).toStartWith(

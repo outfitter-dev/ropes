@@ -9,6 +9,7 @@ import {
   PRESET_PATH,
   rumdlPresetAdapter,
 } from "../src/adapters/rumdl/preset.ts";
+import { checkOne, fixOne } from "./one-file.ts";
 
 const OLD = ".markdownlint.json";
 const KNOWN = [
@@ -209,7 +210,7 @@ test("adopting a config merges the old rules into it", async () => {
     const target = path.join(root, CONFIG_PATH);
     await Bun.write(target, "[MD013]\nline-length = 100\n");
     const preset = rumdlPresetAdapter();
-    const first = await preset.fix({ path: CONFIG_PATH, root });
+    const first = await fixOne(preset, { path: CONFIG_PATH, root });
     expect(first.status).toBe("fixed");
     const text = await Bun.file(target).text();
     expect(text).toStartWith(
@@ -219,7 +220,7 @@ test("adopting a config merges the old rules into it", async () => {
     expect(text).toContain(
       "`line-length` on MD013 is 120 in .markdownlint.json and 100 here."
     );
-    const second = await preset.check({ path: CONFIG_PATH, root });
+    const second = await checkOne(preset, { path: CONFIG_PATH, root });
     expect(second.status).toBe("passed");
   } finally {
     await rm(root, { force: true, recursive: true });

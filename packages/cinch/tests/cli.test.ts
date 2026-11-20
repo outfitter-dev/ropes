@@ -45,7 +45,7 @@ test("fix --dry-run reports a dry run and leaves the file alone", async () => {
   const result = await run("fix", "README.md", "--dry-run", "--json");
   expect(JSON.parse(result.stdout)).toMatchObject({
     dryRun: true,
-    schemaVersion: 0,
+    schemaVersion: 1,
   });
   expect(
     await Bun.file(new URL("../../../README.md", import.meta.url)).text()
@@ -57,7 +57,7 @@ test("explain prints a versioned plan as JSON on stdout", async () => {
   expect(result.exitCode).toBe(0);
   expect(JSON.parse(result.stdout)).toMatchObject({
     paths: [{ path: "README.md" }],
-    schemaVersion: 0,
+    schemaVersion: 1,
     selection: { kind: "paths", paths: ["README.md"] },
   });
 });
@@ -127,7 +127,7 @@ test("schema prints the JSON Schema of a command's --json output", async () => {
       "preset update",
     ],
     files: ["config"],
-    schemaVersion: 0,
+    schemaVersion: 1,
   });
   const text = await run("schema");
   expect(text.stdout).toContain("  preset update\n");

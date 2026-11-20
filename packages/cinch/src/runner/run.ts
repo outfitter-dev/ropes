@@ -1,5 +1,5 @@
-import type { Adapter, StepOutcome } from "../adapters/adapter.ts";
-import type { Plan, PlanStep } from "../contracts/plan.ts";
+import type { Adapter, FileOutcome, StepOutcome } from "../adapters/adapter.ts";
+import type { Plan, PlanBatch } from "../contracts/plan.ts";
 import { outcomeOf } from "../contracts/result.ts";
 import type { Result, StepResult } from "../contracts/result.ts";
 import { probeAdapter, threw, versionProblem } from "./ready.ts";
@@ -34,35 +34,57 @@ const readiness = (adapters: readonly Adapter[], platform: string) => {
   };
 };
 
-const runStep = async (
+/** One outcome for each file of the batch, whatever the adapter returned. */
+const answered = (
+  batch: PlanBatch,
+  outcomes: readonly FileOutcome[]
+): FileOutcome[] => {
+  const byPath = new Map(outcomes.map((outcome) => [outcome.path, outcome]));
+  return batch.paths.map(
+    (path) =>
+      byPath.get(path) ?? {
+        ...incomplete(`${batch.tool} gave no answer for this file`),
+        path,
+      }
+  );
+};
+
+const runBatch = async (
   ready: ReturnType<typeof readiness>,
-  step: PlanStep,
-  input: { root: string; path: string },
+  batch: PlanBatch,
+  root: string,
   mode: RunMode
-): Promise<StepOutcome> => {
-  const { adapter, probe } = ready(step.adapter);
+): Promise<FileOutcome[]> => {
+  const all = (reason: string) =>
+    batch.paths.map((path) => ({ ...incomplete(reason), path }));
+  const { adapter, probe } = ready(batch.adapter);
   if (!adapter) {
-    return incomplete(`no adapter registered for "${step.adapter}"`);
+    return all(`no adapter registered for "${batch.adapter}"`);
   }
   const found = await probe;
   const reason =
     found?.problem ??
-    versionProblem(step.tool, found?.version, step.versionRange);
+    versionProblem(batch.tool, found?.version, batch.versionRange);
   if (reason !== undefined) {
-    return incomplete(reason);
+    return all(reason);
   }
+  const input = { package: batch.package, paths: batch.paths, root };
   try {
-    return mode === "fix" && step.writes
-      ? await adapter.fix(input)
-      : await adapter.check(input);
+    return answered(
+      batch,
+      mode === "fix" && batch.writes
+        ? await adapter.fix(input)
+        : await adapter.check(input)
+    );
   } catch (error) {
-    return incomplete(threw(step.tool, error));
+    return all(threw(batch.tool, error));
   }
 };
 
 /**
- * Runs a plan through adapters. It never branches on which adapter it holds,
- * and a step that could not run is incomplete, never passed.
+ * Runs a plan through adapters, one start of an engine for each batch. It
+ * never branches on which adapter it holds. A step that could not run marks
+ * every file of its batch incomplete, never passed.
  */
 export const runPlan = async (
   plan: Plan,
@@ -70,21 +92,24 @@ export const runPlan = async (
   options: RunOptions
 ): Promise<Result> => {
   const ready = readiness(adapters, options.platform ?? process.platform);
-  const steps: StepResult[] = [];
-  for (const planned of plan.paths) {
-    for (const step of planned.steps) {
-      // Steps on one file must run in plan order: a later step reads what an
-      // earlier one wrote.
-      // oxlint-disable-next-line no-await-in-loop
-      const outcome = await runStep(
-        ready,
-        step,
-        { path: planned.path, root: plan.root },
-        options.mode
-      );
-      steps.push({ adapter: step.adapter, path: planned.path, ...outcome });
+  const byPath = new Map<string, StepResult[]>();
+  for (const batch of plan.batches) {
+    // Batches run in plan order: a later step reads what an earlier one
+    // wrote, and a kept config is written before the step that reads it.
+    // oxlint-disable-next-line no-await-in-loop
+    const outcomes = await runBatch(ready, batch, plan.root, options.mode);
+    for (const outcome of outcomes) {
+      const step = { adapter: batch.adapter, ...outcome };
+      const before = byPath.get(outcome.path);
+      if (before === undefined) {
+        byPath.set(outcome.path, [step]);
+      } else {
+        before.push(step);
+      }
     }
   }
+  // Reported file by file, in the order the plan lists them.
+  const steps = plan.paths.flatMap((planned) => byPath.get(planned.path) ?? []);
   return {
     outcome: outcomeOf(steps),
     plan,

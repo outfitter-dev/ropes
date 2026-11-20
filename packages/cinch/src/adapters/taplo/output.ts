@@ -22,7 +22,20 @@ const SYNTAX_MESSAGE = "invalid TOML";
  * parses, its keys and tables agree, then it fits its schema. Only the last
  * stage is about a schema, and Taplo names the stage when it gives up.
  */
-const SCHEMA_STAGE = /invalid file error=schema validation failed/u;
+const STAGE = /invalid file error=(?<stage>.+?) path=/u;
+const SCHEMA_STAGE = "schema validation failed";
+
+/**
+ * The rule of the stage Taplo gave up at. Undefined when it did not name one:
+ * the file is valid, or Taplo dropped the line, which it does now and then.
+ */
+export const ruleOf = (stderr: string): "schema" | "syntax" | undefined => {
+  const stage = STAGE.exec(stderr)?.groups?.stage;
+  if (stage === undefined) {
+    return undefined;
+  }
+  return stage === SCHEMA_STAGE ? "schema" : "syntax";
+};
 
 /** Taplo warns, then carries on with no config, when it cannot use its own. */
 const CONFIG_REFUSED = /^\s*WARN taplo:load_config: (?<problem>.+)$/mu;
@@ -75,18 +88,21 @@ export type Parsed =
  * what the parser expected, or one whose keys or tables conflict. A problem
  * is reported under `schema` only when Taplo got as far as the schema. A
  * problem with no place is not usable as a finding, so the whole output is
- * refused.
+ * refused. So is one that names no stage: the rule would be a guess.
  */
 export const parseOutput = (
   stderr: string,
   context: { readonly path: string; readonly source: string }
 ): Parsed => {
   const findings: Finding[] = [];
-  const rule = SCHEMA_STAGE.test(stderr) ? "schema" : "syntax";
+  const rule = ruleOf(stderr);
   for (const block of blocksOf(stderr)) {
     const place = placeOf(block);
     if (place === undefined) {
       return { message: `it gave no place for "${block.message}"`, ok: false };
+    }
+    if (rule === undefined) {
+      return { message: "it did not say which check failed", ok: false };
     }
     const label = labelOf(block);
     findings.push({

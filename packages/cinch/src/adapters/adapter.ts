@@ -4,9 +4,11 @@ import type { StepStatus } from "../contracts/result.ts";
 export type Platform = "darwin" | "linux" | "win32";
 
 /**
- * What one step works on. Only `file` steps are planned today. `package` and
- * `workspace` are named now so an engine that cannot work file by file does
- * not have to pretend it can. The resolver gives such an adapter no steps.
+ * What an engine needs to see to judge one file. A `file` adapter can answer
+ * for any subset of a package, so it is handed only the files selected.
+ * `package` and `workspace` are named now so an engine that needs more does
+ * not have to pretend otherwise. The resolver gives such an adapter no steps
+ * yet.
  */
 export type Unit = "file" | "package" | "workspace";
 
@@ -53,8 +55,20 @@ export interface StepOutcome {
   readonly reason?: string;
 }
 
+/**
+ * What one step works on: the selected files of one package, so an engine
+ * starts once for all of them.
+ */
 export interface StepInput {
   readonly root: string;
+  /** The root-relative package directory. `.` is the workspace itself. */
+  readonly package: string;
+  /** Root-relative files, all in that package. Never empty. */
+  readonly paths: readonly string[];
+}
+
+/** What a step found out about one of the files it was handed. */
+export interface FileOutcome extends StepOutcome {
   readonly path: string;
 }
 
@@ -94,8 +108,12 @@ export interface Adapter {
   readonly descriptor: AdapterDescriptor;
   /** Reports whether the tool is installed, and at which version. */
   readonly probe: () => Promise<ProbeResult>;
-  readonly check: (input: StepInput) => Promise<StepOutcome>;
-  readonly fix: (input: StepInput) => Promise<StepOutcome>;
+  /**
+   * One outcome for each file handed in. A file left without one is
+   * incomplete: the runner never counts silence as a pass.
+   */
+  readonly check: (input: StepInput) => Promise<readonly FileOutcome[]>;
+  readonly fix: (input: StepInput) => Promise<readonly FileOutcome[]>;
   /**
    * The file choices in a config this adapter takes over from, for a Cinch
    * config that is about to be written. Null when there are none.

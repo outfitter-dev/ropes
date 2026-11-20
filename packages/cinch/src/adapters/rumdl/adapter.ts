@@ -3,13 +3,12 @@ import path from "node:path";
 import type {
   Adapter,
   AdapterDescriptor,
+  FileOutcome,
   ProbeResult,
   StepInput,
-  StepOutcome,
 } from "../adapter.ts";
 import { exec } from "../exec.ts";
-import { readFences } from "./fences.ts";
-import { parseOutput } from "./output.ts";
+import { runBatch } from "./run.ts";
 
 const ID = "rumdl";
 
@@ -28,61 +27,23 @@ export interface RumdlOptions {
 
 const VERSION = /\d+\.\d+\.\d+/u;
 
-const incomplete = (reason: string): StepOutcome => ({
-  findings: [],
-  reason,
-  status: "incomplete",
-});
-
-const firstLine = (text: string): string => text.trim().split("\n")[0] ?? "";
-
 /**
- * rumdl exits 0 when clean, 1 when findings remain and 2 when it could not
- * run. Anything it could not report on is incomplete, except a fenced block
- * that is not valid code: that block is a finding.
+ * What a file holds, for telling whether a fix changed it. Null when it is
+ * missing or cannot be read: the engine then says so for that one file, and
+ * the other files of the batch are still fixed.
  */
-const run = async (
-  command: string,
-  input: StepInput,
-  flags: readonly string[]
-): Promise<StepOutcome> => {
-  const { exitCode, stderr, stdout } = await exec(
-    [
-      Bun.which(command) ?? command,
-      "check",
-      ...flags,
-      "--no-cache",
-      "--output-format",
-      "json",
-      "--",
-      input.path,
-    ],
-    input.root
-  );
-  if (exitCode !== 0 && exitCode !== 1) {
-    const detail = firstLine(stderr) || "no message";
-    return incomplete(`${ID} exited ${exitCode}: ${detail}`);
+const textOf = async (file: string): Promise<string | null> => {
+  try {
+    const handle = Bun.file(file);
+    return (await handle.exists()) ? await handle.text() : null;
+  } catch {
+    return null;
   }
-  const parsed = parseOutput(stdout, { path: input.path, source: ID });
-  if (!parsed.ok) {
-    return incomplete(`${ID} ran, but ${parsed.message}`);
-  }
-  const fences = readFences(stderr, { path: input.path, source: ID });
-  if (!fences.ok) {
-    return incomplete(`${ID} ran, but ${fences.message}`);
-  }
-  if (exitCode === 1 && parsed.findings.length === 0) {
-    return incomplete(`${ID} exited 1 without reporting a finding`);
-  }
-  const findings = [...parsed.findings, ...fences.findings].toSorted(
-    (a, b) => a.range.start.line - b.range.start.line
-  );
-  return { findings, status: findings.length > 0 ? "findings" : "passed" };
 };
 
 /**
- * Markdown lint through rumdl. rumdl runs from the repository root and reads
- * its own config there. Cinch does not install it: the binary must be on
+ * Markdown lint through rumdl. rumdl runs from the repository root, once for
+ * the files of a batch, and reads its own config there. Cinch does not install it: the binary must be on
  * `PATH` at the pinned version, or its steps are incomplete.
  */
 export const rumdlAdapter = (options: RumdlOptions = {}): Adapter => {
@@ -108,17 +69,25 @@ export const rumdlAdapter = (options: RumdlOptions = {}): Adapter => {
       ? { available: true, version }
       : { available: false, reason: `${command} --version did not answer` };
   };
-  const fix = async (input: StepInput): Promise<StepOutcome> => {
-    const file = Bun.file(path.join(input.root, input.path));
-    const before = await file.text();
-    const outcome = await run(command, input, ["--fix"]);
-    const changed = (await file.text()) !== before;
-    return outcome.status === "passed" && changed
-      ? { ...outcome, status: "fixed" }
-      : outcome;
+  const fix = async (input: StepInput): Promise<FileOutcome[]> => {
+    const read = () =>
+      Promise.all(
+        input.paths.map((file) => textOf(path.join(input.root, file)))
+      );
+    const before = await read();
+    const outcomes = await runBatch(command, input, ["--fix"]);
+    const after = await read();
+    const changed = new Set(
+      input.paths.filter((_, index) => after[index] !== before[index])
+    );
+    return outcomes.map((outcome) =>
+      outcome.status === "passed" && changed.has(outcome.path)
+        ? { ...outcome, status: "fixed" }
+        : outcome
+    );
   };
   return {
-    check: (input) => run(command, input, []),
+    check: (input) => runBatch(command, input, []),
     descriptor,
     fix,
     probe,

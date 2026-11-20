@@ -50,6 +50,7 @@ const resolve = (
   resolvePlan({
     config,
     descriptors: [markdown, fence],
+    packages: [],
     paths,
     root: "/repo",
     selection: { kind: "workspace" },
@@ -121,6 +122,7 @@ test("an override keeps base settings it does not mention", () => {
 
 test("an excluded path stays in the plan with the setting that excluded it", () => {
   expect(only("vendor/lib/README.md")).toEqual({
+    package: ".",
     path: "vendor/lib/README.md",
     policy: [],
     skipped: { reason: "excluded", source: file("exclude") },
@@ -130,6 +132,7 @@ test("an excluded path stays in the plan with the setting that excluded it", () 
 
 test("a path outside include stays in the plan and is marked", () => {
   expect(only("src/a.ts")).toEqual({
+    package: ".",
     path: "src/a.ts",
     policy: [],
     skipped: { reason: "not-included", source: file("include") },

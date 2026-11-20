@@ -5,6 +5,8 @@ import type {
   StepInput,
   StepOutcome,
 } from "../src/adapters/adapter.ts";
+import { eachFile } from "../src/adapters/batch.ts";
+import type { FileInput } from "../src/adapters/batch.ts";
 
 export const PASSED: StepOutcome = { findings: [], status: "passed" };
 export const FIXED: StepOutcome = { findings: [], status: "fixed" };
@@ -40,13 +42,16 @@ export const describeFake = (
 export interface FakeOptions {
   readonly descriptor?: Partial<AdapterDescriptor>;
   readonly probe?: () => Promise<ProbeResult>;
-  readonly check?: () => Promise<StepOutcome>;
-  readonly fix?: (input: StepInput) => Promise<StepOutcome>;
+  /** Asked once for each file of a batch. */
+  readonly check?: (file: FileInput) => Promise<StepOutcome>;
+  readonly fix?: (file: FileInput) => Promise<StepOutcome>;
 }
 
 export interface FakeAdapter extends Adapter {
   /** Every call the runner made, in order. */
   readonly calls: string[];
+  /** The files of each `check` or `fix` call, in order. */
+  readonly batches: StepInput[];
 }
 
 /** An in-memory adapter. It records what the runner asked of it. */
@@ -58,11 +63,21 @@ export const fakeAdapter = (options: FakeOptions = {}): FakeAdapter => {
       calls.push(name);
       return run(...args);
     };
+  const batches: StepInput[] = [];
+  const each =
+    (one: (file: FileInput) => Promise<StepOutcome>) => (input: StepInput) => {
+      batches.push(input);
+      return eachFile(input, one);
+    };
   return {
+    batches,
     calls,
-    check: record("check", options.check ?? (() => Promise.resolve(PASSED))),
+    check: record(
+      "check",
+      each(options.check ?? (() => Promise.resolve(PASSED)))
+    ),
     descriptor: describeFake(options.descriptor),
-    fix: record("fix", options.fix ?? (() => Promise.resolve(FIXED))),
+    fix: record("fix", each(options.fix ?? (() => Promise.resolve(FIXED)))),
     probe: record(
       "probe",
       options.probe ?? (() => Promise.resolve({ available: true }))

@@ -33,13 +33,32 @@
           "versionRange": "1.4.4",
           "writes": true
         }
-      ]
+      ],
+      "package": "."
     }
   ],
   "root": "/repo",
-  "schemaVersion": 0,
+  "schemaVersion": 1,
   "selection": {
     "kind": "paths",
     "paths": ["docs/guide.md"]
-  }
+  },
+  "batches": [
+    {
+      "adapter": "rumdl",
+      "tool": "rumdl",
+      "versionRange": ">=0.1.0",
+      "writes": true,
+      "package": ".",
+      "paths": ["docs/guide.md"]
+    },
+    {
+      "adapter": "bun-fence",
+      "tool": "bun",
+      "versionRange": "1.4.4",
+      "writes": true,
+      "package": ".",
+      "paths": ["docs/guide.md"]
+    }
+  ]
 }

@@ -10,6 +10,7 @@ import {
   rumdlPresetAdapter,
 } from "../src/adapters/rumdl/preset.ts";
 import { createCommands } from "../src/commands/registry.ts";
+import { checkOne, fixOne } from "./one-file.ts";
 
 const SOURCE = new URL("../presets/rumdl.toml", import.meta.url);
 
@@ -52,7 +53,7 @@ test("a kept file is planned by its exact path, and needs no engine", async () =
 
 test("check reports a missing kept file and writes nothing", async () => {
   await inRoot({}, async (root) => {
-    const outcome = await fixed.check({ path: "kept.txt", root });
+    const outcome = await checkOne(fixed, { path: "kept.txt", root });
     expect(outcome.status).toBe("findings");
     expect(outcome.findings).toMatchObject([
       { fixable: true, path: "kept.txt", rule: MANAGED_RULE, source: "kept" },
@@ -65,12 +66,15 @@ test("check reports a missing kept file and writes nothing", async () => {
 test("check reports an edited kept file, fix rewrites it, and a second fix passes", async () => {
   await inRoot({ "kept.txt": "edited\n" }, async (root) => {
     const input = { path: "kept.txt", root };
-    const before = await fixed.check(input);
+    const before = await checkOne(fixed, input);
     expect(before.findings[0]?.message).toContain("differs");
-    expect(await fixed.fix(input)).toMatchObject({ status: "fixed" });
+    expect(await fixOne(fixed, input)).toMatchObject({ status: "fixed" });
     expect(await text(root, "kept.txt")).toBe("A\n");
-    expect(await fixed.fix(input)).toEqual({ findings: [], status: "passed" });
-    expect(await fixed.check(input)).toEqual({
+    expect(await fixOne(fixed, input)).toEqual({
+      findings: [],
+      status: "passed",
+    });
+    expect(await checkOne(fixed, input)).toEqual({
       findings: [],
       status: "passed",
     });
@@ -79,7 +83,7 @@ test("check reports an edited kept file, fix rewrites it, and a second fix passe
 
 test("a path the adapter does not keep is incomplete, never passed", async () => {
   await inRoot({}, async (root) => {
-    const outcome = await fixed.check({ path: "other.txt", root });
+    const outcome = await checkOne(fixed, { path: "other.txt", root });
     expect(outcome.status).toBe("incomplete");
   });
 });
@@ -89,7 +93,7 @@ const preset = rumdlPresetAdapter();
 test("the Markdown preset is copied with a header that says who keeps it", async () => {
   await inRoot({}, async (root) => {
     expect(preset.descriptor.enabledBy).toBe("markdown.preset");
-    expect(await preset.fix({ path: PRESET_PATH, root })).toMatchObject({
+    expect(await fixOne(preset, { path: PRESET_PATH, root })).toMatchObject({
       status: "fixed",
     });
     const copy = await text(root, PRESET_PATH);
@@ -100,7 +104,7 @@ test("the Markdown preset is copied with a header that says who keeps it", async
 
 test("a repository with no config of its own gets one that extends the copy", async () => {
   await inRoot({}, async (root) => {
-    await preset.fix({ path: CONFIG_PATH, root });
+    await fixOne(preset, { path: CONFIG_PATH, root });
     expect(await text(root, CONFIG_PATH)).toBe(`extends = "${PRESET_PATH}"\n`);
   });
 });
@@ -109,17 +113,17 @@ test("a config with no extends line gets one at the top and keeps the rest", asy
   const own = "[MD007]\nindent = 4\n";
   await inRoot({ [CONFIG_PATH]: own }, async (root) => {
     const input = { path: CONFIG_PATH, root };
-    expect(await preset.check(input)).toMatchObject({
+    expect(await checkOne(preset, input)).toMatchObject({
       findings: [{ fixable: true }],
     });
-    await preset.fix(input);
+    await fixOne(preset, input);
     const written = await text(root, CONFIG_PATH);
     expect(written).toBe(`extends = "${PRESET_PATH}"\n\n${own}`);
     expect(Bun.TOML.parse(written)).toEqual({
       MD007: { indent: 4 },
       extends: PRESET_PATH,
     });
-    expect(await preset.check(input)).toEqual({
+    expect(await checkOne(preset, input)).toEqual({
       findings: [],
       status: "passed",
     });
@@ -129,7 +133,7 @@ test("a config with no extends line gets one at the top and keeps the rest", asy
 test("a config that extends something else is reported and left alone", async () => {
   const own = 'extends = "elsewhere.toml"\n';
   await inRoot({ [CONFIG_PATH]: own }, async (root) => {
-    const outcome = await preset.fix({ path: CONFIG_PATH, root });
+    const outcome = await fixOne(preset, { path: CONFIG_PATH, root });
     expect(outcome.status).toBe("findings");
     expect(outcome.findings[0]).toMatchObject({ fixable: false });
     expect(outcome.findings[0]?.message).toContain("preset = false");
@@ -140,7 +144,7 @@ test("a config that extends something else is reported and left alone", async ()
 test("a config that is not valid TOML is reported and left alone", async () => {
   const own = "extends = \n";
   await inRoot({ [CONFIG_PATH]: own }, async (root) => {
-    const outcome = await preset.fix({ path: CONFIG_PATH, root });
+    const outcome = await fixOne(preset, { path: CONFIG_PATH, root });
     expect(outcome.findings[0]?.message).toContain("not valid TOML");
     expect(await text(root, CONFIG_PATH)).toBe(own);
   });
