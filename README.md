@@ -64,6 +64,11 @@ enabled = true
 [tools.rumdl.MD007]
 indent = 4
 
+# Facts several tools must agree on. Cinch writes `.editorconfig` from them.
+[editor]
+indent_style = "space"
+indent_size = 2
+
 [[overrides]]
 paths = ["docs/legacy/**"]
 [overrides.markdown]
@@ -73,6 +78,8 @@ enabled = false
 Overrides apply in file order. When more than one matches a path, the later one wins for each setting it states, and the plan names the override each value came from. A path that `exclude` matches, or that `include` does not, stays in the plan marked as skipped, with the setting that decided it.
 
 A table under `tools` is copied into the config Cinch generates for that tool, at `.outfitter/configs/<tool>.<ext>`. That file extends the preset Cinch ships, and the tool's root config extends that file, so a rule is stated once, in the Cinch config, and plain `rumdl` or an editor sees it too. `cinch doctor --fix` rewrites the generated file after the table changes. [The Markdown standard](docs/markdown-standard.md) has the details. Markdown is the first tool with a table.
+
+The `[editor]` table holds the facts editors and formatters share: indent, line endings, charset, line width. Cinch writes the whole root `.editorconfig` from it, and never overwrites one a person wrote. See [editor settings](docs/editor-settings.md).
 
 This repository's own `cinch.toml` is the first user of the format.
 

@@ -1,3 +1,4 @@
+import type { EditorSettings } from "./editor.ts";
 import type { PolicyValue, Provenance } from "./plan.ts";
 
 /**
@@ -27,6 +28,11 @@ export type ToolTables = Readonly<Record<string, ToolTable>>;
 
 /** What the loader hands to the resolver. Later overrides win. */
 export interface CinchConfig {
+  /**
+   * The facts about text files the config states. Absent when the file has
+   * no such table, and then Cinch writes them nowhere.
+   */
+  readonly editor?: EditorSettings;
   readonly exclude: Sourced<readonly string[]>;
   /** The root-relative file the config came from. Null when there is none. */
   readonly file: string | null;

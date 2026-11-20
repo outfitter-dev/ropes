@@ -7,6 +7,7 @@
 - Every preset Cinch keeps is present and matches what this Cinch ships. Today that is the copy of [the Markdown standard](markdown-standard.md) at `.outfitter/configs/presets/rumdl.toml`.
 - Every generated config matches the Cinch config. Today that is `.outfitter/configs/rumdl.toml`, written from `[tools.rumdl]`. Changing that table leaves the file stale until `cinch doctor --fix` runs.
 - The root config extends the generated one. Today that is the `extends` line in `.rumdl.toml`.
+- `.editorconfig` matches the `[editor]` table of the Cinch config, when the config has one. See [editor settings](editor-settings.md).
 - The tools the workspace's plan needs are installed, at the versions `mise.toml` pins. See [tool versions](tool-versions.md).
 
 A preset the config switches off is no part of the setup, whether or not `exclude` covers its files. A kept file that `exclude` covers while its preset is on stops the run with exit code 2, naming the file and the setting: Cinch cannot keep a file the config tells it to leave alone, and saying nothing would read as a pass.

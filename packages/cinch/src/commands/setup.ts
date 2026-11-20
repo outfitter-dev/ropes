@@ -1,4 +1,6 @@
+import { loadConfig } from "../config/load.ts";
 import { discoverRoot } from "../config/root.ts";
+import { DEFAULT_CONFIG } from "../contracts/config.ts";
 import { setupOf } from "../policy/setup.ts";
 import { describeRootError } from "./errors.ts";
 import { prepare } from "./prepare.ts";
@@ -7,15 +9,23 @@ import { describeGap, gapsOf } from "./preset-gaps.ts";
 import { presetsOf } from "./presets.ts";
 
 /**
- * The files of the Cinch setup. An adapter that keeps files needs no pinned
- * tool, so the list does not depend on the repository's pins.
+ * The files of the Cinch setup at `root`. An adapter that keeps files needs
+ * no pinned tool, so the list does not depend on the repository's pins. It
+ * does depend on the config, which can ask for a file to be kept. A config
+ * that cannot be read is reported by the plan that follows.
  */
-export const setupFiles = (deps: CommandDeps): string[] =>
-  deps
-    .adapters({})
+export const setupFiles = async (
+  deps: CommandDeps,
+  root: string
+): Promise<string[]> => {
+  const config = await loadConfig(root);
+  const stated = config.ok ? config.value : DEFAULT_CONFIG;
+  return deps
+    .adapters({}, stated.tools, stated.editor)
     .flatMap(({ descriptor }) =>
       descriptor.setup === true ? (descriptor.owns ?? []) : []
     );
+};
 
 /**
  * The plan of the Cinch setup at the root above `cwd`: every file Cinch
@@ -36,7 +46,7 @@ export const prepareSetup = async (
   }
   // With no file to keep, no paths means the whole workspace, and
   // `setupOf` then leaves an empty plan.
-  const paths = setupFiles(deps);
+  const paths = await setupFiles(deps, found.value.root);
   const prepared = await prepare({ cwd: found.value.root, paths }, deps);
   if (!prepared.ok) {
     return prepared;

@@ -2,6 +2,104 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "editor": {
+      "description": "Facts about text files that several tools must agree on. Cinch writes the root editor settings file from this table.",
+      "type": "object",
+      "properties": {
+        "charset": {
+          "description": "The character set of text files.",
+          "type": "string",
+          "enum": ["latin1", "utf-16be", "utf-16le", "utf-8", "utf-8-bom"]
+        },
+        "end_of_line": {
+          "description": "How a line ends.",
+          "type": "string",
+          "enum": ["cr", "crlf", "lf"]
+        },
+        "final_newline": {
+          "description": "Whether a file ends with a newline.",
+          "type": "boolean"
+        },
+        "indent_size": {
+          "description": "How many columns one level of indent takes.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "indent_style": {
+          "description": "Whether indents are spaces or tabs.",
+          "type": "string",
+          "enum": ["space", "tab"]
+        },
+        "line_width": {
+          "description": "The column a line should not run past.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "trim_trailing_whitespace": {
+          "description": "Whether whitespace at the end of a line is removed.",
+          "type": "boolean"
+        },
+        "overrides": {
+          "description": "Facts for some files. A later entry wins over an earlier.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "charset": {
+                "description": "The character set of text files.",
+                "type": "string",
+                "enum": ["latin1", "utf-16be", "utf-16le", "utf-8", "utf-8-bom"]
+              },
+              "end_of_line": {
+                "description": "How a line ends.",
+                "type": "string",
+                "enum": ["cr", "crlf", "lf"]
+              },
+              "final_newline": {
+                "description": "Whether a file ends with a newline.",
+                "type": "boolean"
+              },
+              "indent_size": {
+                "description": "How many columns one level of indent takes.",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 16
+              },
+              "indent_style": {
+                "description": "Whether indents are spaces or tabs.",
+                "type": "string",
+                "enum": ["space", "tab"]
+              },
+              "line_width": {
+                "description": "The column a line should not run past.",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1000
+              },
+              "trim_trailing_whitespace": {
+                "description": "Whether whitespace at the end of a line is removed.",
+                "type": "boolean"
+              },
+              "files": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[^\\n\\r\\u005B\\u005D#;]+$"
+                },
+                "description": "The globs these facts apply to, such as `Makefile`."
+              }
+            },
+            "required": ["files"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "exclude": {
       "description": "Root-relative globs for files Cinch leaves alone.",
       "type": "array",

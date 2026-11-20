@@ -10,3 +10,18 @@ enabled = true
 
 [toml]
 enabled = true
+
+# The facts editors and formatters have to agree on. Cinch writes
+# `.editorconfig` from this table.
+[editor]
+charset = "utf-8"
+indent_style = "space"
+indent_size = 2
+end_of_line = "lf"
+final_newline = true
+trim_trailing_whitespace = true
+
+# Two trailing spaces are a line break in Markdown.
+[[editor.overrides]]
+files = ["*.md"]
+trim_trailing_whitespace = false
