@@ -27,9 +27,18 @@ export interface RumdlOptions {
 
 const VERSION = /\d+\.\d+\.\d+/u;
 
+/**
+ * What a file holds, for telling whether a fix changed it. Null when it is
+ * missing or cannot be read: the engine then says so for that one file, and
+ * the other files of the batch are still fixed.
+ */
 const textOf = async (file: string): Promise<string | null> => {
-  const handle = Bun.file(file);
-  return (await handle.exists()) ? await handle.text() : null;
+  try {
+    const handle = Bun.file(file);
+    return (await handle.exists()) ? await handle.text() : null;
+  } catch {
+    return null;
+  }
 };
 
 /**

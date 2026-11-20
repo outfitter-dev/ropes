@@ -8,7 +8,7 @@ import type {
   PolicyValue,
   Selection,
 } from "../contracts/plan.ts";
-import { batchesFor, packageOf, toStep } from "./batches.ts";
+import { batchesFor, inRunOrder, packageOf, toStep } from "./batches.ts";
 import { compileGlobs } from "./glob.ts";
 import type { Matcher } from "./glob.ts";
 
@@ -77,7 +77,7 @@ const stepsFor = (
       .filter((setting) => setting.value === false)
       .map((setting) => setting.key)
   );
-  return descriptors
+  return inRunOrder(descriptors)
     .filter(
       (descriptor) =>
         // A step is one file. A package or workspace adapter gets none until

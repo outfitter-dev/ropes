@@ -20,20 +20,27 @@ const keeps = (descriptor: AdapterDescriptor): boolean =>
   (descriptor.owns ?? []).length > 0;
 
 /**
- * Groups the steps into one batch for each adapter and package. Adapters
- * that keep files go first, since a kept file is often the config another
- * step reads, and a fix has to write it before that step runs. After that
- * the order is the adapters' own, so on any one file a later step still
- * reads what an earlier one wrote.
+ * The order steps run in. Adapters that keep files go first, since a kept
+ * file is often the config another step reads, and a fix has to write it
+ * before that step runs. After that the order is the adapters' own, so on
+ * any one file a later step still reads what an earlier one wrote.
+ */
+export const inRunOrder = (
+  descriptors: readonly AdapterDescriptor[]
+): AdapterDescriptor[] => [
+  ...descriptors.filter(keeps),
+  ...descriptors.filter((descriptor) => !keeps(descriptor)),
+];
+
+/**
+ * Groups the steps into one batch for each adapter and package, in the
+ * order they run.
  */
 export const batchesFor = (
   planned: readonly PlannedPath[],
   descriptors: readonly AdapterDescriptor[]
 ): PlanBatch[] => {
-  const ordered = [
-    ...descriptors.filter(keeps),
-    ...descriptors.filter((descriptor) => !keeps(descriptor)),
-  ];
+  const ordered = inRunOrder(descriptors);
   const packages = [...new Set(planned.map((entry) => entry.package))];
   return ordered.flatMap((descriptor) =>
     packages.toSorted().flatMap((inPackage) => {
