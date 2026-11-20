@@ -2,6 +2,7 @@
 import { parseArgs } from "node:util";
 
 import manifest from "../package.json" with { type: "json" };
+import { STANDALONE } from "./adapters/shipped-text.ts";
 import type { CommandResponse } from "./commands/command.ts";
 import { commands } from "./commands/registry.ts";
 import { EXIT_CODE } from "./contracts/result.ts";
@@ -61,7 +62,9 @@ const main = async (argv: readonly string[]): Promise<number> => {
     strict: false,
   });
   if (values.version === true) {
-    process.stdout.write(`${manifest.version}\n`);
+    process.stdout.write(
+      `${manifest.version}${STANDALONE ? " (binary)" : ""}\n`
+    );
     return EXIT_CODE.clean;
   }
   const [name, ...paths] = positionals;

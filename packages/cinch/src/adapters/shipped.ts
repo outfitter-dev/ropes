@@ -2,6 +2,7 @@ import type { Adapter, FileOutcome, StepInput } from "./adapter.ts";
 import { BUILT_ON_RULE, builtOnProblem, installedVersion } from "./built-on.ts";
 import type { BuiltOn } from "./built-on.ts";
 import { managedAdapter } from "./managed.ts";
+import { shippedText } from "./shipped-text.ts";
 
 export interface ShippedOptions {
   readonly id: string;
@@ -77,7 +78,7 @@ export const shippedPreset = (options: ShippedOptions): Adapter => {
         path: options.path,
         want: async () => ({
           ok: true,
-          text: `${shippedHeader(options.comment)}${await Bun.file(options.source).text()}`,
+          text: `${shippedHeader(options.comment)}${await shippedText(options.source)}`,
         }),
       },
     ],

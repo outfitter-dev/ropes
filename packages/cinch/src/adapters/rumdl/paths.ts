@@ -1,3 +1,5 @@
+import { shippedText } from "../shipped-text.ts";
+
 /** The standard as this Cinch ships it. Cinch owns the file. */
 export const PRESET_PATH = ".outfitter/configs/presets/rumdl.toml";
 /**
@@ -13,7 +15,7 @@ export const RUMDL_TABLE = "rumdl";
 const SOURCE = new URL("../../../presets/rumdl.toml", import.meta.url);
 
 /** The Markdown standard, as shipped. */
-export const standard = (): Promise<string> => Bun.file(SOURCE).text();
+export const standard = (): Promise<string> => shippedText(SOURCE);
 
 /** The line that makes the root config extend the generated one. */
 export const EXTENDS = `extends = ${JSON.stringify(GENERATED_PATH)}\n`;
