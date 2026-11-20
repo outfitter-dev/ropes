@@ -18,7 +18,7 @@ cinch init --yes
 
 This writes the change. Running it again changes nothing.
 
-When a preset replaces another tool's config, `init` also deals with the old config files. The preview names them and says whether `--yes` will remove them. They are removed only when everything in them was carried over and the setup ended clean. Otherwise they stay and `init` says why. With `--json`, this is the `retired` object in the report. See [markdown-standard.md](markdown-standard.md) for the Markdown case.
+When a preset replaces another tool's config, `init` also deals with the old config files. The preview names them and says whether `--yes` will remove them. They are removed only when everything in them was carried over and the setup ended clean. Otherwise they stay and `init` says why. What else still names the old tool, such as a dependency or a hook, is listed and left alone. With `--json`, this is the `retired` object in the report. See [markdown-standard.md](markdown-standard.md) for the Markdown case.
 
 | Flag | What it does |
 | --- | --- |
