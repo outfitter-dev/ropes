@@ -4,8 +4,8 @@ import { DEFAULT_CONFIG } from "../contracts/config.ts";
 import { setupOf } from "../policy/setup.ts";
 import { describeRootError } from "./errors.ts";
 import { prepare } from "./prepare.ts";
-import type { CommandDeps, PrepareResult } from "./prepare.ts";
-import { describeGap, gapsOf } from "./preset-gaps.ts";
+import type { CommandDeps, Prepared, PrepareResult } from "./prepare.ts";
+import { describeGap, gapsOf, settingOf } from "./preset-gaps.ts";
 import { presetsOf } from "./presets.ts";
 
 /**
@@ -28,13 +28,38 @@ export const setupFiles = async (
 };
 
 /**
+ * One line for each kept file that is not a preset's and that the config
+ * excludes while its adapter is on. A preset's files are judged with the
+ * preset, which has a name a person can be told.
+ */
+const excludedKept = ({ adapters, plan }: Prepared): string[] =>
+  adapters.flatMap(({ descriptor }) => {
+    if (descriptor.setup !== true || descriptor.preset !== undefined) {
+      return [];
+    }
+    return (descriptor.owns ?? []).flatMap((file) => {
+      const entry = plan.paths.find((planned) => planned.path === file);
+      const off = entry?.policy.some(
+        (setting) =>
+          setting.key === descriptor.enabledBy && setting.value === false
+      );
+      return entry?.skipped?.reason === "excluded" && off !== true
+        ? [
+            `the Cinch config leaves ${file} out (${settingOf(entry.skipped)}), so Cinch cannot keep it. Take the file out of that setting, then run this again.`,
+          ]
+        : [];
+    });
+  });
+
+/**
  * The plan of the Cinch setup at the root above `cwd`: every file Cinch
  * keeps there, with only the steps that keep it. It is the same plan
  * `explain` shows for those files, less the steps of other adapters.
  *
  * A kept file the config leaves out cannot be kept, and passing over it
  * would read as a setup in good shape, so that is an error for every
- * caller. A preset that is switched off is not part of the setup.
+ * caller, whether the file is a preset's or another the config asks for. A
+ * preset that is switched off is not part of the setup.
  */
 export const prepareSetup = async (
   cwd: string,
@@ -54,8 +79,9 @@ export const prepareSetup = async (
   const gaps = gapsOf(presetsOf(deps.adapters({})), prepared.value.plan).filter(
     (gap) => gap.why === "left-out"
   );
-  if (gaps.length > 0) {
-    return { error: gaps.map(describeGap).join("\ncinch: "), ok: false };
+  const problems = [...gaps.map(describeGap), ...excludedKept(prepared.value)];
+  if (problems.length > 0) {
+    return { error: problems.join("\ncinch: "), ok: false };
   }
   return {
     ok: true,

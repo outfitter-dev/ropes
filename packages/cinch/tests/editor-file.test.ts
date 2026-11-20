@@ -155,3 +155,24 @@ test("without the table, the file is not Cinch's and is left alone", async () =>
   const plan = parsePlan(JSON.parse(shown.output ?? ""));
   expect(plan.ok && plan.value.paths[0]?.steps).toEqual([]);
 });
+
+test("an excluded editor file is an unusable setup, not a clean one", async () => {
+  await put(
+    "cinch.toml",
+    EDITOR.replace("pilot = 0", 'pilot = 0\nexclude = [".editorconfig"]')
+  );
+  const repaired = await run("doctor", { fix: true });
+  expect(repaired.exitCode).toBe(2);
+  expect(repaired.error).toContain(
+    "the Cinch config leaves .editorconfig out (`exclude` in cinch.toml), so Cinch cannot keep it."
+  );
+  expect(await exit("fix")).toBe(2);
+  expect(await Bun.file(path.join(root, EDITOR_PATH)).exists()).toBe(false);
+});
+
+test("init writes the editor file a config that is already there asks for", async () => {
+  await put("cinch.toml", EDITOR);
+  expect(await exit("init", { yes: true })).toBe(0);
+  expect(await kept()).toContain("indent_size = 2");
+  expect(await exit("doctor")).toBe(0);
+});
