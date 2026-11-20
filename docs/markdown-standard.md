@@ -17,6 +17,34 @@ extends = ".outfitter/configs/rumdl.toml"
 
 Cinch leaves a `.rumdl.toml` that already extends something else alone and reports it. Change the line by hand, or opt out. It also will not write `.rumdl.toml` when the repository configures rumdl in `rumdl.toml`, `.config/rumdl.toml` or `pyproject.toml`, because rumdl reads only one of them and the new file would hide those settings. Move them into `.rumdl.toml` first.
 
+## Moving from markdownlint
+
+rumdl reads a markdownlint config when a repository has no rumdl config. The moment `.rumdl.toml` exists it stops, so adopting the standard would drop the repository's own rules without a word. Cinch carries them over instead. When it creates `.rumdl.toml` and finds a markdownlint config, it writes the rules that differ from the standard below the `extends` line:
+
+```toml
+extends = ".outfitter/configs/rumdl.toml"
+
+# Carried over from .markdownlint.json by Cinch.
+# Only what differs from the Markdown standard is here.
+[global]
+extend-disable = ["MD001"]
+
+[MD007]
+indent = 4
+
+# Not carried over from .markdownlint.json:
+# - `my-rule` is not a rule the new linter has. It may be a custom rule or a tag.
+```
+
+`cinch init` shows this as a diff before anything is written, like every other change it makes.
+
+- Cinch reads `.markdownlint.json`, `.jsonc`, `.yaml` and `.yml`, the `config` block of `.markdownlint-cli2.jsonc` and `.markdownlint-cli2.yaml`, and the `markdownlint-cli2` key in `package.json`. It reads the first one it finds, in markdownlint-cli2's order, and names any other in the notes.
+- The translation is rumdl's own (`rumdl import`). Cinch then compares rules by ID, so `no-inline-html` and `MD033` are the same rule, and drops every value the standard already sets and every value rumdl added that the old config did not state.
+- A rule the old config switched off stays off, under `extend-disable`. A rule the standard switches off that the old config configured or switched on stays on. Then `disable` replaces the standard's list and repeats what stays off.
+- What cannot be carried over is listed in a comment by name: custom rules and tags, `extends`, and markdownlint-cli2 settings such as `customRules`. `globs` and `ignores` choose files, which is the Cinch config's job, so the note gives the `include` or `exclude` line to add there.
+- A config that is a script, such as `.markdownlint.cjs`, is never run. Cinch reports it and does not create `.rumdl.toml`. Write the file by hand.
+- An existing `.rumdl.toml` is not touched by this. Cinch does not remove the old config, its ignore file, its dependency or the scripts that call it. Do that once the new file reads right.
+
 A fix writes these two files before it touches any Markdown, so the first run already uses the standard.
 
 ## Take a newer standard
