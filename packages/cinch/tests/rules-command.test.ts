@@ -155,3 +155,20 @@ test("an action it does not have is refused", async () => {
     'cinch: unknown rules action "nope". Use list or adopt.'
   );
 });
+
+test("a named pack whose files the config leaves out is noted", async () => {
+  await put("tsconfig.json", "{}\n");
+  await config("enabled = true\n");
+  const note =
+    'config will not run yet: cinch.toml leaves out the files it reads, such as tsconfig.json. Add "**/tsconfig.json" to `include` to run it.';
+  expect(await report().then((one) => one.notes)).toEqual([note]);
+  const shown = await run({ json: false });
+  expect(shown.output).toEndWith(`\n\n${note}`);
+  await put(
+    "cinch.toml",
+    'pilot = 0\ninclude = ["**/*.json"]\n\n[rules]\nenabled = true\npacks = ["config"]\n'
+  );
+  expect(await report().then((one) => one.notes)).toEqual([]);
+  await put("cinch.toml", "pilot = 0\n\n[rules]\nenabled = true\n");
+  expect(await report().then((one) => one.notes)).toEqual([]);
+});
