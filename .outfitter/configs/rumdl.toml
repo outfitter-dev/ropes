@@ -78,6 +78,10 @@ emphasis = true
 enabled = true
 # A missing formatter is a failure, never a silent pass.
 on-missing-tool-binary = "fail"
+# A block the formatter fails on is reported as a warning, and the blocks
+# after it are still checked. Cinch reads the warning: a block that is not
+# valid code is named as unchecked, and any other failure is incomplete.
+on-error = "warn"
 
 [code-block-tools.languages]
 typescript = { lint = ["bun-fmt:ts"], format = ["bun-fmt:ts"] }

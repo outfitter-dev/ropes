@@ -19,8 +19,9 @@ const OutputSchema = z.array(DiagnosticSchema);
 
 /**
  * The rule rumdl reports under when a tool it runs on a fenced block could not
- * do its work: the tool is missing, or it failed on the block. rumdl stops
- * reading the file there, so the rest of the file was not checked.
+ * do its work: the tool is missing, or the config does not set
+ * `on-error = "warn"` and the tool failed on the block. rumdl then checks no
+ * later block in the file.
  */
 const FENCE_TOOL_RULE = "code-block-tools";
 

@@ -87,3 +87,11 @@ test("incomplete beats findings, and findings beat clean", () => {
   expect(outcomeOf([step("passed"), step("findings")])).toBe("findings");
   expect(outcomeOf([step("findings"), step("incomplete")])).toBe("incomplete");
 });
+
+test("an unchecked part is carried in the result and changes no outcome", () => {
+  const unchecked = [{ line: 3, reason: "the fenced block does not parse" }];
+  const steps = [{ ...step("passed"), unchecked }];
+  const parsed = parseResult({ ...result, outcome: "clean", steps });
+  expect(parsed.ok ? parsed.value.steps[0]?.unchecked : []).toEqual(unchecked);
+  expect(outcomeOf(steps)).toBe("clean");
+});

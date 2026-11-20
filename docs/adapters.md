@@ -40,7 +40,7 @@ An engine's preset lives in the engine's own folder and is listed in the registr
 - `check(input)` inspects one path and returns findings with a status of `passed` or `findings`. It must not write.
 - `fix(input)` may write. It returns `fixed` when it changed the file and nothing remains, `findings` when something remains that it could not fix, and `passed` when there was nothing to do.
 
-Any operation may return `incomplete` with a reason when it could not do its work.
+Any operation may return `incomplete` with a reason when it could not do its work. An operation that did its work but left a part of the file alone on purpose lists that part in `unchecked`, with a line and a reason. Use it only for something the author can see and change, never for a tool that failed.
 
 ## What the runner guarantees
 
@@ -65,7 +65,7 @@ An adapter takes a root and a path and returns data. It does not read arguments,
 - rumdl reads its own config, such as `.rumdl.toml`, from the repository root. Running rumdl by hand and running it through Cinch therefore apply the same rules. Cinch passes no policy of its own to rumdl. It keeps the shared config that rumdl reads.
 - Cinch does not install rumdl. The binary must be on `PATH`. A repository pins the version in `mise.toml`, and `mise install` provides it. Without a pin the adapter accepts the 0.3 releases from 0.3.5, the version its output mapping was checked against.
 - rumdl exits 0 when clean, 1 when findings remain and 2 when it could not run, for example on a config file it cannot parse. Exit 2, output that is not the expected JSON, and exit 1 with no finding all make the step incomplete.
-- rumdl can run other tools on fenced code. When one of them is missing or fails on a block, rumdl reports it under the rule `code-block-tools` and stops reading that file. The rest of the file was not checked, so the step is incomplete and the reason names the line. See [the Markdown standard](markdown-standard.md).
+- rumdl can run other tools on fenced code. A missing tool is reported under the rule `code-block-tools`, and the step is incomplete. A tool that fails on a block is a warning on stderr, which the adapter reads. When the error is placed in the block itself, the block is not valid code: the step names it in `unchecked` and keeps its status. Any other failure makes the step incomplete, and the reason names the line. See [the Markdown standard](markdown-standard.md).
 - rumdl's cache is switched off, so a run leaves no `.rumdl_cache` folder behind.
 
 ## Testing

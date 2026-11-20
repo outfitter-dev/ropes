@@ -120,20 +120,38 @@ withEngines(
   }
 );
 
+const BROKEN = "the fenced block does not parse, so it was not formatted: ";
+
 withEngines(
-  "a fence that does not parse leaves the step incomplete",
+  "a fence that does not parse is named as unchecked, and the rest is checked",
   async () => {
-    const text = fence("const x = {");
+    const text = `${fence("const x = {")}\n\`\`\`ts\nconst   y=1\n\`\`\`\n`;
     const [checked, fixed, after] = await inRepo(text, async (root, read) => [
       await rumdlAdapter().check(input(root)),
       await rumdlAdapter().fix(input(root)),
       await read(),
     ]);
-    expect(checked.status).toBe("incomplete");
-    expect(checked.reason).toStartWith(
-      "rumdl ran, but it could not check the fenced block at line 3: Tool 'bun' failed"
+    const unchecked = [{ line: 3, reason: `${BROKEN}'}' expected.` }];
+    expect(checked.status).toBe("findings");
+    expect(checked.findings.map((finding) => finding.range.start.line)).toEqual(
+      [7]
     );
-    expect(fixed.status).toBe("incomplete");
-    expect(after).toBe(text);
+    expect(checked.unchecked).toEqual(unchecked);
+    expect(fixed).toEqual({ findings: [], status: "fixed", unchecked });
+    expect(after).toBe(text.replace("const   y=1", "const y = 1;"));
+  }
+);
+
+withEngines(
+  "a formatter config that does not load leaves the step incomplete",
+  async () => {
+    const outcome = await inRepo(fence("const x = 1;"), async (root) => {
+      await Bun.write(path.join(root, "oxfmt.config.ts"), "export default {");
+      return await rumdlAdapter().check(input(root));
+    });
+    expect(outcome.status).toBe("incomplete");
+    expect(outcome.reason).toStartWith(
+      "rumdl ran, but the formatter's config did not load, so the fenced block at line 3 was not checked."
+    );
   }
 );

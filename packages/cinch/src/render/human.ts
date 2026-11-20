@@ -18,7 +18,12 @@ const noticeLines = (step: StepResult): string[] => {
       `  incomplete  ${step.adapter}: ${step.reason ?? "no reason given"}`,
     ];
   }
-  return step.status === "fixed" ? [`  fixed  ${step.adapter}`] : [];
+  const unchecked = (step.unchecked ?? []).map(
+    (part) => `  ${part.line}:1  unchecked  ${step.adapter}: ${part.reason}`
+  );
+  return step.status === "fixed"
+    ? [`  fixed  ${step.adapter}`, ...unchecked]
+    : unchecked;
 };
 
 /**
@@ -71,6 +76,13 @@ const summary = (result: Result): string => {
   }
   if (count("incomplete") > 0) {
     counts.push(`${plural(count("incomplete"), "step")} incomplete`);
+  }
+  const unchecked = result.steps.reduce(
+    (sum, step) => sum + (step.unchecked?.length ?? 0),
+    0
+  );
+  if (unchecked > 0) {
+    counts.push(`${plural(unchecked, "part")} left unchecked`);
   }
   if (skipped > 0) {
     counts.push(`${plural(skipped, "file")} left out by config`);

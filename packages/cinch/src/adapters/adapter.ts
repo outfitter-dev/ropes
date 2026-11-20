@@ -1,5 +1,5 @@
 import type { Finding } from "../contracts/finding.ts";
-import type { StepStatus } from "../contracts/result.ts";
+import type { StepStatus, Unchecked } from "../contracts/result.ts";
 
 export type Platform = "darwin" | "linux" | "win32";
 
@@ -51,6 +51,8 @@ export interface StepOutcome {
   readonly status: StepStatus;
   readonly findings: readonly Finding[];
   readonly reason?: string;
+  /** Parts of the file left alone on purpose. Leave out when there are none. */
+  readonly unchecked?: readonly Unchecked[];
 }
 
 export interface StepInput {

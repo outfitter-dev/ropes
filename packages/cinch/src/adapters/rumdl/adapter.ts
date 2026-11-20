@@ -8,6 +8,7 @@ import type {
   StepOutcome,
 } from "../adapter.ts";
 import { exec } from "./exec.ts";
+import { readFences } from "./fences.ts";
 import { parseOutput } from "./output.ts";
 
 const ID = "rumdl";
@@ -37,7 +38,8 @@ const firstLine = (text: string): string => text.trim().split("\n")[0] ?? "";
 
 /**
  * rumdl exits 0 when clean, 1 when findings remain and 2 when it could not
- * run. Anything it could not report on is incomplete.
+ * run. Anything it could not report on is incomplete, except a fenced block
+ * that is not valid code: that block is named as unchecked.
  */
 const run = async (
   command: string,
@@ -68,9 +70,14 @@ const run = async (
   if (exitCode === 1 && parsed.findings.length === 0) {
     return incomplete(`${ID} exited 1 without reporting a finding`);
   }
+  const fences = readFences(stderr);
+  if (!fences.ok) {
+    return incomplete(`${ID} ran, but ${fences.message}`);
+  }
   return {
     findings: parsed.findings,
     status: parsed.findings.length > 0 ? "findings" : "passed",
+    ...(fences.unchecked.length > 0 ? { unchecked: fences.unchecked } : {}),
   };
 };
 
