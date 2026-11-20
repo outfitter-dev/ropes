@@ -13,6 +13,7 @@ import { describeConfigError, describeRootError } from "./errors.ts";
 import { filesUnder } from "./files.ts";
 import { packagesAbove } from "./packages.ts";
 import { select } from "./select.ts";
+import { settle } from "./settle.ts";
 import { unreadTable } from "./tool-tables.ts";
 
 /** What a command needs from outside. Tests pass adapters of their own. */
@@ -80,12 +81,20 @@ export const prepare = async (
   if (!pins.ok) {
     return { error: pins.message, ok: false };
   }
-  const adapters = deps.adapters(
-    pins.pins,
-    config.value.tools,
-    config.value.editor,
-    config.value.rulesLocal?.value
+  const settled = await settle(
+    deps.adapters(
+      pins.pins,
+      config.value.tools,
+      config.value.editor,
+      config.value.rulesLocal?.value
+    ),
+    root.root,
+    config.value
   );
+  if (!settled.ok) {
+    return settled;
+  }
+  const { adapters } = settled;
   const owned = adapters.flatMap((adapter) => adapter.descriptor.owns ?? []);
   const selected = await select(root, request.cwd, request.paths, owned);
   if (!selected.ok) {

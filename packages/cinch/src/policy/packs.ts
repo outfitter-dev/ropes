@@ -1,10 +1,10 @@
 import type { AdapterDescriptor } from "../adapters/adapter.ts";
 import type { CinchConfig } from "../contracts/config.ts";
-import type { PackState, Plan } from "../contracts/plan.ts";
+import type { PackState, Plan, Provenance } from "../contracts/plan.ts";
 import { compileGlobs } from "./glob.ts";
 
 /** Whether policy asks for the adapter on any file at all. */
-const isWanted = (
+export const isWanted = (
   { enabledBy, optIn }: AdapterDescriptor,
   config: CinchConfig
 ): boolean => {
@@ -120,22 +120,42 @@ export const unknownPacks = (
 };
 
 /**
- * The folders of its own rules the config names, as they would stand if
- * policy asked for every adapter given.
+ * The folders of its own rules the repository names, in its Cinch config
+ * or in an engine's project config, as they would stand if policy asked for
+ * every adapter given. A folder both name is the Cinch config's.
  */
 export const namedLocalRules = (
   config: CinchConfig,
   descriptors: readonly AdapterDescriptor[]
 ): Plan["localRules"] => {
-  const folders = descriptors.flatMap(
-    (descriptor) => descriptor.localRules ?? []
+  const stated = config.rulesLocal?.source;
+  const named = descriptors.flatMap(
+    ({ foundRules: found, localRules: own }) => {
+      const theirs: Provenance | undefined =
+        found === undefined
+          ? undefined
+          : { file: found.file, key: found.key, kind: "file" };
+      return [
+        ...(stated === undefined
+          ? []
+          : (own ?? []).map((folder) => ({ folder, source: stated }))),
+        ...(theirs === undefined
+          ? []
+          : (found?.folders ?? []).map((folder) => ({
+              folder,
+              source: theirs,
+            }))),
+      ];
+    }
   );
-  return config.rulesLocal === undefined || folders.length === 0
-    ? undefined
-    : { folders: [...new Set(folders)], source: config.rulesLocal.source };
+  const folders = named.filter(
+    ({ folder }, index) =>
+      named.findIndex((other) => other.folder === folder) === index
+  );
+  return folders.length === 0 ? undefined : folders;
 };
 
-/** The folders of its own rules the config names, when an adapter runs them. */
+/** The folders of its own rules the repository names, when an adapter runs them. */
 export const localRules = (
   config: CinchConfig,
   descriptors: readonly AdapterDescriptor[]

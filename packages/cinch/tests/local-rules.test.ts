@@ -89,13 +89,13 @@ const resolve = (localRules?: readonly string[]) =>
 test("an adapter with local rules has a step where no shipped pack is on", () => {
   const plan = resolve(["rules"]);
   expect(plan.batches).toMatchObject([{ adapter: "fake-rules", rules: [] }]);
-  expect(plan.localRules).toEqual({ folders: ["rules"], source: LOCAL });
+  expect(plan.localRules).toEqual([{ folder: "rules", source: LOCAL }]);
   expect(resolve().batches).toEqual([]);
   expect(resolve().localRules).toBeUndefined();
 });
 
 test("explain lists local folders apart from the shipped packs", () => {
-  expect(localRulesBlock({ folders: ["rules"], source: LOCAL })).toBe(
+  expect(localRulesBlock([{ folder: "rules", source: LOCAL }])).toBe(
     "Local rules\n  rules  (cinch.toml: rules.local)"
   );
 });

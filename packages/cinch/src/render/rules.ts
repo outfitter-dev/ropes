@@ -50,7 +50,7 @@ export const localRulesBlock = (
 ): string =>
   [
     "Local rules",
-    ...local.folders.map((folder) => `  ${folder}  (${origin(local.source)})`),
+    ...local.map(({ folder, source }) => `  ${folder}  (${origin(source)})`),
   ].join("\n");
 
 /** What `cinch rules` prints: every pack Cinch ships and how it stands here. */

@@ -4,7 +4,7 @@ import type { FileOutcome, StepInput } from "../adapter.ts";
 import { allIncomplete, inChunks } from "../batch.ts";
 import { exec } from "../exec.ts";
 import { readLocal, refusedFile } from "./local.ts";
-import type { LocalRules } from "./local.ts";
+import type { LocalRules, RuleFolder } from "./local.ts";
 import { parseOutput } from "./output.ts";
 import { shippedIds, shippedRules } from "./rules.ts";
 
@@ -97,14 +97,14 @@ const start = async (
 
 /**
  * Runs the shipped rules that are on, and the repository's own from the
- * `folders` it names, on a batch. The engine starts in the repository root,
+ * `folders` it or its project config names, on a batch. The engine starts in the repository root,
  * and a rule's own `files` globs are read from there.
  */
 export const scanBatch = async (
   binary: string,
   source: string,
   input: StepInput,
-  folders: readonly string[] = []
+  folders: readonly RuleFolder[] = []
 ): Promise<FileOutcome[]> => {
   const local = await readLocal(input.root, folders, shippedIds);
   if (!local.ok) {
