@@ -6,7 +6,7 @@ import { describeRootError } from "./errors.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps, PrepareResult } from "./prepare.ts";
 import { describeGap, gapsOf } from "./preset-gaps.ts";
-import { presetsOf } from "./presets.ts";
+import { keptOf } from "./presets.ts";
 
 /**
  * The files of the Cinch setup at `root`. An adapter that keeps files needs
@@ -51,9 +51,12 @@ export const prepareSetup = async (
   if (!prepared.ok) {
     return prepared;
   }
-  const gaps = gapsOf(presetsOf(deps.adapters({})), prepared.value.plan).filter(
-    (gap) => gap.why === "left-out"
-  );
+  // The adapters that built the plan. Adapters built with no config omit a
+  // setup file the config asked to keep, and the run would then look clean.
+  const gaps = gapsOf(
+    keptOf(prepared.value.adapters),
+    prepared.value.plan
+  ).filter((gap) => gap.why === "left-out");
   if (gaps.length > 0) {
     return { error: gaps.map(describeGap).join("\ncinch: "), ok: false };
   }

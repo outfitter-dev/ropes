@@ -145,6 +145,23 @@ test("a file a person wrote is never overwritten", async () => {
   expect(await first()).toStartWith("This file was written by hand");
 });
 
+test("exclude that covers the editor file stops doctor and fix, and writes nothing", async () => {
+  await put(
+    "cinch.toml",
+    `pilot = 0\nexclude = [${JSON.stringify(EDITOR_PATH)}]\n[markdown]\nenabled = false\npreset = false\n[toml]\nenabled = false\n[editor]\nindent_style = "space"\nindent_size = 2\n`
+  );
+  const reported = await run("doctor");
+  expect(reported.exitCode).toBe(2);
+  expect(reported.error).toContain(`leaves ${EDITOR_PATH} out`);
+  expect(reported.error).toContain("the editor file");
+  expect(reported.error).toContain("exclude");
+  const fixing = await run("doctor", { fix: true });
+  expect(fixing.exitCode).toBe(2);
+  expect(await Bun.file(path.join(root, EDITOR_PATH)).exists()).toBe(false);
+  expect(await exit("fix")).toBe(2);
+  expect(await Bun.file(path.join(root, EDITOR_PATH)).exists()).toBe(false);
+});
+
 test("without the table, the file is not Cinch's and is left alone", async () => {
   const mine = "root = true\n";
   await put("cinch.toml", QUIET);

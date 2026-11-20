@@ -45,8 +45,13 @@ const settingOf = (skipped: Skipped | undefined): string =>
     ? `\`${skipped.source.key}\` in ${skipped.source.file}`
     : "its defaults";
 
-/** What a person reads when a preset file cannot be kept. */
+const held = (preset: Preset): string =>
+  preset.kind === "file"
+    ? `the ${preset.name} file`
+    : `the ${preset.name} preset`;
+
+/** What a person reads when a kept file cannot be kept. */
 export const describeGap = (gap: Gap): string =>
   gap.why === "off"
-    ? `the ${gap.preset.name} preset is switched off: the Cinch config sets \`${gap.preset.enabledBy}\` to false. Remove that line, then run this again.`
-    : `the Cinch config leaves ${gap.file} out (${settingOf(gap.skipped)}), so the ${gap.preset.name} preset cannot be kept there. Take the file out of that setting, then run this again.`;
+    ? `${held(gap.preset)} is switched off: the Cinch config sets \`${gap.preset.enabledBy}\` to false. Remove that line, then run this again.`
+    : `the Cinch config leaves ${gap.file} out (${settingOf(gap.skipped)}), so ${held(gap.preset)} cannot be kept there. Take the file out of that setting, then run this again.`;

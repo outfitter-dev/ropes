@@ -4,12 +4,16 @@ import type { RepoRoot } from "../contracts/root.ts";
 import { describeRootError } from "./errors.ts";
 import type { CommandDeps } from "./prepare.ts";
 
-/** A shared config Cinch ships, and the adapter that keeps its files. */
+/**
+ * A set of files one adapter keeps. A preset leaves `kind` unset. A setup
+ * file that is not a preset sets it, so a message does not call it one.
+ */
 export interface Preset {
   readonly name: string;
   readonly adapter: string;
   readonly enabledBy: string;
   readonly files: readonly string[];
+  readonly kind?: "file";
 }
 
 /**
@@ -28,6 +32,33 @@ export const presetsOf = (adapters: readonly Adapter[]): readonly Preset[] =>
             name: descriptor.preset,
           },
         ]
+  );
+
+/** An id ending in `-file` is spoken without that suffix, then as a file. */
+const fileName = (id: string): string => {
+  const suffix = "-file";
+  return id.endsWith(suffix) ? id.slice(0, -suffix.length) : id;
+};
+
+const keptOne = (descriptor: Adapter["descriptor"]): Preset => {
+  const base = {
+    adapter: descriptor.id,
+    enabledBy: descriptor.enabledBy,
+    files: descriptor.owns ?? [],
+  };
+  return descriptor.preset === undefined
+    ? { ...base, kind: "file", name: fileName(descriptor.id) }
+    : { ...base, name: descriptor.preset };
+};
+
+/**
+ * The setup files a gap check judges, in adapter order. Presets are not the
+ * only files Cinch keeps: one that has no preset name is still left out when
+ * `exclude` covers it while its adapter is on.
+ */
+export const keptOf = (adapters: readonly Adapter[]): readonly Preset[] =>
+  adapters.flatMap(({ descriptor }) =>
+    descriptor.setup === true ? [keptOne(descriptor)] : []
   );
 
 export type Located =
