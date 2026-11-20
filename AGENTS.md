@@ -1,13 +1,14 @@
-# Outfitter
+# Ropes
 
-This repository holds two things that ship separately:
+This repository owns the Ropes quality engine and CLI, including contracts, policy, runner, adapters, shared presets, rules, schemas, standalone build, tests, and quality setup.
 
-- **Fit** is the `outfitter` package, with the `outfitter` and `fit` executables. It is the whole Outfitter CLI. It starts with quality and leaves room for more.
-- **Cinch** is the `@outfitter/cinch` package, with the `cinch` executable. It is the slim quality CLI. `outfitter` depends on an exact Cinch version and hoists its verbs, so `cinch check`, `outfitter check` and `fit check` are the same command.
+- `@ropes/core` is the unpublished package under `packages/cinch/`. It exposes typed quality operations and versioned contract parsers. This directory also retains the existing Cinch command and setup implementation during the cutover.
+- `@ropes/cli` is the unpublished package under `packages/cli/`, with the `rope` executable. Its first slice exposes `explain`, `check`, and `fix` through public core imports. Use `bun run rope` from this checkout.
+- The separate [`outfitter` application](https://github.com/outfitter-dev/outfitter) will consume the public core API. Application initialization, cross-tool configuration migration, and the unscoped `outfitter` npm cutover belong to that repository. New consumer examples use the `outfitter` executable.
 
-The old framework that used to live under this repository name is now `outfitter-dev/outfitter-legacy`. Nothing here depends on it.
+The previous framework lives in [`outfitter-legacy`](https://github.com/outfitter-dev/outfitter-legacy).
 
-Read README.md and the [specification and decision register](https://linear.app/outfitter/document/fit-product-specification-and-decision-register-232485133059) before implementing. The specification governs behaviour. When the work shows it is wrong, update it and say so in the pull request instead of quietly diverging. Work is tracked in the Cinch Build project on the Linear `FIT` team.
+Read README.md, the [product direction](https://linear.app/outfitter/document/ropes-product-direction-cli-design-and-repository-architecture-def8de43517b), and the [execution plan](https://linear.app/outfitter/document/ropes-execution-plan-cutover-pilot-and-rollout-37f1f91fa166) before implementing. The [specification and decision register](https://linear.app/outfitter/document/fit-product-specification-and-decision-register-232485133059) governs existing Cinch behavior until the cutover is accepted. When implementation needs to diverge, update the governing document and explain the change in the pull request. Work is tracked on the Linear `ROPE` team in Cinch Build and Cinch Rule Enforcement.
 
 ## Rules that come from the specification
 
@@ -15,7 +16,7 @@ Read README.md and the [specification and decision register](https://linear.app/
 - Each verb writes its own files and no others. `explain` and `check` write nothing. `fix` writes the repository's own files. `doctor --fix` writes the Cinch setup: the presets and generated configs Cinch keeps under `.outfitter/configs/`, and the one edit Cinch may make to a config a person wrote, the missing `extends` line. `init` and `preset` write through the same steps as `doctor --fix`. `init` alone may also carry an older tool's settings into such a config, because it is the takeover. `preset adopt` and `preset eject` move one tool's settings between its root config and its table in the Cinch config, and write those two files and the generated config only when `--yes` is given. `rules adopt` names rule packs in the Cinch config, and writes that one file only when `--yes` is given. These limits are about the repository. The standalone binary also keeps a stand-in `bun` in the user's cache folder, under any verb, and never in the repository; `docs/binary.md` describes it.
 - The resolver in `policy/` is pure. It reads no files, spawns nothing, and gives the same plan for the same input.
 - Engines sit behind the `Adapter` interface. The runner knows only that interface and never branches on an adapter's id. Adding an engine is one new folder under `adapters/` and one line in `adapters/registry.ts`.
-- `cli.ts` is the only file that parses arguments or prints. Commands take a typed request and return data, so `outfitter` can call them directly, and so the command layer can be replaced later (a move to Trails is possible) without touching the rest.
+- Argument parsing and printing belong to the CLI entry points. Core operations take typed requests and return data. `rope` and external consumers use the public `@ropes/core` exports; keep their quality logic in core. The existing Cinch commands use those same operations. A future command-layer change must preserve the resolver and runner boundaries.
 - A step that could not run is incomplete, never passed. Exit codes are 0 clean, 1 findings remain, 2 incomplete or unusable, and incomplete wins.
 - The plan, result and config shapes are provisional. An unknown schema or config version is an error, never a silent default.
 
@@ -29,4 +30,4 @@ Run `./scripts/bootstrap.sh` in a fresh checkout, then `bun run check`. Do not h
 
 Stacks and worktrees go through [Climb](https://github.com/outfitter-dev/climb). `climb.yaml` points its checks phase at `bun run check`, so `climb commit` runs the same gate as CI.
 
-Do not publish a package, make the repository public, or change repository access as an incidental change. The npm name `outfitter` is still held by the legacy CLI; do not publish over it.
+Package publication, repository visibility, and access changes need explicit authorization. The Ropes prerelease gate is [ROPE-18](https://linear.app/outfitter/issue/ROPE-18). The separate Outfitter repository owns the unscoped npm cutover.

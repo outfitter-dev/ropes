@@ -1,8 +1,8 @@
 {
-  "name": "outfitter-workspace",
+  "name": "ropes-workspace",
   "version": "0.0.0",
   "private": true,
-  "description": "Workspace for the outfitter CLI (Fit) and @outfitter/cinch.",
+  "description": "Ropes quality engine, CLI, tool configuration, and shared presets.",
   "workspaces": [
     "packages/*"
   ],
