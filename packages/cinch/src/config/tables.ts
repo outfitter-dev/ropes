@@ -1,8 +1,13 @@
 import { z } from "zod";
 
-/** Whether a root-relative path stays under the root it is read from. */
+/**
+ * Whether a root-relative path stays under the root it is read from. A
+ * leading `\` is a Windows root or UNC path, and the folder is later given
+ * to the engine as it was written.
+ */
 const isInside = (folder: string): boolean =>
   !folder.startsWith("/") &&
+  !folder.startsWith("\\") &&
   !/^[A-Za-z]:/u.test(folder) &&
   !folder.split(/[\\/]/u).includes("..");
 

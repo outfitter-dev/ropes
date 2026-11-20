@@ -35,14 +35,20 @@ const errorCount = (exitCode: number, stderr: string): number | null => {
 /**
  * One start on some files that exist. A run whose exit code, count and
  * printed matches do not agree is not used, and then none of the files
- * count as checked.
+ * count as checked. A local rule the engine refuses fails every file the
+ * same way, so the file it names is remembered and a later start of this
+ * batch does not ask the engine again.
  */
 const start = async (
   binary: string,
   source: string,
   input: StepInput,
-  local: Local
+  local: Local,
+  remembered: { reason?: string }
 ): Promise<FileOutcome[]> => {
+  if (remembered.reason !== undefined) {
+    return allIncomplete(input, remembered.reason);
+  }
   const rules = [shippedRules(input.rules), ...local.texts]
     .filter((text) => text !== "")
     .join("\n---\n");
@@ -53,6 +59,9 @@ const start = async (
   const said = errorCount(exitCode, stderr);
   if (said === null) {
     const refused = await refusedFile(binary, input.root, local.files);
+    if (refused !== null) {
+      remembered.reason = refused;
+    }
     return allIncomplete(
       input,
       refused ?? `${source} exited ${exitCode}: ${firstLine(stderr)}`
@@ -100,12 +109,13 @@ export const scanBatch = async (
     input.paths.map((file) => Bun.file(path.join(input.root, file)).exists())
   );
   const paths = input.paths.filter((_, index) => present[index] === true);
+  const remembered: { reason?: string } = {};
   const scanned =
     paths.length === 0 ||
     (input.rules?.length === 0 && local.texts.length === 0)
       ? []
       : await inChunks({ ...input, paths }, (part) =>
-          start(binary, source, part, local)
+          start(binary, source, part, local, remembered)
         );
   const byPath = new Map(scanned.map((outcome) => [outcome.path, outcome]));
   // Only a file another adapter keeps is planned before it exists. Its
