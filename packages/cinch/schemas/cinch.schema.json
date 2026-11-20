@@ -108,6 +108,16 @@
         "minLength": 1
       }
     },
+    "format": {
+      "type": "object",
+      "properties": {
+        "preset": {
+          "description": "Whether Cinch keeps the shared formatter config in the repository. Off unless set to true.",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
     "include": {
       "description": "Root-relative globs for the files Cinch checks.",
       "type": "array",
@@ -115,6 +125,16 @@
         "type": "string",
         "minLength": 1
       }
+    },
+    "lint": {
+      "type": "object",
+      "properties": {
+        "preset": {
+          "description": "Whether Cinch keeps the shared lint config in the repository. Off unless set to true.",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
     },
     "markdown": {
       "type": "object",
@@ -203,6 +223,16 @@
         },
         "additionalProperties": {}
       }
+    },
+    "typescript": {
+      "type": "object",
+      "properties": {
+        "preset": {
+          "description": "Whether Cinch keeps the shared TypeScript compiler options in the repository. Off unless set to true.",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": ["pilot"],

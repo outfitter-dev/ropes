@@ -73,11 +73,14 @@ const stepsFor = (
   descriptors: readonly AdapterDescriptor[]
 ): PlanStep[] => {
   const extension = extensionOf(path);
-  const off = new Set(
-    policy
-      .filter((setting) => setting.value === false)
-      .map((setting) => setting.key)
-  );
+  const keysSet = (to: boolean): Set<string> =>
+    new Set(
+      policy
+        .filter((setting) => setting.value === to)
+        .map((setting) => setting.key)
+    );
+  const off = keysSet(false);
+  const on = keysSet(true);
   return inRunOrder(descriptors)
     .filter(
       (descriptor) =>
@@ -86,7 +89,9 @@ const stepsFor = (
         descriptor.unit === "file" &&
         (descriptor.extensions.includes(extension) ||
           descriptor.owns?.includes(path) === true) &&
-        !off.has(descriptor.enabledBy)
+        (descriptor.optIn === true
+          ? on.has(descriptor.enabledBy)
+          : !off.has(descriptor.enabledBy))
     )
     .map(toStep);
 };

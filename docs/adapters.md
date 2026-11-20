@@ -27,6 +27,7 @@ The descriptor is plain data. It is all the resolver sees.
 | `platforms` | Where the tool can run, from `darwin`, `linux` and `win32`. |
 | `extensions` | The file extensions, with the dot, that get a step from this adapter. |
 | `enabledBy` | The policy key that switches the adapter. A path whose policy sets it to `false` gets no step. |
+| `optIn` | Optional. The adapter is off until policy sets `enabledBy` to `true`, instead of on until policy sets it to `false`. For a preset only some repositories want. |
 | `table` | Optional. The table under `tools` in the Cinch config that the adapter copies into a file it keeps. The registry hands the adapter that table. A table no adapter names is an error. |
 | `layers` | Optional. For each kept file, the part it plays in the tool's config: `preset`, `generated` or `root`. `explain` prints it. |
 | `reports` | Optional. The [shared facts](shared-facts.md) the adapter can report its tool's value for, by the names the `[editor]` table uses. An empty list says the tool has such settings and the adapter cannot report them, and `explain` says so. |
@@ -37,6 +38,8 @@ The descriptor is plain data. It is all the resolver sees.
 Some files in a repository belong to Cinch, such as the copy of a shared config preset. `adapters/managed.ts` builds an adapter for them from a list of paths and, for each, a function that says what the file should hold. `check` reports a file that is missing or differs, and `fix` writes it. The descriptor sets `setup`, so the runner calls that `fix` only for `cinch doctor --fix`. There is no engine to install, so the probe always succeeds.
 
 An engine's preset lives in the engine's own folder and is listed in the registry like any adapter. `adapters/rumdl/preset.ts` is the first one. It keeps three files that the engine reads through `extends`: the preset in `.outfitter/configs/presets/`, a config generated from the engine's `tools` table in `.outfitter/configs/`, and the root config, which extends the generated one. The layers stay separate files and are never merged. See [the Markdown standard](markdown-standard.md).
+
+`adapters/shipped.ts` builds the simplest kind: one kept file that is a copy of a file the package ships under `presets/`, behind a comment that says Cinch manages it, and off until the config asks for it. The lint, formatter and compiler presets of [the TypeScript standard](typescript-standard.md) are three of these.
 
 ## The operations
 

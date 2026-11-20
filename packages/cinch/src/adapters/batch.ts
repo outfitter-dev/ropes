@@ -30,7 +30,7 @@ export const eachFile = async (
 ): Promise<FileOutcome[]> => {
   const outcomes: FileOutcome[] = [];
   for (const path of input.paths) {
-    // oxlint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop
     const outcome = await one({
       migrate: input.migrate === true,
       path,

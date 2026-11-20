@@ -1,12 +1,5 @@
 import { defineConfig } from "oxfmt";
-import ultracite from "ultracite/oxfmt";
 
-export default defineConfig({
-  ...ultracite,
-  ignorePatterns: [
-    ...(ultracite.ignorePatterns ?? []),
-    "dist/**",
-    "coverage/**",
-  ],
-  proseWrap: "never",
-});
+import preset from "./.outfitter/configs/presets/oxfmt.ts";
+
+export default defineConfig({ ...preset });

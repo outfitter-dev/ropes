@@ -49,11 +49,11 @@ export const discoverRoot = async (from: string): Promise<RootResult> => {
   let configured: { dir: string; file: string } | null = null;
   for (;;) {
     if (configured === null) {
-      // oxlint-disable-next-line no-await-in-loop -- the walk is sequential: each step depends on the last
+      // eslint-disable-next-line no-await-in-loop -- the walk is sequential: each step depends on the last
       const file = await configFileIn(dir);
       configured = file === null ? null : { dir, file };
     }
-    // oxlint-disable-next-line no-await-in-loop -- as above
+    // eslint-disable-next-line no-await-in-loop -- as above
     const vcs = await vcsAt(dir);
     if (vcs !== null) {
       const root = configured?.dir ?? dir;
@@ -86,7 +86,7 @@ const physical = async (target: string): Promise<string> => {
   let dir = target;
   for (;;) {
     try {
-      // oxlint-disable-next-line no-await-in-loop -- each step depends on the last
+      // eslint-disable-next-line no-await-in-loop -- each step depends on the last
       return path.join(await realpath(dir), ...rest);
     } catch {
       const parent = path.dirname(dir);

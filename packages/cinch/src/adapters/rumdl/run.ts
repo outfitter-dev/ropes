@@ -107,7 +107,7 @@ const apart = async (
 ): Promise<FileOutcome[]> => {
   const outcomes: FileOutcome[] = [];
   for (const path of input.paths) {
-    // oxlint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop
     const one = await start(command, { ...input, paths: [path] }, flags);
     outcomes.push(...one);
   }
@@ -128,12 +128,12 @@ export const runBatch = async (
   for (const paths of chunks(input.paths)) {
     const part = { ...input, paths };
     // One start at a time: with `--fix`, rumdl writes the files it is given.
-    // oxlint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop
     const together = await start(command, part, flags);
     const failed =
       paths.length > 1 &&
       together.every((outcome) => outcome.status === "incomplete");
-    // oxlint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop
     outcomes.push(...(failed ? await apart(command, part, flags) : together));
   }
   return outcomes;

@@ -10,6 +10,8 @@ export interface Preset {
   readonly adapter: string;
   readonly enabledBy: string;
   readonly files: readonly string[];
+  /** True when the preset is off until the config switches it on. */
+  readonly optIn: boolean;
 }
 
 /**
@@ -26,6 +28,7 @@ export const presetsOf = (adapters: readonly Adapter[]): readonly Preset[] =>
             enabledBy: descriptor.enabledBy,
             files: descriptor.owns ?? [],
             name: descriptor.preset,
+            optIn: descriptor.optIn === true,
           },
         ]
   );

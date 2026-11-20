@@ -54,9 +54,12 @@ const literal = (file: string): string =>
  * How often Taplo is asked before its silence counts. Taplo 0.10 now and then
  * drops a log line, mostly on a busy machine, though it linted the file: the
  * line that says which files it read, about once in a thousand starts, and
- * the line that names the check that failed, far more often.
+ * the line that names the check that failed, far more often. When its own
+ * config excludes the file it exits sooner, and the first of those lines
+ * was missing in 42 of 200 starts, so three asks were too few: all three
+ * came back silent about once in a hundred runs.
  */
-const ASKS = 3;
+const ASKS = 6;
 
 const lint = (command: string, input: FileInput) =>
   exec(
