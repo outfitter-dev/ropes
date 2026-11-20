@@ -21,6 +21,8 @@ export const unreached = async (
     readonly file: string;
     readonly names: readonly string[];
     readonly present: readonly string[];
+    /** The repository root, which the files in `present` are relative to. */
+    readonly root: string;
   }
 ): Promise<string[]> => {
   const packs = given.adapters
@@ -35,7 +37,11 @@ export const unreached = async (
     return [];
   }
   const planned = await prepare(
-    { ...request, paths: packs.flatMap((pack) => pack.files) },
+    {
+      ...request,
+      cwd: given.root,
+      paths: packs.flatMap((pack) => pack.files),
+    },
     deps
   );
   if (!planned.ok) {

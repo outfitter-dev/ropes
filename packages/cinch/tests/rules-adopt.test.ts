@@ -240,3 +240,12 @@ test("a pack with one file the config covers gets no such note", async () => {
   await put("cinch.toml", 'pilot = 0\ninclude = ["pkg/**/*.json"]\n');
   expect(await report().then((one) => one.notes)).toEqual([]);
 });
+
+test("the same note is given from a directory under the root", async () => {
+  await put("cinch.toml", "pilot = 0\n\n[rules]\nenabled = true\n");
+  await mkdir(path.join(root, "docs"));
+  const below = await report({ cwd: path.join(root, "docs") });
+  expect(below.notes).toEqual([
+    'config will not run yet: cinch.toml leaves out the files it reads, such as tsconfig.json. Add "**/tsconfig.json" to `include` to run it.',
+  ]);
+});

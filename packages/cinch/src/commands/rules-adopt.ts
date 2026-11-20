@@ -145,6 +145,7 @@ export const adopt = async (
     file: text.file,
     names: adopted,
     present,
+    root: root.root,
   });
   const named = namePacks(text.text, text.prefix, [
     ...(config.rulesPacks?.value ?? []),
