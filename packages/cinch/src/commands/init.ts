@@ -11,7 +11,7 @@ import { runFix } from "./fix.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { locate } from "./presets.ts";
-import { inheritedBy, starterConfig } from "./starter.ts";
+import { inheritedBy, sparing, starterConfig } from "./starter.ts";
 
 /** Puts the config file first in a report about the files Cinch keeps. */
 const withConfig = (report: FixReport, config: string): FixReport => ({
@@ -23,7 +23,8 @@ const withConfig = (report: FixReport, config: string): FixReport => ({
 /**
  * Sets a repository up: a starting config when there is none, then every
  * preset that is switched on. The starting config takes the file choices of
- * a config an adapter replaces. It only shows the change unless `yes` is set,
+ * a config an adapter replaces, except a choice that would leave out a file
+ * Cinch keeps. It only shows the change unless `yes` is set,
  * and `dryRun` wins over `yes`. A config that is already there is never
  * rewritten.
  */
@@ -51,7 +52,9 @@ export const init =
     }
     const starter =
       (await configFileIn(root)) === null
-        ? starterConfig(await inheritedBy(planned.value.adapters, root))
+        ? starterConfig(
+            sparing(await inheritedBy(planned.value.adapters, root), paths)
+          )
         : null;
     if (starter !== null && apply) {
       await Bun.write(path.join(root, STANDALONE_FILE), starter);

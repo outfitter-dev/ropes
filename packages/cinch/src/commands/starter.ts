@@ -1,4 +1,5 @@
 import type { Adapter, Inherited } from "../adapters/adapter.ts";
+import { compileGlob } from "../policy/glob.ts";
 
 const HEAD = [
   "# Cinch config. This is the unstable pilot format and will change.",
@@ -60,3 +61,32 @@ export const inheritedBy = async (
   );
   return found.flatMap((one) => (one === null ? [] : [one]));
 };
+
+const keptBy = (glob: string, kept: readonly string[]): string | undefined =>
+  kept.find(compileGlob(glob));
+
+const spared = (one: Inherited, kept: readonly string[]): Inherited => ({
+  ...one,
+  exclude: one.exclude.filter((glob) => keptBy(glob, kept) === undefined),
+  notes: [
+    ...one.notes,
+    ...one.exclude.flatMap((glob) => {
+      const file = keptBy(glob, kept);
+      return file === undefined
+        ? []
+        : [
+            `${JSON.stringify(glob)} was not carried over, because it would leave out ${file}, which Cinch keeps.`,
+          ];
+    }),
+  ],
+});
+
+/**
+ * Drops each carried `exclude` that would leave out a file Cinch keeps, and
+ * says so. The old list was written for the old tool's files. Carried as it
+ * is, it could stop `init` writing a preset that another kept file points at.
+ */
+export const sparing = (
+  inherited: readonly Inherited[],
+  kept: readonly string[]
+): Inherited[] => inherited.map((one) => spared(one, kept));

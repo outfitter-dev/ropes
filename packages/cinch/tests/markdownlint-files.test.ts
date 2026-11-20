@@ -46,6 +46,20 @@ test("ignores become exclude, and a directory covers what is under it", async ()
   expect(excluded("docs/dist.md")).toBe(false);
 });
 
+test("a trailing slash or a dot in a directory name still covers its contents", async () => {
+  const found = await chosen({ ignores: ["dist/", "docs/v1.0", "a.min.md"] });
+  expect(found?.exclude).toEqual([
+    "dist",
+    "dist/**",
+    "docs/v1.0",
+    "docs/v1.0/**",
+    "a.min.md",
+  ]);
+  const excluded = compileGlobs(found?.exclude ?? []);
+  expect(excluded("dist/README.md")).toBe(true);
+  expect(excluded("docs/v1.0/notes.md")).toBe(true);
+});
+
 test("globs become include, and a negated glob becomes exclude", async () => {
   const found = await chosen({
     globs: ["**/*.md", "**/*.mdx", "!drafts"],

@@ -8,11 +8,15 @@ const Globs = z.array(z.string());
 
 /** Syntax the old linter's globs have and the Cinch config's do not. */
 const GROUP = /[@+?!*]\(/u;
-/** A last segment with something before its final dot is read as a file. */
-const FILE_NAME = /[^/.][^/]*\.[^/.]+$|\*\*$/u;
+/** A pattern that can only name files: Markdown, or everything below. */
+const FILES_ONLY = /\.(?:md|mdx|mdc|markdown)$|\*\*$/iu;
+const TRAILING_SLASHES = /\/+$/u;
 
 const trimmed = (pattern: string): string =>
-  pattern.startsWith("./") ? pattern.slice(2) : pattern;
+  (pattern.startsWith("./") ? pattern.slice(2) : pattern).replace(
+    TRAILING_SLASHES,
+    ""
+  );
 
 const expressible = (pattern: string): boolean =>
   pattern !== "" &&
@@ -26,9 +30,11 @@ const expressible = (pattern: string): boolean =>
  * The old linter reads a pattern that names a directory as everything under
  * it. A Cinch glob matches a whole path, so a pattern that may name a
  * directory is written twice: once as it is, and once for what is under it.
+ * A dot does not make a name a file (`docs/v1.0`), so only a Markdown
+ * extension counts. The second line is harmless when the name is a file.
  */
 const withContents = (pattern: string): string[] =>
-  FILE_NAME.test(pattern) ? [pattern] : [pattern, `${pattern}/**`];
+  FILES_ONLY.test(pattern) ? [pattern] : [pattern, `${pattern}/**`];
 
 interface Sorted {
   readonly include: string[];
