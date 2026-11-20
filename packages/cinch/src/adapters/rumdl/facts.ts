@@ -15,7 +15,8 @@ const SETTINGS: Readonly<Record<(typeof REPORTS)[number], readonly string[]>> =
   { line_width: ["global.line-length", "MD013.line-length"] };
 
 const SECTION = /^\[(?<name>[^\]]+)\]$/u;
-const SETTING = /^(?<key>[\w-]+) = (?<value>.*?)\s+\[from (?<from>[^\]]+)\]$/u;
+// The file runs to the last `]` of the line: a path may hold one itself.
+const SETTING = /^(?<key>[\w-]+) = (?<value>.*?)\s+\[from (?<from>.+)\]$/u;
 
 /** What a file sets: rumdl's built-in defaults are left out. */
 const DEFAULT = "default";

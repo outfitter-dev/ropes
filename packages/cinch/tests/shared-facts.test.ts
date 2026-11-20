@@ -161,6 +161,59 @@ test("a tool that cannot run is not asked, since its steps already say so", asyn
   expect(result.steps).toHaveLength(1);
 });
 
+const at = (version: string | undefined, versionRange = "^2.0.0") =>
+  fakeAdapter({
+    descriptor: { reports: ["line_width"], versionRange },
+    facts: () => Promise.resolve({ facts: [width(1)], ok: true }),
+    probe: () =>
+      Promise.resolve(
+        version === undefined
+          ? { available: true }
+          : { available: true, version }
+      ),
+  });
+
+test("a tool at a version the plan does not allow is not asked either", async () => {
+  const [old, silent, fits] = [at("1.9.0"), at(undefined), at("2.1.0")];
+  const [first, second, third] = await Promise.all(
+    [old, silent, fits].map((adapter) =>
+      runPlan(planFor([adapter]), [adapter], check)
+    )
+  );
+  expect(old.calls).not.toContain("facts");
+  expect(first?.steps).toHaveLength(1);
+  expect(first?.steps[0]?.status).toBe("incomplete");
+  expect(silent.calls).not.toContain("facts");
+  expect(second?.steps).toHaveLength(1);
+  expect(fits.calls).toContain("facts");
+  expect(third?.steps.map((step) => step.status)).toEqual([
+    "passed",
+    "findings",
+  ]);
+});
+
+test("the range that counts is the plan's, not the registered adapter's", async () => {
+  const planned = at("2.0.0");
+  const registered = at("1.9.0", "*");
+  const result = await runPlan(planFor([planned]), [registered], check);
+  expect(registered.calls).not.toContain("facts");
+  expect(result.steps).toHaveLength(1);
+});
+
+test("a config nested in the shared file names its keys as that file has them", () => {
+  const plan = planFor([reporter("one", { facts: [], ok: true })], {
+    ...STATED,
+    file: "outfitter.toml",
+    prefix: "cinch.",
+  });
+  expect(plan.facts?.stated.map((fact) => `${fact.file}: ${fact.key}`)).toEqual(
+    [
+      "outfitter.toml: cinch.editor.indent_size",
+      "outfitter.toml: cinch.editor.line_width",
+    ]
+  );
+});
+
 test("explain shows what is compared, and says when an adapter cannot report", () => {
   const can = reporter("one", { facts: [], ok: true });
   const cannot = fakeAdapter({

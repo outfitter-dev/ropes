@@ -137,7 +137,19 @@ export const runPlan = async (
       : await compareFacts(plan.facts, plan.root, async (id) => {
           const { adapter, probe } = ready(id);
           const found = await probe;
-          return found?.problem === undefined ? adapter : undefined;
+          // Held to the ranges the plan shows, as its file steps are.
+          const unfit =
+            found?.problem !== undefined ||
+            plan.batches.some(
+              (batch) =>
+                batch.adapter === id &&
+                versionProblem(
+                  batch.tool,
+                  found?.version,
+                  batch.versionRange
+                ) !== undefined
+            );
+          return unfit ? undefined : adapter;
         });
   const steps = [...ran, ...compared];
   return {

@@ -48,6 +48,21 @@ test("the engine's printed config is read with the file behind each value", () =
   );
 });
 
+test("a config path that holds a closing bracket is still read", () => {
+  const bracketed = PRINTED.replace(
+    ".rumdl.toml",
+    "configs/[shared]/base.toml"
+  );
+  expect(factsIn(bracketed, "/repo")).toEqual([
+    {
+      file: "configs/[shared]/base.toml",
+      key: "global.line-length",
+      name: "line_width",
+      value: 120,
+    },
+  ]);
+});
+
 const installed = Bun.which("rumdl") !== null;
 const CONFIG = "pilot = 0\n\n[editor]\nline_width = 100\n";
 const REPO = {

@@ -5,7 +5,7 @@ import type { PlanBatch } from "../contracts/plan.ts";
 
 /** The facts the `[editor]` table states for every file. */
 const statedIn = (config: CinchConfig): Fact[] => {
-  const { editor, file } = config;
+  const { editor, file, prefix = "" } = config;
   if (editor === undefined || file === null) {
     return [];
   }
@@ -13,7 +13,7 @@ const statedIn = (config: CinchConfig): Fact[] => {
     typeof value === "string" ||
     typeof value === "number" ||
     typeof value === "boolean"
-      ? [{ file, key: `editor.${name}`, name, value }]
+      ? [{ file, key: `${prefix}editor.${name}`, name, value }]
       : []
   );
 };
