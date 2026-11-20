@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { Glob } from "bun";
 
@@ -11,6 +12,7 @@ import {
 } from "../src/adapters/ast-grep/adapter.ts";
 import { parseOutput } from "../src/adapters/ast-grep/output.ts";
 import { shippedRules } from "../src/adapters/ast-grep/rules.ts";
+import { shippedFolder } from "../src/adapters/shipped-text.ts";
 import { checkOne } from "./one-file.ts";
 
 const RULES = path.join(import.meta.dir, "..", "rules");
@@ -24,9 +26,23 @@ test("the adapter is off until asked for, never writes, and follows the pin", ()
     versionRange: SUPPORTED_RANGE,
     writes: false,
   });
-  expect(rulesAdapter({ version: "0.51.3" }).descriptor.versionRange).toBe(
-    "0.51.3"
-  );
+  // A pin keeps the tested range beside it, so a run outside CI can accept
+  // a newer engine inside that range.
+  expect(rulesAdapter({ version: "0.51.3" }).descriptor).toMatchObject({
+    tested: SUPPORTED_RANGE,
+    versionRange: "0.51.3",
+  });
+});
+
+test("a shipped folder is read where its path has a space in it", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "cinch shipped "));
+  try {
+    await Bun.write(path.join(dir, "pack", "rule.yml"), "id: pack/rule\n");
+    const files = await shippedFolder(pathToFileURL(`${dir}/`));
+    expect([...files]).toEqual([["pack/rule.yml", "id: pack/rule\n"]]);
+  } finally {
+    await rm(dir, { force: true, recursive: true });
+  }
 });
 
 test("every shipped rule is named for its pack and says what is wrong", async () => {

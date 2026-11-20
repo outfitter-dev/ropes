@@ -1,6 +1,7 @@
 import type { Adapter, AdapterDescriptor, StepInput } from "../adapter.ts";
 import { allIncomplete } from "../batch.ts";
 import { probeOnPath } from "../on-path.ts";
+import { heldTo } from "../pins.ts";
 import { scanBatch } from "./run.ts";
 
 const ID = "ast-grep";
@@ -35,7 +36,7 @@ export const rulesAdapter = (options: RulesOptions = {}): Adapter => {
     platforms: ["darwin", "linux", "win32"],
     tool: ID,
     unit: "file",
-    versionRange: options.version ?? SUPPORTED_RANGE,
+    ...heldTo(options.version, SUPPORTED_RANGE),
     writes: false,
   };
   const run = (input: StepInput) => {

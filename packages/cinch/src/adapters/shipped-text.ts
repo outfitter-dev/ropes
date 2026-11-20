@@ -1,4 +1,5 @@
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { Glob } from "bun";
 
@@ -38,7 +39,7 @@ export const shippedFolder = async (
     );
   }
   const files = await Array.fromAsync(
-    new Glob("**/*").scan({ cwd: folder.pathname })
+    new Glob("**/*").scan({ cwd: fileURLToPath(folder) })
   );
   const texts = await Promise.all(
     files.map((file) => Bun.file(new URL(file, folder)).text())
