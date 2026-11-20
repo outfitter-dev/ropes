@@ -126,10 +126,12 @@ test("schema prints the JSON Schema of a command's --json output", async () => {
       "preset list",
       "preset update",
     ],
+    files: ["config"],
     schemaVersion: 0,
   });
   const text = await run("schema");
   expect(text.stdout).toContain("  preset update\n");
+  expect(text.stdout).toContain("`cinch schema config`");
 });
 
 test("with --json a failure is one JSON document on stderr", async () => {

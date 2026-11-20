@@ -24,7 +24,7 @@ Given a path, Cinch resolves one plan: which policy applies, where each value ca
 | `cinch fix [path...]` | Apply what the plan allows. `--dry-run` previews without touching the checkout. See [docs/fix.md](docs/fix.md) |
 | `cinch init` | Set up the config and presets a repository needs. It only shows the change. `--yes` writes it. See [docs/presets.md](docs/presets.md) |
 | `cinch preset` | List the shared configs Cinch keeps in the repository and whether each is current. `preset add <name>` and `preset update [name]` write them |
-| `cinch schema [command]` | Print the JSON Schema of a command's `--json` output, to write a jq filter against |
+| `cinch schema [command]` | Print the JSON Schema of a command's `--json` output, to write a jq filter against. `cinch schema config` prints the schema of the config file |
 
 Every command prints plain text that can be piped, or one JSON document with `--json`. [Output](docs/output.md) has the contract and jq examples. Exit codes are 0 for clean, 1 when findings remain, and 2 when the run is incomplete or unusable. A check that could not run never counts as a pass. [Outcomes and exit codes](docs/exit-codes.md) has the full contract, and [Selecting files](docs/selection.md) says which files a command looks at. Markdown is held to [the Markdown standard](docs/markdown-standard.md), which also formats fenced TypeScript and JavaScript.
 

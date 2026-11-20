@@ -25,4 +25,4 @@ jobs:
       - name: Run the cinch command from the workspace
         run: bun run cinch --version
       - name: Confirm the pinned external tools resolve
-        run: rumdl --version
+        run: rumdl --version && taplo --version

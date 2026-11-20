@@ -1,6 +1,6 @@
 # Tool versions
 
-`mise.toml` is the one place a tool version is pinned. That covers Bun and every external binary the repository runs, starting with rumdl. Local runs, CI and Cinch all read it.
+`mise.toml` is the one place a tool version is pinned. That covers Bun and every external binary the repository runs, starting with rumdl and Taplo. Local runs, CI and Cinch all read it.
 
 ## Change a version
 

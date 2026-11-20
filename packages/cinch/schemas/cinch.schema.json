@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "exclude": {
+      "description": "Root-relative globs for files Cinch leaves alone.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "include": {
+      "description": "Root-relative globs for the files Cinch checks.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "markdown": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Whether Markdown is checked. On unless set to false.",
+          "type": "boolean"
+        },
+        "preset": {
+          "description": "Whether Cinch keeps the shared Markdown standard in the repository.",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "overrides": {
+      "description": "Settings for some paths. A later entry wins over an earlier.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "markdown": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "description": "Whether Markdown is checked. On unless set to false.",
+                "type": "boolean"
+              },
+              "preset": {
+                "description": "Whether Cinch keeps the shared Markdown standard in the repository.",
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          },
+          "paths": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Root-relative globs. The settings beside them apply to matching files."
+          }
+        },
+        "required": ["paths"],
+        "additionalProperties": false
+      }
+    },
+    "pilot": {
+      "type": "number",
+      "const": 0,
+      "description": "The version of this unstable format. It must be stated."
+    }
+  },
+  "required": ["pilot"],
+  "additionalProperties": false,
+  "description": "The pilot config of Cinch. Unstable: it will change without notice.",
+  "title": "cinch.toml"
+}
