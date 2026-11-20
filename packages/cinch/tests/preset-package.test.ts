@@ -114,3 +114,18 @@ test("the version it was written for, or a later one of that major, passes", asy
   await install("9.0.0");
   expect(await found()).toEqual([{ fixable: false, rule: BUILT_ON_RULE }]);
 });
+
+test("a preview finds a package installed above a nested root, as a real run does", async () => {
+  const app = path.join(root, "packages", "app");
+  await mkdir(app, { recursive: true });
+  await Bun.write(
+    path.join(app, "cinch.toml"),
+    "pilot = 0\n[lint]\npreset = true\n[markdown]\npreset = false\n"
+  );
+  await install(PRESET_BASE.version);
+  const preview = await run("doctor", { cwd: app, dryRun: true, fix: true });
+  expect(preview.exitCode).toBe(0);
+  expect(await Bun.file(path.join(app, KEPT)).exists()).toBe(false);
+  const fixed = await run("doctor", { cwd: app, fix: true });
+  expect(fixed.exitCode).toBe(0);
+});
