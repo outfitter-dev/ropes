@@ -1,5 +1,3 @@
-import path from "node:path";
-
 import type {
   Adapter,
   AdapterDescriptor,
@@ -7,6 +5,7 @@ import type {
   ProbeResult,
   StepInput,
 } from "../adapter.ts";
+import { markFixed } from "../changed.ts";
 import { exec } from "../exec.ts";
 import { REPORTS, readFacts } from "./facts.ts";
 import { runBatch } from "./run.ts";
@@ -27,20 +26,6 @@ export interface RumdlOptions {
 }
 
 const VERSION = /\d+\.\d+\.\d+/u;
-
-/**
- * What a file holds, for telling whether a fix changed it. Null when it is
- * missing or cannot be read: the engine then says so for that one file, and
- * the other files of the batch are still fixed.
- */
-const textOf = async (file: string): Promise<string | null> => {
-  try {
-    const handle = Bun.file(file);
-    return (await handle.exists()) ? await handle.text() : null;
-  } catch {
-    return null;
-  }
-};
 
 /**
  * Markdown lint through rumdl. rumdl runs from the repository root, once for
@@ -71,23 +56,8 @@ export const rumdlAdapter = (options: RumdlOptions = {}): Adapter => {
       ? { available: true, version }
       : { available: false, reason: `${command} --version did not answer` };
   };
-  const fix = async (input: StepInput): Promise<FileOutcome[]> => {
-    const read = () =>
-      Promise.all(
-        input.paths.map((file) => textOf(path.join(input.root, file)))
-      );
-    const before = await read();
-    const outcomes = await runBatch(command, input, ["--fix"]);
-    const after = await read();
-    const changed = new Set(
-      input.paths.filter((_, index) => after[index] !== before[index])
-    );
-    return outcomes.map((outcome) =>
-      outcome.status === "passed" && changed.has(outcome.path)
-        ? { ...outcome, status: "fixed" }
-        : outcome
-    );
-  };
+  const fix = (input: StepInput): Promise<FileOutcome[]> =>
+    markFixed(input, () => runBatch(command, input, ["--fix"]));
   return {
     check: (input) => runBatch(command, input, []),
     descriptor,

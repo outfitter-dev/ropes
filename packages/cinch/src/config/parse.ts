@@ -41,10 +41,25 @@ const optInPreset = (what: string) =>
   });
 const OPT_IN = {
   format: optInPreset("formatter config"),
-  lint: optInPreset("lint config"),
+  lint: optInPreset("lint config").extend({
+    enabled: z
+      .boolean()
+      .optional()
+      .describe(
+        "Whether TypeScript and JavaScript are linted. Off unless set to true."
+      ),
+  }),
   typescript: optInPreset("TypeScript compiler options"),
 };
 const OverrideSchema = z.strictObject({
+  lint: z
+    .strictObject({
+      enabled: z
+        .boolean()
+        .optional()
+        .describe("Whether the matching files are linted."),
+    })
+    .optional(),
   markdown: ProfileSchema.optional(),
   paths: Globs.min(1).describe(
     "Root-relative globs. The settings beside them apply to matching files."
@@ -108,7 +123,7 @@ const sourced = <T>(
 
 /** The tables that hold settings, as a file or an override states them. */
 type Switches = Readonly<Record<string, boolean | undefined>> | undefined;
-/** The tables a file can state. An override states the first two only. */
+/** The tables a file can state. An override states some of them. */
 const SETTING_TABLES = [
   "markdown",
   "toml",

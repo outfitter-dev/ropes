@@ -34,27 +34,38 @@ export const inRunOrder = (
 ];
 
 /**
- * Groups the steps into one batch for each adapter and package, in the
- * order they run.
+ * Groups the steps into batches, in the order they run: one for each
+ * adapter and package, and two where some of its files may be written and
+ * others only read.
  */
 export const batchesFor = (
   planned: readonly PlannedPath[],
   descriptors: readonly AdapterDescriptor[]
 ): PlanBatch[] => {
-  const ordered = inRunOrder(descriptors);
   const packages = [...new Set(planned.map((entry) => entry.package))];
-  return ordered.flatMap((descriptor) =>
+  return inRunOrder(descriptors).flatMap(({ id }) =>
     packages.toSorted().flatMap((inPackage) => {
-      const paths = planned
-        .filter(
-          (entry) =>
-            entry.package === inPackage &&
-            entry.steps.some((step) => step.adapter === descriptor.id)
-        )
-        .map((entry) => entry.path);
-      return paths.length === 0
-        ? []
-        : [{ ...toStep(descriptor), package: inPackage, paths }];
+      const steps = planned
+        .filter((entry) => entry.package === inPackage)
+        .flatMap((entry) =>
+          entry.steps
+            .filter((step) => step.adapter === id)
+            .map((step) => ({ path: entry.path, step }))
+        );
+      return [true, false].flatMap((writes) => {
+        const [first, ...rest] = steps.filter(
+          ({ step }) => step.writes === writes
+        );
+        return first === undefined
+          ? []
+          : [
+              {
+                ...first.step,
+                package: inPackage,
+                paths: [first, ...rest].map(({ path }) => path),
+              },
+            ];
+      });
     })
   );
 };
