@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import type { FixReport } from "../contracts/fix.ts";
+import type { Plan } from "../contracts/plan.ts";
 import type { PresetFile, PresetReport } from "../contracts/preset.ts";
 import { EXIT_CODE } from "../contracts/result.ts";
 import type { ExitCode, Outcome, Result } from "../contracts/result.ts";
@@ -103,19 +104,45 @@ const list = async (
 const exitOf = (report: FixReport): ExitCode =>
   EXIT_CODE[report.result.outcome];
 
+/**
+ * The presets a write is for. One the person named is kept whatever its
+ * state, so a preset that is off is an error they read. With no name the
+ * write is for every preset that is on, and one that is off is passed over,
+ * as `doctor --fix` passes over it. When none is on, all are kept, so the
+ * error says how to switch one on.
+ */
+const wanted = (
+  presets: readonly Preset[],
+  named: boolean,
+  plan: Plan
+): readonly Preset[] => {
+  if (named) {
+    return presets;
+  }
+  const on = presets.filter((item) => {
+    const gaps = gapsOf([item], plan);
+    return gaps.length === 0 || gaps.some((gap) => gap.why !== "off");
+  });
+  return on.length === 0 ? presets : on;
+};
+
 const write = async (
   request: CommandRequest,
   deps: CommandDeps,
   root: string,
-  presets: readonly Preset[]
+  picked: { readonly presets: readonly Preset[]; readonly named: boolean }
 ): Promise<CommandResponse> => {
   // Every file is settled before any is written: a preset the config
   // switches off, or a file it leaves out, stops the whole write.
-  const paths = filesOf(presets);
-  const prepared = await prepare({ cwd: root, paths }, deps);
+  const prepared = await prepare(
+    { cwd: root, paths: filesOf(picked.presets) },
+    deps
+  );
   if (!prepared.ok) {
     return unusable(prepared.error);
   }
+  const presets = wanted(picked.presets, picked.named, prepared.value.plan);
+  const paths = filesOf(presets);
   const gaps = gapsOf(presets, prepared.value.plan);
   if (gaps.length > 0) {
     return unusable(gaps.map(describeGap).join("\ncinch: "));
@@ -166,5 +193,8 @@ export const preset =
     const { root } = located.root;
     return await (action === "list"
       ? list(request, deps, root, picked.presets)
-      : write(request, deps, root, picked.presets));
+      : write(request, deps, root, {
+          named: names.length > 0,
+          presets: picked.presets,
+        }));
   };

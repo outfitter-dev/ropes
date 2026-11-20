@@ -71,6 +71,19 @@ test("adding a preset that is off says which setting switches it on", async () =
   expect(await exists("oxlint.ts")).toBe(false);
 });
 
+test("an update that names no preset passes over the ones that are off", async () => {
+  await config("[lint]\npreset = true\n");
+  const updated = await run("preset", { action: "update" });
+  expect(updated.exitCode).toBe(0);
+  expect(await exists("oxlint.ts")).toBe(true);
+  expect(await exists("oxfmt.ts")).toBe(false);
+  // The Markdown preset is on by default, so the update wrote it too.
+  expect(await exists("rumdl.toml")).toBe(true);
+  const named = await run("preset", { action: "update", paths: ["format"] });
+  expect(named.exitCode).toBe(2);
+  expect(named.error).toContain("the format preset is off");
+});
+
 test("a preset the config asks for is written with a header, then current", async () => {
   await config(ON);
   const before = await run("check");

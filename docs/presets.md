@@ -63,7 +63,7 @@ cinch preset update
 cinch preset update markdown --dry-run
 ```
 
-`add` writes one preset's files. `update` rewrites what is behind, for one preset or for all of them. `--dry-run` shows the diff and writes nothing. `cinch doctor --fix` does what `preset update` does for every preset, and is the command to reach for once a repository is set up. To take a newer standard, upgrade Cinch and run it.
+`add` writes one preset's files. `update` rewrites what is behind, for one preset or for all of them. With no name it passes over a preset that is off, and naming one that is off is an error that says how to switch it on. `--dry-run` shows the diff and writes nothing. `cinch doctor --fix` does what `preset update` does for every preset, and is the command to reach for once a repository is set up. To take a newer standard, upgrade Cinch and run it.
 
 A preset that the config switches off is not written. Cinch names the setting to remove and does not edit a hand-written config.
 
