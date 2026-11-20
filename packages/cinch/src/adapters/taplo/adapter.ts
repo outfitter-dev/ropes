@@ -11,7 +11,7 @@ import { eachFile } from "../batch.ts";
 import type { FileInput } from "../batch.ts";
 import { exec } from "../exec.ts";
 import type { Exit } from "../exec.ts";
-import { configProblem, readOnly, parseOutput } from "./output.ts";
+import { configProblem, readOnly, parseOutput, ruleOf } from "./output.ts";
 
 const ID = "taplo";
 
@@ -52,8 +52,9 @@ const literal = (file: string): string =>
 
 /**
  * How often Taplo is asked before its silence counts. Taplo 0.10 now and then
- * drops the log line that says which files it read, mostly on a busy machine,
- * though it linted the file. Seen about once in a thousand starts.
+ * drops a log line, mostly on a busy machine, though it linted the file: the
+ * line that says which files it read, about once in a thousand starts, and
+ * the line that names the check that failed, far more often.
  */
 const ASKS = 3;
 
@@ -70,7 +71,10 @@ const lint = (command: string, input: FileInput) =>
     input.root
   );
 
-/** Asks again while Taplo ran but did not say which files it read. */
+/**
+ * Asks again while Taplo ran but left out a line the result depends on: which
+ * files it read, or, when it exits 1, which check failed.
+ */
 const asked = async (
   command: string,
   input: FileInput,
@@ -80,7 +84,8 @@ const asked = async (
   const silent =
     (ran.exitCode === 0 || ran.exitCode === 1) &&
     configProblem(ran.stderr) === undefined &&
-    readOnly(ran.stderr, input.path) === undefined;
+    (readOnly(ran.stderr, input.path) === undefined ||
+      (ran.exitCode === 1 && ruleOf(ran.stderr) === undefined));
   return silent && left > 1 ? await asked(command, input, left - 1) : ran;
 };
 
