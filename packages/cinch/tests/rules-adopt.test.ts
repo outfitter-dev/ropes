@@ -198,6 +198,20 @@ test("a config that leads out of the repository is not written", async () => {
   }
 });
 
+test("a config with CRLF endings keeps them on every line", () => {
+  expect(
+    packsOf("pilot = 0\r\n\r\n[rules]\r\nenabled = true\r\n", ["config"])
+  ).toBe(
+    'pilot = 0\r\n\r\n[rules]\r\nenabled = true\r\npacks = ["config"]\r\n'
+  );
+  expect(packsOf("pilot = 0\r\n", ["config"])).toBe(
+    'pilot = 0\r\n\r\n[rules]\r\nenabled = true\r\npacks = ["config"]\r\n'
+  );
+  expect(packsOf("pilot = 0\r\n\n[rules]\n", ["config"])).toStartWith(
+    "The file mixes line endings, so Cinch will not edit it."
+  );
+});
+
 test("rules written another way are left for a person", () => {
   expect(packsOf("pilot = 0\nrules = { enabled = true }\n", ["config"])).toBe(
     'The rules settings are not in a `[rules]` table of their own. Add `packs = ["config"]` under `[rules]` by hand.'

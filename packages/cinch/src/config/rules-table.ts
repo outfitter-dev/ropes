@@ -110,14 +110,19 @@ const within = (
 /**
  * The config text with `packs` under its rules table naming exactly the
  * packs given, and rules switched on where the table did not say. Every
- * other line is left as it was. It refuses when it cannot make that edit
+ * other line is left as it was, line endings included. It refuses when it cannot make that edit
  * and nothing else, so a person's config is never rewritten by guesswork.
  */
 export const namePacks = (
-  text: string,
+  given: string,
   prefix: string,
   packs: readonly string[]
 ): NamedPacks => {
+  // The edit is made on LF text and given back with the endings it came in.
+  const crlf = given.includes("\r\n");
+  const text = crlf ? given.replaceAll("\r\n", "\n") : given;
+  const back = (edited: string): string =>
+    crlf ? edited.replaceAll("\n", "\r\n") : edited;
   const names = [...prefix.split("."), "rules"].filter((name) => name !== "");
   const title = names.join(".");
   const line = `packs = [${packs.map((name) => JSON.stringify(name)).join(", ")}]`;
@@ -139,8 +144,14 @@ export const namePacks = (
     start === -1
       ? `${text.trimEnd()}\n\n[${title}]\nenabled = true\n${line}\n`
       : within(lines, start, line).join("\n");
+  if (crlf && back(text) !== given) {
+    return {
+      ok: false,
+      reason: `The file mixes line endings, so Cinch will not edit it. ${by}`,
+    };
+  }
   const kept = isOnlyThat(text, edited, names, packs);
   return kept
-    ? { ok: true, text: edited }
+    ? { ok: true, text: back(edited) }
     : { ok: false, reason: `Cinch could not make the edit safely. ${by}` };
 };
