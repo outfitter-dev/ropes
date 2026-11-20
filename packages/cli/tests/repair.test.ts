@@ -3,13 +3,20 @@ import { mkdtemp, readdir, realpath, rm } from "node:fs/promises";
 import { devNull, tmpdir } from "node:os";
 import path from "node:path";
 
-import { check, readRepairs } from "@ropes/core";
+import { parseResult, readRepairs } from "@ropes/core";
 
-import { fixtureGit, withFixture } from "../../cinch/tests/acceptance-repo.ts";
+import {
+  fixtureGit,
+  json,
+  runEntry,
+  withFixture,
+} from "../../cinch/tests/acceptance-repo.ts";
+import manifest from "../package.json" with { type: "json" };
 import { FILES, RATIONALE } from "./trace-fixture.ts";
 
 const HOOK = new URL("repair-hook.ts", import.meta.url);
 const READER = new URL("repair-reader.ts", import.meta.url);
+const ROPE = new URL(manifest.bin.rope, new URL("../", import.meta.url));
 
 // A hook's `GIT_DIR` or a developer's Git config must not reach the fixture.
 const fixtureEnv = (
@@ -22,6 +29,15 @@ const fixtureEnv = (
   GIT_CONFIG_GLOBAL: devNull,
   GIT_CONFIG_NOSYSTEM: "1",
 });
+
+const checkFixture = async (cwd: string) => {
+  const ran = await runEntry(ROPE, ["check", "--json"], cwd);
+  const result = parseResult(json(ran));
+  if (!result.ok) {
+    throw new Error(JSON.stringify(result.error));
+  }
+  return result.value;
+};
 
 test("a fresh offline reader recovers the failed attempt and verified repair", async () => {
   if (Bun.which("ast-grep") === null) {
@@ -61,16 +77,11 @@ test("a fresh offline reader recovers the failed attempt and verified repair", a
         "--message",
         "repair baseline"
       );
-      const original = await check({ cwd: main.root, paths: [] });
-      if (!original.ok) {
-        throw new Error(original.error);
-      }
+      const original = await checkFixture(main.root);
       expect(
-        original.value.steps.flatMap((step) =>
-          step.findings.map(({ rule }) => rule)
-        )
+        original.steps.flatMap((step) => step.findings.map(({ rule }) => rule))
       ).toContain("local/private-import");
-      await Bun.write(baseline, JSON.stringify(original.value));
+      await Bun.write(baseline, JSON.stringify(original));
       const hook = async (id: string, directory = records) => {
         const child = Bun.spawn([process.execPath, HOOK.pathname], {
           cwd: main.root,
@@ -165,12 +176,9 @@ test("a fresh offline reader recovers the failed attempt and verified repair", a
         const patch = path.join(history, `${record.id}.patch`);
         await Bun.write(patch, record.edit.patch);
         await fixtureGit(replay, "apply", patch);
-        const rerun = await check({ cwd: replay, paths: [] });
-        if (!rerun.ok) {
-          throw new Error(rerun.error);
-        }
-        expect(rerun.value.outcome).toBe(record.result.outcome);
-        expect(rerun.value.steps.flatMap((step) => step.findings)).toEqual(
+        const rerun = await checkFixture(replay);
+        expect(rerun.outcome).toBe(record.result.outcome);
+        expect(rerun.steps.flatMap((step) => step.findings)).toEqual(
           record.result.steps.flatMap((step) => step.findings)
         );
       })
