@@ -10,6 +10,7 @@ import {
   rumdlPresetAdapter,
 } from "../src/adapters/rumdl/preset.ts";
 import { createCommands } from "../src/commands/registry.ts";
+import { DoctorReportSchema } from "../src/contracts/doctor.ts";
 import { InitReportSchema } from "../src/contracts/init.ts";
 
 const OLD = ".markdownlint.json";
@@ -17,6 +18,9 @@ const RUNNER = ".markdownlint-cli2.jsonc";
 const RULES = JSON.stringify({ MD007: { indent: 4 } });
 
 const ready = Bun.which("rumdl") !== null;
+const diffOf = (output: string | undefined): string =>
+  DoctorReportSchema.parse(JSON.parse(output ?? "null")).diff;
+
 /** A real-engine test. It says so when the engine is not there to run it. */
 const withEngine = (name: string, body: () => Promise<void>) => {
   test(name, async () => {
@@ -148,6 +152,33 @@ test("doctor --fix adds the line to a person's config and nothing else", async (
     expect(await Bun.file(path.join(root, OLD)).text()).toBe(RULES);
   });
 });
+
+withEngine(
+  "doctor --fix --dry-run shows what an ignored old config carries over",
+  async () => {
+    const files = { ".gitignore": `${OLD}\n`, [OLD]: RULES };
+    await inRoot(files, async (root) => {
+      await rm(path.join(root, ".git"), { force: true, recursive: true });
+      // A hook's `GIT_DIR` or a developer's Git config must not reach it.
+      const env = {
+        ...Object.fromEntries(
+          Object.entries(process.env).filter(([n]) => !n.startsWith("GIT_"))
+        ),
+        GIT_CONFIG_GLOBAL: "/dev/null",
+        GIT_CONFIG_NOSYSTEM: "1",
+      };
+      expect(
+        Bun.spawnSync(["git", "init", "-q"], { cwd: root, env })
+      ).toMatchObject({ exitCode: 0 });
+      const { doctor } = createCommands({ adapters: adaptersFor });
+      const request = { cwd: root, fix: true, json: true, paths: [] };
+      const preview = await doctor?.({ ...request, dryRun: true });
+      const real = await doctor?.(request);
+      expect(diffOf(preview?.output)).toContain("MD007");
+      expect(diffOf(preview?.output)).toBe(diffOf(real?.output));
+    });
+  }
+);
 
 withEngine(
   "init --yes keeps the old config when its target is excluded",

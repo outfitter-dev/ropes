@@ -1,14 +1,17 @@
 import type { DoctorReport } from "../contracts/doctor.ts";
-import { EXIT_CODE } from "../contracts/result.ts";
+import { EXIT_CODE, outcomeOf } from "../contracts/result.ts";
 import type { Outcome } from "../contracts/result.ts";
 import { pathBlocks } from "./human.ts";
 import { toolLine } from "./plan.ts";
 
-/** A tool that cannot run leaves the setup unproven, so incomplete wins. */
+/**
+ * A tool that cannot run leaves the setup unproven, so incomplete wins. The
+ * rest is read from the steps, as the exit code of every other verb is.
+ */
 export const doctorOutcome = (report: DoctorReport): Outcome =>
   report.tools.some((tool) => tool.problem !== undefined)
     ? "incomplete"
-    : report.result.outcome;
+    : outcomeOf(report.result.steps);
 
 const verdict = (report: DoctorReport): string => {
   const outcome = doctorOutcome(report);

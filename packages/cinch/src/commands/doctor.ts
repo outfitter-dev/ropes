@@ -12,6 +12,7 @@ import { writePlan } from "./fix.ts";
 import type { FixRun } from "./fix.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps, Prepared } from "./prepare.ts";
+import { oldConfigs } from "./retire.ts";
 import { prepareSetup } from "./setup.ts";
 import { toolStatuses } from "./tools.ts";
 
@@ -68,8 +69,14 @@ export const doctor =
     const setup = prepared.value;
     const { root } = setup.root;
     const fixing = request.fix === true;
+    // A new config carries over an older tool's settings, so a dry run's
+    // copy must hold that tool's files even when git ignores them.
+    const old = fixing
+      ? await oldConfigs(setup.adapters, setup.plan, root)
+      : null;
     const ran: FixRun = fixing
       ? await writePlan(setup, {
+          also: old?.files ?? [],
           dryRun: request.dryRun === true,
           mode: "doctor",
         })
