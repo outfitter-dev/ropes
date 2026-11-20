@@ -65,23 +65,27 @@ export default defineConfig({ ...preset });
 
 The compiler preset states no `include`, because which files are the project is the repository's to say. Add the kept `.ts` presets to `include` when the config files themselves are type checked.
 
-## Run the linter
+## Run the linter and the formatter
 
-Keeping a preset and running a tool are separate switches. To have `cinch check` and `cinch fix` run Oxlint, name the files in `include` and switch lint on:
+Keeping a preset and running a tool are separate switches. To have `cinch check` and `cinch fix` run Oxlint and the formatter, name the files in `include` and switch them on:
 
 ```toml
-include = ["**/*.md", "**/*.toml", "**/*.ts"]
+include = ["**/*.md", "**/*.toml", "**/*.ts", "**/*.json"]
 
 [lint]
 enabled = true
 preset = true
+
+[format]
+enabled = true
+preset = true
 ```
 
-`cinch explain <file>` then shows the lint step, and [adapters](adapters.md) says how the step runs.
+`cinch explain <file>` then shows the steps, and [adapters](adapters.md) says how each runs. The formatter also formats the Markdown and TOML files `include` names.
 
 ## Not yet
 
-- Cinch does not yet run the formatter or the type check. Those adapters come next.
+- Cinch does not yet run the type check. That adapter comes next.
 - Cinch does not yet check that a root config extends the kept copy.
 - There are no `[tools.oxlint]` or `[tools.oxfmt]` tables and no generated layer between the preset and the root config, as Markdown has.
 - Cinch does not yet check that the installed `ultracite` is the version the presets were written for.

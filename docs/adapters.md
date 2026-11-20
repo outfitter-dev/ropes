@@ -129,3 +129,15 @@ An adapter takes a root and the files of a batch and returns data. It does not r
 - A fixing run reports what it saw before it wrote. The adapter runs a second time without `--fix` and reports what that run finds. A file the fixing run could not take stays incomplete, and the others are still checked again.
 - Oxlint states how many files it linted. When that is not the number it was given, it left a file out without saying which, and every file of that run is incomplete. A report that cannot be read, or an exit code of 1 with nothing in the report, is incomplete too.
 - A warning is a finding. `cinch check` exits 1 on one, as `oxlint --deny-warnings` does.
+
+## The formatter
+
+`adapters/bun-fmt/` formats with `bun fmt`, which is [oxfmt](https://oxc.rs/docs/guide/usage/formatter) as Bun ships it. It runs once for the files of a batch, from the repository root, and reads the repository's own `oxfmt.config.ts` there. It covers TypeScript and JavaScript, JSON, YAML, TOML, Markdown, CSS, HTML, Vue, GraphQL and Handlebars. In `fix` it writes.
+
+- It is off until the Cinch config sets `format.enabled = true`, and `include` has to name the files.
+- The tool is Bun itself, so the `bun` pin in `mise.toml` is the pin. Without one the adapter accepts the 1.x releases from 1.4.4, the version its output mapping was checked against. It runs `bun fmt --no-script`, so a `fmt` script in `package.json` is never run in its place.
+- A file that is not formatted is one finding under the rule `format`, at the top of the file, and it is fixable. The formatter does not say where the file differs. A file that does not parse is a finding under the rule `syntax`, at the place the formatter names. That holds when the formatter only warns and passes over the file, as it does for malformed TOML.
+- The formatter passes over a file that an ignore file or its own config leaves out, and says nothing. So the adapter first asks which of the files it would format (`--list-files`). A file that is there and that the formatter leaves out is incomplete, never passed. Leave such a file out of the Cinch config too, with `exclude` or an override that sets `format.enabled = false`.
+- Each file is handed over as `./file`. The formatter reads a name that starts with `!` as files to leave out, and would then take the whole folder.
+- A fixing run is followed by a check, and the adapter reports what the check finds. A file the formatter could not write is incomplete, with the reason it gave.
+- Markdown and TOML also have a linter. The linter runs first and the formatter after it, so the formatter has the last word on layout.

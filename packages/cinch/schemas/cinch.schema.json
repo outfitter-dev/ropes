@@ -114,6 +114,10 @@
         "preset": {
           "description": "Whether Cinch keeps the shared formatter config in the repository. Off unless set to true.",
           "type": "boolean"
+        },
+        "enabled": {
+          "description": "Whether files are held to the formatter. Off unless set to true.",
+          "type": "boolean"
         }
       },
       "additionalProperties": false
@@ -160,6 +164,16 @@
       "items": {
         "type": "object",
         "properties": {
+          "format": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "description": "Whether the matching files are held to the formatter.",
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          },
           "lint": {
             "type": "object",
             "properties": {

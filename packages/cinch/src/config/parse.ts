@@ -39,27 +39,31 @@ const optInPreset = (what: string) =>
         `Whether Cinch keeps the shared ${what} in the repository. Off unless set to true.`
       ),
   });
+/** The switch for an engine that is off until the repository asks for it. */
+const optInSwitch = (what: string) => ({
+  enabled: z
+    .boolean()
+    .optional()
+    .describe(`Whether ${what}. Off unless set to true.`),
+});
 const OPT_IN = {
-  format: optInPreset("formatter config"),
-  lint: optInPreset("lint config").extend({
-    enabled: z
-      .boolean()
-      .optional()
-      .describe(
-        "Whether TypeScript and JavaScript are linted. Off unless set to true."
-      ),
-  }),
+  format: optInPreset("formatter config").extend(
+    optInSwitch("files are held to the formatter")
+  ),
+  lint: optInPreset("lint config").extend(
+    optInSwitch("TypeScript and JavaScript are linted")
+  ),
   typescript: optInPreset("TypeScript compiler options"),
 };
-const OverrideSchema = z.strictObject({
-  lint: z
+const overrideSwitch = (what: string) =>
+  z
     .strictObject({
-      enabled: z
-        .boolean()
-        .optional()
-        .describe("Whether the matching files are linted."),
+      enabled: z.boolean().optional().describe(`Whether ${what}.`),
     })
-    .optional(),
+    .optional();
+const OverrideSchema = z.strictObject({
+  format: overrideSwitch("the matching files are held to the formatter"),
+  lint: overrideSwitch("the matching files are linted"),
   markdown: ProfileSchema.optional(),
   paths: Globs.min(1).describe(
     "Root-relative globs. The settings beside them apply to matching files."
