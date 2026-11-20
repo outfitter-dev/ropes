@@ -8,12 +8,15 @@ import type {
   Sourced,
 } from "../contracts/config.ts";
 import { EditorSchema } from "../contracts/editor.ts";
+import { ENFORCEMENT_PREFIX } from "../contracts/enforcement.ts";
+import type { EnforcementLevel } from "../contracts/enforcement.ts";
 import type { PolicyValue, Provenance } from "../contracts/plan.ts";
 import {
   Globs,
   OPT_IN,
   overrideSwitch,
   ProfileSchema,
+  RuleSwitchSchema,
   TomlSchema,
 } from "./tables.ts";
 
@@ -24,7 +27,7 @@ const OverrideSchema = z.strictObject({
   paths: Globs.min(1).describe(
     "Root-relative globs. The settings beside them apply to matching files."
   ),
-  rules: overrideSwitch("the shipped rules are run on the matching files"),
+  rules: RuleSwitchSchema.optional(),
   toml: TomlSchema.optional(),
   typescript: overrideSwitch("the matching files are type checked"),
 });
@@ -128,17 +131,38 @@ const overDefaults = (stated: readonly PolicyValue[]): PolicyValue[] => {
   ];
 };
 
+const enforcementSettings = (
+  settings: Readonly<Record<string, EnforcementLevel>> | undefined,
+  origin: TableOrigin,
+  prefix: string
+): PolicyValue[] =>
+  Object.entries(settings ?? {}).map(([rule, value]) => ({
+    key: `${ENFORCEMENT_PREFIX}${rule}`,
+    source: from(origin, `${prefix}${ENFORCEMENT_PREFIX}${rule}`),
+    value,
+  }));
+
 const build = (
   table: z.infer<typeof ConfigFileSchema>,
   origin: TableOrigin
 ): CinchConfig => {
-  const { local, off, packs, ...rules } = table.rules ?? {};
-  const base = settingsOf({ ...table, rules }, origin, "");
+  const { enforcement, local, off, packs, ...rules } = table.rules ?? {};
+  const base = [
+    ...settingsOf({ ...table, rules }, origin, ""),
+    ...enforcementSettings(enforcement, origin, ""),
+  ];
   const overrides: ConfigOverride[] = (table.overrides ?? []).map(
-    (override, index) => ({
-      paths: override.paths,
-      settings: settingsOf(override, origin, `overrides.${index}.`),
-    })
+    (override, index) => {
+      const { enforcement: levels, ...switches } = override.rules ?? {};
+      const prefix = `overrides.${index}.`;
+      return {
+        paths: override.paths,
+        settings: [
+          ...settingsOf({ ...override, rules: switches }, origin, prefix),
+          ...enforcementSettings(levels, origin, prefix),
+        ],
+      };
+    }
   );
   return {
     ...(table.editor === undefined ? {} : { editor: table.editor }),

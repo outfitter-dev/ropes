@@ -27,12 +27,21 @@ export type StepResult = z.infer<typeof StepResultSchema>;
 export const OutcomeSchema = z.enum(["clean", "findings", "incomplete"]);
 export type Outcome = z.infer<typeof OutcomeSchema>;
 
-/** Incomplete beats findings, and findings beat clean. */
+/** Incomplete beats blocking findings. Completed advisory findings remain visible. */
 export const outcomeOf = (steps: readonly StepResult[]): Outcome => {
   if (steps.some((step) => step.status === "incomplete")) {
     return "incomplete";
   }
-  if (steps.some((step) => step.status === "findings")) {
+  if (
+    steps.some(
+      (step) =>
+        step.status === "findings" &&
+        (step.findings.length === 0 ||
+          step.findings.some(
+            (finding) => finding.enforcement?.level !== "advisory"
+          ))
+    )
+  ) {
     return "findings";
   }
   return "clean";

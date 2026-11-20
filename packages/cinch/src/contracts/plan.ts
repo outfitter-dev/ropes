@@ -7,7 +7,7 @@ import { SharedFactsSchema } from "./facts.ts";
  * and the finding together until the shapes are ratified. A consumer that
  * meets a version it does not know must stop, never guess.
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 /** Where a policy value came from. */
 export const ProvenanceSchema = z.discriminatedUnion("kind", [

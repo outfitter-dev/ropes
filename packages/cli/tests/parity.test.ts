@@ -4,6 +4,7 @@ import path from "node:path";
 import { parsePlan, parseResult } from "@ropes/core";
 
 import { FixReportSchema } from "../../cinch/src/contracts/fix.ts";
+import { SCHEMA_VERSION } from "../../cinch/src/contracts/plan.ts";
 import { json, proof, runEntry } from "../../cinch/tests/acceptance-repo.ts";
 import manifest from "../package.json" with { type: "json" };
 
@@ -97,7 +98,7 @@ proof(
     expect(preview).toMatchObject({
       changed: ["README.md"],
       dryRun: true,
-      schemaVersion: 1,
+      schemaVersion: SCHEMA_VERSION,
     });
     expect(preview.diff).toContain("-# Second title\n+## Second title");
     expect(await main.files()).toEqual(before);

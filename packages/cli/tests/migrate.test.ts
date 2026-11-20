@@ -2,6 +2,7 @@ import { expect } from "bun:test";
 import { mkdir, rename, rm } from "node:fs/promises";
 import path from "node:path";
 
+import { SCHEMA_VERSION } from "../../cinch/src/contracts/plan.ts";
 import {
   CONFIG,
   json,
@@ -103,7 +104,7 @@ proof(
           to: `${NEXT}/rumdl.toml`,
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: SCHEMA_VERSION,
       source: { path: "cinch.toml" },
       target: { path: "rope.toml", text: legacyConfig },
     });

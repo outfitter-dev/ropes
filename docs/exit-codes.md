@@ -4,22 +4,24 @@ Every run ends in one of three outcomes, and each outcome has one exit code.
 
 | Outcome | Exit code | Meaning |
 | --- | --- | --- |
-| `clean` | 0 | Every planned step ran and nothing is left to report. |
-| `findings` | 1 | Every planned step ran and at least one finding remains. |
+| `clean` | 0 | Every required step ran and no blocking finding remains. Advisory findings remain visible. |
+| `findings` | 1 | Every required step ran and at least one blocking finding remains. |
 | `incomplete` | 2 | At least one step could not run, or the run was unusable. |
 
-Incomplete beats findings, and findings beat clean. A run with one missing tool and no findings exits 2, not 0, because a step that did not run tells you nothing about the file it was meant to check.
+Incomplete takes precedence over blocking findings. A run with a missing required tool exits 2, including when another completed step reports findings.
 
 ## How a step counts
 
-| Step status  | Counts as  |
-| ------------ | ---------- |
-| `passed`     | clean      |
-| `fixed`      | clean      |
-| `findings`   | findings   |
-| `incomplete` | incomplete |
+| Step status  | Counts as                                            |
+| ------------ | ---------------------------------------------------- |
+| `passed`     | clean                                                |
+| `fixed`      | clean                                                |
+| `findings`   | findings when any match is blocking, otherwise clean |
+| `incomplete` | incomplete                                           |
 
 A `fix` step that repairs some problems and leaves others reports `findings`, not `fixed`.
+
+A step with advisory matches also retains `findings` as its native status. Its diagnostics keep their severity, location, and fixability. The resolved enforcement determines whether those matches block the overall run. Findings with no explicit enforcement retain the blocking default. [Rule enforcement](enforcement.md) records the pilot policy and precedence.
 
 Exit code 2 also covers problems that stop a run before any step: an unknown command, a config file that does not parse, or an unknown schema or config version.
 

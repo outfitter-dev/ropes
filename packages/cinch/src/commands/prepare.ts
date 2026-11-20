@@ -11,6 +11,7 @@ import type { EditorSettings } from "../contracts/editor.ts";
 import type { ManagedDir } from "../contracts/managed-config.ts";
 import type { Plan } from "../contracts/plan.ts";
 import type { RepoRoot } from "../contracts/root.ts";
+import { unknownEnforcement } from "../policy/enforcement.ts";
 import { unknownOff, unknownPacks } from "../policy/packs.ts";
 import { resolvePlan } from "../policy/resolve.ts";
 import type { Operation, ReadRequest } from "./command.ts";
@@ -107,6 +108,13 @@ export const prepare = async (
   const kept = selection.kind === "workspace" ? owned : [];
   const all = [...named, ...walked, ...kept];
   const descriptors = adapters.map(({ descriptor }) => descriptor);
+  const unknownLevel = unknownEnforcement(config.value, descriptors);
+  if (unknownLevel !== undefined) {
+    return {
+      error: `${config.value.file ?? "the config"}: rules.enforcement names unknown shipped rule "${unknownLevel}".`,
+      ok: false,
+    };
+  }
   const [unknown] = unknownOff(config.value, descriptors);
   if (unknown !== undefined) {
     const file = config.value.file ?? "the Cinch config";

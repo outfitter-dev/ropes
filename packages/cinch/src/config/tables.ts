@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { EnforcementLevelSchema } from "../contracts/enforcement.ts";
+
 /** Whether a root-relative path stays under the root it is read from. */
 const isInside = (folder: string): boolean =>
   !/^[\\/]/u.test(folder) &&
@@ -42,6 +44,15 @@ const optInSwitch = (what: string) => ({
     .optional()
     .describe(`Whether ${what}. Off unless set to true.`),
 });
+export const RuleSwitchSchema = z.strictObject({
+  ...optInSwitch("the structural rules are run"),
+  enforcement: z
+    .record(z.string().min(1), EnforcementLevelSchema)
+    .optional()
+    .describe(
+      "Explicit enforcement for a shipped rule ID. Unstated rules retain their blocking behavior."
+    ),
+});
 export const OPT_IN = {
   format: optInPreset("formatter config").extend(
     optInSwitch("files are held to the formatter")
@@ -49,8 +60,7 @@ export const OPT_IN = {
   lint: optInPreset("lint config").extend(
     optInSwitch("TypeScript and JavaScript are linted")
   ),
-  rules: z.strictObject({
-    ...optInSwitch("the structural rules Cinch ships are run"),
+  rules: RuleSwitchSchema.extend({
     local: z
       .array(
         z

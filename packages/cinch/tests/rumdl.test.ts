@@ -8,6 +8,7 @@ import {
   rumdlAdapter,
   SUPPORTED_RANGE,
 } from "../src/adapters/rumdl/adapter.ts";
+import { SCHEMA_VERSION } from "../src/contracts/plan.ts";
 import type { Plan } from "../src/contracts/plan.ts";
 import { exitCodeOf } from "../src/contracts/result.ts";
 import { runPlan } from "../src/runner/run.ts";
@@ -57,7 +58,7 @@ const planFor = (root: string, adapter = rumdlAdapter()): Plan => {
     batches: [{ ...step, package: ".", paths: ["a.md"] }],
     paths: [{ package: ".", path: "a.md", policy: [], steps: [step] }],
     root,
-    schemaVersion: 1,
+    schemaVersion: SCHEMA_VERSION,
     selection: { kind: "workspace" },
   };
 };
