@@ -84,6 +84,15 @@ const fresh = async (run: Run): Promise<Wanted> => {
 
 const ADD = `${OWN} It does not extend the config Cinch generates. Add \`${EXTENDS.trimEnd()}\` as its first line, or run \`cinch doctor --fix\`, which adds it and changes nothing else.`;
 
+/** Whether the file holds the `extends` line and no other setting. */
+const onlyExtends = (text: string): boolean => {
+  try {
+    return Bun.deepEquals(Bun.TOML.parse(text), { extends: GENERATED_PATH });
+  } catch {
+    return false;
+  }
+};
+
 /** What a run hands the root config's step. */
 export interface Run {
   readonly root: string;
@@ -145,6 +154,10 @@ export const rootConfig = async (
     return { ok: true, text: POINTER };
   }
   if (current.startsWith(MARK)) {
+    // Line endings or a reworded comment do not make the file a person's.
+    if (onlyExtends(current)) {
+      return { ok: true, text: POINTER };
+    }
     return {
       message: `${CONFIG_PATH} says Cinch generated it, but it holds more than Cinch wrote, so Cinch will not overwrite it. Move the settings to \`[tools.${RUMDL_TABLE}]\` in the Cinch config and delete this file, or delete its first comment to make the file your own.`,
       ok: false,
