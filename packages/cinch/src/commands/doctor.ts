@@ -13,6 +13,7 @@ import type { FixRun } from "./fix.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps, Prepared } from "./prepare.ts";
 import { oldConfigs } from "./retire.ts";
+import { declined, unadopted } from "./rules-adopt.ts";
 import { prepareSetup } from "./setup.ts";
 import { toolStatuses } from "./tools.ts";
 
@@ -53,7 +54,8 @@ const tools = async (
 
 /**
  * `cinch doctor` checks the Cinch setup: the files Cinch keeps, and the
- * tools the plan needs. `--fix` writes the files Cinch keeps, and makes the
+ * tools the plan needs. It also names the rule packs that apply here and are
+ * not adopted, which is a note and not a fault. `--fix` writes the files Cinch keeps, and makes the
  * one edit Cinch may make to a config a person wrote. It reads the same
  * plan as the other verbs, so it writes nothing `explain` does not show.
  */
@@ -89,7 +91,15 @@ export const doctor =
     if (typeof found === "string") {
       return unusable(found);
     }
-    const report: DoctorReport = { ...ran.report, fix: fixing, tools: found };
+    // A repository that states rules are off has made its choice.
+    const report: DoctorReport = {
+      ...ran.report,
+      fix: fixing,
+      notAdopted: declined(setup.config)
+        ? []
+        : unadopted(setup.config, setup.adapters, setup.present),
+      tools: found,
+    };
     return {
       exitCode: EXIT_CODE[doctorOutcome(report)],
       output: request.json ? renderDoctorJson(report) : renderDoctor(report),

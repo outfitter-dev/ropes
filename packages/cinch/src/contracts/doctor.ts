@@ -27,6 +27,11 @@ export const DoctorReportSchema = FixReportSchema.unwrap()
   .extend({
     /** True when the run was asked to repair, not only to report. */
     fix: z.boolean(),
+    /**
+     * The rule packs that apply here and that the config neither names nor
+     * turns off. They do not change the outcome.
+     */
+    notAdopted: z.array(z.string().min(1)).readonly(),
     tools: z.array(ToolStatusSchema).readonly(),
   })
   .readonly();

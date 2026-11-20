@@ -11,6 +11,7 @@ import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { locate } from "./presets.ts";
 import { choiceReasons, oldConfigs, retire } from "./retire.ts";
+import { unadopted } from "./rules-adopt.ts";
 import { setupFiles } from "./setup.ts";
 import { inheritedBy, sparing, starterConfig } from "./starter.ts";
 
@@ -25,7 +26,7 @@ const withConfig = (report: FixReport, config: string): FixReport => ({
  * Sets a repository up: a starting config when there is none, then every
  * preset that is switched on. The starting config takes the file choices of
  * a config an adapter replaces, except a choice that would leave out a file
- * Cinch keeps. Last, the config files of a tool an adapter replaces are
+ * Cinch keeps, and names the rule packs that apply here. Last, the config files of a tool an adapter replaces are
  * removed, when everything in them was carried over and the setup ended
  * clean. It only shows the change unless `yes` is set, and `dryRun` wins over
  * `yes`. A config that is already there is never rewritten.
@@ -55,14 +56,17 @@ export const init =
         exitCode: EXIT_CODE.incomplete,
       };
     }
-    const { adapters, plan } = planned.value;
+    const { adapters, config, plan, present } = planned.value;
     const found = await inheritedBy(adapters, root);
     // A table carried into the new config can make Cinch keep a file the
     // setup did not have yet, and an old exclude must not leave that out.
     const kept = [...paths, ...found.flatMap((one) => one.keeps ?? [])];
     const carried =
       (await configFileIn(root)) === null ? sparing(found, kept) : null;
-    const starter = carried === null ? null : starterConfig(carried);
+    const starter =
+      carried === null
+        ? null
+        : starterConfig(carried, unadopted(config, adapters, present));
     // The old config is judged now: once the new files are written, an
     // adapter can no longer tell what they were made from.
     const old = await oldConfigs(adapters, plan, root);

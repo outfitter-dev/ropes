@@ -1,6 +1,8 @@
 import path from "node:path";
 
+import type { Adapter } from "../adapters/adapter.ts";
 import { namePacks } from "../config/rules-table.ts";
+import type { CinchConfig } from "../contracts/config.ts";
 import type { PackState } from "../contracts/plan.ts";
 import { SCHEMA_VERSION } from "../contracts/plan.ts";
 import { EXIT_CODE } from "../contracts/result.ts";
@@ -33,6 +35,32 @@ const chosen = (
     : states.filter(
         (pack) => asked.includes(pack.name) && pack.named === undefined
       );
+
+/**
+ * The names of the packs that apply to the repository and that its config
+ * neither names nor turns off. `init` starts a new config with them, and
+ * `doctor` reports them.
+ */
+export const unadopted = (
+  config: CinchConfig,
+  adapters: readonly Adapter[],
+  present: readonly string[]
+): string[] =>
+  chosen(
+    shippedStates(
+      config,
+      adapters.map(({ descriptor }) => descriptor),
+      present
+    ),
+    []
+  ).map(({ name }) => name);
+
+/** Whether the config itself states that rules are off. */
+export const declined = (config: CinchConfig): boolean =>
+  config.settings.some(
+    ({ key, source, value }) =>
+      key === "rules.enabled" && value === false && source.kind === "file"
+  );
 
 const OFF_NOTE = (file: string): string =>
   `Rules are switched off in ${file} (\`enabled = false\`), so the packs it names do not run yet.`;
@@ -96,11 +124,7 @@ export const adopt = async (
   if ("error" in text) {
     return unusable(text.error);
   }
-  const off = config.settings.some(
-    ({ key, source, value }) =>
-      key === "rules.enabled" && value === false && source.kind === "file"
-  );
-  const notes = off ? [OFF_NOTE(text.file)] : [];
+  const notes = declined(config) ? [OFF_NOTE(text.file)] : [];
   if (adds.length === 0) {
     return respond({ ...nothing, notes });
   }

@@ -55,16 +55,32 @@ const carried = (found: readonly Inherited[]): string[] => {
   ];
 };
 
+/** The table that runs the rule packs the repository has files for. */
+const rules = (packs: readonly string[]): string[] =>
+  packs.length === 0
+    ? []
+    : [
+        "[rules]",
+        "enabled = true",
+        `packs = [${packs.map((name) => JSON.stringify(name)).join(", ")}]`,
+        "",
+      ];
+
 /**
  * The first Cinch config for a repository. The file choices of a config that
  * an adapter takes over from go in, so the first check covers the files the
- * old tool covered and no others.
+ * old tool covered and no others. The rule packs that apply to the
+ * repository are named, so a new setup starts with the defaults running.
  */
-export const starterConfig = (inherited: readonly Inherited[]): string =>
+export const starterConfig = (
+  inherited: readonly Inherited[],
+  packs: readonly string[] = []
+): string =>
   [
     ...HEAD,
     ...carried(inherited),
     ...PROFILE,
+    ...rules(packs),
     ...inherited.flatMap((one) => one.tables ?? []),
   ].join("\n");
 
