@@ -76,7 +76,13 @@ const check = async (
   if (problem !== undefined) {
     return incomplete(`${ID} could not use its own config: ${problem}`);
   }
-  if (readOnly(stderr, input.path) !== true) {
+  const read = readOnly(stderr, input.path);
+  if (read === undefined) {
+    return incomplete(
+      `${ID} did not say which files it read: ${lastLine(stderr) || "it printed nothing"}`
+    );
+  }
+  if (!read) {
     return incomplete(`${ID} did not read the file. Its config may exclude it`);
   }
   const parsed = parseOutput(stderr, { path: input.path, source: ID });

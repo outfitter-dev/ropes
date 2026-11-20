@@ -92,20 +92,24 @@ export const runPlan = async (
   options: RunOptions
 ): Promise<Result> => {
   const ready = readiness(adapters, options.platform ?? process.platform);
-  const ran: StepResult[] = [];
+  const byPath = new Map<string, StepResult[]>();
   for (const batch of plan.batches) {
     // Batches run in plan order: a later step reads what an earlier one
     // wrote, and a kept config is written before the step that reads it.
     // oxlint-disable-next-line no-await-in-loop
     const outcomes = await runBatch(ready, batch, plan.root, options.mode);
-    ran.push(
-      ...outcomes.map((outcome) => ({ adapter: batch.adapter, ...outcome }))
-    );
+    for (const outcome of outcomes) {
+      const step = { adapter: batch.adapter, ...outcome };
+      const before = byPath.get(outcome.path);
+      if (before === undefined) {
+        byPath.set(outcome.path, [step]);
+      } else {
+        before.push(step);
+      }
+    }
   }
   // Reported file by file, in the order the plan lists them.
-  const steps = plan.paths.flatMap((planned) =>
-    ran.filter((step) => step.path === planned.path)
-  );
+  const steps = plan.paths.flatMap((planned) => byPath.get(planned.path) ?? []);
   return {
     outcome: outcomeOf(steps),
     plan,
