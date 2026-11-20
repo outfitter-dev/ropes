@@ -60,10 +60,10 @@ test("--yes moves the tables and their comments out, and a second run changes no
   expect(again.report).toMatchObject({ changed: [], written: false });
 });
 
-test("absorb undoes eject, to the byte", async () => {
+test("adopt undoes eject, to the byte", async () => {
   const root = await repo({ [CINCH]: HELD });
   await move(root, "eject", { yes: true });
-  await move(root, "absorb", { yes: true });
+  await move(root, "adopt", { yes: true });
   expect(await read(root, CINCH)).toBe(HELD);
   expect(await read(root, ROOT)).toBe(POINTER);
 });

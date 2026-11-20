@@ -9,12 +9,12 @@ export interface CommandRequest {
   /** `doctor` only: repair the setup. Without it, `doctor` only reports. */
   readonly fix?: boolean;
   /**
-   * `init`, `preset absorb` and `preset eject`: write the change, which is
+   * `init`, `preset adopt` and `preset eject`: write the change, which is
    * otherwise only shown. `dryRun` wins when both are set.
    */
   readonly yes?: boolean;
   /**
-   * `preset` only: `list`, `add`, `update`, `absorb` or `eject`. The names
+   * `preset` only: `list`, `add`, `update`, `adopt` or `eject`. The names
    * follow in `paths`.
    */
   readonly action?: string;

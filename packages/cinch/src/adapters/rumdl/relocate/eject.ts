@@ -5,7 +5,7 @@ import type { ConfigText, Relocation } from "../../relocation.ts";
 import { generated } from "../generated.ts";
 import { CONFIG_PATH, EXTENDS, GENERATED_PATH } from "../paths.ts";
 import { configuredElsewhere, isPointer } from "../root-config.ts";
-import { familyOf } from "./absorb.ts";
+import { familyOf } from "./adopt.ts";
 import { commentsIn, linesOf, renamed, sectionsOf, textOf } from "./scan.ts";
 import type { Line, Section } from "./scan.ts";
 import { parsed, same, withTable } from "./tables.ts";

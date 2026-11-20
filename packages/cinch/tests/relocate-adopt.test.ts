@@ -28,7 +28,7 @@ exclude = ["vendor/**"]
 
 test("the preview names every file and writes none", async () => {
   const root = await repo({ [ROOT]: OWN });
-  const { exitCode, report } = await move(root, "absorb");
+  const { exitCode, report } = await move(root, "adopt");
   expect(exitCode).toBe(0);
   expect(report.written).toBe(false);
   expect(report.changed).toEqual([CINCH, GENERATED, ROOT]);
@@ -39,7 +39,7 @@ test("the preview names every file and writes none", async () => {
 
 test("--yes moves the settings and their comments, and a second run changes nothing", async () => {
   const root = await repo({ [ROOT]: OWN });
-  const { exitCode, report } = await move(root, "absorb", { yes: true });
+  const { exitCode, report } = await move(root, "adopt", { yes: true });
   expect(exitCode).toBe(0);
   expect(report).toMatchObject({ notes: [], written: true });
   expect(await read(root, ROOT)).toBe(POINTER);
@@ -53,13 +53,13 @@ indent = 4
 exclude = ["vendor/**"]
 `);
   expect(await read(root, GENERATED)).toContain("[MD007]\nindent = 4\n");
-  const again = await move(root, "absorb", { yes: true });
+  const again = await move(root, "adopt", { yes: true });
   expect(again.report).toMatchObject({ changed: [], written: false });
 });
 
 test("--dry-run wins over --yes", async () => {
   const root = await repo({ [ROOT]: OWN });
-  const { report } = await move(root, "absorb", { dryRun: true, yes: true });
+  const { report } = await move(root, "adopt", { dryRun: true, yes: true });
   expect(report.written).toBe(false);
   expect(await read(root, ROOT)).toBe(OWN);
 });
@@ -77,7 +77,7 @@ start-indented = true
 style = "dash"
 `,
   });
-  const { report } = await move(root, "absorb", { yes: true });
+  const { report } = await move(root, "adopt", { yes: true });
   expect(await read(root, CINCH)).toBe(
     `${CONFIG}\n[tools.rumdl.MD007]\nstart-indented = true\n`
   );
@@ -89,7 +89,7 @@ style = "dash"
 
 test("a file that holds nothing new becomes the pointer, and the config is left alone", async () => {
   const root = await repo({ [ROOT]: `${EXTENDS}\n[MD007]\nindent = 2\n` });
-  const { report } = await move(root, "absorb", { yes: true });
+  const { report } = await move(root, "adopt", { yes: true });
   expect(report.changed).toEqual([ROOT]);
   expect(await read(root, ROOT)).toBe(POINTER);
 });
@@ -98,7 +98,7 @@ test("a value on several lines moves as it is written", async () => {
   const root = await repo({
     [ROOT]: `${EXTENDS}\n[global]\nexclude = [\n  "vendor/**", # theirs\n  "out/**",\n]\n`,
   });
-  await move(root, "absorb", { yes: true });
+  await move(root, "adopt", { yes: true });
   expect(await read(root, CINCH)).toContain(
     '[tools.rumdl.global]\nexclude = [\n  "vendor/**", # theirs\n  "out/**",\n]\n'
   );
@@ -115,7 +115,7 @@ anchor-style = """
 github"""
 `,
   });
-  const { report } = await move(root, "absorb", { yes: true });
+  const { report } = await move(root, "adopt", { yes: true });
   expect(await read(root, CINCH)).toBe(
     `${CONFIG}\n[tools.rumdl.MD080]\nlevels = [1, 2]\n`
   );
@@ -125,7 +125,7 @@ github"""
 test("a setting the Cinch config states differently stops the move", async () => {
   const config = `${CONFIG}\n[tools.rumdl.MD007]\nindent = 3\n`;
   const root = await repo({ [CINCH]: config, [ROOT]: OWN });
-  const { exitCode, report } = await move(root, "absorb", { yes: true });
+  const { exitCode, report } = await move(root, "adopt", { yes: true });
   expect(exitCode).toBe(1);
   expect(report.changed).toEqual([]);
   expect(report.stopped).toEqual([
@@ -138,7 +138,7 @@ test("a setting the Cinch config states differently stops the move", async () =>
 test("a table the Cinch config already has stops the move, with the keys to move by hand", async () => {
   const config = `${CONFIG}\n[tools.rumdl.MD007]\nstart-indented = true\n`;
   const root = await repo({ [CINCH]: config, [ROOT]: OWN });
-  const { report } = await move(root, "absorb", { yes: true });
+  const { report } = await move(root, "adopt", { yes: true });
   expect(report.stopped).toEqual([
     "cinch.toml already has a `MD007` table under `[tools.rumdl]`. Move `indent` from `[MD007]` in .rumdl.toml into it by hand, then run this again.",
   ]);
@@ -147,14 +147,14 @@ test("a table the Cinch config already has stops the move, with the keys to move
 test("a root config that does not extend the generated one is sent to doctor", async () => {
   const root = await repo({});
   await Bun.write(`${root}/${ROOT}`, "[MD007]\nindent = 4\n");
-  const { report } = await move(root, "absorb", { yes: true });
+  const { report } = await move(root, "adopt", { yes: true });
   expect(report.stopped?.[0]).toContain("Run `cinch doctor --fix` first.");
 });
 
 test("in the shared file the tables go under `cinch`", async () => {
   const shared = "[cinch]\npilot = 0\n\n[cinch.markdown]\nenabled = true\n";
   const root = await repo({ [ROOT]: OWN, [SHARED]: shared });
-  const { report } = await move(root, "absorb", { yes: true });
+  const { report } = await move(root, "adopt", { yes: true });
   expect(report.changed[0]).toBe(SHARED);
   expect(await read(root, SHARED)).toContain(
     "[cinch.tools.rumdl.MD007]\nindent = 4\n"

@@ -110,7 +110,7 @@ const UNSETTLED =
   "The Cinch setup is not clean after the move. Run `cinch doctor` to see why.";
 
 /**
- * `cinch preset absorb <name>` moves the settings in a tool's own config
+ * `cinch preset adopt <name>` moves the settings in a tool's own config
  * into the Cinch config, and `eject` moves them back out. Both only show
  * the change, and write it with `--yes`. Every file is settled before any
  * is written.

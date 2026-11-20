@@ -43,10 +43,10 @@ const resolved = async (root: string): Promise<string> => {
   return out.replaceAll(/\s*\[from [^\]]*\]/gu, "");
 };
 
-test("the engine resolves the same before, after absorb and after eject", async () => {
+test("the engine resolves the same before, after adopt and after eject", async () => {
   if (Bun.which("rumdl") === null) {
     console.warn(
-      "skipped: rumdl is not on PATH, so the absorb and eject round trip did not run against it"
+      "skipped: rumdl is not on PATH, so the adopt and eject round trip did not run against it"
     );
     return;
   }
@@ -54,8 +54,8 @@ test("the engine resolves the same before, after absorb and after eject", async 
   const before = await resolved(root);
   expect(before).toContain("line-length = 120");
 
-  const absorbed = await move(root, "absorb", { yes: true });
-  expect(absorbed.exitCode).toBe(0);
+  const adopted = await move(root, "adopt", { yes: true });
+  expect(adopted.exitCode).toBe(0);
   expect(await read(root, CINCH)).not.toBe(CONFIG);
   expect(await resolved(root)).toBe(before);
 

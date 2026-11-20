@@ -10,7 +10,7 @@ import {
   RUMDL_TABLE,
   standard,
 } from "./paths.ts";
-import { absorb } from "./relocate/absorb.ts";
+import { adopt } from "./relocate/adopt.ts";
 import { eject } from "./relocate/eject.ts";
 import { rootConfig } from "./root-config.ts";
 
@@ -71,7 +71,7 @@ export const rumdlPresetAdapter = (
     ],
     preset: "markdown",
     relocates: {
-      absorb: (root, config) => absorb(root, config, options.table),
+      adopt: (root, config) => adopt(root, config, options.table),
       eject: (root, config) => eject(root, config, options.table),
     },
     table: RUMDL_TABLE,

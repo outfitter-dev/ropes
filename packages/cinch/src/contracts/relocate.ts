@@ -3,14 +3,14 @@ import { z } from "zod";
 import { SCHEMA_VERSION } from "./plan.ts";
 
 /**
- * `absorb` moves a tool's settings out of the config a person wrote for it
+ * `adopt` moves a tool's settings out of the config a person wrote for it
  * and into the Cinch config. `eject` moves them back out.
  */
-export const RelocateActionSchema = z.enum(["absorb", "eject"]);
+export const RelocateActionSchema = z.enum(["adopt", "eject"]);
 export type RelocateAction = z.infer<typeof RelocateActionSchema>;
 
 /**
- * Provisional and unstable. What `cinch preset absorb` or `eject` did, or
+ * Provisional and unstable. What `cinch preset adopt` or `eject` did, or
  * would do. Nothing is removed: a file is only ever rewritten.
  */
 export const RelocateReportSchema = z

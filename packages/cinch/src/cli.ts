@@ -23,7 +23,7 @@ Commands:
   preset    List the shared configs Cinch keeps here and their state
             preset add <name>      Write one preset's files
             preset update [name]   Rewrite copies that are behind
-            preset absorb <name>   Move the settings in a tool's own config
+            preset adopt <name>    Move the settings in a tool's own config
                                    into the Cinch config (--yes to write it)
             preset eject <name>    Move them back out (--yes to write it)
   schema    Print the JSON Schema of a command's --json output

@@ -13,11 +13,11 @@ import {
 
 afterAll(cleanUp);
 
-test("absorb stops, and writes nothing, when its lines would open a table the config already has", async () => {
+test("adopt stops, and writes nothing, when its lines would open a table the config already has", async () => {
   const held = `${CONFIG}\n[tools.rumdl]\nline-length = 100\n`;
   const own = `${EXTENDS}disable = ["MD033"]\n`;
   const root = await repo({ [CINCH]: held, [ROOT]: own });
-  const { exitCode, report } = await move(root, "absorb", { yes: true });
+  const { exitCode, report } = await move(root, "adopt", { yes: true });
   expect(exitCode).toBe(1);
   expect(report.stopped?.[0]).toContain("by hand");
   expect(report.changed).toEqual([]);

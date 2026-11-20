@@ -48,7 +48,7 @@ export const read = (root: string, file: string): Promise<string> =>
 
 export const move = async (
   root: string,
-  action: "absorb" | "eject",
+  action: "adopt" | "eject",
   request: Partial<CommandRequest> = {}
 ): Promise<{ readonly exitCode: number; readonly report: RelocateReport }> => {
   const response = await preset(root, { action, ...request });

@@ -57,7 +57,7 @@ test("eject stops on a table that sets `extends`, and writes nothing", async () 
   expect(await read(root, ROOT)).toBe(before);
 });
 
-test("absorb stops while the installed preset is not the one Cinch ships", async () => {
+test("adopt stops while the installed preset is not the one Cinch ships", async () => {
   const own = `${EXTENDS}\n[MD007]\nindent = 2\n`;
   const root = await repo({ [ROOT]: own });
   const installed = await read(root, PRESET);
@@ -65,7 +65,7 @@ test("absorb stops while the installed preset is not the one Cinch ships", async
     path.join(root, PRESET),
     `${installed}\n[MD007]\nindent = 4\n`
   );
-  const { exitCode, report } = await move(root, "absorb", { yes: true });
+  const { exitCode, report } = await move(root, "adopt", { yes: true });
   expect(exitCode).toBe(1);
   expect(report.stopped?.[0]).toContain("cinch doctor --fix");
   expect(await read(root, ROOT)).toBe(own);
@@ -96,7 +96,7 @@ test("a move whose result cannot be checked is incomplete, not findings", async 
 test("a comment on a setting's own line is named when the setting is left out", async () => {
   const own = `${EXTENDS}\n[MD004]\nstyle = "dash" # we like dashes\n\n[MD007] # ours\nindent = 4\n`;
   const root = await repo({ [ROOT]: own });
-  const { report } = await move(root, "absorb");
+  const { report } = await move(root, "adopt");
   expect(report.notes.join("\n")).toContain('style = "dash" # we like dashes');
   expect(report.notes.join("\n")).not.toContain("# ours");
   expect(report.diff).toContain("+[tools.rumdl.MD007] # ours");
@@ -113,7 +113,7 @@ test("a Cinch config linked from outside the repository is not written", async (
   const root = await repo({ [ROOT]: own });
   await rm(path.join(root, CINCH));
   await symlink(target, path.join(root, CINCH));
-  const failed = await move(root, "absorb", { yes: true })
+  const failed = await move(root, "adopt", { yes: true })
     .then(() => "")
     .catch(String);
   expect(failed).toContain("cinch.toml leads outside the repository");

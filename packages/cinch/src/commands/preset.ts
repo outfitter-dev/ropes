@@ -167,7 +167,7 @@ const write = async (
  * `cinch preset` lists the shared configs Cinch keeps in a repository.
  * `add <name>` and `update [name]` write them. Both go through the same
  * plan as `doctor --fix`, with the preset's own files as the selection.
- * `absorb <name>` and `eject <name>` move a tool's settings into the Cinch
+ * `adopt <name>` and `eject <name>` move a tool's settings into the Cinch
  * config and back out.
  */
 export const preset =
@@ -182,7 +182,7 @@ export const preset =
     const moves = RelocateActionSchema.safeParse(action);
     if (!moves.success && !ACTIONS.has(action)) {
       return unusable(
-        `unknown preset action "${action}". Use list, add, update, absorb or eject.`
+        `unknown preset action "${action}". Use list, add, update, adopt or eject.`
       );
     }
     if (action === "add" && names.length === 0) {

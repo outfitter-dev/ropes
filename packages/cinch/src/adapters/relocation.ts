@@ -29,7 +29,7 @@ export type Relocation =
  */
 export interface Relocates {
   /** Out of the tool's own config, into the Cinch config. */
-  readonly absorb: (root: string, config: ConfigText) => Promise<Relocation>;
+  readonly adopt: (root: string, config: ConfigText) => Promise<Relocation>;
   /** Out of the Cinch config, into a config the repository owns. */
   readonly eject: (root: string, config: ConfigText) => Promise<Relocation>;
 }

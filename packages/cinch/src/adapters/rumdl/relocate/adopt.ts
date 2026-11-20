@@ -101,7 +101,7 @@ const stale = async (root: string): Promise<string | null> => {
  * config, and leaves the root config a pointer. The settings go down one
  * layer and the layers keep their order, so the engine resolves the same.
  */
-export const absorb = async (
+export const adopt = async (
   root: string,
   config: ConfigText,
   table: ToolTable = {}
