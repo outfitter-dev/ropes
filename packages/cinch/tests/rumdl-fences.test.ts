@@ -48,6 +48,18 @@ test("a config that did not load is a failure, not a skipped block", () => {
   expect(read.ok ? "" : read.message).toContain("config did not load");
 });
 
+test("a block that quotes the config message is still a block", () => {
+  const stderr = [
+    'Warning: a.md:5: [bun] 1 | const m = "error: Cannot load the configuration file" +;',
+    "error: Expression expected.",
+    "    at _.ts:1:55",
+  ].join("\n");
+  expect(readFences(stderr)).toEqual({
+    ok: true,
+    unchecked: [{ line: 5, reason: reason("Expression expected.") }],
+  });
+});
+
 test("a failure that is not placed in the block is a failure", () => {
   expect(readFences("Warning: a.md:5: [bun] error: out of memory\n")).toEqual({
     message: "it could not check the fenced block at line 5: out of memory",

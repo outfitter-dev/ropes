@@ -14,7 +14,11 @@ const HEADER = /^Warning: .+:(?<line>\d+): \[[^\]]+\] (?<rest>.*)$/u;
  */
 const IN_BLOCK = /^\s*at _\.[a-z]+:\d+:\d+\s*$/mu;
 const ERROR = /^error: (?<text>.+)$/mu;
-const CONFIG = "Cannot load the configuration file";
+/**
+ * The formatter's own message, at the start of a line. A line of the block
+ * that holds the same words is printed behind a `N |` gutter and is not it.
+ */
+const CONFIG = /^error: Cannot load the configuration file/mu;
 
 export type Fences =
   | { readonly ok: true; readonly unchecked: readonly Unchecked[] }
@@ -47,7 +51,7 @@ const detailOf = (warned: Warned): string =>
   ERROR.exec(warned.body)?.groups?.text ?? "no message";
 
 const problem = (warned: Warned): string => {
-  if (warned.body.includes(CONFIG)) {
+  if (CONFIG.test(warned.body)) {
     return `the formatter's config did not load, so the fenced block at line ${warned.line} was not checked. Are the repository's dependencies installed?`;
   }
   return `it could not check the fenced block at line ${warned.line}: ${detailOf(warned)}`;
@@ -61,7 +65,7 @@ const problem = (warned: Warned): string => {
 export const readFences = (stderr: string): Fences => {
   const byLine = new Map<number, Unchecked>();
   for (const warned of warnings(stderr)) {
-    if (warned.body.includes(CONFIG) || !IN_BLOCK.test(warned.body)) {
+    if (CONFIG.test(warned.body) || !IN_BLOCK.test(warned.body)) {
       return { message: problem(warned), ok: false };
     }
     byLine.set(warned.line, {
