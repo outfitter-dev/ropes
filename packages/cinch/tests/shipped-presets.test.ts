@@ -60,7 +60,10 @@ test("the lint, format and TypeScript presets are off until asked for", async ()
     "markdown missing",
     "markdown missing",
     "lint off",
+    "lint off",
     "format off",
+    "format off",
+    "typescript off",
     "typescript off",
   ]);
   await run("doctor", { fix: true });
@@ -112,7 +115,10 @@ test("a preset the config asks for is written with a header, then current", asyn
   const listed = await run("preset");
   expect(statesOf(listed.output).slice(3)).toEqual([
     "lint current",
+    "lint current",
     "format current",
+    "format current",
+    "typescript current",
     "typescript current",
   ]);
 });

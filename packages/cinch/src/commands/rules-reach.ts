@@ -1,5 +1,6 @@
 import type { Adapter } from "../adapters/adapter.ts";
 import { compileGlobs } from "../policy/glob.ts";
+import { keptWhole } from "../policy/packs.ts";
 import type { CommandRequest } from "./command.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
@@ -26,9 +27,7 @@ export const unreached = async (
     readonly root: string;
   }
 ): Promise<string[]> => {
-  const kept = new Set(
-    given.adapters.flatMap(({ descriptor }) => descriptor.owns ?? [])
-  );
+  const kept = keptWhole(given.adapters.map(({ descriptor }) => descriptor));
   const own = given.present.filter((file) => !kept.has(file));
   const packs = given.adapters
     .flatMap(({ descriptor }) => descriptor.packs ?? [])

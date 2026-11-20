@@ -35,7 +35,13 @@ The presets are written for `ultracite` 8.1.1. `cinch check` and `cinch doctor` 
 
 ## Extend them
 
-The root configs stay the repository's own. Cinch does not write them yet, so add the lines by hand.
+The root configs stay the repository's own, and each must build on its preset while the preset is on. `cinch check` and `cinch doctor` report one that does not.
+
+- A root config that is missing is written by `cinch doctor --fix`, as the smallest file that uses the preset. It will not write `oxlint.config.ts` beside an `.oxlintrc.json`, or `oxfmt.config.ts` beside an `.oxfmtrc.json`, `.oxfmtrc.jsonc` or `oxfmt.config.mts`. It names the file that is there.
+- A `tsconfig.json` with no `extends` gets the key from `cinch doctor --fix`, as its first, and nothing else in the file changes. One that already extends something else is reported and left alone, because the order of the two decides which wins: make `extends` a list with the preset first.
+- An `oxlint.config.ts` or `oxfmt.config.ts` that does not import the preset is reported with the lines to add. Cinch does not rewrite a module a person wrote. The check is that the import is there. It does not prove the config uses it.
+
+Written by hand, they look like this.
 
 ```ts
 // oxlint.config.ts

@@ -2,6 +2,7 @@ import type { Adapter, FileOutcome, StepInput } from "./adapter.ts";
 import { BUILT_ON_RULE, builtOnProblem, installedVersion } from "./built-on.ts";
 import type { BuiltOn } from "./built-on.ts";
 import { managedAdapter } from "./managed.ts";
+import type { ManagedFile } from "./managed.ts";
 import { shippedText } from "./shipped-text.ts";
 
 export interface ShippedOptions {
@@ -16,6 +17,11 @@ export interface ShippedOptions {
   readonly source: URL;
   /** What starts a line comment in the file's format. */
   readonly comment: string;
+  /**
+   * The check of the tool's own config, which must build on the copy. It is
+   * required, so no preset ships without one.
+   */
+  readonly root: ManagedFile;
   /** The package the preset imports, when it imports one. */
   readonly builtOn?: BuiltOn;
 }
@@ -65,8 +71,8 @@ const withPackage =
   };
 
 /**
- * Keeps one copy of a preset this Cinch ships, for a tool whose own config
- * extends the copy. The preset is off until the Cinch config asks for it,
+ * Keeps one copy of a preset this Cinch ships, and checks that the tool's
+ * own config builds on the copy. The preset is off until the Cinch config asks for it,
  * since not every repository uses the tool.
  */
 export const shippedPreset = (options: ShippedOptions): Adapter => {
@@ -81,6 +87,7 @@ export const shippedPreset = (options: ShippedOptions): Adapter => {
           text: `${shippedHeader(options.comment)}${await shippedText(options.source)}`,
         }),
       },
+      { ...options.root, layer: "root" },
     ],
     id: options.id,
     optIn: true,
