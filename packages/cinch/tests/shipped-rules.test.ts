@@ -117,6 +117,13 @@ test("on the real engine a compiler config that builds on nothing is a finding",
     expect(
       await check("pkg/tsconfig.json", '{ "extends": "../base.json" }\n')
     ).toEqual(["passed"]);
+    // An `extends` deeper in the file is some other setting.
+    expect(
+      await check(
+        "deep/tsconfig.json",
+        '{ "compilerOptions": { "paths": { "extends": ["./src"] } } }\n'
+      )
+    ).toEqual(["findings", "1 config/tsconfig-extends"]);
     expect(await check("other.json", '{ "compilerOptions": {} }\n')).toEqual([
       "passed",
     ]);

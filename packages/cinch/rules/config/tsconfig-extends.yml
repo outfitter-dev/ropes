@@ -10,8 +10,9 @@ rule:
   kind: document
   not:
     has:
-      stopBy: end
-      kind: pair
+      kind: object
       has:
-        field: key
-        regex: ^"extends"$
+        kind: pair
+        has:
+          field: key
+          regex: ^"extends"$
