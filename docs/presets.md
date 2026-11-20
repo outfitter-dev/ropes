@@ -67,6 +67,30 @@ cinch preset update markdown --dry-run
 
 A preset that the config switches off is not written. Cinch names the setting to remove and does not edit a hand-written config.
 
+## Move a tool's settings into the Cinch config, and back
+
+A repository can state its Markdown rules in two places: `.rumdl.toml`, or the `[tools.rumdl]` table in the Cinch config. Both resolve the same. These two commands move the settings from one to the other.
+
+```sh
+cinch preset absorb markdown
+cinch preset absorb markdown --yes
+cinch preset eject markdown --yes
+```
+
+`absorb` moves what `.rumdl.toml` states into `[tools.rumdl]`, regenerates `.outfitter/configs/rumdl.toml` from it, and leaves `.rumdl.toml` as the one `extends` line Cinch keeps. `eject` is the way back: the table leaves the Cinch config and becomes a `.rumdl.toml` the repository owns, which still extends the generated file.
+
+Both show the diff of every file and write nothing until `--yes` is given. `--dry-run` wins over `--yes`. After writing, the command checks that the setup is clean, and exits 1 when it is not. A second run finds nothing to move.
+
+The settings move one layer up or down under the same layers as before, so the tool resolves the same before and after. A test runs `rumdl config` at each point and compares.
+
+- Comments move with their settings. Where they cannot, the settings are written afresh and the comments that were lost are listed.
+- A setting in `.rumdl.toml` that only repeats the layer below is left out, and the output names it.
+- `absorb` stops, writes nothing and exits 1 when a setting is stated in both places with different values, or when the Cinch config already has a table for the same rule. It names the keys to settle by hand.
+- `absorb` needs `.rumdl.toml` to extend the generated config already. When it does not, run `cinch doctor --fix` first.
+- `eject` will not overwrite a `.rumdl.toml` the repository wrote.
+
+Markdown is the only preset with a tool config to move today.
+
 ## How this fits the plan
 
 These commands have no way of their own to write a file. The preset files are steps in the plan, so `cinch explain` lists them, `cinch check` fails when one is behind, and `cinch doctor --fix` writes them. `init` and `preset` run that same plan with the preset files as the selection. `cinch fix` only checks them: see [Doctor](doctor.md).

@@ -7,6 +7,7 @@ import { FixReportSchema } from "../contracts/fix.ts";
 import { InitReportSchema } from "../contracts/init.ts";
 import { PlanSchema, SCHEMA_VERSION } from "../contracts/plan.ts";
 import { PresetReportSchema } from "../contracts/preset.ts";
+import { RelocateReportSchema } from "../contracts/relocate.ts";
 import { EXIT_CODE, ResultSchema } from "../contracts/result.ts";
 import type { Command } from "./command.ts";
 
@@ -22,7 +23,9 @@ export const OUTPUT_SCHEMAS: Readonly<Record<string, z.ZodType>> = {
   fix: FixReportSchema,
   init: InitReportSchema,
   preset: PresetReportSchema,
+  "preset absorb": RelocateReportSchema,
   "preset add": FixReportSchema,
+  "preset eject": RelocateReportSchema,
   "preset list": PresetReportSchema,
   "preset update": FixReportSchema,
 };

@@ -93,6 +93,16 @@ const onlyExtends = (text: string): boolean => {
   }
 };
 
+/** Whether the root config is missing, or a pointer Cinch wrote and owns. */
+export const isPointer = (current: string | null): boolean =>
+  current === null ||
+  current === POINTER ||
+  current === EXTENDS ||
+  (current.startsWith(MARK) && onlyExtends(current));
+
+/** Whether the file says Cinch generated it, whatever else it holds. */
+export const isMarked = (current: string): boolean => current.startsWith(MARK);
+
 /** What a run hands the root config's step. */
 export interface Run {
   readonly root: string;

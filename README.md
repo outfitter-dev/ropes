@@ -24,7 +24,7 @@ Given a path, Cinch resolves one plan: which policy applies, where each value ca
 | `cinch fix [path...]` | Fix the repository's own files. `--dry-run` previews without touching the checkout. It never writes a file Cinch keeps, and it stops when the setup needs repair. See [docs/fix.md](docs/fix.md) |
 | `cinch doctor` | Check the Cinch setup: the files Cinch keeps, and the pinned tools. `--fix` repairs it, and `--fix --dry-run` previews that. See [docs/doctor.md](docs/doctor.md) |
 | `cinch init` | First-time setup. Set up the config and presets a repository needs. It only shows the change. `--yes` writes it. See [docs/presets.md](docs/presets.md) |
-| `cinch preset` | List the shared configs Cinch keeps in the repository and whether each is current. `preset add <name>` and `preset update [name]` write them |
+| `cinch preset` | List the shared configs Cinch keeps in the repository and whether each is current. `preset add <name>` and `preset update [name]` write them. `preset absorb <name>` and `preset eject <name>` move a tool's settings between its own config and the Cinch config |
 | `cinch schema [command]` | Print the JSON Schema of a command's `--json` output, to write a jq filter against. `cinch schema config` prints the schema of the config file |
 
 Every command prints plain text that can be piped, or one JSON document with `--json`. [Output](docs/output.md) has the contract and jq examples. Exit codes are 0 for clean, 1 when findings remain, and 2 when the run is incomplete or unusable. A check that could not run never counts as a pass.
@@ -34,6 +34,7 @@ Every command prints plain text that can be piped, or one JSON document with `--
 | `explain`, `check`, `doctor` | Nothing |
 | `fix` | The repository's own files: what the plan's engines fix |
 | `doctor --fix` | The presets and generated configs Cinch keeps under `.outfitter/configs/`, a root config Cinch creates when there is none, and the `extends` line in one a person wrote |
+| `preset absorb`, `preset eject` | With `--yes`, a tool's settings, moved between its root config and its table in the Cinch config, and the generated config rewritten to match |
 
 `init` and `preset add` or `update` write the same files as `doctor --fix`, through the same steps. Only `init` also carries an older tool's settings over. [Outcomes and exit codes](docs/exit-codes.md) has the full contract, and [Selecting files](docs/selection.md) says which files a command looks at. Markdown is held to [the Markdown standard](docs/markdown-standard.md), which also formats fenced TypeScript and JavaScript. A TypeScript repository can ask for the shared lint, formatter and compiler presets, and have Cinch run the linter, the type check and the formatter: see [the TypeScript standard](docs/typescript-standard.md).
 
