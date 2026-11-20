@@ -14,6 +14,7 @@ import type { CommandRequest, CommandResponse } from "./command.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { configText, outside } from "./relocate.ts";
+import { unreached } from "./rules-reach.ts";
 
 const unusable = (message: string): CommandResponse => ({
   error: `cinch: ${message}`,
@@ -139,6 +140,12 @@ export const adopt = async (
     return respond({ ...nothing, notes });
   }
   const adopted = adds.map(({ name }) => name);
+  const left = await unreached(request, deps, {
+    adapters,
+    file: text.file,
+    names: adopted,
+    present,
+  });
   const named = namePacks(text.text, text.prefix, [
     ...(config.rulesPacks?.value ?? []),
     ...adopted,
@@ -163,7 +170,7 @@ export const adopt = async (
     adopted,
     changed: [text.file],
     diff: unifiedDiff(text.file, before, named.text),
-    notes,
+    notes: [...notes, ...left],
     written,
   });
 };

@@ -113,13 +113,16 @@ test("a name nothing has is refused, and a pack that is off is not adopted", asy
 });
 
 test("rules a person switched off stay off, and the report says so", async () => {
-  await put("cinch.toml", "pilot = 0\n\n[rules]\nenabled = false\n");
+  await put(
+    "cinch.toml",
+    'pilot = 0\ninclude = ["**/*.json"]\n\n[rules]\nenabled = false\n'
+  );
   const done = await report({ yes: true });
   expect(done.notes).toEqual([
     "Rules are switched off in cinch.toml (`enabled = false`), so the packs it names do not run yet.",
   ]);
   expect(await config()).toBe(
-    'pilot = 0\n\n[rules]\nenabled = false\npacks = ["config"]\n'
+    'pilot = 0\ninclude = ["**/*.json"]\n\n[rules]\nenabled = false\npacks = ["config"]\n'
   );
 });
 
@@ -216,4 +219,24 @@ test("rules written another way are left for a person", () => {
   expect(packsOf("pilot = 0\nrules = { enabled = true }\n", ["config"])).toBe(
     'The rules settings are not in a `[rules]` table of their own. Add `packs = ["config"]` under `[rules]` by hand.'
   );
+});
+
+test("adopting a pack whose files the config leaves out says so", async () => {
+  await put("cinch.toml", "pilot = 0\n\n[rules]\nenabled = true\n");
+  expect(await report().then((one) => one.notes)).toEqual([
+    'config will not run yet: cinch.toml leaves out the files it reads, such as tsconfig.json. Add "**/tsconfig.json" to `include` to run it.',
+  ]);
+  await put(
+    "cinch.toml",
+    'pilot = 0\ninclude = ["**/*.json"]\nexclude = ["tsconfig.json"]\n'
+  );
+  expect(await report().then((one) => one.notes)).toEqual([
+    "config will not run yet: cinch.toml leaves out the files it reads, such as tsconfig.json. Take them out of `exclude` to run it.",
+  ]);
+});
+
+test("a pack with one file the config covers gets no such note", async () => {
+  await put("pkg/tsconfig.json", "{}\n");
+  await put("cinch.toml", 'pilot = 0\ninclude = ["pkg/**/*.json"]\n');
+  expect(await report().then((one) => one.notes)).toEqual([]);
 });
