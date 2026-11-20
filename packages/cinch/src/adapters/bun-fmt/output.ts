@@ -2,10 +2,19 @@ import type { Finding } from "../../contracts/finding.ts";
 
 /**
  * A file the formatter could not parse, as Bun 1.4.4 prints it on stderr:
- * the message, then the place on the next line.
+ * the message, then the place on the next line. A file it cannot parse and
+ * so passes over, such as malformed TOML, is a `warn` and does not change
+ * the exit code. One that stops it is an `error`, and the run exits 2.
  */
 const PARSE_ERROR =
-  /^error: (?<message>.+)\n\s+at (?<file>.+):(?<line>\d+):(?<column>\d+)$/gmu;
+  /^(?<level>error|warn): (?<message>.+)\n\s+at (?<file>.+):(?<line>\d+):(?<column>\d+)$/gmu;
+
+/** The start of a parse error that stops the formatter. */
+const STOPPED = /^error: .+\n\s+at .+:\d+:\d+$/mu;
+
+/** A file the formatter could not write, with the reason on the next line. */
+const WRITE_ERROR =
+  /^error: Unable to write file "(?<file>.+)":\n(?<reason>.+)$/gmu;
 
 /** The rule a file that needs formatting is reported under. */
 export const UNFORMATTED_RULE = "format";
@@ -13,7 +22,12 @@ export const UNFORMATTED_RULE = "format";
 export const PARSE_RULE = "syntax";
 
 export type Parsed =
-  | { readonly ok: true; readonly files: ReadonlyMap<string, Finding[]> }
+  | {
+      readonly ok: true;
+      readonly files: ReadonlyMap<string, Finding[]>;
+      /** True when a file stopped the formatter, which makes it exit 2. */
+      readonly stopped: boolean;
+    }
   | { readonly ok: false; readonly message: string };
 
 export interface Printed {
@@ -55,6 +69,26 @@ const parseErrors = (stderr: string, source: string): Finding[] =>
   );
 
 /**
+ * The lines of a list of files. A file name can start or end with a space,
+ * so only the line ending is taken off.
+ */
+export const linesOf = (text: string): string[] =>
+  text
+    .split("\n")
+    .map((line) => (line.endsWith("\r") ? line.slice(0, -1) : line))
+    .filter((line) => line !== "");
+
+/** The files a writing run could not write, each with the reason it gave. */
+export const writeFailures = (stderr: string): Map<string, string> =>
+  new Map(
+    [...stderr.matchAll(WRITE_ERROR)].flatMap(({ groups }) =>
+      groups?.file === undefined
+        ? []
+        : [[groups.file, groups.reason ?? "no reason given"] as const]
+    )
+  );
+
+/**
  * Reads one run that lists the files that need formatting. Each line of
  * stdout is such a file. A line or an error for a file the run was not
  * given makes the whole run unusable: it would otherwise be dropped unseen.
@@ -66,13 +100,9 @@ export const parseOutput = (
   const files = new Map<string, Finding[]>(
     context.paths.map((file) => [file, []])
   );
-  const listed = printed.stdout
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line !== "");
   const found = [
     ...parseErrors(printed.stderr, context.source),
-    ...listed.map((file) => unformatted(file, context.source)),
+    ...linesOf(printed.stdout).map((file) => unformatted(file, context.source)),
   ];
   for (const finding of found) {
     const mine = files.get(finding.path);
@@ -84,5 +114,5 @@ export const parseOutput = (
     }
     mine.push(finding);
   }
-  return { files, ok: true };
+  return { files, ok: true, stopped: STOPPED.test(printed.stderr) };
 };

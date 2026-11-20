@@ -3,23 +3,29 @@ import path from "node:path";
 import type { FileOutcome, StepInput } from "../adapter.ts";
 import { allIncomplete, inChunks } from "../batch.ts";
 import { exec } from "../exec.ts";
-import { PARSE_RULE, parseOutput } from "./output.ts";
+import { linesOf, parseOutput, writeFailures } from "./output.ts";
 
 const NAME = "bun fmt";
 const SOURCE = "bun-fmt";
 
 const lastLine = (text: string): string => text.trim().split("\n").at(-1) ?? "";
 
-const linesOf = (text: string): string[] =>
-  text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line !== "");
-
-/** `--no-script` keeps a `fmt` package script from running in its place. */
+/**
+ * `--no-script` keeps a `fmt` package script from running in its place.
+ * Each file is given as `./file`: the formatter reads a name that starts
+ * with `!` as files to leave out, and then takes the whole folder. It
+ * prints the names without the `./`.
+ */
 const run = (binary: string, input: StepInput, flags: readonly string[]) =>
   exec(
-    [binary, "fmt", "--no-script", ...flags, "--", ...input.paths],
+    [
+      binary,
+      "fmt",
+      "--no-script",
+      ...flags,
+      "--",
+      ...input.paths.map((file) => `./${file}`),
+    ],
     input.root
   );
 
@@ -27,8 +33,8 @@ const run = (binary: string, input: StepInput, flags: readonly string[]) =>
  * One start on some files. The formatter passes over a file an ignore file
  * or its config leaves out, and over one that is missing, and says nothing.
  * So it is first asked which of the files it would format, and a file that
- * is there and that it leaves out is incomplete, not passed. Then it lists the ones that need
- * formatting. It exits 0 when none does, 1 when one does and 2 when a file
+ * is there and that it leaves out is incomplete, not passed. Then it lists
+ * the ones that need formatting. It exits 0 when none does, 1 when one does and 2 when a file
  * did not parse.
  */
 const start = async (
@@ -59,8 +65,9 @@ const start = async (
     return all(`${NAME} ran, but ${parsed.message}`);
   }
   const found = [...parsed.files.values()].flat();
-  const failed = found.some((finding) => finding.rule === PARSE_RULE);
-  const expected = failed ? 2 : Math.min(found.length, 1);
+  const expected = parsed.stopped
+    ? 2
+    : Math.min(linesOf(checked.stdout).length, 1);
   if (checked.exitCode !== expected) {
     return all(
       `${NAME} exited ${checked.exitCode} and reported ${found.length} files: ${lastLine(checked.stderr) || "it printed nothing more"}`
@@ -100,12 +107,27 @@ export const checkBatch = (
 /**
  * Formats a batch in place, then checks it, so what is reported is what is
  * left. A file that does not parse stops nothing: the others are written.
+ * A file the formatter could not write is incomplete, with the reason it
+ * gave: the check after it can still read the file, and would call it an
+ * ordinary finding.
  */
 export const fixBatch = (
   binary: string,
   input: StepInput
 ): Promise<FileOutcome[]> =>
   inChunks(input, async (part) => {
-    await run(binary, part, []);
-    return await start(binary, part);
+    const wrote = await run(binary, part, []);
+    const unwritten = writeFailures(wrote.stderr);
+    const outcomes = await start(binary, part);
+    return outcomes.map((outcome) => {
+      const reason = unwritten.get(outcome.path);
+      return reason === undefined || outcome.status === "incomplete"
+        ? outcome
+        : {
+            findings: [],
+            path: outcome.path,
+            reason: `${NAME} could not write this file: ${reason}`,
+            status: "incomplete",
+          };
+    });
   });

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdtemp, rm } from "node:fs/promises";
+import { chmod, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -7,7 +7,7 @@ import {
   bunFmtAdapter,
   SUPPORTED_RANGE,
 } from "../src/adapters/bun-fmt/adapter.ts";
-import { parseOutput } from "../src/adapters/bun-fmt/output.ts";
+import { parseOutput, writeFailures } from "../src/adapters/bun-fmt/output.ts";
 import { adaptersFor } from "../src/adapters/registry.ts";
 import type { Finding } from "../src/contracts/finding.ts";
 import { checkOne, fixOne } from "./one-file.ts";
@@ -209,4 +209,89 @@ test("the output of a run is read into findings for the files it was given", () 
     message: "it named other.ts, which it was not given",
     ok: false,
   });
+});
+
+withEngine(
+  "a file whose name starts with ! is formatted, and no other file is",
+  async () => {
+    await inRepo(
+      {
+        "!a.ts": "export const a  =  1\n",
+        "b.ts": "export const b  =  1\n",
+        "oxfmt.config.ts": "export default {};\n",
+      },
+      async (root) => {
+        const adapter = bunFmtAdapter();
+        expect(await fixOne(adapter, { path: "!a.ts", root })).toEqual({
+          findings: [],
+          status: "fixed",
+        });
+        expect(await Bun.file(path.join(root, "b.ts")).text()).toBe(
+          "export const b  =  1\n"
+        );
+      }
+    );
+  }
+);
+
+withEngine(
+  "a file whose name starts with a space is judged like any other",
+  async () => {
+    await inRepo({ " a.ts": "export const a  =  1\n" }, async (root) => {
+      expect(await checkOne(bunFmtAdapter(), { path: " a.ts", root })).toEqual({
+        findings: [unformatted(" a.ts")],
+        status: "findings",
+      });
+    });
+  }
+);
+
+withEngine(
+  "a file the formatter passes over with a warning is a finding, not a pass",
+  async () => {
+    await inRepo(
+      { "a.toml": "value = [\n", "oxfmt.config.ts": "export default {};\n" },
+      async (root) => {
+        const outcome = await checkOne(bunFmtAdapter(), {
+          path: "a.toml",
+          root,
+        });
+        expect(outcome).toMatchObject({
+          findings: [{ fixable: false, rule: "syntax" }],
+          status: "findings",
+        });
+      }
+    );
+  }
+);
+
+withEngine(
+  "a file the formatter cannot write is incomplete, with the reason",
+  async () => {
+    if (process.getuid?.() === 0) {
+      console.warn("skipped: root can write any file, so no write fails");
+      return;
+    }
+    await inRepo({ "a.ts": "export const a  =  1\n" }, async (root) => {
+      await chmod(path.join(root, "a.ts"), 0o444);
+      const outcome = await fixOne(bunFmtAdapter(), { path: "a.ts", root });
+      expect(outcome).toMatchObject({ findings: [], status: "incomplete" });
+      expect(outcome.reason).toContain("could not write this file");
+    });
+  }
+);
+
+test("the files a writing run could not write are read with their reasons", () => {
+  const stderr = [
+    "error: Unexpected token",
+    "    at bad.ts:2:1",
+    "",
+    'error: Unable to write file "sub/a.ts":',
+    "EACCES: Permission denied",
+    "Error occurred when checking code style in the above files.",
+  ].join("\n");
+  expect([...writeFailures(stderr)]).toEqual([
+    ["sub/a.ts", "EACCES: Permission denied"],
+  ]);
+  expect([...writeFailures("")]).toEqual([]);
 });
