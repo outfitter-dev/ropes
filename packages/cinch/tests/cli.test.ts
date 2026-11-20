@@ -124,6 +124,8 @@ test("schema prints the JSON Schema of a command's --json output", async () => {
       "init",
       "preset",
       "preset add",
+      "preset adopt",
+      "preset eject",
       "preset list",
       "preset update",
     ],

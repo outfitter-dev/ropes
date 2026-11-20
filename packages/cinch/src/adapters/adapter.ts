@@ -2,6 +2,7 @@ import type { FactReport } from "../contracts/facts.ts";
 import type { Finding } from "../contracts/finding.ts";
 import type { Layer } from "../contracts/plan.ts";
 import type { StepStatus } from "../contracts/result.ts";
+import type { Relocates } from "./relocation.ts";
 
 export type Platform = "darwin" | "linux" | "win32";
 
@@ -189,4 +190,9 @@ export interface Adapter {
    * each with the file that sets it. It reads, and never writes.
    */
   readonly facts?: (root: string) => Promise<FactReport>;
+  /**
+   * Moves the tool's settings between a config a person wrote for it and
+   * its table in the Cinch config. An adapter with no such table has none.
+   */
+  readonly relocates?: Relocates;
 }

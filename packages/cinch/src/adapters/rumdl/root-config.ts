@@ -48,7 +48,9 @@ const namesTool = (text: string): boolean => {
  * finds, so writing `CONFIG_PATH` beside another one would silently replace
  * the repository's settings. Returns the file that already holds them.
  */
-const configuredElsewhere = async (root: string): Promise<string | null> => {
+export const configuredElsewhere = async (
+  root: string
+): Promise<string | null> => {
   const found = await Promise.all(
     SIBLINGS.map((name) => Bun.file(path.join(root, name)).exists())
   );
@@ -92,6 +94,19 @@ const onlyExtends = (text: string): boolean => {
     return false;
   }
 };
+
+/**
+ * Whether the root config is missing, or holds nothing a move could lose:
+ * a pointer Cinch wrote, or the `extends` line alone with no comment beside
+ * it, whatever its line endings or blank lines.
+ */
+export const isPointer = (current: string | null): boolean =>
+  current === null ||
+  (onlyExtends(current) &&
+    (current.startsWith(MARK) || !current.includes("#")));
+
+/** Whether the file says Cinch generated it, whatever else it holds. */
+export const isMarked = (current: string): boolean => current.startsWith(MARK);
 
 /** What a run hands the root config's step. */
 export interface Run {

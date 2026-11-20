@@ -111,4 +111,6 @@ indent = 4
 - The table cannot set `extends`, because Cinch writes that line itself.
 - A `[tools.rumdl]` table beside `preset = false` is an error, since nothing would read it. So is a table for a tool Cinch generates no config for.
 
+A repository that already states its rules in `.rumdl.toml` can move them into this table with `cinch preset adopt markdown`, and back with `cinch preset eject markdown`. See [Presets](presets.md).
+
 The settings several tools must agree on, such as indent and line width, are not part of this table yet.

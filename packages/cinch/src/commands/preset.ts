@@ -3,6 +3,7 @@ import path from "node:path";
 import type { FixReport } from "../contracts/fix.ts";
 import type { Plan } from "../contracts/plan.ts";
 import type { PresetFile, PresetReport } from "../contracts/preset.ts";
+import { RelocateActionSchema } from "../contracts/relocate.ts";
 import { EXIT_CODE } from "../contracts/result.ts";
 import type { ExitCode, Outcome, Result } from "../contracts/result.ts";
 import { renderFix, renderFixJson } from "../render/fix.ts";
@@ -15,6 +16,9 @@ import type { CommandDeps } from "./prepare.ts";
 import { describeGap, gapOf, gapsOf } from "./preset-gaps.ts";
 import { locate, pick } from "./presets.ts";
 import type { Preset } from "./presets.ts";
+import { relocate } from "./relocate.ts";
+
+const ACTIONS = new Set(["list", "add", "update"]);
 
 const unusable = (message: string): CommandResponse => ({
   error: `cinch: ${message}`,
@@ -163,6 +167,8 @@ const write = async (
  * `cinch preset` lists the shared configs Cinch keeps in a repository.
  * `add <name>` and `update [name]` write them. Both go through the same
  * plan as `doctor --fix`, with the preset's own files as the selection.
+ * `adopt <name>` and `eject <name>` move a tool's settings into the Cinch
+ * config and back out.
  */
 export const preset =
   (deps: CommandDeps): Command =>
@@ -173,14 +179,20 @@ export const preset =
     }
     const action = request.action ?? "list";
     const names = request.paths;
-    if (action !== "list" && action !== "add" && action !== "update") {
+    const moves = RelocateActionSchema.safeParse(action);
+    if (!moves.success && !ACTIONS.has(action)) {
       return unusable(
-        `unknown preset action "${action}". Use list, add or update.`
+        `unknown preset action "${action}". Use list, add, update, adopt or eject.`
       );
     }
     if (action === "add" && names.length === 0) {
       return unusable(
         "name the preset to add. Run `cinch preset` to see them."
+      );
+    }
+    if (moves.success && names.length !== 1) {
+      return unusable(
+        `name one preset to ${action}. Run \`cinch preset\` to see them.`
       );
     }
     const picked = pick(located.presets, action === "list" ? [] : names);
@@ -191,6 +203,13 @@ export const preset =
       );
     }
     const { root } = located.root;
+    const [only] = picked.presets;
+    if (moves.success && only !== undefined) {
+      return await relocate(request, deps, root, {
+        action: moves.data,
+        preset: only,
+      });
+    }
     return await (action === "list"
       ? list(request, deps, root, picked.presets)
       : write(request, deps, root, {

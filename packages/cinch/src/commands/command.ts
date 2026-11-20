@@ -8,9 +8,15 @@ export interface CommandRequest {
   readonly dryRun?: boolean;
   /** `doctor` only: repair the setup. Without it, `doctor` only reports. */
   readonly fix?: boolean;
-  /** `init` only: write without asking. `dryRun` wins when both are set. */
+  /**
+   * `init`, `preset adopt` and `preset eject`: write the change, which is
+   * otherwise only shown. `dryRun` wins when both are set.
+   */
   readonly yes?: boolean;
-  /** `preset` only: `list`, `add` or `update`. The names follow in `paths`. */
+  /**
+   * `preset` only: `list`, `add`, `update`, `adopt` or `eject`. The names
+   * follow in `paths`.
+   */
   readonly action?: string;
 }
 

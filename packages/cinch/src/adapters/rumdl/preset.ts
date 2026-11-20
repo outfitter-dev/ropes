@@ -10,6 +10,8 @@ import {
   RUMDL_TABLE,
   standard,
 } from "./paths.ts";
+import { adopt } from "./relocate/adopt.ts";
+import { eject } from "./relocate/eject.ts";
 import { rootConfig } from "./root-config.ts";
 
 export {
@@ -68,5 +70,9 @@ export const rumdlPresetAdapter = (
       })),
     ],
     preset: "markdown",
+    relocates: {
+      adopt: (root, config) => adopt(root, config, options.table),
+      eject: (root, config) => eject(root, config, options.table),
+    },
     table: RUMDL_TABLE,
   });

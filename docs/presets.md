@@ -67,6 +67,32 @@ cinch preset update markdown --dry-run
 
 A preset that the config switches off is not written. Cinch names the setting to remove and does not edit a hand-written config.
 
+## Move a tool's settings into the Cinch config, and back
+
+A repository can state its Markdown rules in two places: `.rumdl.toml`, or the `[tools.rumdl]` table in the Cinch config. Both resolve the same. These two commands move the settings from one to the other.
+
+```sh
+cinch preset adopt markdown
+cinch preset adopt markdown --yes
+cinch preset eject markdown --yes
+```
+
+`adopt` moves what `.rumdl.toml` states into `[tools.rumdl]`, regenerates `.outfitter/configs/rumdl.toml` from it, and leaves `.rumdl.toml` as the one `extends` line Cinch keeps. `eject` is the way back: the table leaves the Cinch config and becomes a `.rumdl.toml` the repository owns, which still extends the generated file.
+
+Both show the diff of every file and write nothing until `--yes` is given. `--dry-run` wins over `--yes`. After writing, the command checks that the setup is clean, and exits 1 when it is not. A second run finds nothing to move.
+
+The settings move one layer up or down under the same layers as before, so the tool resolves the same before and after. A test runs `rumdl config` at each point and compares.
+
+- Comments move with their settings. Where they cannot, the settings are written afresh and the comments that were lost are listed.
+- A setting in `.rumdl.toml` that only repeats the layer below is left out, and the output names it.
+- `adopt` stops, writes nothing and exits 1 when a setting is stated in both places with different values, or when the Cinch config already has a table for the same rule. It names the keys to settle by hand.
+- `adopt` needs `.rumdl.toml` to extend the generated config already, and the preset under `.outfitter/configs/presets/` to be the one this Cinch ships. When either is not so, run `cinch doctor --fix` first.
+- `eject` will not overwrite a `.rumdl.toml` the repository wrote. It will not create one beside a `rumdl.toml`, a `.config/rumdl.toml` or a `[tool.rumdl]` table in `pyproject.toml` either, because rumdl would stop reading that file. It stops on a table that sets `extends`.
+- Neither command writes a file that is a link to somewhere outside the repository. That exits 2.
+- When the files were written and Cinch could not check them afterwards, the command exits 2. When it checked them and they are not clean, it exits 1.
+
+Markdown is the only preset with a tool config to move today.
+
 ## How this fits the plan
 
 These commands have no way of their own to write a file. The preset files are steps in the plan, so `cinch explain` lists them, `cinch check` fails when one is behind, and `cinch doctor --fix` writes them. `init` and `preset` run that same plan with the preset files as the selection. `cinch fix` only checks them: see [Doctor](doctor.md).

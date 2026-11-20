@@ -61,6 +61,8 @@ export interface ManagedOptions {
   readonly migrates?: Adapter["migrates"];
   /** See `AdapterDescriptor.table`. */
   readonly table?: string;
+  /** See `Adapter.relocates`. */
+  readonly relocates?: Adapter["relocates"];
 }
 
 /** The rule every finding about a kept file is reported under. */
@@ -81,6 +83,7 @@ const read = async (file: string): Promise<string | null> => {
  */
 export const managedAdapter = (options: ManagedOptions): Adapter => {
   const { enabledBy, files, id, migrates, optIn, preset, table } = options;
+  const { relocates } = options;
   const layers = Object.fromEntries(
     files.flatMap((file) =>
       file.layer === undefined ? [] : [[file.path, file.layer]]
@@ -166,5 +169,6 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
     fix: (input) => eachFile(input, (file) => inspect(file, true)),
     ...(migrates === undefined ? {} : { migrates }),
     probe: () => Promise.resolve({ available: true }),
+    ...(relocates === undefined ? {} : { relocates }),
   };
 };
