@@ -3,6 +3,7 @@ import path from "node:path";
 import type { Adapter } from "../adapter.ts";
 import { managedAdapter } from "../managed.ts";
 import type { Wanted } from "../managed.ts";
+import { carriedOver } from "./markdownlint.ts";
 
 /** The copy of the standard that Cinch keeps in a repository. */
 export const PRESET_PATH = ".outfitter/configs/rumdl.toml";
@@ -21,9 +22,11 @@ const HEADER = [
 
 const EXTENDS = `extends = ${JSON.stringify(PRESET_PATH)}\n`;
 
+const standard = (): Promise<string> => Bun.file(SOURCE).text();
+
 const preset = async (): Promise<Wanted> => ({
   ok: true,
-  text: `${HEADER}${await Bun.file(SOURCE).text()}`,
+  text: `${HEADER}${await standard()}`,
 });
 
 const extendsOf = (text: string): unknown => {
@@ -68,22 +71,36 @@ const configuredElsewhere = async (root: string): Promise<string | null> => {
 };
 
 /**
+ * A new config. It carries over what a config for the old Markdown linter
+ * says, because the engine stops reading that one once this file exists.
+ */
+const fresh = async (root: string, command?: string): Promise<Wanted> => {
+  const other = await configuredElsewhere(root);
+  if (other !== null) {
+    return {
+      message: `This repository configures Markdown in ${other}, and a new ${CONFIG_PATH} would hide it. Move those settings into ${CONFIG_PATH}, or set \`preset = false\` under \`[markdown]\` in the Cinch config.`,
+      ok: false,
+    };
+  }
+  const carried = await carriedOver(root, await standard(), command);
+  if (carried === null) {
+    return { ok: true, text: EXTENDS };
+  }
+  return carried.ok ? { ok: true, text: `${EXTENDS}${carried.text}` } : carried;
+};
+
+/**
  * The repository's config must extend the copy. A missing file is written,
  * and a file with no `extends` gets the line at the top, where TOML needs a
  * top-level key to be. A file that extends something else is left alone.
  */
 const config = async (
   current: string | null,
-  root: string
+  root: string,
+  command?: string
 ): Promise<Wanted> => {
   if (current === null) {
-    const other = await configuredElsewhere(root);
-    return other === null
-      ? { ok: true, text: EXTENDS }
-      : {
-          message: `This repository configures Markdown in ${other}, and a new ${CONFIG_PATH} would hide it. Move those settings into ${CONFIG_PATH}, or set \`preset = false\` under \`[markdown]\` in the Cinch config.`,
-          ok: false,
-        };
+    return await fresh(root, command);
   }
   let found: unknown;
   try {
@@ -110,12 +127,20 @@ const config = async (
  * Keeps the shared Markdown standard in a repository: a copy of the preset,
  * and the line in the repository's own rumdl config that extends it.
  */
-export const rumdlPresetAdapter = (): Adapter =>
+export const rumdlPresetAdapter = (
+  options: {
+    /** The engine's executable. */
+    readonly command?: string;
+  } = {}
+): Adapter =>
   managedAdapter({
     enabledBy: "markdown.preset",
     files: [
       { path: PRESET_PATH, want: preset },
-      { path: CONFIG_PATH, want: config },
+      {
+        path: CONFIG_PATH,
+        want: (current, root) => config(current, root, options.command),
+      },
     ],
     id: "rumdl-preset",
     preset: "markdown",
