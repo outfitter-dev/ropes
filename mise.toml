@@ -4,3 +4,4 @@
 [tools]
 bun = "1.4.4"
 rumdl = "0.3.5"
+taplo = "0.10.0"

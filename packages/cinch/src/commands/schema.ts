@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { configJsonSchema } from "../config/schema.ts";
 import { FailureSchema } from "../contracts/failure.ts";
 import { FixReportSchema } from "../contracts/fix.ts";
 import { InitReportSchema } from "../contracts/init.ts";
@@ -26,21 +27,31 @@ export const OUTPUT_SCHEMAS: Readonly<Record<string, z.ZodType>> = {
 
 const NAMES = Object.keys(OUTPUT_SCHEMAS).toSorted();
 
+/** The name that asks for the schema of the config file, not of an output. */
+export const CONFIG_NAME = "config";
+
 const print = (value: unknown): string => JSON.stringify(value, null, 2);
 
 const listing = (json: boolean): string =>
   json
-    ? print({ commands: NAMES, schemaVersion: SCHEMA_VERSION })
+    ? print({
+        commands: NAMES,
+        files: [CONFIG_NAME],
+        schemaVersion: SCHEMA_VERSION,
+      })
     : [
         "Run `cinch schema <command>` for the JSON Schema of its --json output.",
         "",
         ...NAMES.map((name) => `  ${name}`),
+        "",
+        `Run \`cinch schema ${CONFIG_NAME}\` for the JSON Schema of the Cinch config file.`,
       ].join("\n");
 
 /**
  * `cinch schema <command>` prints the JSON Schema of what that command prints
  * with `--json`, so a jq filter can be written without running it first. With
- * no command it lists the names. It reads nothing and runs nothing.
+ * no command it lists the names. `cinch schema config` prints the schema of
+ * the config file instead. It reads nothing and runs nothing.
  */
 export const schema: Command = (request) => {
   const name = request.paths.join(" ");
@@ -48,6 +59,12 @@ export const schema: Command = (request) => {
     return Promise.resolve({
       exitCode: EXIT_CODE.clean,
       output: listing(request.json),
+    });
+  }
+  if (name === CONFIG_NAME) {
+    return Promise.resolve({
+      exitCode: EXIT_CODE.clean,
+      output: print(configJsonSchema()),
     });
   }
   const found = Object.hasOwn(OUTPUT_SCHEMAS, name)

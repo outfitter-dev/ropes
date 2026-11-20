@@ -11,20 +11,42 @@ import type { PolicyValue, Provenance } from "../contracts/plan.ts";
 
 const Globs = z.array(z.string().min(1));
 const ProfileSchema = z.strictObject({
-  enabled: z.boolean().optional(),
-  /** Whether Cinch keeps the shared Markdown standard in the repository. */
-  preset: z.boolean().optional(),
+  enabled: z
+    .boolean()
+    .optional()
+    .describe("Whether Markdown is checked. On unless set to false."),
+  preset: z
+    .boolean()
+    .optional()
+    .describe(
+      "Whether Cinch keeps the shared Markdown standard in the repository."
+    ),
 });
 const OverrideSchema = z.strictObject({
   markdown: ProfileSchema.optional(),
-  paths: Globs.min(1),
+  paths: Globs.min(1).describe(
+    "Root-relative globs. The settings beside them apply to matching files."
+  ),
 });
-const FileSchema = z.strictObject({
-  exclude: Globs.optional(),
-  include: Globs.optional(),
+/**
+ * The shape of `cinch.toml`, and of the `[cinch]` table in `outfitter.toml`.
+ * The loader and the published JSON Schema both come from this definition.
+ */
+export const ConfigFileSchema = z.strictObject({
+  exclude: Globs.optional().describe(
+    "Root-relative globs for files Cinch leaves alone."
+  ),
+  include: Globs.optional().describe(
+    "Root-relative globs for the files Cinch checks."
+  ),
   markdown: ProfileSchema.optional(),
-  overrides: z.array(OverrideSchema).optional(),
-  pilot: z.literal(PILOT_VERSION),
+  overrides: z
+    .array(OverrideSchema)
+    .optional()
+    .describe("Settings for some paths. A later entry wins over an earlier."),
+  pilot: z
+    .literal(PILOT_VERSION)
+    .describe("The version of this unstable format. It must be stated."),
 });
 const VersionedSchema = z.looseObject({ pilot: z.unknown().optional() });
 
@@ -81,7 +103,7 @@ const overDefaults = (stated: readonly PolicyValue[]): PolicyValue[] => {
 };
 
 const build = (
-  table: z.infer<typeof FileSchema>,
+  table: z.infer<typeof ConfigFileSchema>,
   origin: TableOrigin
 ): CinchConfig => {
   const base = markdownSettings(table.markdown, origin, "");
@@ -131,7 +153,7 @@ export const parseConfigTable = (
       ok: false,
     };
   }
-  const parsed = FileSchema.safeParse(table);
+  const parsed = ConfigFileSchema.safeParse(table);
   if (!parsed.success) {
     const issues = parsed.error.issues.map(
       (issue) => `${origin.prefix}${issue.path.join(".")}: ${issue.message}`
