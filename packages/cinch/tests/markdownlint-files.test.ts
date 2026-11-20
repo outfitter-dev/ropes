@@ -43,6 +43,7 @@ test("ignores become exclude, and a directory covers what is under it", async ()
     ],
     from: RUNNER,
     include: [],
+    kinds: [".md"],
     notes: [],
   });
   const excluded = compileGlobs(found?.exclude ?? []);
@@ -70,6 +71,7 @@ test("the root, however it is spelled, is everything", async () => {
   expect(found).toMatchObject({
     exclude: ["out", "out/**"],
     include: ["**"],
+    kinds: [".md"],
   });
 });
 
@@ -80,6 +82,7 @@ test("globs become include, and a negated glob becomes exclude", async () => {
   expect(found).toMatchObject({
     exclude: ["drafts", "drafts/**"],
     include: ["**/*.md", "**/*.mdx"],
+    kinds: [".md"],
   });
 });
 
@@ -135,9 +138,16 @@ test("the starter config states carried choices once and loads", async () => {
       exclude: ["dist", "dist/**"],
       from: RUNNER,
       include: ["**/*.md", "**/*.mdx"],
+      kinds: [".md"],
       notes: ['"/abs" in `ignores` was not carried over.'],
     },
-    { exclude: ["dist", "out/**"], from: "other.json", include: [], notes: [] },
+    {
+      exclude: ["dist", "out/**"],
+      from: "other.json",
+      include: [],
+      kinds: [".md"],
+      notes: [],
+    },
   ]);
   expect(text.match(/^exclude = \[$/gmu)).toHaveLength(1);
   expect(text).toContain(
@@ -155,9 +165,14 @@ test("the starter config states carried choices once and loads", async () => {
 });
 
 test("a carried include keeps the default for every other kind of file", async () => {
-  const carried = { exclude: [], from: RUNNER, include: ["docs/**/*.md"] };
+  const carried = {
+    exclude: [],
+    from: RUNNER,
+    include: ["docs/**/*.md"],
+    kinds: [".md"],
+  };
   const adapter = {
-    ...fakeAdapter(),
+    ...fakeAdapter({ descriptor: { extensions: [] } }),
     inherits: () => Promise.resolve({ ...carried, notes: [] }),
   };
   const [found] = await inheritedBy([adapter], root);
@@ -166,7 +181,13 @@ test("a carried include keeps the default for every other kind of file", async (
     [
       {
         ...adapter,
-        inherits: () => Promise.resolve({ ...carried, include: [], notes: [] }),
+        inherits: () =>
+          Promise.resolve({
+            ...carried,
+            include: [],
+            kinds: [".md"],
+            notes: [],
+          }),
       },
     ],
     root

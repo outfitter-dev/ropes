@@ -39,7 +39,13 @@ const inherits = async (dir: string): Promise<Inherited | null> => {
   const file = Bun.file(path.join(dir, OLD));
   const text = (await file.exists()) ? await file.text() : "";
   return text.includes("glob")
-    ? { exclude: ["vendor/**"], from: OLD, include: [], notes: [] }
+    ? {
+        exclude: ["vendor/**"],
+        from: OLD,
+        include: [],
+        kinds: [".md"],
+        notes: [],
+      }
     : null;
 };
 

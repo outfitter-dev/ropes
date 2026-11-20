@@ -29,6 +29,7 @@ const oldLinter = async (dir: string): Promise<Inherited | null> => {
       : ["vendor", "vendor/**"],
     from: OLD,
     include: [],
+    kinds: [".md"],
     notes: [],
   };
 };

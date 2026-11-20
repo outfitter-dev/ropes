@@ -65,6 +65,8 @@ export interface Inherited {
   /** Root-relative globs, in the form the Cinch config reads. */
   readonly include: readonly string[];
   readonly exclude: readonly string[];
+  /** The file endings the replaced config covered, such as `.md`. */
+  readonly kinds: readonly string[];
   /** One line for each choice that could not be carried over. */
   readonly notes: readonly string[];
 }

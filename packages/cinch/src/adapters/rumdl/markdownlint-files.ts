@@ -96,6 +96,7 @@ export const chosenFiles = async (root: string): Promise<Inherited | null> => {
     exclude: [...new Set(sorted.exclude)],
     from: runner.file,
     include: same(include, MARKDOWN_DEFAULT) ? [] : include,
+    kinds: [".md"],
     notes: sorted.notes,
   };
   const empty =

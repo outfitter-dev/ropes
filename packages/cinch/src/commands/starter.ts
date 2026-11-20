@@ -61,11 +61,11 @@ export const starterConfig = (inherited: readonly Inherited[]): string =>
   [...HEAD, ...carried(inherited), ...PROFILE].join("\n");
 
 /**
- * An old tool chose only its own kind of file. A carried `include` replaces
- * the whole default, so the default for every other kind of file is added
- * back beside it.
+ * An old tool chose only its own kinds of file. A carried `include` replaces
+ * the whole default, so the default for every kind the old tool did not
+ * cover is added back beside it.
  */
-const withOtherKinds = (one: Inherited, adapter: Adapter): Inherited =>
+const withOtherKinds = (one: Inherited): Inherited =>
   one.include.length === 0
     ? one
     : {
@@ -73,10 +73,7 @@ const withOtherKinds = (one: Inherited, adapter: Adapter): Inherited =>
         include: [
           ...one.include,
           ...DEFAULT_CONFIG.include.value.filter(
-            (glob) =>
-              !adapter.descriptor.extensions.some((extension) =>
-                glob.endsWith(extension)
-              )
+            (glob) => !one.kinds.some((kind) => glob.endsWith(kind))
           ),
         ],
       };
@@ -89,7 +86,7 @@ export const inheritedBy = async (
   const found = await Promise.all(
     adapters.map(async (adapter) => {
       const one = (await adapter.inherits?.(root)) ?? null;
-      return one === null ? null : withOtherKinds(one, adapter);
+      return one === null ? null : withOtherKinds(one);
     })
   );
   return found.flatMap((one) => (one === null ? [] : [one]));
