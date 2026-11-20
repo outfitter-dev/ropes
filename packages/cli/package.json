@@ -6,6 +6,9 @@
   "bin": {
     "rope": "./src/cli.ts"
   },
+  "files": [
+    "src"
+  ],
   "type": "module",
   "dependencies": {
     "@ropes/core": "workspace:*"

@@ -3,9 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "description": "The Ropes policy engine and typed quality operations.",
-  "bin": {
-    "cinch": "./src/cli.ts"
-  },
+  "files": [
+    "src",
+    "!src/cli.ts",
+    "presets",
+    "rules",
+    "schemas"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts",

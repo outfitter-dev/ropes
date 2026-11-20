@@ -22,6 +22,8 @@ jobs:
           version: 2026.11.10
       - run: bun install --frozen-lockfile
       - run: bun run check
+      - name: Check the packed Ropes packages
+        run: bun run check:packed
       - name: Run the cinch command from the workspace
         run: bun run cinch --version
       - name: Confirm the pinned external tools resolve
