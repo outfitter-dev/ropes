@@ -49,7 +49,9 @@ const imported = async (command: string, rules: Rules): Promise<unknown> => {
   const dir = await mkdtemp(path.join(tmpdir(), "cinch-import-"));
   try {
     const file = path.join(dir, ".markdownlint.json");
-    await Bun.write(file, JSON.stringify(rules));
+    // The engine never follows `extends`, and here it would point nowhere.
+    const { extends: _parent, ...own } = rules;
+    await Bun.write(file, JSON.stringify(own));
     return await ask(command, [
       "import",
       file,
@@ -62,9 +64,24 @@ const imported = async (command: string, rules: Rules): Promise<unknown> => {
   }
 };
 
+/** The option names the engine writes for one rule's table. */
+const written = async (
+  command: string,
+  rule: string,
+  table: Rules
+): Promise<string[]> => {
+  const sections = SectionsSchema.safeParse(
+    await imported(command, { [rule]: table })
+  );
+  return Object.entries(sections.success ? sections.data : {})
+    .filter(([name]) => name !== "global")
+    .flatMap(([, section]) => Object.keys(section));
+};
+
 /**
  * The engine renames some options as it reads them. Each option it seemed to
- * drop is read again by itself, and whatever comes back is its new name.
+ * drop is read again by itself, and what comes back is its new name. A key
+ * the engine writes for the rule with no options at all is its own addition.
  */
 const renamed = async (
   command: string,
@@ -72,11 +89,11 @@ const renamed = async (
 ): Promise<Renames> => {
   const found = await Promise.all(
     leftover.map(async (old) => {
-      const alone = { [old.rule]: { [old.key]: old.value } };
-      const sections = SectionsSchema.safeParse(await imported(command, alone));
-      const keys = Object.values(sections.success ? sections.data : {}).flatMap(
-        (section) => Object.keys(section)
-      );
+      const [alone, bare] = await Promise.all([
+        written(command, old.rule, { [old.key]: old.value }),
+        written(command, old.rule, {}),
+      ]);
+      const keys = alone.filter((key) => !bare.includes(key));
       return [`${old.id}.${option(old.key)}`, keys] satisfies [
         string,
         string[],

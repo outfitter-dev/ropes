@@ -189,3 +189,15 @@ test("a config that switches every rule off stays that way", () => {
     global: { enable: [], "extend-disable": ["MD024", "MD033"] },
   });
 });
+
+test("a new name never takes a key the old config stated itself", () => {
+  const result = translate({
+    imported: { MD013: { strict: false } },
+    known,
+    preset,
+    renames: new Map([["MD013.stern", ["strict"]]]),
+    rules: { MD013: { stern: true, strict: false } },
+  });
+  expect(result.sections.MD013).toEqual({ strict: false });
+  expect(result.notes).toEqual(["`stern` on MD013 has no equivalent here."]);
+});

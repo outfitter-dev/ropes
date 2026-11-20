@@ -74,16 +74,21 @@ const presetValue = (preset: Sections, id: string, key: string): unknown => {
   return found?.[1];
 };
 
-/** For each key the engine wrote for a rule, the old option it came from. */
+/**
+ * For each key the engine wrote for a rule, the old option it came from. An
+ * option the old config stated under the engine's own name keeps that key.
+ */
 const sources = (
   id: string,
   wanted: ReadonlyMap<string, Option>,
   renames: Renames
 ): Map<string, string> => {
-  const from = new Map<string, string>();
+  const from = new Map([...wanted.keys()].map((old) => [old, old]));
   for (const old of wanted.keys()) {
-    for (const name of [old, ...(renames.get(`${id}.${old}`) ?? [])]) {
-      from.set(option(name), old);
+    for (const name of renames.get(`${id}.${old}`) ?? []) {
+      if (!from.has(option(name))) {
+        from.set(option(name), old);
+      }
     }
   }
   return from;

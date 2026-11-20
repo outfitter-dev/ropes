@@ -258,3 +258,18 @@ test("without the engine the step is incomplete, and nothing is written", async 
     expect(await Bun.file(path.join(root, CONFIG_PATH)).exists()).toBe(false);
   });
 });
+
+withEngine(
+  "`extends` in the old config does not stop the migration",
+  async () => {
+    const rules = { MD007: { indent: 4 }, extends: "../shared/base.json" };
+    const files = { ".markdownlint.json": JSON.stringify(rules) };
+    await inRoot(files, async (root) => {
+      const outcome = await preset.fix({ path: CONFIG_PATH, root });
+      expect(outcome.status).toBe("fixed");
+      const text = await written(root);
+      expect(text).toContain("[MD007]\nindent = 4");
+      expect(text).toContain("`extends` names another config");
+    });
+  }
+);
