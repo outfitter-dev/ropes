@@ -1,48 +1,30 @@
 import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
-import { devNull, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import core from "../../cinch/package.json" with { type: "json" };
 import cli from "../package.json" with { type: "json" };
+import fixture from "../tests/fixtures/outfitter/package.json" with { type: "json" };
+import { packConsumer, proveConsumer } from "./packed-consumer.ts";
+import { run } from "./packed-run.ts";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
-
-const run = async (command: readonly string[], cwd = ROOT): Promise<string> => {
-  const child = Bun.spawn([...command], {
-    cwd,
-    env: {
-      ...Object.fromEntries(
-        Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_"))
-      ),
-      GIT_CONFIG_GLOBAL: devNull,
-      GIT_CONFIG_NOSYSTEM: "1",
-    },
-    stderr: "pipe",
-    stdout: "pipe",
-  });
-  const [stdout, stderr, code] = await Promise.all([
-    new Response(child.stdout).text(),
-    new Response(child.stderr).text(),
-    child.exited,
-  ]);
-  if (code !== 0) {
-    throw new Error(`${command.join(" ")} exited ${code}\n${stdout}${stderr}`);
-  }
-  return stdout;
-};
 
 const decode = (text: string): unknown => JSON.parse(text);
 
 const tool = (name: string, args: readonly string[]): Promise<string> =>
-  run([process.execPath, path.join(ROOT, "node_modules/.bin", name), ...args]);
+  run(
+    [process.execPath, path.join(ROOT, "node_modules/.bin", name), ...args],
+    ROOT
+  );
 
 const checkFiles = async (
   archive: string,
   allowed: readonly string[],
   required: readonly string[]
 ) => {
-  const listing = await run(["tar", "-tzf", archive]);
+  const listing = await run(["tar", "-tzf", archive], ROOT);
   const files = listing
     .trim()
     .split("\n")
@@ -70,12 +52,17 @@ const smoke = async (
   cliArchive: string
 ) => {
   const consumer = path.join(folder, "consumer");
+  const fixtureArchive = await packConsumer(folder);
   await mkdir(consumer);
   await run(["git", "init", "--quiet", "--template="], consumer);
   await Bun.write(
     path.join(consumer, "package.json"),
     JSON.stringify({
-      dependencies: { [core.name]: coreArchive, [cli.name]: cliArchive },
+      dependencies: {
+        [core.name]: coreArchive,
+        [cli.name]: cliArchive,
+        [fixture.name]: fixtureArchive,
+      },
       private: true,
       type: "module",
     })
@@ -147,6 +134,7 @@ console.log(JSON.stringify(parsed.value));
       "The packed CLI and public core API produced different plans"
     );
   }
+  await proveConsumer(consumer);
 };
 
 if (core.version !== cli.version) {
@@ -192,7 +180,7 @@ try {
     ]
   );
   await checkFiles(cliArchive, ["package.json", "src"], ["src/cli.ts"]);
-  const coreFiles = await run(["tar", "-tzf", coreArchive]);
+  const coreFiles = await run(["tar", "-tzf", coreArchive], ROOT);
   if (coreFiles.split("\n").includes("package/src/cli.ts")) {
     throw new Error("The core tarball contains the legacy Cinch entry point");
   }
