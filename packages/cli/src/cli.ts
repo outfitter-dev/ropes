@@ -31,9 +31,11 @@ const print = (output: string): void => {
 };
 
 const fail = (message: string, json: boolean): number => {
-  process.stderr.write(
-    `${json ? renderFailureJson(message) : `rope: ${message}`}\n`
-  );
+  // Setup errors join later lines with `cinch: `. Rebrand those as rope.
+  const text = json
+    ? renderFailureJson(message)
+    : `rope: ${message.replaceAll("\ncinch: ", "\nrope: ")}`;
+  process.stderr.write(`${text}\n`);
   return EXIT_CODE.incomplete;
 };
 
