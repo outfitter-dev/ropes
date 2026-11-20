@@ -3,7 +3,7 @@ import path from "node:path";
 import type { FixReport } from "../contracts/fix.ts";
 import type { Plan } from "../contracts/plan.ts";
 import { EXIT_CODE, exitCodeOf } from "../contracts/result.ts";
-import { unifiedDiff } from "../render/diff.ts";
+import { changeAt, unifiedDiff } from "../render/diff.ts";
 import { renderFix, renderFixJson } from "../render/fix.ts";
 import { runPlan, writesIn } from "../runner/run.ts";
 import type { Command, CommandRequest, CommandResponse } from "./command.ts";
@@ -45,7 +45,10 @@ const apply = async (
   run: { readonly dryRun: boolean; readonly mode: WriteMode }
 ): Promise<FixReport> => {
   const before = await snapshot(root, plan, run.mode);
-  const ran = await runPlan({ ...plan, root }, adapters, { mode: run.mode });
+  const ran = await runPlan({ ...plan, root }, adapters, {
+    changeAt,
+    mode: run.mode,
+  });
   const after = await snapshot(root, plan, run.mode);
   const diffs = plan.paths.map((entry, index) =>
     unifiedDiff(entry.path, before[index] ?? "", after[index] ?? "")

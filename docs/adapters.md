@@ -84,6 +84,8 @@ Each of these marks every file of the batch incomplete. A file the adapter retur
 
 An adapter never has to guard against these itself, and a step that could not run is never reported as passed.
 
+In a `fix` run the runner also checks a file again, with `check()`, after a later step rewrote it. That is how it finds [two steps that undo each other](fix.md#when-two-steps-undo-each-other). So `check()` may be called on a file the same adapter has just fixed, and it has to answer for the file as it is then.
+
 ## Keep it free of the command line
 
 An adapter takes a root and the files of a batch and returns data. It does not read arguments, print, or set an exit code. That keeps the interface usable from `outfitter`, and from a different command layer later.

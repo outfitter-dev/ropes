@@ -43,3 +43,5 @@ An adapter whose tool has such settings but cannot print what it resolves is lis
 | `rumdl` | `line_width` | `rumdl config`, which prints each setting with the file it came from. The rule's own `MD013.line-length` counts when it differs from `global.line-length`. |
 
 Taplo is only used to lint, and its lint reads none of these facts, so it reports nothing.
+
+Settings are not the only way tools disagree. A lint rule and the formatter can undo each other while they run, and `cinch fix` [reports that as a conflict](fix.md#when-two-steps-undo-each-other).

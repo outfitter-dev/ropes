@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { ConflictSchema } from "./conflict.ts";
 import { FindingSchema } from "./finding.ts";
 import { PlanSchema, SCHEMA_VERSION } from "./plan.ts";
 
@@ -40,6 +41,11 @@ export const outcomeOf = (steps: readonly StepResult[]): Outcome => {
 /** Provisional and unstable. What a run did, next to the plan it ran. */
 export const ResultSchema = z
   .object({
+    /**
+     * Present when steps of a `fix` run undid each other. Each is also a
+     * finding in `steps`, so the outcome already counts it.
+     */
+    conflicts: z.array(ConflictSchema).min(1).readonly().optional(),
     outcome: OutcomeSchema,
     plan: PlanSchema,
     schemaVersion: z.literal(SCHEMA_VERSION),
