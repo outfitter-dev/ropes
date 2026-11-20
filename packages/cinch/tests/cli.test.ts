@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import manifest from "../package.json" with { type: "json" };
+import { FailureSchema } from "../src/contracts/failure.ts";
 import { FixReportSchema } from "../src/contracts/fix.ts";
 
 const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
@@ -103,4 +104,46 @@ test("init shows the change and writes nothing", async () => {
   ]);
   expect(FixReportSchema.parse(JSON.parse(report)).dryRun).toBe(true);
   await rm(root, { force: true, recursive: true });
+});
+
+test("schema prints the JSON Schema of a command's --json output", async () => {
+  const result = await run("schema", "preset", "add");
+  expect(result.exitCode).toBe(0);
+  expect(JSON.parse(result.stdout)).toMatchObject({
+    properties: { changed: { type: "array" }, dryRun: { type: "boolean" } },
+    type: "object",
+  });
+  const names = await run("schema", "--json");
+  expect(JSON.parse(names.stdout)).toEqual({
+    commands: [
+      "check",
+      "explain",
+      "failure",
+      "fix",
+      "init",
+      "preset",
+      "preset add",
+      "preset list",
+      "preset update",
+    ],
+    schemaVersion: 0,
+  });
+  const text = await run("schema");
+  expect(text.stdout).toContain("  preset update\n");
+});
+
+test("with --json a failure is one JSON document on stderr", async () => {
+  const results = await Promise.all([
+    run("nope", "--json"),
+    run("schema", "nope", "--json"),
+    run("check", "no-such-file.md", "--json"),
+  ]);
+  for (const result of results) {
+    expect(result.exitCode).toBe(2);
+    expect(result.stdout).toBe("");
+    const failure = FailureSchema.parse(JSON.parse(result.stderr));
+    expect(failure.error.message).not.toStartWith("cinch: ");
+  }
+  const plain = await run("schema", "nope");
+  expect(plain.stderr).toStartWith("cinch: no schema");
 });

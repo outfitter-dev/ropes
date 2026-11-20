@@ -5,6 +5,7 @@ import manifest from "../package.json" with { type: "json" };
 import type { CommandResponse } from "./commands/command.ts";
 import { commands } from "./commands/registry.ts";
 import { EXIT_CODE } from "./contracts/result.ts";
+import { renderFailureJson } from "./render/failure.ts";
 
 const HELP = `cinch ${manifest.version}
 
@@ -19,16 +20,23 @@ Commands:
   preset    List the shared configs Cinch keeps here and their state
             preset add <name>      Write one preset's files
             preset update [name]   Rewrite copies that are behind
+  schema    Print the JSON Schema of a command's --json output
+            schema [command]       With no command, list the names
+
+Every command prints plain text, or one JSON document with --json. A command
+that could not run prints its reason on stderr, as JSON when --json is given.
 
 Exit codes: 0 clean, 1 findings remain, 2 incomplete or unusable.
 `;
 
-const print = (response: CommandResponse): void => {
+/** With `--json`, a failure is JSON too, so stderr never needs parsing. */
+const print = (response: CommandResponse, json: boolean): void => {
   if (response.output !== undefined) {
     process.stdout.write(`${response.output}\n`);
   }
   if (response.error !== undefined) {
-    process.stderr.write(`${response.error}\n`);
+    const text = json ? renderFailureJson(response.error) : response.error;
+    process.stderr.write(`${text}\n`);
   }
 };
 
@@ -56,9 +64,8 @@ const main = async (argv: readonly string[]): Promise<number> => {
   }
   const command = Object.hasOwn(commands, name) ? commands[name] : undefined;
   if (!command) {
-    process.stderr.write(
-      `cinch: unknown command "${name}". Run cinch --help.\n`
-    );
+    const error = `cinch: unknown command "${name}". Run cinch --help.`;
+    print({ error, exitCode: EXIT_CODE.incomplete }, values.json === true);
     return EXIT_CODE.incomplete;
   }
   // `preset` takes an action before its names. Every other command takes paths.
@@ -72,7 +79,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
     yes: values.yes === true,
   };
   const response = await command(request);
-  print(response);
+  print(response, request.json);
   return response.exitCode;
 };
 
