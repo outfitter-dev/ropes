@@ -147,9 +147,19 @@ test("every shipped rule sits in a pack that has a manifest", async () => {
   }
 });
 
+// A hook's `GIT_DIR` or a developer's Git config must not reach a fixture.
+const ENV = {
+  ...Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_"))
+  ),
+  GIT_CONFIG_GLOBAL: "/dev/null",
+  GIT_CONFIG_NOSYSTEM: "1",
+};
+
 const explain = async (root: string, ...paths: readonly string[]) => {
   const child = Bun.spawn(["bun", CLI, "explain", ...paths], {
     cwd: root,
+    env: ENV,
     stderr: "pipe",
     stdout: "pipe",
   });
@@ -192,7 +202,8 @@ test("explain names the shipped packs, and refuses a name nothing has", async ()
 test("a named file git ignores still makes its pack relevant", async () => {
   const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-pk-")));
   try {
-    await Bun.spawn(["git", "init", "--quiet"], { cwd: root }).exited;
+    const made = Bun.spawnSync(["git", "init", "-q"], { cwd: root, env: ENV });
+    expect(made.exitCode).toBe(0);
     await Bun.write(path.join(root, ".gitignore"), "tsconfig.json\n");
     await Bun.write(path.join(root, "tsconfig.json"), "{}\n");
     await Bun.write(
