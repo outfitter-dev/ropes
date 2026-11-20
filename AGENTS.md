@@ -7,7 +7,7 @@ This repository holds two things that ship separately:
 
 The old framework that used to live under this repository name is now `outfitter-dev/outfitter-legacy`. Nothing here depends on it.
 
-Read README.md and the [specification and decision register](https://linear.app/outfitter/document/fit-product-specification-and-decision-register-232485133059) before implementing. The specification governs behaviour. When the work shows it is wrong, update it and say so in the pull request instead of quietly diverging. Work is tracked in the Cinch Build project on the Linear `FIT` team.
+Read the [design tenets](docs/tenets.md), README.md, and the [specification and decision register](https://linear.app/outfitter/document/fit-product-specification-and-decision-register-232485133059) before implementing. The tenets are the slow-moving design layer; the specification governs current behaviour. Keep implementation and technical documentation aligned with both. When work challenges either, record an explicit decision and explain it in the pull request instead of quietly diverging. Work is tracked in the Cinch Build project on the Linear `FIT` team.
 
 ## Rules that come from the specification
 
