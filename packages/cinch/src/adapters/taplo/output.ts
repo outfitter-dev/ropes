@@ -110,7 +110,9 @@ export const parseOutput = (
 /**
  * Whether Taplo says it read exactly this one file. Undefined when it did not
  * say what it read. The file is named by the end of its path, since Taplo
- * prints the full path it resolved.
+ * prints the full path it resolved. Taplo prints the separators of the
+ * system it runs on, doubled where they are backslashes, and a plan path
+ * always uses a forward slash, so both are read as one.
  */
 export const readOnly = (stderr: string, file: string): boolean | undefined => {
   const found = COLLECTED.exec(stderr)?.groups;
@@ -119,7 +121,7 @@ export const readOnly = (stderr: string, file: string): boolean | undefined => {
   }
   return (
     Number(found.total) - Number(found.excluded) === 1 &&
-    (found.files ?? "").endsWith(`${file}"`)
+    (found.files ?? "").replaceAll(/\\+/gu, "/").endsWith(`/${file}"`)
   );
 };
 

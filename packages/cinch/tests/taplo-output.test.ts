@@ -108,6 +108,13 @@ test("only the one file asked for counts as read", () => {
   expect(readOnly("", "mise.toml")).toBeUndefined();
 });
 
+test("a path printed with the other separator is the same file", () => {
+  const windows = collected(1, 0, String.raw`"C:\\repo\\packages\\a.toml"`);
+  expect(readOnly(windows, "packages/a.toml")).toBe(true);
+  expect(readOnly(windows, "other/a.toml")).toBe(false);
+  expect(readOnly(collected(1, 0, '"/repo/xa.toml"'), "a.toml")).toBe(false);
+});
+
 const CONFLICT = `${collected(1, 0, '"/repo/a.toml"')}error: conflicting keys
   ┌─ /repo/a.toml:2:1
   │
