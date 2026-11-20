@@ -70,6 +70,7 @@ export const renderRules = (
     ...(report.localRules === undefined
       ? []
       : [localRulesBlock(report.localRules)]),
+    ...report.notes,
   ].join("\n\n");
 
 /** What `cinch rules adopt` prints: the packs, the change, and what to know. */

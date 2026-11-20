@@ -12,6 +12,7 @@ import type { Command } from "./command.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { adopt } from "./rules-adopt.ts";
+import { unreached } from "./rules-reach.ts";
 
 const standing = (pack: PackState, enabled: boolean): RuleStanding => {
   if (pack.off !== undefined) {
@@ -68,9 +69,20 @@ export const rules =
     const descriptors = adapters.map(({ descriptor }) => descriptor);
     const packs = plan.rules ?? shippedStates(config, descriptors, present);
     const local = plan.localRules ?? namedLocalRules(config, descriptors);
+    const file = root.configFile ?? "cinch.toml";
+    const notes = await unreached(request, deps, {
+      adapters,
+      file,
+      names: packs
+        .filter((pack) => pack.named !== undefined && pack.off === undefined)
+        .map((pack) => pack.name),
+      present,
+      root: root.root,
+    });
     const report: RulesReport = {
       enabled,
       ...(local === undefined ? {} : { localRules: local }),
+      notes,
       packs: packs.map((pack) => withStates(pack, enabled)),
       schemaVersion: SCHEMA_VERSION,
     };
@@ -79,7 +91,7 @@ export const rules =
       output: request.json
         ? JSON.stringify(report, null, 2)
         : renderRules(report, {
-            file: root.configFile ?? "cinch.toml",
+            file,
             table: `${config.prefix ?? ""}rules`,
           }),
     };

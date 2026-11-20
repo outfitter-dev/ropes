@@ -48,6 +48,8 @@ export const RulesReportSchema = z
       })
       .readonly()
       .optional(),
+    /** What a person should know, one line each, such as a pack named in the config whose files the config leaves out. */
+    notes: z.array(z.string()).readonly(),
     packs: z.array(RulesPackSchema).readonly(),
     schemaVersion: z.literal(SCHEMA_VERSION),
   })
