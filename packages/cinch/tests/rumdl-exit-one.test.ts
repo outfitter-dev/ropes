@@ -22,6 +22,8 @@ const run = async (warns: string) => {
     await Promise.all([
       Bun.write(command, ENGINE),
       Bun.write(path.join(root, "warns"), warns),
+      Bun.write(path.join(root, "a.md"), "# A\n"),
+      Bun.write(path.join(root, "b.md"), "# B\n"),
     ]);
     await chmod(command, 0o755);
     return await runBatch(
@@ -56,4 +58,29 @@ test("exit 1 with only a fence warning gives that file its own reason", async ()
     },
     { findings: [], path: "b.md", status: "passed" },
   ]);
+});
+
+test("a file that is gone when its comments are read is incomplete, never passed", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "cinch-exit-one-"));
+  try {
+    const command = path.join(root, "engine");
+    await Bun.write(command, '#!/bin/sh\necho "[]"\n');
+    await chmod(command, 0o755);
+    const outcomes = await runBatch(
+      command,
+      { package: ".", paths: ["gone.md"], root },
+      []
+    );
+    expect(outcomes).toEqual([
+      {
+        findings: [],
+        path: "gone.md",
+        reason:
+          "rumdl ran, but the file is gone, so its comments could not be read",
+        status: "incomplete",
+      },
+    ]);
+  } finally {
+    await rm(root, { force: true, recursive: true });
+  }
 });
