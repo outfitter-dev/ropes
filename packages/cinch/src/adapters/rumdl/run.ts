@@ -1,8 +1,11 @@
+import nodePath from "node:path";
+
 import type { FileOutcome, StepInput, StepOutcome } from "../adapter.ts";
 import { allIncomplete, inChunks } from "../batch.ts";
 import { exec } from "../exec.ts";
 import { readFences } from "./fences.ts";
 import type { Fences } from "./fences.ts";
+import { withMarkers } from "./markers.ts";
 import { parseOutput } from "./output.ts";
 import type { Parsed } from "./output.ts";
 
@@ -26,6 +29,32 @@ const outcomeFor = (parsed: Parsed, fences: Fences): StepOutcome => {
   const findings = [...parsed.findings, ...fences.findings].toSorted(
     (a, b) => a.range.start.line - b.range.start.line
   );
+  return { findings, status: findings.length > 0 ? "findings" : "passed" };
+};
+
+/**
+ * The outcome once the file's own markers are read. A file with no result is
+ * left as it is: its markers cannot be judged without one.
+ */
+const marked = async (
+  root: string,
+  file: string,
+  outcome: StepOutcome
+): Promise<StepOutcome> => {
+  if (outcome.status === "incomplete") {
+    return outcome;
+  }
+  const handle = Bun.file(nodePath.join(root, file));
+  if (!(await handle.exists())) {
+    return incomplete(
+      `${ID} ran, but the file is gone, so its comments could not be read`
+    );
+  }
+  const text = await handle.text();
+  const findings = withMarkers(text, outcome.findings, {
+    path: file,
+    source: ID,
+  });
   return { findings, status: findings.length > 0 ? "findings" : "passed" };
 };
 
@@ -73,16 +102,18 @@ const start = async (
   if (exitCode === 1 && !reported) {
     return allIncomplete(input, `${ID} exited 1 without reporting a finding`);
   }
-  return input.paths.map((path) => {
-    const mine = parsed.files.get(path);
-    const fenced = fences.files.get(path);
-    return {
-      ...(mine === undefined || fenced === undefined
-        ? incomplete(`${ID} gave no answer for this file`)
-        : outcomeFor(mine, fenced)),
-      path,
-    };
-  });
+  return await Promise.all(
+    input.paths.map(async (path) => {
+      const mine = parsed.files.get(path);
+      const fenced = fences.files.get(path);
+      return {
+        ...(mine === undefined || fenced === undefined
+          ? incomplete(`${ID} gave no answer for this file`)
+          : await marked(input.root, path, outcomeFor(mine, fenced))),
+        path,
+      };
+    })
+  );
 };
 
 /**
