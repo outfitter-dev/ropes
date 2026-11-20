@@ -28,7 +28,7 @@ test("absorb stops, and writes nothing, when its lines would open a table the co
 test("eject fills a root config that holds the bare line with other line endings", async () => {
   const root = await repo({
     [CINCH]: `${CONFIG}\n[tools.rumdl.MD007]\nindent = 4\n`,
-    [ROOT]: EXTENDS.replace("\n", "\r\n\r\n"),
+    [ROOT]: EXTENDS.replaceAll("\n", "\r\n\r\n"),
   });
   const { exitCode, report } = await move(root, "eject", { yes: true });
   expect(report.stopped ?? []).toEqual([]);
