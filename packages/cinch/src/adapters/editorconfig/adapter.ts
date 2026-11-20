@@ -4,6 +4,7 @@ import { managedAdapter } from "../managed.ts";
 import type { Wanted } from "../managed.ts";
 import { EDITOR_PATH } from "./path.ts";
 import { readFile } from "./read.ts";
+import { editorRelocates } from "./relocate.ts";
 import { MARK, render } from "./render.ts";
 import { handWritten } from "./source.ts";
 
@@ -11,7 +12,7 @@ export { EDITOR_PATH } from "./path.ts";
 
 const STALE =
   "This file differs from `[editor]` in the Cinch config. Make the change there, then run `cinch doctor --fix`.";
-const BY_HAND = `This file was written by hand, and the Cinch config has an \`[editor]\` table that Cinch writes it from. Move its settings into \`[editor]\` and delete this file, then run \`cinch doctor --fix\`.`;
+const BY_HAND = `This file was written by hand, and the Cinch config has an \`[editor]\` table that Cinch writes it from. Run \`cinch preset adopt editor\` to see how the two differ, make the table state what you want and delete this file, then run \`cinch doctor --fix\`.`;
 
 const SAME =
   "This file was written by hand and states what `[editor]` in the Cinch config states. Run `cinch doctor --fix` to have Cinch write it from the table.";
@@ -64,4 +65,6 @@ export const editorFileAdapter = (settings?: EditorSettings): Adapter =>
           ],
     id: "editor-file",
     migrates: [handWritten],
+    moves: { files: [EDITOR_PATH], name: "editor" },
+    relocates: editorRelocates,
   });

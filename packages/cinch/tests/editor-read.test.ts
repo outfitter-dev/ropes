@@ -36,7 +36,9 @@ const HAND = [
 
 test("the section for every file becomes the base facts and the rest overrides", () => {
   expect(readFile(HAND)).toEqual({
+    comments: [],
     dropped: [],
+    lost: [],
     settings: {
       charset: "utf-8",
       end_of_line: "lf",

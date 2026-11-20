@@ -48,7 +48,23 @@ Above the table it writes one `# Not carried over:` line for each thing the tabl
 
 `init` leaves `.editorconfig` as it is. When nothing was left out, `cinch doctor` reports that the file states what the table states, and `cinch doctor --fix` replaces it with the generated one. When something was left out, the file stays until you delete it.
 
-A repository that already has a Cinch config is not changed this way. Move the values by hand there.
+`init` does this only for a repository with no Cinch config. For one that has a config, see the next section.
+
+## Adopting a file later
+
+A repository that already has a Cinch config and a hand-written `.editorconfig` moves it over in one step:
+
+```sh
+cinch preset adopt editor
+cinch preset adopt editor --yes
+```
+
+The first shows the `[editor]` table it would add to the Cinch config and the generated `.editorconfig` that would replace the file. The second writes both. It reads the file the way `init` does.
+
+- It stops, writes nothing and exits 1 when the file states a setting the table cannot hold, such as `tab_width`. It names each one. Take them out, or keep the file by hand.
+- Comments are not carried over. The move says which lines held them.
+- When the Cinch config already has an `[editor]` table that states what the file states, only the file is replaced. When the table states something else, it stops: settle the table by hand.
+- `cinch preset eject editor` moves nothing. To keep the file by hand again, delete the `[editor]` table and the first two lines of `.editorconfig`.
 
 ## Not yet
 

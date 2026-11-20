@@ -12,17 +12,17 @@ const pairs = (facts: EditorFacts): string[] =>
   );
 
 /** The lines of the `[editor]` table that state what the file stated. */
-export const tableOf = (text: string): string[] => {
+export const tableOf = (text: string, prefix = ""): string[] => {
   const { dropped, settings } = readFile(text);
   const { overrides = [], ...base } = settings;
   return [
     `# The facts ${EDITOR_PATH} stated, carried over by Cinch.`,
     ...dropped.map((one) => `# Not carried over: ${one}.`),
-    "[editor]",
+    `[${prefix}editor]`,
     ...pairs(base),
     ...overrides.flatMap(({ files, ...facts }) => [
       "",
-      "[[editor.overrides]]",
+      `[[${prefix}editor.overrides]]`,
       `files = ${JSON.stringify(files)}`,
       ...pairs(facts),
     ]),

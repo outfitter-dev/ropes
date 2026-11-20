@@ -57,6 +57,15 @@ export interface AdapterDescriptor {
    */
   readonly preset?: string;
   /**
+   * For an adapter that is no preset and still has settings a person can
+   * move with `preset adopt` and `preset eject`: the name they use, and the
+   * files the move is about, kept by the adapter or not.
+   */
+  readonly moves?: {
+    readonly name: string;
+    readonly files: readonly string[];
+  };
+  /**
    * The table under `tools` in the Cinch config that this adapter copies
    * into a file it keeps. Adapters that generate no config leave it out.
    */

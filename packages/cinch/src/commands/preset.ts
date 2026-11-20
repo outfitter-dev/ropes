@@ -195,11 +195,14 @@ export const preset =
         `name one preset to ${action}. Run \`cinch preset\` to see them.`
       );
     }
-    const picked = pick(located.presets, action === "list" ? [] : names);
+    const among = moves.success ? located.movables : located.presets;
+    const picked = pick(among, action === "list" ? [] : names);
     if (!picked.ok) {
-      const known = located.presets.map((item) => item.name).join(", ");
+      const known = among.map((item) => item.name).join(", ");
       return unusable(
-        `there is no preset named "${picked.unknown}". Cinch ships: ${known}.`
+        moves.success
+          ? `there is nothing named "${picked.unknown}" to ${action}. Cinch can ${action}: ${known}.`
+          : `there is no preset named "${picked.unknown}". Cinch ships: ${known}.`
       );
     }
     const { root } = located.root;

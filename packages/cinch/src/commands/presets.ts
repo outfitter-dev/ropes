@@ -33,11 +33,34 @@ export const presetsOf = (adapters: readonly Adapter[]): readonly Preset[] =>
         ]
   );
 
+/**
+ * What `adopt` and `eject` can be asked for: every preset, and each adapter
+ * that names settings a person can move without being one.
+ */
+export const movablesOf = (adapters: readonly Adapter[]): readonly Preset[] => [
+  ...presetsOf(adapters),
+  ...adapters.flatMap(({ descriptor }) =>
+    descriptor.moves === undefined
+      ? []
+      : [
+          {
+            adapter: descriptor.id,
+            enabledBy: descriptor.enabledBy,
+            files: descriptor.moves.files,
+            name: descriptor.moves.name,
+            optIn: false,
+          },
+        ]
+  ),
+];
+
 export type Located =
   | {
       readonly ok: true;
       readonly root: RepoRoot;
       readonly presets: readonly Preset[];
+      /** See `movablesOf`. */
+      readonly movables: readonly Preset[];
     }
   | { readonly ok: false; readonly error: string };
 
@@ -47,9 +70,16 @@ export const locate = async (
   deps: CommandDeps
 ): Promise<Located> => {
   const found = await discoverRoot(cwd);
-  return found.ok
-    ? { ok: true, presets: presetsOf(deps.adapters({})), root: found.value }
-    : { error: describeRootError(found.error), ok: false };
+  if (!found.ok) {
+    return { error: describeRootError(found.error), ok: false };
+  }
+  const adapters = deps.adapters({});
+  return {
+    movables: movablesOf(adapters),
+    ok: true,
+    presets: presetsOf(adapters),
+    root: found.value,
+  };
 };
 
 /** The presets with these names, or the first name that is not one. */

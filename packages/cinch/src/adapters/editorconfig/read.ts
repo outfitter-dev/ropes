@@ -6,6 +6,10 @@ export interface ReadFile {
   readonly settings: EditorSettings;
   /** One line for each thing the `[editor]` table could not take. */
   readonly dropped: readonly string[];
+  /** The dropped things that are settings. Comments are not among them. */
+  readonly lost: readonly string[];
+  /** The lines that hold a comment, counted from 1. */
+  readonly comments: readonly number[];
 }
 
 /** The file's key on the left, the table's on the right. */
@@ -116,6 +120,7 @@ export const readFile = (text: string): ReadFile => {
       overrides.push(override);
     }
   }
+  const lost = [...dropped];
   if (walk.comments.length > 0) {
     dropped.push(`the comments on lines ${walk.comments.join(", ")}`);
   }
@@ -123,5 +128,5 @@ export const readFile = (text: string): ReadFile => {
     ...base,
     ...(overrides.length === 0 ? {} : { overrides }),
   });
-  return { dropped, settings };
+  return { comments: walk.comments, dropped, lost, settings };
 };
