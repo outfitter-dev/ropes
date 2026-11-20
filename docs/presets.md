@@ -46,12 +46,14 @@ markdown
 | `stale`   | The file differs. `cinch doctor --fix` rewrites it             |
 | `missing` | The file is not there. `cinch doctor --fix` writes it          |
 | `blocked` | Cinch will not change the file by itself. The message says why |
-| `off`     | The config switches the preset off                             |
+| `off`     | The config switches the preset off, or has not asked for it    |
 | `unknown` | The file could not be checked                                  |
 
 The exit code is 0 when every file is current or off, 1 when one is stale, missing or blocked, and 2 when one is unknown.
 
 Each file is judged by itself. A file that `exclude` covers is `blocked`, because Cinch cannot keep a file the config tells it to leave alone. `cinch preset add` and `cinch preset update` then write nothing and exit 2, naming the file and the setting, so a preset is never half written. `cinch init` plans first for the same reason: when the plan cannot be made, it writes no config either.
+
+Some presets are on unless the config switches them off, such as `markdown`. Others are off until the config asks for them with `preset = true`: `lint`, `format` and `typescript`, which only a TypeScript repository wants. See [the TypeScript standard](typescript-standard.md). Asking `cinch preset add` for one that is off writes nothing and says which setting switches it on.
 
 ## Add or update a preset
 
@@ -61,7 +63,7 @@ cinch preset update
 cinch preset update markdown --dry-run
 ```
 
-`add` writes one preset's files. `update` rewrites what is behind, for one preset or for all of them. `--dry-run` shows the diff and writes nothing. `cinch doctor --fix` does what `preset update` does for every preset, and is the command to reach for once a repository is set up. To take a newer standard, upgrade Cinch and run it.
+`add` writes one preset's files. `update` rewrites what is behind, for one preset or for all of them. With no name it passes over a preset that is off, and naming one that is off is an error that says how to switch it on. `--dry-run` shows the diff and writes nothing. `cinch doctor --fix` does what `preset update` does for every preset, and is the command to reach for once a repository is set up. To take a newer standard, upgrade Cinch and run it.
 
 A preset that the config switches off is not written. Cinch names the setting to remove and does not edit a hand-written config.
 

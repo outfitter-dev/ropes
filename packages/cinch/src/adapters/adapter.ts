@@ -34,6 +34,11 @@ export interface AdapterDescriptor {
    */
   readonly enabledBy: string;
   /**
+   * True when the adapter is off until policy sets `enabledBy` to `true`.
+   * Without it the adapter is on until policy sets the key to `false`.
+   */
+  readonly optIn?: true;
+  /**
    * Root-relative files this adapter keeps, whatever their extension and
    * whatever `include` says. They are planned even before they exist, so a
    * check can report a missing one and a fix can write it.

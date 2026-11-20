@@ -53,6 +53,8 @@ export interface ManagedOptions {
   /** The policy key that switches these files off when it is `false`. */
   readonly enabledBy: string;
   readonly files: readonly ManagedFile[];
+  /** See `AdapterDescriptor.optIn`. */
+  readonly optIn?: true;
   /** The name a person uses for this set of files, when it is a preset. */
   readonly preset?: string;
   /** See `Adapter.migrates`. */
@@ -78,7 +80,7 @@ const read = async (file: string): Promise<string | null> => {
  * there is nothing to install.
  */
 export const managedAdapter = (options: ManagedOptions): Adapter => {
-  const { enabledBy, files, id, migrates, preset, table } = options;
+  const { enabledBy, files, id, migrates, optIn, preset, table } = options;
   const layers = Object.fromEntries(
     files.flatMap((file) =>
       file.layer === undefined ? [] : [[file.path, file.layer]]
@@ -89,6 +91,7 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
     extensions: [],
     id,
     ...(Object.keys(layers).length === 0 ? {} : { layers }),
+    ...(optIn === undefined ? {} : { optIn }),
     owns: files.map((file) => file.path),
     platforms: ["darwin", "linux", "win32"],
     ...(preset === undefined ? {} : { preset }),

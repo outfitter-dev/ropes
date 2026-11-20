@@ -29,6 +29,21 @@ const TomlSchema = z.strictObject({
     .optional()
     .describe("Whether TOML is checked. On unless set to false."),
 });
+/** A shared config that is kept only when the repository asks for it. */
+const optInPreset = (what: string) =>
+  z.strictObject({
+    preset: z
+      .boolean()
+      .optional()
+      .describe(
+        `Whether Cinch keeps the shared ${what} in the repository. Off unless set to true.`
+      ),
+  });
+const OPT_IN = {
+  format: optInPreset("formatter config"),
+  lint: optInPreset("lint config"),
+  typescript: optInPreset("TypeScript compiler options"),
+};
 const OverrideSchema = z.strictObject({
   markdown: ProfileSchema.optional(),
   paths: Globs.min(1).describe(
@@ -47,9 +62,11 @@ export const ConfigFileSchema = z.strictObject({
   exclude: Globs.optional().describe(
     "Root-relative globs for files Cinch leaves alone."
   ),
+  format: OPT_IN.format.optional(),
   include: Globs.optional().describe(
     "Root-relative globs for the files Cinch checks."
   ),
+  lint: OPT_IN.lint.optional(),
   markdown: ProfileSchema.optional(),
   overrides: z
     .array(OverrideSchema)
@@ -65,6 +82,7 @@ export const ConfigFileSchema = z.strictObject({
     .describe(
       "One table for each tool, in the tool's own settings. Cinch copies it into the config it generates for that tool."
     ),
+  typescript: OPT_IN.typescript.optional(),
 });
 const VersionedSchema = z.looseObject({ pilot: z.unknown().optional() });
 
@@ -89,10 +107,18 @@ const sourced = <T>(
 ): Sourced<T> => (value === undefined ? fallback : { source, value });
 
 /** The tables that hold settings, as a file or an override states them. */
-interface Tables {
-  readonly markdown?: z.infer<typeof ProfileSchema> | undefined;
-  readonly toml?: z.infer<typeof TomlSchema> | undefined;
-}
+type Switches = Readonly<Record<string, boolean | undefined>> | undefined;
+/** The tables a file can state. An override states the first two only. */
+const SETTING_TABLES = [
+  "markdown",
+  "toml",
+  "format",
+  "lint",
+  "typescript",
+] as const;
+type Tables = Readonly<
+  Partial<Record<(typeof SETTING_TABLES)[number], Switches>>
+>;
 
 /** One setting per key the tables state, sourced under `prefix`. */
 const settingsOf = (
@@ -100,19 +126,18 @@ const settingsOf = (
   origin: TableOrigin,
   prefix: string
 ): PolicyValue[] =>
-  Object.entries({ markdown: tables.markdown, toml: tables.toml }).flatMap(
-    ([table, profile]) =>
-      Object.entries(profile ?? {}).flatMap(([key, value]) =>
-        value === undefined
-          ? []
-          : [
-              {
-                key: `${table}.${key}`,
-                source: from(origin, `${prefix}${table}.${key}`),
-                value,
-              },
-            ]
-      )
+  SETTING_TABLES.flatMap((table) =>
+    Object.entries(tables[table] ?? {}).flatMap(([key, value]) =>
+      value === undefined
+        ? []
+        : [
+            {
+              key: `${table}.${key}`,
+              source: from(origin, `${prefix}${table}.${key}`),
+              value,
+            },
+          ]
+    )
   );
 
 /** The defaults, with every key the file states replacing its default. */

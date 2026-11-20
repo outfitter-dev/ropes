@@ -25,3 +25,14 @@ trim_trailing_whitespace = true
 [[editor.overrides]]
 files = ["*.md"]
 trim_trailing_whitespace = false
+
+# The shared lint, formatter and TypeScript configs. The root configs extend
+# the copies Cinch keeps under `.outfitter/configs/presets/`.
+[lint]
+preset = true
+
+[format]
+preset = true
+
+[typescript]
+preset = true

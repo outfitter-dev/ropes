@@ -1,27 +1,13 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "lib": ["ESNext"],
-    "module": "Preserve",
-    "moduleResolution": "Bundler",
-    "types": ["bun"],
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
-    "verbatimModuleSyntax": true,
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "noEmit": true,
-    "skipLibCheck": true
-  },
+  "extends": "./.outfitter/configs/presets/tsconfig.json",
   "include": [
     "packages/*/src/**/*.ts",
     "packages/*/tests/**/*.ts",
     "tests/*.ts",
     "tests/fixtures/typed-lint/*.ts",
-    "*.config.ts"
+    "*.config.ts",
+    ".outfitter/configs/presets/*.ts",
+    "packages/*/presets/*.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

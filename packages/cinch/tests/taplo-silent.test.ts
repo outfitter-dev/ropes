@@ -75,13 +75,13 @@ test("an engine that ran without saying what it read is asked again", async () =
 });
 
 test("an engine that never says what it read is incomplete, not passed", async () => {
-  const { outcome, starts } = await run(4);
+  const { outcome, starts } = await run(7);
   expect(outcome).toMatchObject({
     reason:
-      "taplo did not say which files it read in 3 starts: it printed nothing",
+      "taplo did not say which files it read in 6 starts: it printed nothing",
     status: "incomplete",
   });
-  expect(starts).toBe(3);
+  expect(starts).toBe(6);
 });
 
 test("an engine that did not name the check that failed is asked again", async () => {
@@ -92,10 +92,10 @@ test("an engine that did not name the check that failed is asked again", async (
 });
 
 test("an engine that never names the check is incomplete, not a guess", async () => {
-  const { outcome, starts } = await run(4, UNNAMED);
+  const { outcome, starts } = await run(7, UNNAMED);
   expect(outcome).toMatchObject({
     reason: "taplo ran, but it did not say which check failed",
     status: "incomplete",
   });
-  expect(starts).toBe(3);
+  expect(starts).toBe(6);
 });

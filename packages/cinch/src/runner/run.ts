@@ -116,7 +116,7 @@ export const runPlan = async (
   for (const batch of plan.batches) {
     // Batches run in plan order: a later step reads what an earlier one
     // wrote, and a kept config is written before the step that reads it.
-    // oxlint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop
     const outcomes = await runBatch(ready, batch, plan.root, options.mode);
     for (const outcome of outcomes) {
       const step = { adapter: batch.adapter, ...outcome };
