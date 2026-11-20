@@ -52,6 +52,7 @@ const fresh = async (root: string, options: ModuleRoot): Promise<Wanted> => {
  * Cinch says what to add and writes nothing.
  */
 export const moduleRoot = (options: ModuleRoot): ManagedFile => ({
+  beside: options.siblings,
   layer: "root",
   path: options.path,
   want: async (current, root) => {

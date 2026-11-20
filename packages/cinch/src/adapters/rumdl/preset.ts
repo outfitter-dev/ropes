@@ -12,7 +12,7 @@ import {
 } from "./paths.ts";
 import { adopt } from "./relocate/adopt.ts";
 import { eject } from "./relocate/eject.ts";
-import { rootConfig } from "./root-config.ts";
+import { ELSEWHERE, rootConfig } from "./root-config.ts";
 
 export {
   CONFIG_PATH,
@@ -46,6 +46,7 @@ export const rumdlPresetAdapter = (
         want: () => generated(options.table),
       },
       {
+        beside: ELSEWHERE,
         layer: "root",
         path: CONFIG_PATH,
         want: (current, root, migrate) =>

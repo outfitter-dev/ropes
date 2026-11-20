@@ -121,6 +121,18 @@ test("a config the tool reads from another file stops the new one", async () => 
   );
 });
 
+test("a dry run sees a config git ignores, as the real run does", async () => {
+  Bun.spawnSync(["git", "init", "-q"], { cwd: root });
+  await put(".gitignore", ".oxlintrc.json\nnode_modules\n");
+  await put(".oxlintrc.json", "{}\n");
+  const preview = await doctor({ dryRun: true, fix: true });
+  const found = preview.result.steps
+    .filter((step) => step.path === "oxlint.config.ts")
+    .flatMap((step) => step.findings.map((finding) => finding.message));
+  expect(found).toHaveLength(1);
+  expect(found[0]).toContain("keeps its config in .oxlintrc.json");
+});
+
 test("a tsconfig.json with no extends gets the key and nothing else", async () => {
   const own =
     '// The { compiler } config.\n{\n  /* ours */\n  "include": ["src"], // all of it\n}\n';

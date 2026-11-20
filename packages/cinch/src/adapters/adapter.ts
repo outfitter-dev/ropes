@@ -83,6 +83,8 @@ export interface AdapterDescriptor {
    * through, by root-relative path. `explain` names it.
    */
   readonly layers?: Readonly<Record<string, Layer>>;
+  /** Root-relative files it reads when they are there and never writes. */
+  readonly beside?: readonly string[];
   /**
    * The shared facts this adapter can report its tool's value for, by the
    * names the `[editor]` table uses. An empty list says the tool has such
