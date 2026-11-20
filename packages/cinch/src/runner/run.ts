@@ -5,7 +5,20 @@ import type { Result, StepResult } from "../contracts/result.ts";
 import { probeAdapter, threw, versionProblem } from "./ready.ts";
 import type { Readiness } from "./ready.ts";
 
-export type RunMode = "check" | "fix";
+/**
+ * `fix` writes the repository's own files and `doctor` writes the Cinch
+ * setup. Each only checks what the other writes. `init` writes what
+ * `doctor` does, and is the one run in which an adapter may migrate.
+ */
+export type RunMode = "check" | "doctor" | "fix" | "init";
+
+/** Whether a batch may write in this mode. */
+export const writesIn = (
+  mode: RunMode,
+  step: { readonly setup?: boolean | undefined; readonly writes: boolean }
+): boolean =>
+  step.writes &&
+  (step.setup === true ? mode === "doctor" || mode === "init" : mode === "fix");
 
 export interface RunOptions {
   readonly mode: RunMode;
@@ -68,11 +81,16 @@ const runBatch = async (
   if (reason !== undefined) {
     return all(reason);
   }
-  const input = { package: batch.package, paths: batch.paths, root };
+  const input = {
+    ...(mode === "init" ? { migrate: true } : {}),
+    package: batch.package,
+    paths: batch.paths,
+    root,
+  };
   try {
     return answered(
       batch,
-      mode === "fix" && batch.writes
+      writesIn(mode, batch)
         ? await adapter.fix(input)
         : await adapter.check(input)
     );

@@ -36,6 +36,12 @@ export interface AdapterDescriptor {
    */
   readonly owns?: readonly string[];
   /**
+   * True when what this adapter writes is the Cinch setup, not the
+   * repository's own content. `fix` then only checks its files, and
+   * `doctor --fix` is the one verb that writes them.
+   */
+  readonly setup?: true;
+  /**
    * The name a person uses for the shared config this adapter keeps in its
    * `owns` files, such as `markdown`. Adapters that keep none leave it out.
    */
@@ -65,6 +71,13 @@ export interface StepInput {
   readonly package: string;
   /** Root-relative files, all in that package. Never empty. */
   readonly paths: readonly string[];
+  /**
+   * True only while `init` takes a repository over from an older setup. It
+   * is the one time an adapter may carry an old config's settings into a
+   * file a person wrote. Every other run leaves such a file's own content
+   * as it is.
+   */
+  readonly migrate?: boolean;
 }
 
 /** What a step found out about one of the files it was handed. */

@@ -195,7 +195,7 @@ test("a line that would land inside a string stops the merge", () => {
 
 const ready = Bun.which("rumdl") !== null;
 
-test("adopting a config merges the old rules into it", async () => {
+test("init merges the old rules into a config, and doctor adds one line", async () => {
   if (!ready) {
     console.warn("skipped: rumdl is not on PATH, so the merge did not run");
     return;
@@ -208,9 +208,20 @@ test("adopting a config merges the old rules into it", async () => {
       JSON.stringify({ MD007: { indent: 4 }, MD013: { line_length: 120 } })
     );
     const target = path.join(root, CONFIG_PATH);
-    await Bun.write(target, "[MD013]\nline-length = 100\n");
     const preset = rumdlPresetAdapter();
-    const first = await fixOne(preset, { path: CONFIG_PATH, root });
+    const mine = "[MD013]\nline-length = 100\n";
+    await Bun.write(target, mine);
+    const plain = await fixOne(preset, { path: CONFIG_PATH, root });
+    expect(plain.status).toBe("fixed");
+    expect(await Bun.file(target).text()).toBe(
+      `extends = ${JSON.stringify(PRESET_PATH)}\n\n${mine}`
+    );
+    await Bun.write(target, mine);
+    const first = await fixOne(preset, {
+      migrate: true,
+      path: CONFIG_PATH,
+      root,
+    });
     expect(first.status).toBe("fixed");
     const text = await Bun.file(target).text();
     expect(text).toStartWith(

@@ -1,6 +1,7 @@
 import { adaptersFor } from "../adapters/registry.ts";
 import { check } from "./check.ts";
 import type { Command } from "./command.ts";
+import { doctor } from "./doctor.ts";
 import { explain } from "./explain.ts";
 import { fix } from "./fix.ts";
 import { init } from "./init.ts";
@@ -16,6 +17,7 @@ export const createCommands = (
   deps: CommandDeps
 ): Readonly<Record<string, Command>> => ({
   check: check(deps),
+  doctor: doctor(deps),
   explain: explain(deps),
   fix: fix(deps),
   init: init(deps),

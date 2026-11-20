@@ -6,14 +6,14 @@ Outfitter repositories share one set of Markdown rules. It lives in `packages/ci
 
 Cinch keeps two files in the repository. Both are committed.
 
-- `.outfitter/configs/rumdl.toml` is a copy of the standard. Cinch owns it. Do not edit it, because `cinch fix` rewrites it.
+- `.outfitter/configs/rumdl.toml` is a copy of the standard. Cinch owns it. Do not edit it, because `cinch doctor --fix` rewrites it.
 - `.rumdl.toml` is the repository's own config. Its first line extends the copy, and everything after that line is the repository's to change.
 
 ```toml
 extends = ".outfitter/configs/rumdl.toml"
 ```
 
-`cinch check` reports the copy when it is missing or differs from what this Cinch ships, and reports `.rumdl.toml` when it does not extend the copy. `cinch fix` writes the copy, creates `.rumdl.toml` when there is none, and adds the `extends` line to one that has none. `cinch explain` lists both files like any other. The copy is on disk, so running rumdl by hand applies the same rules.
+`cinch check` reports the copy when it is missing or differs from what this Cinch ships, and reports `.rumdl.toml` when it does not extend the copy. `cinch doctor --fix` writes the copy, creates `.rumdl.toml` when there is none, and adds the `extends` line to one that has none. `cinch fix` writes neither file, and fixes no Markdown until both are right. `cinch explain` lists both files like any other. The copy is on disk, so running rumdl by hand applies the same rules.
 
 Cinch leaves a `.rumdl.toml` that already extends something else alone and reports it. Change the line by hand, or opt out. It also will not write `.rumdl.toml` when the repository configures rumdl in `rumdl.toml`, `.config/rumdl.toml` or `pyproject.toml`, because rumdl reads only one of them and the new file would hide those settings. Move them into `.rumdl.toml` first.
 
@@ -43,15 +43,15 @@ indent = 4
 - A rule the old config switched off stays off, under `extend-disable`. A rule the standard switches off that the old config configured or switched on stays on. Then `disable` replaces the standard's list and repeats what stays off. A config with `default: false` becomes an `enable` list of the rules it switched on, and the rules the standard adds are switched off beside it.
 - What cannot be carried over is listed in a comment by name: custom rules and tags, `extends`, and markdownlint-cli2 settings such as `customRules`. `globs` and `ignores` choose files, which is the Cinch config's job. When `cinch init` writes the first `cinch.toml`, it puts `ignores` and negated `globs` there as `exclude`, and other `globs` as `include`, unless they only say `**/*.md`. The old linter reads a pattern that names a directory, such as `dist`, as everything under it, so every pattern that does not end in a Markdown extension or `**` is written twice: `dist` and `dist/**`. A pattern a Cinch glob cannot say, such as an absolute path or an extended glob, is named in a comment and not written. The same goes for an `exclude` that would leave out a file Cinch keeps, such as `.outfitter/configs/rumdl.toml`. A `cinch.toml` that is already there is left alone, and the note in `.rumdl.toml` says to add the lines by hand. `gitignore` needs no line: Cinch already leaves out the files git ignores.
 - A config that is a script, such as `.markdownlint.cjs`, is never run. Cinch reports it and does not create `.rumdl.toml`. Write the file by hand.
-- A `.rumdl.toml` that is already there gets the same rules when Cinch adds its `extends` line, and only then. What the file already sets stays as it is, and a different value in the old config is named in a comment. A new option goes under the table's own header, and a rule the file does not mention gets a new table at the end. An option Cinch cannot place, because the file writes that rule's settings inline, is named in a comment to add by hand. A file that already extends the standard is not touched, so a rule removed from it later does not come back.
+- A `.rumdl.toml` that is already there gets the same rules when `cinch init --yes` adds its `extends` line, and only then. `cinch doctor --fix` adds the line and nothing else, and leaves the old config where it is. What the file already sets stays as it is, and a different value in the old config is named in a comment. A new option goes under the table's own header, and a rule the file does not mention gets a new table at the end. An option Cinch cannot place, because the file writes that rule's settings inline, is named in a comment to add by hand. A file that already extends the standard is not touched, so a rule removed from it later does not come back.
 - The translation needs rumdl on `PATH`. Without it the step is incomplete and nothing is written.
 - `cinch init --yes` removes the old config files once the new config is written, and the preview names them first. They go only when everything in them was carried over and the setup ended clean. Anything listed as not carried over keeps them in place, and so does a value that an existing `.rumdl.toml` overrides, a script, or file choices that a `cinch.toml` that was already there did not get. The same goes for a rule the old config switches on that the `disable` or `enable` lists in an existing `.rumdl.toml` switch off, and for a `.rumdl.toml` that the Cinch config leaves out of the run, because then nothing was carried into it. `init` prints each reason. A `.rumdl.toml` that extended the standard before the run also keeps them, because Cinch can no longer tell what was carried over. `cinch check` and `cinch fix` never remove them. Cinch does not remove what else names the old linter. `init` lists it under "Still here, and not removed by Cinch", and as `retired.leftovers` with `--json`: `.markdownlintignore`, the `markdownlint-cli2` settings in `package.json`, the packages still installed, the package scripts and `lint-staged` settings that run it, and the hook and workflow files that mention it (lefthook, pre-commit, husky, lint-staged and `.github/workflows`). This list is reported even when no old config file is left, and it never keeps the old config files in place.
 
-A fix writes these two files before it touches any Markdown, so the first run already uses the standard.
+`cinch init --yes` and `cinch doctor --fix` write these two files. `cinch fix` touches no Markdown until both are right, so the first fix already uses the standard.
 
 ## Take a newer standard
 
-Update Cinch, run `cinch preset update` or `cinch fix`, and review the diff of `.outfitter/configs/rumdl.toml`. Until then `cinch check` fails, so a repository cannot drift from the Cinch it pins without someone seeing it.
+Update Cinch, run `cinch doctor --fix`, and review the diff of `.outfitter/configs/rumdl.toml`. Until then `cinch check` fails, so a repository cannot drift from the Cinch it pins without someone seeing it.
 
 ## Opt out
 

@@ -5,17 +5,25 @@ import type { Plan } from "../contracts/plan.ts";
 import { EXIT_CODE, exitCodeOf } from "../contracts/result.ts";
 import { unifiedDiff } from "../render/diff.ts";
 import { renderFix, renderFixJson } from "../render/fix.ts";
-import { runPlan } from "../runner/run.ts";
+import { runPlan, writesIn } from "../runner/run.ts";
 import type { Command, CommandRequest, CommandResponse } from "./command.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps, Prepared } from "./prepare.ts";
 import { CopyError, withCopy } from "./scratch.ts";
+import { prepareSetup } from "./setup.ts";
+
+/** `fix` writes the repository's files, and `doctor` the Cinch setup. */
+export type WriteMode = "doctor" | "fix" | "init";
 
 /** The text of each file a step may write. Null when it cannot be read. */
-const snapshot = (root: string, plan: Plan): Promise<(string | null)[]> =>
+const snapshot = (
+  root: string,
+  plan: Plan,
+  mode: WriteMode
+): Promise<(string | null)[]> =>
   Promise.all(
     plan.paths.map(async (entry) => {
-      if (!entry.steps.some((step) => step.writes)) {
+      if (!entry.steps.some((step) => writesIn(mode, step))) {
         return null;
       }
       try {
@@ -34,11 +42,11 @@ const snapshot = (root: string, plan: Plan): Promise<(string | null)[]> =>
 const apply = async (
   { adapters, plan }: Prepared,
   root: string,
-  dryRun: boolean
+  run: { readonly dryRun: boolean; readonly mode: WriteMode }
 ): Promise<FixReport> => {
-  const before = await snapshot(root, plan);
-  const ran = await runPlan({ ...plan, root }, adapters, { mode: "fix" });
-  const after = await snapshot(root, plan);
+  const before = await snapshot(root, plan, run.mode);
+  const ran = await runPlan({ ...plan, root }, adapters, { mode: run.mode });
+  const after = await snapshot(root, plan, run.mode);
   const diffs = plan.paths.map((entry, index) =>
     unifiedDiff(entry.path, before[index] ?? "", after[index] ?? "")
   );
@@ -47,7 +55,7 @@ const apply = async (
       .filter((_, index) => before[index] !== after[index])
       .map((entry) => entry.path),
     diff: diffs.join(""),
-    dryRun,
+    dryRun: run.dryRun,
     result: { ...ran, plan },
     schemaVersion: plan.schemaVersion,
   };
@@ -70,29 +78,34 @@ const failed = (message: string): FixRun => ({
   response: { error: `cinch: ${message}`, exitCode: EXIT_CODE.incomplete },
 });
 
-/**
- * Applies what the plan allows and returns the report. A dry run does the
- * same work on a temporary copy, so what it shows is what a real run would
- * write. `init` and `preset` call this with the files Cinch keeps.
- */
-export const runFix = async (
-  request: CommandRequest,
-  deps: CommandDeps,
+export interface WriteOptions {
+  readonly dryRun: boolean;
+  readonly mode: WriteMode;
   /** Files a dry run's copy must hold even when git ignores them. */
-  also: readonly string[] = []
+  readonly also?: readonly string[];
+}
+
+/**
+ * Applies what the plan allows in this mode and returns the report. A dry
+ * run does the same work on a temporary copy, so what it shows is what a
+ * real run would write.
+ */
+export const writePlan = async (
+  prepared: Prepared,
+  options: WriteOptions
 ): Promise<FixRun> => {
-  const prepared = await prepare(request, deps);
-  if (!prepared.ok) {
-    return failed(prepared.error);
-  }
-  const { plan, root } = prepared.value;
-  if (request.dryRun !== true) {
-    return { ok: true, report: await apply(prepared.value, root.root, false) };
+  const { plan, root } = prepared;
+  const { also = [], dryRun, mode } = options;
+  if (!dryRun) {
+    return {
+      ok: true,
+      report: await apply(prepared, root.root, { dryRun, mode }),
+    };
   }
   try {
     const paths = [...plan.paths.map((entry) => entry.path), ...also];
     const report = await withCopy(root, paths, (copy) =>
-      apply(prepared.value, copy, true)
+      apply(prepared, copy, { dryRun, mode })
     );
     return { ok: true, report };
   } catch (error) {
@@ -103,9 +116,64 @@ export const runFix = async (
   }
 };
 
+/** Plans the request's paths, then writes what the mode allows. */
+export const runWrite = async (
+  request: CommandRequest,
+  deps: CommandDeps,
+  options: Omit<WriteOptions, "dryRun">
+): Promise<FixRun> => {
+  const prepared = await prepare(request, deps);
+  return prepared.ok
+    ? await writePlan(prepared.value, {
+        ...options,
+        dryRun: request.dryRun === true,
+      })
+    : failed(prepared.error);
+};
+
+const STOPPED =
+  "Nothing was fixed: the Cinch setup needs repair first. Run `cinch doctor --fix`, then run this again.";
+
+/**
+ * The setup is checked before anything is written. A config Cinch keeps
+ * that is missing or behind would have an engine fix files by the wrong
+ * rules, so `fix` stops and leaves the repair to `doctor --fix`.
+ */
+const brokenSetup = async (
+  request: CommandRequest,
+  deps: CommandDeps
+): Promise<FixRun | null> => {
+  const setup = await prepareSetup(request.cwd, deps);
+  if (!setup.ok) {
+    return failed(setup.error);
+  }
+  const { adapters, plan } = setup.value;
+  const result = await runPlan(plan, adapters, { mode: "check" });
+  if (result.outcome === "clean") {
+    return null;
+  }
+  return {
+    ok: true,
+    report: {
+      changed: [],
+      diff: "",
+      dryRun: request.dryRun === true,
+      result,
+      schemaVersion: plan.schemaVersion,
+      stopped: STOPPED,
+    },
+  };
+};
+
+/**
+ * `cinch fix` fixes the repository's own files. It never writes a file
+ * Cinch keeps: that is `cinch doctor --fix`.
+ */
 export const fix =
   (deps: CommandDeps): Command =>
   async (request) => {
-    const ran = await runFix(request, deps);
+    const ran =
+      (await brokenSetup(request, deps)) ??
+      (await runWrite(request, deps, { mode: "fix" }));
     return ran.ok ? respond(request, ran.report) : ran.response;
   };

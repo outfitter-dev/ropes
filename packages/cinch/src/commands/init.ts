@@ -6,7 +6,7 @@ import { EXIT_CODE } from "../contracts/result.ts";
 import { unifiedDiff } from "../render/diff.ts";
 import { renderInit, renderInitJson } from "../render/init.ts";
 import type { Command } from "./command.ts";
-import { runFix } from "./fix.ts";
+import { runWrite } from "./fix.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { locate } from "./presets.ts";
@@ -62,10 +62,10 @@ export const init =
     if (starter !== null && apply) {
       await Bun.write(path.join(root, STANDALONE_FILE), starter);
     }
-    const ran = await runFix(
+    const ran = await runWrite(
       { cwd: root, dryRun: !apply, json: request.json, paths },
       deps,
-      old.files
+      { also: old.files, mode: "init" }
     );
     if (!ran.ok) {
       return ran.response;

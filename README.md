@@ -11,22 +11,31 @@ The Outfitter CLI and the quality tool it is built around.
 
 ## Status
 
-Early. `cinch explain`, `cinch check` and `cinch fix` work on Markdown, `cinch check` also lints TOML, and `cinch init` and `cinch preset` set a repository up. The `outfitter` package does not exist yet. Nothing is published.
+Early. `cinch explain`, `cinch check` and `cinch fix` work on Markdown, `cinch check` also lints TOML, `cinch init` and `cinch preset` set a repository up, and `cinch doctor` keeps that setup right. The `outfitter` package does not exist yet. Nothing is published.
 
 ## What Cinch does
 
-Given a path, Cinch resolves one plan: which policy applies, where each value came from, and which tools will run. Three verbs read that same plan.
+Given a path, Cinch resolves one plan: which policy applies, where each value came from, and which tools will run. Four verbs read that same plan, and each may write only its own files.
 
 | Command | What it will do |
 | --- | --- |
 | `cinch explain [path...]` | Show the plan without running anything |
 | `cinch check [path...]` | Run the plan read-only and report findings |
-| `cinch fix [path...]` | Apply what the plan allows. `--dry-run` previews without touching the checkout. See [docs/fix.md](docs/fix.md) |
-| `cinch init` | Set up the config and presets a repository needs. It only shows the change. `--yes` writes it. See [docs/presets.md](docs/presets.md) |
+| `cinch fix [path...]` | Fix the repository's own files. `--dry-run` previews without touching the checkout. It never writes a file Cinch keeps, and it stops when the setup needs repair. See [docs/fix.md](docs/fix.md) |
+| `cinch doctor` | Check the Cinch setup: the files Cinch keeps, and the pinned tools. `--fix` repairs it, and `--fix --dry-run` previews that. See [docs/doctor.md](docs/doctor.md) |
+| `cinch init` | First-time setup. Set up the config and presets a repository needs. It only shows the change. `--yes` writes it. See [docs/presets.md](docs/presets.md) |
 | `cinch preset` | List the shared configs Cinch keeps in the repository and whether each is current. `preset add <name>` and `preset update [name]` write them |
 | `cinch schema [command]` | Print the JSON Schema of a command's `--json` output, to write a jq filter against. `cinch schema config` prints the schema of the config file |
 
-Every command prints plain text that can be piped, or one JSON document with `--json`. [Output](docs/output.md) has the contract and jq examples. Exit codes are 0 for clean, 1 when findings remain, and 2 when the run is incomplete or unusable. A check that could not run never counts as a pass. [Outcomes and exit codes](docs/exit-codes.md) has the full contract, and [Selecting files](docs/selection.md) says which files a command looks at. Markdown is held to [the Markdown standard](docs/markdown-standard.md), which also formats fenced TypeScript and JavaScript.
+Every command prints plain text that can be piped, or one JSON document with `--json`. [Output](docs/output.md) has the contract and jq examples. Exit codes are 0 for clean, 1 when findings remain, and 2 when the run is incomplete or unusable. A check that could not run never counts as a pass.
+
+| Verb | What it may write |
+| --- | --- |
+| `explain`, `check`, `doctor` | Nothing |
+| `fix` | The repository's own files: what the plan's engines fix |
+| `doctor --fix` | The files Cinch keeps under `.outfitter/configs/`, a root config Cinch creates when there is none, and the `extends` line in one a person wrote |
+
+`init` and `preset add` or `update` write the same files as `doctor --fix`, through the same steps. Only `init` also carries an older tool's settings over. [Outcomes and exit codes](docs/exit-codes.md) has the full contract, and [Selecting files](docs/selection.md) says which files a command looks at. Markdown is held to [the Markdown standard](docs/markdown-standard.md), which also formats fenced TypeScript and JavaScript.
 
 The first profile is Markdown. TOML is the second: every TOML file must parse, and one with a schema must fit it. Formatting TOML stays with the formatter.
 
@@ -87,7 +96,7 @@ bun run cinch --help
 
 `bun run check` ends with `cinch check` on this repository, reading the root `cinch.toml`. That step needs the pinned rumdl and Taplo on `PATH`. With mise activated in your shell it is. Otherwise run `mise exec -- bun run check`. Without them the step is incomplete and the check fails, which is the point: a check that could not run is not a pass.
 
-The pre-commit hook runs `cinch fix` on the Markdown you staged, after the formatter. It stages what it fixed and stops the commit when a finding is left or the engine could not run. It works on the file in your working tree, so a partly staged Markdown file is staged whole.
+The pre-commit hook runs `cinch fix` on the Markdown you staged, after the formatter. It stages what it fixed and stops the commit when a finding is left or the engine could not run. It also stops, without fixing anything, when the Cinch setup needs repair, and says to run `cinch doctor --fix`. It works on the file in your working tree, so a partly staged Markdown file is staged whole.
 
 [Rolling Cinch out](docs/rollout.md) lists the other Outfitter repositories and what each needs first.
 

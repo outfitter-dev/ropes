@@ -36,6 +36,7 @@ Prints the JSON Schema of a command's `--json` document, so a filter can be writ
 ```sh
 cinch schema                 # the names
 cinch schema check           # what `cinch check --json` prints
+cinch schema doctor          # what `cinch doctor --json` prints
 cinch schema preset add      # `preset add` and `preset update` print a fix report
 cinch schema failure         # the stderr document above
 cinch schema check | jq '.properties | keys'

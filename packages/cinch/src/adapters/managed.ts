@@ -24,8 +24,13 @@ export interface ManagedFile {
   /**
    * Given what the file holds now, or null when it is missing, and the root
    * it sits in, for a file whose content depends on what is beside it.
+   * `migrate` is `StepInput.migrate`.
    */
-  readonly want: (current: string | null, root: string) => Promise<Wanted>;
+  readonly want: (
+    current: string | null,
+    root: string,
+    migrate: boolean
+  ) => Promise<Wanted>;
 }
 
 export interface ManagedOptions {
@@ -51,8 +56,9 @@ const read = async (file: string): Promise<string | null> => {
 /**
  * An adapter for files Cinch keeps in a repository, such as a shared config
  * preset. `check` reports a file that is missing or differs from what Cinch
- * ships, and `fix` writes it. The engine is Cinch itself, so there is nothing
- * to install.
+ * ships, and `fix` writes it. The runner calls `fix` only for `doctor --fix`,
+ * because these files are the Cinch setup. The engine is Cinch itself, so
+ * there is nothing to install.
  */
 export const managedAdapter = (options: ManagedOptions): Adapter => {
   const { enabledBy, files, id, migrates, preset } = options;
@@ -63,6 +69,7 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
     owns: files.map((file) => file.path),
     platforms: ["darwin", "linux", "win32"],
     ...(preset === undefined ? {} : { preset }),
+    setup: true,
     tool: TOOL,
     unit: "file",
     versionRange: "*",
@@ -92,7 +99,7 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
     }
     const target = path.join(input.root, input.path);
     const current = await read(target);
-    const wanted = await managed.want(current, input.root);
+    const wanted = await managed.want(current, input.root, input.migrate);
     if (!wanted.ok && wanted.unknown === true) {
       return {
         findings: [],
@@ -117,7 +124,11 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
       current === null ? "is missing" : `differs from what ${TOOL} keeps here`;
     return {
       findings: [
-        finding(input, `This file ${problem}. Run \`${TOOL} fix\`.`, true),
+        finding(
+          input,
+          `This file ${problem}. Run \`${TOOL} doctor --fix\`.`,
+          true
+        ),
       ],
       status: "findings",
     } satisfies StepOutcome;

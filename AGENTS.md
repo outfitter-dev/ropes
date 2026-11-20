@@ -11,7 +11,8 @@ Read README.md and the [specification and decision register](https://linear.app/
 
 ## Rules that come from the specification
 
-- One plan, three verbs. `explain`, `check` and `fix` all read the plan the resolver produced. Nothing runs that `explain` would not have shown.
+- One plan, four verbs. `explain`, `check`, `fix` and `doctor` all read the plan the resolver produced. Nothing runs that `explain` would not have shown.
+- Each verb writes its own files and no others. `explain` and `check` write nothing. `fix` writes the repository's own files. `doctor --fix` writes the Cinch setup: the files Cinch keeps under `.outfitter/configs/`, and the one edit Cinch may make to a config a person wrote, the missing `extends` line. `init` and `preset` write through the same steps as `doctor --fix`. `init` alone may also carry an older tool's settings into such a config, because it is the takeover.
 - The resolver in `policy/` is pure. It reads no files, spawns nothing, and gives the same plan for the same input.
 - Engines sit behind the `Adapter` interface. The runner knows only that interface and never branches on an adapter's id. Adding an engine is one new folder under `adapters/` and one line in `adapters/registry.ts`.
 - `cli.ts` is the only file that parses arguments or prints. Commands take a typed request and return data, so `outfitter` can call them directly, and so the command layer can be replaced later (a move to Trails is possible) without touching the rest.

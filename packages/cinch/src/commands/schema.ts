@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { configJsonSchema } from "../config/schema.ts";
+import { DoctorReportSchema } from "../contracts/doctor.ts";
 import { FailureSchema } from "../contracts/failure.ts";
 import { FixReportSchema } from "../contracts/fix.ts";
 import { InitReportSchema } from "../contracts/init.ts";
@@ -15,6 +16,7 @@ import type { Command } from "./command.ts";
  */
 export const OUTPUT_SCHEMAS: Readonly<Record<string, z.ZodType>> = {
   check: ResultSchema,
+  doctor: DoctorReportSchema,
   explain: PlanSchema,
   failure: FailureSchema,
   fix: FixReportSchema,

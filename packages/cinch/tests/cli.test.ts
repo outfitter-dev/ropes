@@ -117,6 +117,7 @@ test("schema prints the JSON Schema of a command's --json output", async () => {
   expect(JSON.parse(names.stdout)).toEqual({
     commands: [
       "check",
+      "doctor",
       "explain",
       "failure",
       "fix",

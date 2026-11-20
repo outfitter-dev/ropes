@@ -48,11 +48,16 @@ export const PlanStepSchema = z
   .object({
     /** Adapter id from the registry. */
     adapter: z.string().min(1),
+    /**
+     * True when what the step keeps is the Cinch setup. Then `doctor --fix`
+     * writes it, and `fix` only checks it.
+     */
+    setup: z.boolean().optional(),
     /** The external tool the adapter drives. */
     tool: z.string().min(1),
     /** The version of the tool the step needs. */
     versionRange: z.string().min(1),
-    /** Whether the step may write when run by `fix`. */
+    /** Whether the step may write: under `fix`, or `doctor --fix` for setup. */
     writes: z.boolean(),
   })
   .readonly();

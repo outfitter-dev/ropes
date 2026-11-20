@@ -1,3 +1,4 @@
+import { test } from "bun:test";
 import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { devNull, tmpdir } from "node:os";
 import path from "node:path";
@@ -149,3 +150,29 @@ export const withFixture = async <T>(
     await rm(base, { force: true, recursive: true });
   }
 };
+
+const TOOLS = ["rumdl", "taplo", "git"].filter(
+  (tool) => Bun.which(tool) === null
+);
+
+/** A proof that needs the real engines. It says so when it cannot run. */
+export const proof = (
+  name: string,
+  body: (fixture: Fixture) => Promise<void>
+) => {
+  test(
+    name,
+    async () => {
+      if (TOOLS.length > 0) {
+        console.warn(
+          `skipped: ${TOOLS.join(" and ")} not on PATH, so "${name}" did not run`
+        );
+        return;
+      }
+      await withFixture(body);
+    },
+    30_000
+  );
+};
+
+export const json = (ran: Ran): unknown => JSON.parse(ran.stdout);

@@ -150,16 +150,18 @@ test("a config that is not valid TOML is reported and left alone", async () => {
   });
 });
 
-test("a dry run shows a kept file it would write, and a real fix writes it", async () => {
+test("a dry run shows a kept file doctor would write, and doctor --fix writes it", async () => {
   const files = { ".git/HEAD": "", "cinch.toml": "pilot = 0\n" };
   await inRoot(files, async (root) => {
-    const { check, fix } = createCommands({ adapters: () => [fixed] });
+    const { check, doctor } = createCommands({ adapters: () => [fixed] });
     const request = { cwd: root, json: false, paths: [] };
     expect(await check?.(request)).toMatchObject({ exitCode: 1 });
-    const preview = await fix?.({ ...request, dryRun: true });
+    const preview = await doctor?.({ ...request, dryRun: true, fix: true });
     expect(preview?.output).toContain("+++ b/kept.txt\n@@ -0,0 +1,1 @@\n+A");
     expect(await Bun.file(path.join(root, "kept.txt")).exists()).toBe(false);
-    expect(await fix?.(request)).toMatchObject({ exitCode: 0 });
+    expect(await doctor?.({ ...request, fix: true })).toMatchObject({
+      exitCode: 0,
+    });
     expect(await text(root, "kept.txt")).toBe("A\n");
     expect(await check?.(request)).toMatchObject({ exitCode: 0 });
   });

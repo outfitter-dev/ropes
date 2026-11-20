@@ -17,6 +17,11 @@ export const FixReportSchema = z
     dryRun: z.boolean(),
     result: ResultSchema,
     schemaVersion: z.literal(SCHEMA_VERSION),
+    /**
+     * Why nothing was fixed. Present when the Cinch setup has to be repaired
+     * first. Then `result` holds the setup steps, and no file was written.
+     */
+    stopped: z.string().optional(),
   })
   .readonly();
 export type FixReport = z.infer<typeof FixReportSchema>;

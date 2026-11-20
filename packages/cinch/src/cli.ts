@@ -9,12 +9,15 @@ import { renderFailureJson } from "./render/failure.ts";
 
 const HELP = `cinch ${manifest.version}
 
-Usage: cinch <command> [path...] [--json] [--dry-run] [--yes]
+Usage: cinch <command> [path...] [--json] [--dry-run] [--yes] [--fix]
 
 Commands:
   explain   Show the plan for a path without running anything
   check     Run the plan read-only and report findings
-  fix       Apply what the plan allows (--dry-run to preview)
+  fix       Fix the repository's own files (--dry-run to preview). It never
+            writes the files Cinch keeps
+  doctor    Check the Cinch setup: the files Cinch keeps and the pinned tools
+            doctor --fix           Repair it (--dry-run to preview)
   init      Set up the config and presets a repository needs. It only shows
             the change (--yes to write it)
   preset    List the shared configs Cinch keeps here and their state
@@ -46,6 +49,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
     args: [...argv],
     options: {
       "dry-run": { type: "boolean" },
+      fix: { type: "boolean" },
       help: { short: "h", type: "boolean" },
       json: { type: "boolean" },
       version: { short: "v", type: "boolean" },
@@ -74,6 +78,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
     ...(action === undefined ? {} : { action }),
     cwd: process.cwd(),
     dryRun: values["dry-run"] === true,
+    fix: values.fix === true,
     json: values.json === true,
     paths: name === "preset" ? names : paths,
     yes: values.yes === true,

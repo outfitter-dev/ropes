@@ -4,6 +4,8 @@ import type { Adapter, StepOutcome } from "../src/adapters/adapter.ts";
 export interface OneFile {
   readonly root: string;
   readonly path: string;
+  /** Runs the step as `init` does. See `StepInput.migrate`. */
+  readonly migrate?: boolean;
 }
 
 const only = async (
@@ -15,6 +17,7 @@ const only = async (
     throw new Error("no adapter to run");
   }
   const outcomes = await adapter[verb]({
+    ...(file.migrate === undefined ? {} : { migrate: file.migrate }),
     package: ".",
     paths: [file.path],
     root: file.root,

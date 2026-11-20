@@ -8,7 +8,7 @@ import { renderFix, renderFixJson } from "../render/fix.ts";
 import { renderPresets, renderPresetsJson } from "../render/preset.ts";
 import { runPlan } from "../runner/run.ts";
 import type { Command, CommandRequest, CommandResponse } from "./command.ts";
-import { runFix } from "./fix.ts";
+import { runWrite } from "./fix.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { describeGap, gapOf, gapsOf } from "./preset-gaps.ts";
@@ -120,7 +120,9 @@ const write = async (
   if (gaps.length > 0) {
     return unusable(gaps.map(describeGap).join("\ncinch: "));
   }
-  const ran = await runFix({ ...request, cwd: root, paths }, deps);
+  const ran = await runWrite({ ...request, cwd: root, paths }, deps, {
+    mode: "doctor",
+  });
   if (!ran.ok) {
     return ran.response;
   }
@@ -133,7 +135,7 @@ const write = async (
 /**
  * `cinch preset` lists the shared configs Cinch keeps in a repository.
  * `add <name>` and `update [name]` write them. Both go through the same
- * plan as `fix`, with the preset's own files as the selection.
+ * plan as `doctor --fix`, with the preset's own files as the selection.
  */
 export const preset =
   (deps: CommandDeps): Command =>

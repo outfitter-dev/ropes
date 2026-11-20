@@ -1,3 +1,4 @@
+import type { ToolStatus } from "../contracts/doctor.ts";
 import type {
   Plan,
   PlanBatch,
@@ -7,15 +8,7 @@ import type {
   Provenance,
 } from "../contracts/plan.ts";
 
-/** Whether a tool the plan needs can run here. `explain` reports it. */
-export interface ToolStatus {
-  readonly tool: string;
-  readonly versionRange: string;
-  /** The installed version, when the tool reported one. */
-  readonly version?: string | undefined;
-  /** Why the tool cannot run. Absent when it can. */
-  readonly problem?: string | undefined;
-}
+export type { ToolStatus } from "../contracts/doctor.ts";
 
 /** What `explain` knows beyond the plan itself. */
 export interface PlanContext {
@@ -48,10 +41,20 @@ const company = (
   return `  with ${others} other ${others === 1 ? "file" : "files"}`;
 };
 
+/** What the verbs do with a step. Setup is written by `doctor --fix` only. */
+const doing = (step: PlanStep): string => {
+  if (!step.writes) {
+    return "checks";
+  }
+  return step.setup === true
+    ? "checks, and `doctor --fix` writes"
+    : "checks and fixes";
+};
+
 const stepLine =
   (planned: PlannedPath, batches: readonly PlanBatch[]) =>
   (step: PlanStep): string =>
-    `    ${step.adapter}  ${step.tool} ${step.versionRange}  ${step.writes ? "checks and fixes" : "checks"}${company(step, planned, batches)}`;
+    `    ${step.adapter}  ${step.tool} ${step.versionRange}  ${doing(step)}${company(step, planned, batches)}`;
 
 const REASON = {
   excluded: "excluded",
@@ -76,7 +79,7 @@ const pathBlock =
     ].join("\n");
   };
 
-const toolLine = (status: ToolStatus): string => {
+export const toolLine = (status: ToolStatus): string => {
   if (status.problem !== undefined) {
     return `  ${status.tool}  unavailable: ${status.problem}`;
   }
