@@ -42,6 +42,15 @@ export const pathBlocks = (result: Result): string[] => {
   return [...byPath].map(([path, lines]) => [path, ...lines].join("\n"));
 };
 
+/** One block per conflict: the two steps, the rule, and the rewrite. */
+const conflictBlocks = (result: Result): string[] =>
+  (result.conflicts ?? []).map((conflict) =>
+    [
+      `Conflict in ${conflict.path}: ${conflict.rewrittenBy} rewrote what ${conflict.rule} [${conflict.reportedBy}] then reported.`,
+      conflict.diff.trimEnd(),
+    ].join("\n")
+  );
+
 const VERDICT: Readonly<Record<Outcome, string>> = {
   clean: "Clean.",
   findings: "Findings remain.",
@@ -86,6 +95,7 @@ export const renderHuman = (result: Result): string => {
   const verdict = VERDICT[outcomeOf(result.steps)];
   return [
     ...pathBlocks(result),
+    ...conflictBlocks(result),
     summary(result),
     `${verdict} Exit code ${exitCodeOf(result)}.`,
   ].join("\n\n");

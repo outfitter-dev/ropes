@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { unifiedDiff } from "../src/render/diff.ts";
+import { changeAt, unifiedDiff } from "../src/render/diff.ts";
 
 const lines = (count: number): string[] =>
   Array.from({ length: count }, (_, index) => `line ${index + 1}`);
@@ -61,4 +61,39 @@ test("a path that would break the header is quoted the way git quotes it", () =>
   expect(unifiedDiff('a\tb "c".md', "x\n", "y\n")).toStartWith(
     '--- "a/a\\tb \\"c\\".md"\n+++ "b/a\\tb \\"c\\".md"\n@@'
   );
+});
+
+test("the change at a span of lines is only the hunks that touch it", () => {
+  const before = lines(20);
+  const after = before.with(1, "changed 2").with(17, "changed 18");
+  const at = (from: number, to = from) =>
+    changeAt("a.md", text(before), text(after), { from, to });
+  expect(at(18)).toBe(
+    [
+      "--- a/a.md",
+      "+++ b/a.md",
+      "@@ -15,6 +15,6 @@",
+      " line 15",
+      " line 16",
+      " line 17",
+      "-line 18",
+      "+changed 18",
+      " line 19",
+      " line 20",
+      "",
+    ].join("\n")
+  );
+  expect(at(1, 2)).toContain("+changed 2");
+  expect(at(1, 2)).not.toContain("changed 18");
+  // Context lines of a hunk are not lines the change touched.
+  expect(at(3, 17)).toBe("");
+});
+
+test("a removed line counts as the line that took its place", () => {
+  const before = lines(6);
+  const after = before.toSpliced(2, 1);
+  const at = (line: number) =>
+    changeAt("a.md", text(before), text(after), { from: line, to: line });
+  expect(at(3)).toContain("-line 3");
+  expect(at(2)).toBe("");
 });

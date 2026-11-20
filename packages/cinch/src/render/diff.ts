@@ -1,3 +1,5 @@
+import type { ChangeAt } from "../contracts/conflict.ts";
+
 const CONTEXT = 3;
 /** Past this many cells the table is not built and the middle is replaced. */
 const MAX_CELLS = 4_000_000;
@@ -124,6 +126,47 @@ const header = (prefix: string, path: string): string => {
 };
 
 /**
+ * The one-based lines of the new text a hunk changes. A removed line counts
+ * as the line that now sits where it was.
+ */
+const touched = (ops: readonly Op[], start: number, end: number): number[] => {
+  let line = count(ops.slice(0, start), "-");
+  const lines: number[] = [];
+  for (const op of ops.slice(start, end)) {
+    if (op.kind !== "-") {
+      line += 1;
+    }
+    if (op.kind !== " ") {
+      lines.push(op.kind === "+" ? line : line + 1);
+    }
+  }
+  return lines;
+};
+
+const diffOf = (
+  path: string,
+  before: string,
+  after: string,
+  keep: (lines: readonly number[]) => boolean
+): string => {
+  if (before === after) {
+    return "";
+  }
+  const ops = opsOf(linesOf(before), linesOf(after));
+  const hunks = hunkRanges(ops)
+    .filter(([start, end]) => keep(touched(ops, start, end)))
+    .map(([start, end]) => {
+      const lead = ops.slice(0, start);
+      const body = ops.slice(start, end);
+      const range = `@@ -${span(count(lead, "+"), count(body, "+"))} +${span(count(lead, "-"), count(body, "-"))} @@\n`;
+      return range + body.map(printed).join("");
+    });
+  return hunks.length === 0
+    ? ""
+    : `--- ${header("a", path)}\n+++ ${header("b", path)}\n${hunks.join("")}`;
+};
+
+/**
  * A unified diff of one file, in the form `git diff` prints. Empty when the
  * two texts are the same.
  */
@@ -131,16 +174,13 @@ export const unifiedDiff = (
   path: string,
   before: string,
   after: string
-): string => {
-  if (before === after) {
-    return "";
-  }
-  const ops = opsOf(linesOf(before), linesOf(after));
-  const hunks = hunkRanges(ops).map(([start, end]) => {
-    const lead = ops.slice(0, start);
-    const body = ops.slice(start, end);
-    const range = `@@ -${span(count(lead, "+"), count(body, "+"))} +${span(count(lead, "-"), count(body, "-"))} @@\n`;
-    return range + body.map(printed).join("");
-  });
-  return `--- ${header("a", path)}\n+++ ${header("b", path)}\n${hunks.join("")}`;
-};
+): string => diffOf(path, before, after, () => true);
+
+/**
+ * The hunks of that diff that change a line of the new text inside a span.
+ * Empty when the change leaves those lines alone.
+ */
+export const changeAt: ChangeAt = (path, before, after, { from, to }) =>
+  diffOf(path, before, after, (lines) =>
+    lines.some((line) => line >= from && line <= to)
+  );

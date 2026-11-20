@@ -1,7 +1,10 @@
 import type { Adapter, FileOutcome, StepOutcome } from "../adapters/adapter.ts";
+import type { ChangeAt, Conflict } from "../contracts/conflict.ts";
 import type { Plan, PlanBatch } from "../contracts/plan.ts";
 import { outcomeOf } from "../contracts/result.ts";
 import type { Result, StepResult } from "../contracts/result.ts";
+import { conflictsAfter, textsOf } from "./conflicts.ts";
+import type { Settled } from "./conflicts.ts";
 import { compareFacts } from "./facts.ts";
 import { probeAdapter, threw, versionProblem } from "./ready.ts";
 import type { Readiness } from "./ready.ts";
@@ -25,6 +28,11 @@ export interface RunOptions {
   readonly mode: RunMode;
   /** Defaults to the platform this process runs on. */
   readonly platform?: string;
+  /**
+   * How to show one step's change to a file. A `fix` run that is given it
+   * looks for steps that undo each other.
+   */
+  readonly changeAt?: ChangeAt;
 }
 
 const incomplete = (reason: string): StepOutcome => ({
@@ -121,11 +129,32 @@ export const runPlan = async (
     plan.root
   );
   const byPath = new Map<string, StepResult[]>();
+  const { changeAt, mode } = options;
+  const settled: Settled[] = [];
+  const conflicts: Conflict[] = [];
+  const undone: StepResult[] = [];
   for (const batch of plan.batches) {
+    const watched =
+      mode === "fix" && changeAt !== undefined && writesIn(mode, batch);
     // Batches run in plan order: a later step reads what an earlier one
     // wrote, and a kept config is written before the step that reads it.
-    // eslint-disable-next-line no-await-in-loop
-    const outcomes = await runBatch(ready, batch, plan.root, options.mode);
+    /* eslint-disable no-await-in-loop */
+    const held = watched ? await textsOf(plan.root, batch.paths) : undefined;
+    const outcomes = await runBatch(ready, batch, plan.root, mode);
+    if (held !== undefined && changeAt !== undefined) {
+      const found = await conflictsAfter(settled, {
+        adapterOf: (id) => ready(id).adapter,
+        after: await textsOf(plan.root, batch.paths),
+        batch,
+        before: held,
+        changeAt,
+        root: plan.root,
+      });
+      conflicts.push(...found.conflicts);
+      undone.push(...found.steps);
+      settled.push({ batch, outcomes });
+    }
+    /* eslint-enable no-await-in-loop */
     for (const outcome of outcomes) {
       const step = { adapter: batch.adapter, ...outcome };
       const before = byPath.get(outcome.path);
@@ -159,8 +188,9 @@ export const runPlan = async (
             );
           return unfit ? undefined : adapter;
         });
-  const steps = [...ran, ...compared];
+  const steps = [...ran, ...undone, ...compared];
   return {
+    ...(conflicts.length === 0 ? {} : { conflicts }),
     outcome: outcomeOf(steps),
     plan,
     schemaVersion: plan.schemaVersion,

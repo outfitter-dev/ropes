@@ -35,6 +35,32 @@ With `--json` the report has `stopped`, holding that first line, and `result` ho
 
 A kept file that `exclude` covers while its preset is on cannot be judged at all. `fix` then exits 2 with the same message `cinch doctor` gives, naming the file and the setting.
 
+## When two steps undo each other
+
+Some disagreements between tools only show when they run. A lint rule's fix writes code one way, and the formatter, which runs last, writes it back. Comparing settings does not find these, so `fix` looks for them while it runs.
+
+After a step rewrites a file, `fix` checks that file again with each earlier step that could write it. A finding that was not there before, on lines the later step changed, is a conflict. Only the files a step changed are checked again, so a run in which the later steps change nothing does no extra work.
+
+```text
+a.ts
+  fixed  oxlint
+  fixed  bun-fmt
+  1:23  error  cinch/fix-conflict  bun rewrote this code, and oxlint then reported unicorn(number-literal-case): Unexpected hexadecimal digits in lowercase. The two disagree, so a fix by one is undone by the other. Change the rule or the setting behind the rewrite.  [oxlint]
+
+Conflict in a.ts: bun-fmt rewrote what unicorn(number-literal-case) [oxlint] then reported.
+--- a/a.ts
++++ b/a.ts
+@@ -1,1 +1,1 @@
+-export const mask = 0xABCDEF;
++export const mask = 0xabcdef;
+```
+
+- A conflict is a finding with the rule `cinch/fix-conflict`, so the run exits 1. It names the tool's own rule and shows the later step's change to those lines.
+- Nothing is fixed a second time. Running the two tools in a loop would hide the disagreement, and the next run would start it again.
+- The way out is a decision: switch the rule off, or change the setting behind the rewrite.
+- When the earlier step cannot check the file again, that step is incomplete and the run exits 2.
+- `check` writes nothing, so it finds no conflicts. It reports the lint finding itself.
+
 ## Dry run
 
 `cinch fix --dry-run` does the same work on a temporary copy of the root and prints the change as a unified diff. The checkout is not touched. Because the same steps run on the same content, the diff is the change a real `fix` would write.
@@ -51,7 +77,19 @@ The copy holds what git would let you commit: tracked files and untracked files 
 | `diff` | Unified diff of every changed file. Empty when nothing changed |
 | `dryRun` | `true` when the steps ran on a copy |
 | `result` | The same result `check --json` prints, with remaining findings in its steps |
+| `result.conflicts` | Only when steps undid each other. One record for each, apart from its finding in `result.steps` |
 | `schemaVersion` | `1` |
 | `stopped` | Only when nothing was fixed because the setup needs repair: the reason |
 
 A real run and a dry run of the same tree print the same `changed`, `diff` and `result`.
+
+Each record in `result.conflicts` is one conflict, so a consumer can count them without reading messages.
+
+| Field         | Meaning                                             |
+| ------------- | --------------------------------------------------- |
+| `path`        | Root-relative path of the file                      |
+| `rule`        | The tool's own rule id                              |
+| `reportedBy`  | The adapter whose rule reported the rewritten lines |
+| `rewrittenBy` | The adapter that rewrote them                       |
+| `finding`     | What the tool reported after the rewrite            |
+| `diff`        | The rewrite of those lines, as a unified diff       |
