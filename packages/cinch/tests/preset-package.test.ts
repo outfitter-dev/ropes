@@ -12,6 +12,7 @@ import { PRESET_BASE } from "../src/adapters/preset-base.ts";
 import { adaptersFor } from "../src/adapters/registry.ts";
 import type { CommandRequest } from "../src/commands/command.ts";
 import { createCommands } from "../src/commands/registry.ts";
+import { PresetReportSchema } from "../src/contracts/preset.ts";
 import { ResultSchema } from "../src/contracts/result.ts";
 
 const commands = createCommands({ adapters: adaptersFor });
@@ -93,7 +94,28 @@ test("a kept preset whose package is missing is a finding doctor cannot fix", as
   const fixed = await run("doctor", { fix: true });
   expect(fixed.exitCode).toBe(1);
   expect(await Bun.file(path.join(root, KEPT)).exists()).toBe(true);
+  expect(await Bun.file(path.join(root, "oxlint.config.ts")).exists()).toBe(
+    true
+  );
   expect(await found()).toEqual([{ fixable: false, rule: BUILT_ON_RULE }]);
+  const checkedRun = await run("check");
+  const checked = ResultSchema.parse(JSON.parse(checkedRun.output ?? "null"));
+  const rootSteps = checked.steps.filter(
+    (step) => step.path === "oxlint.config.ts"
+  );
+  expect(rootSteps).toHaveLength(1);
+  expect(rootSteps[0]?.status).toBe("passed");
+  expect(rootSteps[0]?.findings).toEqual([]);
+  const listedRun = await run("preset");
+  const listed = PresetReportSchema.parse(
+    JSON.parse(listedRun.output ?? "null")
+  );
+  expect(
+    listed.presets.find((preset) => preset.name === "lint")?.files
+  ).toMatchObject([
+    { path: KEPT, state: "blocked" },
+    { path: "oxlint.config.ts", state: "current" },
+  ]);
 });
 
 test("a missing preset file is reported before its package is", async () => {

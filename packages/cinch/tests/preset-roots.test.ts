@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { devNull, tmpdir } from "node:os";
 import path from "node:path";
 
 import { adaptersFor } from "../src/adapters/registry.ts";
@@ -14,6 +14,7 @@ const ROOTS = ["oxlint.config.ts", "oxfmt.config.ts", "tsconfig.json"];
 const TS_PRESET = "./.outfitter/configs/presets/tsconfig.json";
 
 const commands = createCommands({ adapters: adaptersFor });
+const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
 
 let root = "";
 beforeEach(async () => {
@@ -122,11 +123,32 @@ test("a config the tool reads from another file stops the new one", async () => 
 });
 
 test("a dry run sees a config git ignores, as the real run does", async () => {
-  Bun.spawnSync(["git", "init", "-q"], { cwd: root });
+  // A hook's `GIT_DIR` or a developer's Git config must not reach the fixture.
+  const env = {
+    ...Object.fromEntries(
+      Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_"))
+    ),
+    GIT_CONFIG_GLOBAL: devNull,
+    GIT_CONFIG_NOSYSTEM: "1",
+  };
+  const made = Bun.spawnSync(["git", "init", "-q"], { cwd: root, env });
+  expect(made.exitCode).toBe(0);
   await put(".gitignore", ".oxlintrc.json\nnode_modules\n");
   await put(".oxlintrc.json", "{}\n");
-  const preview = await doctor({ dryRun: true, fix: true });
-  const found = preview.result.steps
+  const child = Bun.spawn(
+    [process.execPath, CLI, "doctor", "--fix", "--dry-run", "--json"],
+    { cwd: root, env, stderr: "pipe", stdout: "pipe" }
+  );
+  const [stdout, stderr] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
+  if (stdout.trim() === "") {
+    throw new Error(stderr);
+  }
+  const { result } = DoctorReportSchema.parse(JSON.parse(stdout));
+  const found = result.steps
     .filter((step) => step.path === "oxlint.config.ts")
     .flatMap((step) => step.findings.map((finding) => finding.message));
   expect(found).toHaveLength(1);
