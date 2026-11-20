@@ -202,3 +202,14 @@ test("an id is used once: not twice here, and not one Cinch ships", async () => 
   );
   expect(shipped.exitCode).toBe(2);
 });
+
+test("a rule in a dot-named file or folder is read like any other", async () => {
+  if (!hasEngine()) {
+    return;
+  }
+  await rule(".shared/no-log.yml", NO_LOG);
+  await rule(".todo.yml", NO_LOG.replace("no-log", "no-log-again"));
+  const ran = await cinch("check");
+  expect(ran.stdout).toContain("local/no-log ");
+  expect(ran.stdout).toContain("local/no-log-again ");
+});

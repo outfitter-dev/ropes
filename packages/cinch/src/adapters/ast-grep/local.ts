@@ -47,7 +47,7 @@ const isFolder = async (folder: string): Promise<boolean> => {
 
 const filesOf = async (root: string, folder: string): Promise<string[]> => {
   const found = await Array.fromAsync(
-    RULE_FILES.scan({ cwd: path.join(root, folder) })
+    RULE_FILES.scan({ cwd: path.join(root, folder), dot: true })
   );
   return found.toSorted().map((file) => path.posix.join(folder, file));
 };
