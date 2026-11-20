@@ -7,6 +7,7 @@ import type {
   ConfigResult,
   Sourced,
 } from "../contracts/config.ts";
+import { EditorSchema } from "../contracts/editor.ts";
 import type { PolicyValue, Provenance } from "../contracts/plan.ts";
 
 const Globs = z.array(z.string().min(1));
@@ -40,6 +41,9 @@ const OverrideSchema = z.strictObject({
  * The loader and the published JSON Schema both come from this definition.
  */
 export const ConfigFileSchema = z.strictObject({
+  editor: EditorSchema.optional().describe(
+    "Facts about text files that several tools must agree on. Cinch writes the root editor settings file from this table."
+  ),
   exclude: Globs.optional().describe(
     "Root-relative globs for files Cinch leaves alone."
   ),
@@ -132,6 +136,7 @@ const build = (
     })
   );
   return {
+    ...(table.editor === undefined ? {} : { editor: table.editor }),
     exclude: sourced(
       table.exclude,
       DEFAULT_CONFIG.exclude,

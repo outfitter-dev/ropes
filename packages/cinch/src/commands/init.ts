@@ -11,6 +11,7 @@ import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { locate } from "./presets.ts";
 import { choiceReasons, oldConfigs, retire } from "./retire.ts";
+import { setupFiles } from "./setup.ts";
 import { inheritedBy, sparing, starterConfig } from "./starter.ts";
 
 /** Puts the config file first in a report about the files Cinch keeps. */
@@ -41,7 +42,9 @@ export const init =
     }
     const { root } = located.root;
     const apply = request.yes === true && request.dryRun !== true;
-    const paths = located.presets.flatMap((preset) => preset.files);
+    // Every file of the setup, so a config that is already there and asks
+    // for another kept file gets it written too.
+    const paths = await setupFiles(deps, root);
     // Plan before writing anything, so a setup that cannot be planned does
     // not leave a config behind with no presets beside it.
     const planned = await prepare({ cwd: root, paths }, deps);

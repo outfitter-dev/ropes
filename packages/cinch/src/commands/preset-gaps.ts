@@ -40,7 +40,8 @@ export const gapsOf = (presets: readonly Preset[], plan: Plan): Gap[] =>
     preset.files.flatMap((file) => gapOf(preset, file, plan) ?? [])
   );
 
-const settingOf = (skipped: Skipped | undefined): string =>
+/** The setting that left a file out, as a person would look it up. */
+export const settingOf = (skipped: Skipped | undefined): string =>
   skipped?.source.kind === "file"
     ? `\`${skipped.source.key}\` in ${skipped.source.file}`
     : "its defaults";

@@ -4,6 +4,7 @@ import type { Pins, PinsResult } from "../adapters/pins.ts";
 import { loadConfig } from "../config/load.ts";
 import { discoverRoot, toRootRelative } from "../config/root.ts";
 import type { ToolTables } from "../contracts/config.ts";
+import type { EditorSettings } from "../contracts/editor.ts";
 import type { Plan } from "../contracts/plan.ts";
 import type { RepoRoot } from "../contracts/root.ts";
 import { resolvePlan } from "../policy/resolve.ts";
@@ -14,7 +15,11 @@ import { unreadTable } from "./tool-tables.ts";
 
 /** What a command needs from outside. Tests pass adapters of their own. */
 export interface CommandDeps {
-  readonly adapters: (pins: Pins, tables?: ToolTables) => readonly Adapter[];
+  readonly adapters: (
+    pins: Pins,
+    tables?: ToolTables,
+    editor?: EditorSettings
+  ) => readonly Adapter[];
 }
 
 export interface Prepared {
@@ -59,7 +64,11 @@ export const prepare = async (
   if (!pins.ok) {
     return { error: pins.message, ok: false };
   }
-  const adapters = deps.adapters(pins.pins, config.value.tools);
+  const adapters = deps.adapters(
+    pins.pins,
+    config.value.tools,
+    config.value.editor
+  );
   const owned = adapters.flatMap((adapter) => adapter.descriptor.owns ?? []);
   const selected = await select(root, request.cwd, request.paths, owned);
   if (!selected.ok) {
