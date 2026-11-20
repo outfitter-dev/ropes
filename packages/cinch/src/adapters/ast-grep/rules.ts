@@ -56,3 +56,6 @@ export const shippedPacks: readonly RulePack[] = shipped.packs;
 export const shippedRules = (
   ids: readonly string[] = shippedPacks.flatMap((pack) => pack.rules)
 ): string => ids.flatMap((id) => shipped.texts.get(id) ?? []).join("\n---\n");
+
+/** Every id a shipped rule has, on or off. */
+export const shippedIds: ReadonlySet<string> = new Set(shipped.texts.keys());

@@ -20,7 +20,8 @@ export interface CommandDeps {
   readonly adapters: (
     pins: Pins,
     tables?: ToolTables,
-    editor?: EditorSettings
+    editor?: EditorSettings,
+    localRules?: readonly string[]
   ) => readonly Adapter[];
 }
 
@@ -79,7 +80,8 @@ export const prepare = async (
   const adapters = deps.adapters(
     pins.pins,
     config.value.tools,
-    config.value.editor
+    config.value.editor,
+    config.value.rulesLocal?.value
   );
   const owned = adapters.flatMap((adapter) => adapter.descriptor.owns ?? []);
   const selected = await select(root, request.cwd, request.paths, owned);

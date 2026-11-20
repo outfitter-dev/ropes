@@ -44,6 +44,8 @@ export interface CinchConfig {
    * are nested there: `cinch.` in the shared file. Absent when they are not.
    */
   readonly prefix?: string;
+  /** Root-relative folders of the repository's own rules. */
+  readonly rulesLocal?: Sourced<readonly string[]>;
   /** Shipped rule packs and rules, by name, that are not run. */
   readonly rulesOff?: Sourced<readonly string[]>;
   readonly settings: readonly PolicyValue[];

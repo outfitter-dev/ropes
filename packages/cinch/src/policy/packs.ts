@@ -1,6 +1,6 @@
 import type { AdapterDescriptor } from "../adapters/adapter.ts";
 import type { CinchConfig } from "../contracts/config.ts";
-import type { PackState } from "../contracts/plan.ts";
+import type { PackState, Plan } from "../contracts/plan.ts";
 import { compileGlobs } from "./glob.ts";
 
 /** Whether policy asks for the adapter on any file at all. */
@@ -80,4 +80,17 @@ export const unknownOff = (
       .flatMap((pack) => [pack.name, ...pack.rules])
   );
   return (config.rulesOff?.value ?? []).filter((name) => !known.has(name));
+};
+
+/** The folders of its own rules the config names, when an adapter runs them. */
+export const localRules = (
+  config: CinchConfig,
+  descriptors: readonly AdapterDescriptor[]
+): Plan["localRules"] => {
+  const folders = descriptors
+    .filter((descriptor) => isWanted(descriptor, config))
+    .flatMap((descriptor) => descriptor.localRules ?? []);
+  return config.rulesLocal === undefined || folders.length === 0
+    ? undefined
+    : { folders: [...new Set(folders)], source: config.rulesLocal.source };
 };

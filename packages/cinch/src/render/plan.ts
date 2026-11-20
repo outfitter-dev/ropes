@@ -8,7 +8,7 @@ import type {
   Provenance,
 } from "../contracts/plan.ts";
 import { factsBlock } from "./facts.ts";
-import { rulesBlock } from "./rules.ts";
+import { localRulesBlock, rulesBlock } from "./rules.ts";
 
 export type { ToolStatus } from "../contracts/doctor.ts";
 
@@ -119,6 +119,9 @@ export const renderPlan = (plan: Plan, context: PlanContext): string =>
     ...plan.paths.map(pathBlock(plan.batches)),
     ...(plan.facts === undefined ? [] : [factsBlock(plan.facts)]),
     ...(plan.rules === undefined ? [] : [rulesBlock(plan.rules)]),
+    ...(plan.localRules === undefined
+      ? []
+      : [localRulesBlock(plan.localRules)]),
     ...(context.tools.length === 0
       ? []
       : [["Tools", ...context.tools.map(toolLine)].join("\n")]),

@@ -29,8 +29,15 @@ const oneBased = (position: z.infer<typeof Position>) => ({
   line: position.line + 1,
 });
 
-/** Reads what one run printed, and files each match under its path. */
-export const parseOutput = (stdout: string, source: string): Parsed => {
+/**
+ * Reads what one run printed, and files each match under its path. A match
+ * of a rule the repository wrote is reported as `local/<id>`.
+ */
+export const parseOutput = (
+  stdout: string,
+  source: string,
+  local: ReadonlySet<string> = new Set()
+): Parsed => {
   let json: unknown = null;
   try {
     json = JSON.parse(stdout);
@@ -52,7 +59,7 @@ export const parseOutput = (stdout: string, source: string): Parsed => {
         end: oneBased(match.range.end),
         start: oneBased(match.range.start),
       },
-      rule: match.ruleId,
+      rule: local.has(match.ruleId) ? `local/${match.ruleId}` : match.ruleId,
       severity: match.severity === "error" ? "error" : "warning",
       source,
     };

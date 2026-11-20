@@ -9,67 +9,14 @@ import type {
 } from "../contracts/config.ts";
 import { EditorSchema } from "../contracts/editor.ts";
 import type { PolicyValue, Provenance } from "../contracts/plan.ts";
+import {
+  Globs,
+  OPT_IN,
+  overrideSwitch,
+  ProfileSchema,
+  TomlSchema,
+} from "./tables.ts";
 
-const Globs = z.array(z.string().min(1));
-const ProfileSchema = z.strictObject({
-  enabled: z
-    .boolean()
-    .optional()
-    .describe("Whether Markdown is checked. On unless set to false."),
-  preset: z
-    .boolean()
-    .optional()
-    .describe(
-      "Whether Cinch keeps the shared Markdown standard in the repository."
-    ),
-});
-const TomlSchema = z.strictObject({
-  enabled: z
-    .boolean()
-    .optional()
-    .describe("Whether TOML is checked. On unless set to false."),
-});
-/** A shared config that is kept only when the repository asks for it. */
-const optInPreset = (what: string) =>
-  z.strictObject({
-    preset: z
-      .boolean()
-      .optional()
-      .describe(
-        `Whether Cinch keeps the shared ${what} in the repository. Off unless set to true.`
-      ),
-  });
-/** The switch for an engine that is off until the repository asks for it. */
-const optInSwitch = (what: string) => ({
-  enabled: z
-    .boolean()
-    .optional()
-    .describe(`Whether ${what}. Off unless set to true.`),
-});
-const OPT_IN = {
-  format: optInPreset("formatter config").extend(
-    optInSwitch("files are held to the formatter")
-  ),
-  lint: optInPreset("lint config").extend(
-    optInSwitch("TypeScript and JavaScript are linted")
-  ),
-  rules: z.strictObject({
-    ...optInSwitch("the structural rules Cinch ships are run"),
-    off: z
-      .array(z.string().min(1))
-      .optional()
-      .describe("Shipped rule packs and rules, by name, that are not run."),
-  }),
-  typescript: optInPreset("TypeScript compiler options").extend(
-    optInSwitch("TypeScript is type checked")
-  ),
-};
-const overrideSwitch = (what: string) =>
-  z
-    .strictObject({
-      enabled: z.boolean().optional().describe(`Whether ${what}.`),
-    })
-    .optional();
 const OverrideSchema = z.strictObject({
   format: overrideSwitch("the matching files are held to the formatter"),
   lint: overrideSwitch("the matching files are linted"),
@@ -185,7 +132,7 @@ const build = (
   table: z.infer<typeof ConfigFileSchema>,
   origin: TableOrigin
 ): CinchConfig => {
-  const { off, ...rules } = table.rules ?? {};
+  const { local, off, ...rules } = table.rules ?? {};
   const base = settingsOf({ ...table, rules }, origin, "");
   const overrides: ConfigOverride[] = (table.overrides ?? []).map(
     (override, index) => ({
@@ -208,6 +155,9 @@ const build = (
     ),
     overrides,
     ...(origin.prefix === "" ? {} : { prefix: origin.prefix }),
+    ...(local === undefined
+      ? {}
+      : { rulesLocal: { source: from(origin, "rules.local"), value: local } }),
     ...(off === undefined
       ? {}
       : { rulesOff: { source: from(origin, "rules.off"), value: off } }),

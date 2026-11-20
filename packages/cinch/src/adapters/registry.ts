@@ -24,13 +24,15 @@ import { tsconfigPreset } from "./tsconfig/preset.ts";
  * until then its adapter keeps nothing. The
  * presets for the lint, format and TypeScript configs are off until the
  * config asks for each, and so are the lint engine, the type check and the
- * formatter, and the rules Cinch ships. The
+ * formatter, and the rules Cinch ships. The rules adapter is also handed the
+ * folders of rules the repository names as its own. The
  * formatter is last, so in a fix it formats what the others wrote.
  */
 export const adaptersFor = (
   pins: Pins,
   tables: ToolTables = {},
-  editor?: EditorSettings
+  editor?: EditorSettings,
+  localRules?: readonly string[]
 ): readonly Adapter[] => [
   editorFileAdapter(editor),
   rumdlPresetAdapter({ table: tables[RUMDL_TABLE] }),
@@ -41,6 +43,6 @@ export const adaptersFor = (
   taploAdapter({ version: pins.taplo }),
   oxlintAdapter({ version: pins.oxlint }),
   bunCheckAdapter({ version: pins.bun }),
-  rulesAdapter({ version: pins["ast-grep"] }),
+  rulesAdapter({ local: localRules, version: pins["ast-grep"] }),
   bunFmtAdapter({ version: pins.bun }),
 ];

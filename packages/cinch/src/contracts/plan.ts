@@ -157,6 +157,14 @@ export const PlanSchema = z
      * Cinch config can state. A run then compares them.
      */
     facts: SharedFactsSchema.optional(),
+    /** The folders of its own rules the repository names, when it does. */
+    localRules: z
+      .object({
+        folders: z.array(z.string().min(1)).readonly(),
+        source: ProvenanceSchema,
+      })
+      .readonly()
+      .optional(),
     paths: z.array(PlannedPathSchema).readonly(),
     root: z.string().min(1),
     /** Present when policy asks for an adapter that ships rule packs. */
