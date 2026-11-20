@@ -1,3 +1,4 @@
+import { leftOn } from "./markdownlint-off.ts";
 import { comment, render } from "./markdownlint-render.ts";
 import { lookup, option } from "./markdownlint-stated.ts";
 import type { KnownRule } from "./markdownlint-stated.ts";
@@ -56,12 +57,35 @@ interface Plan {
 const keyIn = (table: Table, key: string): string | undefined =>
   Object.keys(table).find((name) => option(name) === option(key));
 
+/**
+ * A value the preset already sets adds nothing, but the file may still say
+ * otherwise, and that difference is named like any other.
+ */
+const differing = (
+  file: string,
+  same: Sections,
+  tableOf: (id: string) => unknown
+): string[] =>
+  Object.entries(same).flatMap(([id, stated]) => {
+    const table = tableOf(id);
+    if (!isTable(table)) {
+      return [];
+    }
+    return Object.entries(stated).flatMap(([key, value]) => {
+      const ours = keyIn(table, key);
+      return ours === undefined || Bun.deepEquals(table[ours], value, true)
+        ? []
+        : [conflict({ file, id, key, ours: table[ours], value })];
+    });
+  });
+
 const planned = (input: {
   readonly have: Table;
   readonly file: string;
   readonly known: readonly KnownRule[];
   readonly sections: Sections;
   readonly same: Sections;
+  readonly off: readonly string[];
   readonly headers: ReadonlySet<string>;
 }): Plan => {
   const { file, have, headers, sections } = input;
@@ -99,21 +123,19 @@ const planned = (input: {
       }
     }
   }
-  // A value the preset already sets adds nothing, but the file may still
-  // say otherwise, and that difference is named like any other.
-  for (const [id, stated] of Object.entries(input.same)) {
-    const table = have[nameOf(id) ?? ""];
-    for (const [key, value] of Object.entries(stated)) {
-      const ours = isTable(table) ? keyIn(table, key) : undefined;
-      if (
-        isTable(table) &&
-        ours !== undefined &&
-        !Bun.deepEquals(table[ours], value, true)
-      ) {
-        plan.notes.push(conflict({ file, id, key, ours: table[ours], value }));
-      }
-    }
-  }
+  plan.notes.push(
+    ...differing(file, input.same, (id) => have[nameOf(id) ?? ""])
+  );
+  const global = have[GLOBAL];
+  plan.notes.push(
+    ...leftOn({
+      added: sections[GLOBAL] ?? {},
+      file,
+      global: isTable(global) ? global : {},
+      idOf,
+      off: input.off,
+    })
+  );
   return plan;
 };
 
@@ -164,6 +186,8 @@ export const merge = (input: {
   readonly sections: Sections;
   /** What the old config stated that the preset already sets. */
   readonly same?: Sections;
+  /** The IDs of the rules the old config switched off. */
+  readonly off?: readonly string[];
 }):
   | { readonly ok: true; readonly text: string }
   | { readonly ok: false; readonly message: string } => {
@@ -177,6 +201,7 @@ export const merge = (input: {
     have,
     headers,
     known: input.known,
+    off: input.off ?? [],
     same: input.same ?? {},
     sections: input.sections,
   });

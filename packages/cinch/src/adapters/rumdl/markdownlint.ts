@@ -111,6 +111,8 @@ export interface Carried {
   readonly sections: Sections;
   /** What the old config stated that the preset already sets. */
   readonly same: Sections;
+  /** The IDs of the rules the old config switched off. */
+  readonly off: readonly string[];
 }
 
 type Failed = Exclude<Wanted, { readonly ok: true }>;
@@ -160,6 +162,7 @@ export const gathered = async (
     file: source.file,
     known: known.data,
     notes: [...result.notes, ...source.notes],
+    off: result.off,
     ok: true,
     same: result.same,
     sections: result.sections,

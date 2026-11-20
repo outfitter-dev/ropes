@@ -16,6 +16,8 @@ export interface Translated {
   readonly sections: Sections;
   /** What the old config stated that the preset already sets, by rule ID. */
   readonly same: Sections;
+  /** The IDs of the rules the old config switched off. */
+  readonly off: readonly string[];
   readonly notes: readonly string[];
   readonly leftover: readonly Leftover[];
 }
@@ -156,5 +158,8 @@ export const translate = (input: {
       (old) => `\`${old.key}\` on ${old.id} has no equivalent here.`
     ),
   ];
-  return { leftover, notes, same, sections };
+  const off = sorted(
+    strings(imported[GLOBAL]?.disable).flatMap((name) => idOf(name) ?? [])
+  );
+  return { leftover, notes, off, same, sections };
 };

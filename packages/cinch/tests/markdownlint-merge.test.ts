@@ -144,6 +144,20 @@ test("a value the preset sets is still named when the file differs", () => {
   });
 });
 
+test("a rule the old config switched off and this list leaves on is named", () => {
+  const result = merge({
+    current: '[global]\ndisable = ["MD001", "line-length"]\n',
+    file: OLD,
+    known: KNOWN,
+    notes: [],
+    off: ["MD007", "MD013", "MD033"],
+    sections: { global: { "extend-disable": ["MD033"] } },
+  });
+  expect(result.ok && result.text).toContain(
+    `# - ${OLD} switches off MD007, and the \`disable\` list here does not. The list here was kept, and it replaces the standard's.`
+  );
+});
+
 test("nothing to add leaves the file as it was", () => {
   const current = "[MD013]\nline-length = 100\n";
   expect(merged(current, { MD013: { "line-length": 100 } })).toBe(current);
