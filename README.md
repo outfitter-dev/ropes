@@ -33,7 +33,7 @@ Every command prints plain text that can be piped, or one JSON document with `--
 | --- | --- |
 | `explain`, `check`, `doctor` | Nothing |
 | `fix` | The repository's own files: what the plan's engines fix |
-| `doctor --fix` | The files Cinch keeps under `.outfitter/configs/`, a root config Cinch creates when there is none, and the `extends` line in one a person wrote |
+| `doctor --fix` | The presets and generated configs Cinch keeps under `.outfitter/configs/`, a root config Cinch creates when there is none, and the `extends` line in one a person wrote |
 
 `init` and `preset add` or `update` write the same files as `doctor --fix`, through the same steps. Only `init` also carries an older tool's settings over. [Outcomes and exit codes](docs/exit-codes.md) has the full contract, and [Selecting files](docs/selection.md) says which files a command looks at. Markdown is held to [the Markdown standard](docs/markdown-standard.md), which also formats fenced TypeScript and JavaScript.
 
@@ -60,6 +60,10 @@ preset = true
 [toml]
 enabled = true
 
+# One table for each tool, in the tool's own settings.
+[tools.rumdl.MD007]
+indent = 4
+
 [[overrides]]
 paths = ["docs/legacy/**"]
 [overrides.markdown]
@@ -67,6 +71,8 @@ enabled = false
 ```
 
 Overrides apply in file order. When more than one matches a path, the later one wins for each setting it states, and the plan names the override each value came from. A path that `exclude` matches, or that `include` does not, stays in the plan marked as skipped, with the setting that decided it.
+
+A table under `tools` is copied into the config Cinch generates for that tool, at `.outfitter/configs/<tool>.<ext>`. That file extends the preset Cinch ships, and the tool's root config extends that file, so a rule is stated once, in the Cinch config, and plain `rumdl` or an editor sees it too. `cinch doctor --fix` rewrites the generated file after the table changes. [The Markdown standard](docs/markdown-standard.md) has the details. Markdown is the first tool with a table.
 
 This repository's own `cinch.toml` is the first user of the format.
 

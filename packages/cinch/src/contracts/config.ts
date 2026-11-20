@@ -19,6 +19,12 @@ export interface ConfigOverride {
   readonly settings: readonly PolicyValue[];
 }
 
+/** Settings for one tool, in that tool's own words. Cinch does not read them. */
+export type ToolTable = Readonly<Record<string, unknown>>;
+
+/** The tables under `tools`, by the name of the tool each one is for. */
+export type ToolTables = Readonly<Record<string, ToolTable>>;
+
 /** What the loader hands to the resolver. Later overrides win. */
 export interface CinchConfig {
   readonly exclude: Sourced<readonly string[]>;
@@ -28,6 +34,11 @@ export interface CinchConfig {
   /** In file order. */
   readonly overrides: readonly ConfigOverride[];
   readonly settings: readonly PolicyValue[];
+  /**
+   * What the file states for each tool. An adapter copies its table into the
+   * config Cinch generates for that tool.
+   */
+  readonly tools: ToolTables;
 }
 
 export type ConfigError =
@@ -72,4 +83,5 @@ export const DEFAULT_CONFIG: CinchConfig = {
     { key: "markdown.enabled", source: DEFAULT, value: true },
     { key: "toml.enabled", source: DEFAULT, value: true },
   ],
+  tools: {},
 };

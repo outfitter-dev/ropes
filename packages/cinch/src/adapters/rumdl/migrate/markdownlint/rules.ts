@@ -4,12 +4,14 @@ import path from "node:path";
 
 import { z } from "zod";
 
+import type { ToolTable } from "../../../../contracts/config.ts";
 import { exec } from "../../../exec.ts";
 import type { Wanted } from "../../../managed.ts";
+import { baseline } from "./baseline.ts";
 import { render } from "./render.ts";
 import { findSource } from "./source.ts";
 import type { Rules } from "./source.ts";
-import { option } from "./stated.ts";
+import { lookup, option } from "./stated.ts";
 import type { KnownRule } from "./stated.ts";
 import { translate } from "./translate.ts";
 import type { Leftover, Renames, Sections } from "./translate.ts";
@@ -123,12 +125,14 @@ type Failed = Exclude<Wanted, { readonly ok: true }>;
 
 /**
  * Reads the config for the old Markdown linter and translates its rules.
- * Null when the repository has none.
+ * Null when the repository has none. `table` is what the Cinch config states
+ * for the engine, which the new config inherits beside the preset.
  */
 export const gathered = async (
   root: string,
   preset: string,
-  command = COMMAND
+  command = COMMAND,
+  table: ToolTable = {}
 ): Promise<Carried | Failed | null> => {
   const source = await findSource(root);
   if (source.kind === "none") {
@@ -154,7 +158,7 @@ export const gathered = async (
   const input = {
     imported: sections.data,
     known: known.data,
-    preset: standard.data,
+    preset: baseline(standard.data, table, lookup(known.data)),
     rules: source.rules,
   };
   const first = translate(input);
@@ -184,9 +188,10 @@ export const gathered = async (
 export const carriedOver = async (
   root: string,
   preset: string,
-  command = COMMAND
+  command = COMMAND,
+  table: ToolTable = {}
 ): Promise<Wanted | null> => {
-  const carried = await gathered(root, preset, command);
+  const carried = await gathered(root, preset, command, table);
   return carried === null || !carried.ok
     ? carried
     : { ok: true, text: render(carried.file, carried) };

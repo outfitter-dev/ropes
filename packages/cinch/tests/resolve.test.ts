@@ -41,6 +41,7 @@ const config: CinchConfig = {
     },
   ],
   settings: [enabled(true, "markdown.enabled")],
+  tools: {},
 };
 
 const resolve = (

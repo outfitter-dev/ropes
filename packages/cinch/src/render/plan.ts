@@ -56,6 +56,12 @@ const stepLine =
   (step: PlanStep): string =>
     `    ${step.adapter}  ${step.tool} ${step.versionRange}  ${doing(step)}${company(step, planned, batches)}`;
 
+const LAYER = {
+  generated: "generated from the Cinch config, and extends the preset",
+  preset: "the preset this Cinch ships",
+  root: "the config the tool reads first, which extends the generated one",
+} satisfies Record<NonNullable<PlannedPath["layer"]>, string>;
+
 const REASON = {
   excluded: "excluded",
   "not-included": "not included",
@@ -70,6 +76,9 @@ const pathBlock =
     }
     return [
       planned.path,
+      ...(planned.layer === undefined
+        ? []
+        : [`  layer: ${planned.layer}, ${LAYER[planned.layer]}`]),
       `  package: ${planned.package === "." ? "the workspace" : planned.package}`,
       "  policy",
       ...planned.policy.map(policyLine),

@@ -106,6 +106,7 @@ test("a valid cinch.toml is read with the file and key behind each value", async
           value: true,
         },
       ],
+      tools: {},
     },
   });
 });

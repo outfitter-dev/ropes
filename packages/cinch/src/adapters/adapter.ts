@@ -1,4 +1,5 @@
 import type { Finding } from "../contracts/finding.ts";
+import type { Layer } from "../contracts/plan.ts";
 import type { StepStatus } from "../contracts/result.ts";
 
 export type Platform = "darwin" | "linux" | "win32";
@@ -11,6 +12,8 @@ export type Platform = "darwin" | "linux" | "win32";
  * yet.
  */
 export type Unit = "file" | "package" | "workspace";
+
+export type { Layer } from "../contracts/plan.ts";
 
 /** The data the resolver needs about an adapter. It carries no behavior. */
 export interface AdapterDescriptor {
@@ -46,6 +49,16 @@ export interface AdapterDescriptor {
    * `owns` files, such as `markdown`. Adapters that keep none leave it out.
    */
   readonly preset?: string;
+  /**
+   * The table under `tools` in the Cinch config that this adapter copies
+   * into a file it keeps. Adapters that generate no config leave it out.
+   */
+  readonly table?: string;
+  /**
+   * The part each kept file plays in the chain a tool reads its config
+   * through, by root-relative path. `explain` names it.
+   */
+  readonly layers?: Readonly<Record<string, Layer>>;
 }
 
 export interface ProbeResult {

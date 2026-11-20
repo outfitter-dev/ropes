@@ -90,6 +90,21 @@
         }
       },
       "additionalProperties": false
+    },
+    "tools": {
+      "description": "One table for each tool, in the tool's own settings. Cinch copies it into the config it generates for that tool.",
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "type": "object",
+        "propertyNames": {
+          "type": "string"
+        },
+        "additionalProperties": {}
+      }
     }
   },
   "required": ["pilot"],

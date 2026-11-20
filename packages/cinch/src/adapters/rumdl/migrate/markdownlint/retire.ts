@@ -1,5 +1,6 @@
 import path from "node:path";
 
+import type { ToolTable } from "../../../../contracts/config.ts";
 import type { Retired } from "../../../adapter.ts";
 import { leftovers } from "./leftovers.ts";
 import { merge } from "./merge.ts";
@@ -27,6 +28,8 @@ export interface Setup {
   readonly extended: string;
   /** The standard's own text. */
   readonly standard: string;
+  /** What the Cinch config states for the engine. */
+  readonly table?: ToolTable | undefined;
   readonly command?: string;
 }
 
@@ -52,7 +55,12 @@ const reasons = async (
       `${setup.config} was set up before this run, so Cinch cannot tell what was carried over from ${files.join(", ")}. Remove what is no longer wanted by hand.`,
     ];
   }
-  const carried = await gathered(setup.root, setup.standard, setup.command);
+  const carried = await gathered(
+    setup.root,
+    setup.standard,
+    setup.command,
+    setup.table
+  );
   if (carried === null) {
     return [];
   }
