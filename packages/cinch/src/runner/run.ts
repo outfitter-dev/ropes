@@ -34,7 +34,11 @@ const incomplete = (reason: string): StepOutcome => ({
 });
 
 /** Probes each adapter at most once per run, however many steps use it. */
-const readiness = (adapters: readonly Adapter[], platform: string) => {
+const readiness = (
+  adapters: readonly Adapter[],
+  platform: string,
+  root: string
+) => {
   const byId = new Map(
     adapters.map((adapter) => [adapter.descriptor.id, adapter])
   );
@@ -42,7 +46,7 @@ const readiness = (adapters: readonly Adapter[], platform: string) => {
   return (id: string) => {
     const adapter = byId.get(id);
     if (adapter && !probes.has(id)) {
-      probes.set(id, probeAdapter(adapter, platform));
+      probes.set(id, probeAdapter(adapter, platform, root));
     }
     return { adapter, probe: probes.get(id) };
   };
@@ -111,7 +115,11 @@ export const runPlan = async (
   adapters: readonly Adapter[],
   options: RunOptions
 ): Promise<Result> => {
-  const ready = readiness(adapters, options.platform ?? process.platform);
+  const ready = readiness(
+    adapters,
+    options.platform ?? process.platform,
+    plan.root
+  );
   const byPath = new Map<string, StepResult[]>();
   for (const batch of plan.batches) {
     // Batches run in plan order: a later step reads what an earlier one

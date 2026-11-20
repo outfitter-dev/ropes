@@ -167,8 +167,12 @@ export interface MigrationSource {
  */
 export interface Adapter {
   readonly descriptor: AdapterDescriptor;
-  /** Reports whether the tool is installed, and at which version. */
-  readonly probe: () => Promise<ProbeResult>;
+  /**
+   * Reports whether the tool is installed, and at which version. `root` is
+   * the repository a run is for. A tool the repository installs is looked
+   * for there, so the probe answers for the executable the run then starts.
+   */
+  readonly probe: (root?: string) => Promise<ProbeResult>;
   /**
    * One outcome for each file handed in. A file left without one is
    * incomplete: the runner never counts silence as a pass.

@@ -1,9 +1,15 @@
 import { expect, test } from "bun:test";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
+import type { StepOutcome } from "../src/adapters/adapter.ts";
+import type { FileInput } from "../src/adapters/batch.ts";
 import { DEFAULT_CONFIG } from "../src/contracts/config.ts";
 import { resolvePlan } from "../src/policy/resolve.ts";
 import type { ResolveInput } from "../src/policy/resolve.ts";
-import { describeFake } from "./fake-adapter.ts";
+import { runPlan } from "../src/runner/run.ts";
+import { describeFake, fakeAdapter, FIXED } from "./fake-adapter.ts";
 
 const markdown = describeFake({ id: "fake-markdown", tool: "fake" });
 const fence = describeFake({
@@ -90,4 +96,69 @@ test("a file's steps are listed in the order its batches run", () => {
   const order = ["fake-keeper", "fake-toml"];
   expect(plan.paths[0]?.steps.map((step) => step.adapter)).toEqual(order);
   expect(plan.batches.map((batch) => batch.adapter)).toEqual(order);
+});
+
+const setupKeeper = describeFake({
+  enabledBy: "markdown.preset",
+  extensions: [],
+  id: "fake-setup",
+  layers: { ".tool/preset.md": "preset", "tool.md": "root" },
+  owns: [".tool/preset.md", "tool.md"],
+  setup: true,
+});
+
+test("another adapter reads a file Cinch writes whole, and never writes it", () => {
+  const plan = resolve([".tool/preset.md", "a.md", "tool.md"], {
+    descriptors: [markdown, setupKeeper],
+  });
+  const writes = (file: string) =>
+    plan.paths
+      .find((entry) => entry.path === file)
+      ?.steps.map((step) => [step.adapter, step.writes]);
+  expect(writes(".tool/preset.md")).toEqual([
+    ["fake-setup", true],
+    ["fake-markdown", false],
+  ]);
+  // A root config is a person's file, and an ordinary file is too.
+  expect(writes("tool.md")).toEqual([
+    ["fake-setup", true],
+    ["fake-markdown", true],
+  ]);
+  expect(writes("a.md")).toEqual([["fake-markdown", true]]);
+  expect(
+    plan.batches.map((batch) => [batch.adapter, batch.writes, batch.paths])
+  ).toEqual([
+    ["fake-setup", true, [".tool/preset.md", "tool.md"]],
+    ["fake-markdown", true, ["tool.md", "a.md"]],
+    ["fake-markdown", false, [".tool/preset.md"]],
+  ]);
+});
+
+const rewrite = async (input: FileInput): Promise<StepOutcome> => {
+  await Bun.write(path.join(input.root, input.path), "DONE\n");
+  return FIXED;
+};
+
+test("a fix leaves a file Cinch writes whole as it was, byte for byte", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "cinch-kept-"));
+  try {
+    const files = { ".tool/preset.md": "TODO\n", "a.md": "TODO\n" };
+    await Promise.all(
+      Object.entries(files).map(([name, text]) =>
+        Bun.write(path.join(root, name), text)
+      )
+    );
+    const lint = fakeAdapter({ descriptor: markdown, fix: rewrite });
+    const keep = fakeAdapter({ descriptor: setupKeeper });
+    const plan = resolve(Object.keys(files), {
+      descriptors: [markdown, setupKeeper],
+      root,
+    });
+    await runPlan(plan, [lint, keep], { mode: "fix" });
+    const text = (name: string) => Bun.file(path.join(root, name)).text();
+    expect(await text(".tool/preset.md")).toBe("TODO\n");
+    expect(await text("a.md")).toBe("DONE\n");
+  } finally {
+    await rm(root, { force: true, recursive: true });
+  }
 });

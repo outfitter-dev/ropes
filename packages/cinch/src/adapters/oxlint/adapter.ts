@@ -7,8 +7,7 @@ import type {
 } from "../adapter.ts";
 import { markFixed } from "../changed.ts";
 import { exec } from "../exec.ts";
-import { whichLocal } from "../local.ts";
-import { runBatch } from "./run.ts";
+import { fixBatch, locate, runBatch } from "./run.ts";
 
 const ID = "oxlint";
 
@@ -47,8 +46,8 @@ export const oxlintAdapter = (options: OxlintOptions = {}): Adapter => {
     versionRange: options.version ?? SUPPORTED_RANGE,
     writes: true,
   };
-  const probe = async (): Promise<ProbeResult> => {
-    const binary = whichLocal(command);
+  const probe = async (root?: string): Promise<ProbeResult> => {
+    const binary = locate(command, root);
     if (binary === null) {
       return {
         available: false,
@@ -61,15 +60,8 @@ export const oxlintAdapter = (options: OxlintOptions = {}): Adapter => {
       ? { available: true, version }
       : { available: false, reason: `${command} --version did not answer` };
   };
-  // A fixing run reports what it saw before it wrote, so what is left is
-  // read from a second run that only checks.
   const fix = (input: StepInput): Promise<FileOutcome[]> =>
-    markFixed(input, async () => {
-      const fixed = await runBatch(command, input, ["--fix"]);
-      return fixed.some((outcome) => outcome.status === "incomplete")
-        ? fixed
-        : await runBatch(command, input, []);
-    });
+    markFixed(input, () => fixBatch(command, input));
   return {
     check: (input) => runBatch(command, input, []),
     descriptor,

@@ -33,7 +33,8 @@ const company = (
   const batch = batches.find(
     (candidate) =>
       candidate.adapter === step.adapter &&
-      candidate.package === planned.package
+      candidate.package === planned.package &&
+      candidate.paths.includes(planned.path)
   );
   const others = (batch?.paths.length ?? 1) - 1;
   if (others === 0) {

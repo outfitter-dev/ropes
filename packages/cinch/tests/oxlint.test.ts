@@ -11,6 +11,7 @@ import {
 import { adaptersFor } from "../src/adapters/registry.ts";
 import { createCommands } from "../src/commands/registry.ts";
 import { PlanSchema } from "../src/contracts/plan.ts";
+import type { PlannedPath } from "../src/contracts/plan.ts";
 import { checkOne, fixOne } from "./one-file.ts";
 
 const installed = whichLocal("oxlint") !== null;
@@ -234,4 +235,88 @@ test("a TypeScript file gets a lint step only when the config switches lint on",
       `${include}[lint]\nenabled = true\n[[overrides]]\npaths = ["a.ts"]\nlint.enabled = false\n`
     )
   ).toEqual([]);
+});
+
+/**
+ * A stand-in that cannot take `bad.ts`. A fixing run reports an error in
+ * the first file it is given, as the engine reports what it saw before it
+ * wrote, and a checking run reports none.
+ */
+const PICKY = `#!/bin/sh
+fix=0; n=0; first=""; files=0
+for arg in "$@"; do
+  if [ "$files" = 1 ]; then
+    n=$((n + 1))
+    if [ -z "$first" ]; then first="$arg"; fi
+    if [ "$arg" = "bad.ts" ]; then exit 2; fi
+  fi
+  if [ "$arg" = "--fix" ]; then fix=1; fi
+  if [ "$arg" = "--" ]; then files=1; fi
+done
+if [ "$fix" = 1 ]; then
+  printf '{"diagnostics":[{"code":"x","filename":"%s","message":"m","severity":"error"}],"number_of_files":%s}\n' "$first" "$n"
+  exit 1
+fi
+printf '{"diagnostics":[],"number_of_files":%s}\n' "$n"
+`;
+
+test("a fix checks again every file it could take, when another start could not run", async () => {
+  const good = Array.from(
+    { length: 200 },
+    (_, index) => `f${String(index).padStart(3, "0")}.ts`
+  );
+  const paths = [...good, "bad.ts"];
+  await inRepo(
+    Object.fromEntries(paths.map((file) => [file, ""])),
+    async (root) => {
+      const command = path.join(root, "picky-lint");
+      await Bun.write(command, PICKY);
+      await chmod(command, 0o755);
+      const outcomes = await oxlintAdapter({ command }).fix({
+        package: ".",
+        paths,
+        root,
+      });
+      expect(outcomes.map((outcome) => outcome.path)).toEqual(paths);
+      // The first start fixed its files, so none keeps what was seen before.
+      expect(outcomes[0]).toMatchObject({ findings: [], status: "passed" });
+      expect(outcomes.at(-1)).toMatchObject({ status: "incomplete" });
+    }
+  );
+});
+
+test("the probe asks the repository the run is for, before the place Cinch runs in", async () => {
+  await inRepo({}, async (root) => {
+    const bin = path.join(root, "node_modules", ".bin");
+    await mkdir(bin, { recursive: true });
+    const command = path.join(bin, "cinch-only-here");
+    await Bun.write(command, "#!/bin/sh\necho 'Version: 9.8.7'\n");
+    await chmod(command, 0o755);
+    const adapter = oxlintAdapter({ command: "cinch-only-here" });
+    const elsewhere = await adapter.probe();
+    expect(elsewhere.available).toBe(false);
+    expect(await adapter.probe(root)).toEqual({
+      available: true,
+      version: "9.8.7",
+    });
+  });
+});
+
+test("a kept preset gets a lint step that only reads", async () => {
+  const { explain } = createCommands({ adapters: adaptersFor });
+  const config =
+    'pilot = 0\ninclude = ["**/*.ts"]\n[lint]\nenabled = true\npreset = true\n';
+  await inRepo({ "a.ts": "", "cinch.toml": config }, async (root) => {
+    await mkdir(path.join(root, ".git"));
+    const ran = await explain?.({ cwd: root, json: true, paths: [] });
+    const plan = PlanSchema.parse(JSON.parse(ran?.output ?? "null"));
+    const lint = (pick: (entry: PlannedPath) => boolean) =>
+      plan.paths
+        .filter(pick)
+        .flatMap((entry) => entry.steps)
+        .filter((step) => step.adapter === "oxlint")
+        .map((step) => step.writes);
+    expect(lint((entry) => entry.layer === "preset")).toEqual([false]);
+    expect(lint((entry) => entry.path === "a.ts")).toEqual([true]);
+  });
 });

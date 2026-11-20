@@ -14,17 +14,21 @@ export interface Readiness {
   readonly version?: string | undefined;
 }
 
-/** Whether the adapter's tool can run on this platform, and at which version. */
+/**
+ * Whether the adapter's tool can run on this platform, and at which version.
+ * `root` is the repository the run is for.
+ */
 export const probeAdapter = async (
   adapter: Adapter,
-  platform: string
+  platform: string,
+  root?: string
 ): Promise<Readiness> => {
   const { platforms, tool } = adapter.descriptor;
   if (!platforms.some((supported) => supported === platform)) {
     return { problem: `${tool} does not run on ${platform}` };
   }
   try {
-    const probe = await adapter.probe();
+    const probe = await adapter.probe(root);
     return probe.available
       ? { version: probe.version }
       : { problem: probe.reason ?? `${tool} is not available` };

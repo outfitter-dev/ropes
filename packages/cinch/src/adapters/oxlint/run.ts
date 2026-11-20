@@ -8,6 +8,15 @@ import { parseOutput } from "./output.ts";
 
 const ID = "oxlint";
 
+/**
+ * The executable a run starts: the repository's own install first, then the
+ * one Cinch itself can see. The probe asks here too, so the version it
+ * reports is the version of what runs.
+ */
+export const locate = (command: string, root?: string): string | null =>
+  (root === undefined ? null : whichLocal(command, root)) ??
+  whichLocal(command);
+
 const firstLine = (text: string): string => text.trim().split("\n")[0] ?? "";
 
 const byLine = (findings: FileOutcome["findings"]): FileOutcome["findings"] =>
@@ -24,8 +33,7 @@ const start = async (
   input: StepInput,
   flags: readonly string[]
 ): Promise<FileOutcome[]> => {
-  // The repository's own install first, then the one Cinch itself can see.
-  const binary = whichLocal(command, input.root) ?? whichLocal(command);
+  const binary = locate(command, input.root);
   if (binary === null) {
     return allIncomplete(input, `${command} could not be found to run`);
   }
@@ -90,5 +98,30 @@ export const runBatch = async (
   const byPath = new Map(ran.map((outcome) => [outcome.path, outcome]));
   return input.paths.map(
     (file) => byPath.get(file) ?? { findings: [], path: file, status: "passed" }
+  );
+};
+
+/**
+ * Fixes a batch, then reads what is left from a second run that only
+ * checks: a fixing run reports what it saw before it wrote. A file the
+ * fixing run could not take stays incomplete, and every other file is
+ * checked again, so none keeps a finding the fix already cleared.
+ */
+export const fixBatch = async (
+  command: string,
+  input: StepInput
+): Promise<FileOutcome[]> => {
+  const fixed = await runBatch(command, input, ["--fix"]);
+  const stuck = new Map(
+    fixed
+      .filter((outcome) => outcome.status === "incomplete")
+      .map((outcome) => [outcome.path, outcome])
+  );
+  const paths = input.paths.filter((file) => !stuck.has(file));
+  const checked =
+    paths.length === 0 ? [] : await runBatch(command, { ...input, paths }, []);
+  const byPath = new Map(checked.map((outcome) => [outcome.path, outcome]));
+  return input.paths.flatMap(
+    (file) => stuck.get(file) ?? byPath.get(file) ?? []
   );
 };

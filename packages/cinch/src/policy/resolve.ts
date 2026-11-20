@@ -96,6 +96,31 @@ const stepsFor = (
     .map(toStep);
 };
 
+/**
+ * The steps of one path. A file Cinch writes whole, such as a preset, is
+ * part of the setup, and only `doctor --fix` writes the setup. So a step of
+ * another adapter may read such a file and never write it. A root config is
+ * a person's file, and stays theirs to fix.
+ */
+const guarded = (
+  path: string,
+  steps: readonly PlanStep[],
+  descriptors: readonly AdapterDescriptor[]
+): PlanStep[] => {
+  const whole = descriptors.some(
+    (descriptor) =>
+      descriptor.setup === true &&
+      descriptor.owns?.includes(path) === true &&
+      descriptor.layers?.[path] !== "root" &&
+      steps.some((step) => step.adapter === descriptor.id)
+  );
+  return steps.map((step) =>
+    whole && step.setup !== true && step.writes
+      ? { ...step, writes: false }
+      : step
+  );
+};
+
 /** Whether an adapter that policy leaves on keeps this exact file. */
 const isKept = (
   path: string,
@@ -133,7 +158,11 @@ const plan = (path: string, input: ResolveInput, scope: Scope): PlannedPath => {
       steps: [],
     };
   }
-  const steps = stepsFor(path, policy, input.descriptors);
+  const steps = guarded(
+    path,
+    stepsFor(path, policy, input.descriptors),
+    input.descriptors
+  );
   const layer = input.descriptors.find(
     (descriptor) =>
       descriptor.layers?.[path] !== undefined &&

@@ -30,7 +30,7 @@ export const toolStatuses = (
           versionRange,
         };
       }
-      const found = await probeAdapter(adapter, process.platform);
+      const found = await probeAdapter(adapter, process.platform, plan.root);
       return {
         problem:
           found.problem ?? versionProblem(tool, found.version, versionRange),
