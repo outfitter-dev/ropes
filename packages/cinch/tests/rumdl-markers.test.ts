@@ -126,6 +126,15 @@ test("a marker shown inside a fenced block is text, not a marker", () => {
   expect(read(text, [])).toEqual([]);
 });
 
+test("only a fence in the block's own container closes it", () => {
+  const indented = "```md\n        ```\n<!-- cinch-typo -->\n```\n";
+  expect(read(indented, [])).toEqual([]);
+  const quoted = "```md\n> ```\n<!-- cinch-typo -->\n```\n";
+  expect(read(quoted, [])).toEqual([]);
+  const inList = `- \`\`\`md\n      \`\`\`\n  <!-- cinch-typo -->\n  \`\`\`\n\n${MARKER}\n${FRAGMENT}`;
+  expect(read(inList, [at(7, PARSE)])).toEqual([]);
+});
+
 test("another tool's comment is not Cinch's to judge", () => {
   expect(
     read("<!-- rumdl-disable-next-line MD001 -->\n<!-- a cinch- note -->\n", [])

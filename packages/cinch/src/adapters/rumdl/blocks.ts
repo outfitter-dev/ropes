@@ -20,12 +20,31 @@ const CODE_INDENT = 4;
 const widthOf = (space: string): number =>
   space.length + (space.split("\t").length - 1) * (TAB - 1);
 
-interface Open {
+interface Fence {
   readonly char: string;
   readonly length: number;
 }
 
-const opens = (text: string): Open | null => {
+/** An open fence, and the quote depth and list column it sits in. */
+interface Open extends Fence {
+  readonly base: number;
+  readonly depth: number;
+}
+
+interface Quoted {
+  readonly depth: number;
+  readonly rest: string;
+}
+
+const unquote = (raw: string): Quoted => {
+  const prefix = QUOTE.exec(raw)?.[0] ?? "";
+  return {
+    depth: prefix.split(">").length - 1,
+    rest: raw.slice(prefix.length),
+  };
+};
+
+const opens = (text: string): Fence | null => {
   const fence = FENCE.exec(text)?.groups;
   const ticks = fence?.ticks;
   if (ticks === undefined) {
@@ -37,7 +56,7 @@ const opens = (text: string): Open | null => {
     : { char, length: ticks.length };
 };
 
-const closes = (text: string, open: Open): boolean => {
+const closes = (text: string, open: Fence): boolean => {
   const fence = FENCE.exec(text)?.groups;
   return (
     fence?.ticks?.startsWith(open.char.repeat(open.length)) === true &&
@@ -53,7 +72,11 @@ const closes = (text: string, open: Open): boolean => {
 const inItems = (
   line: string,
   items: number[]
-): { readonly indent: number; readonly text: string } => {
+): {
+  readonly base: number;
+  readonly indent: number;
+  readonly text: string;
+} => {
   let text = line.trimStart();
   let column = widthOf(line.slice(0, line.length - text.length));
   while (items.length > 0 && column < (items.at(-1) ?? 0)) {
@@ -72,7 +95,27 @@ const inItems = (
     items.push(base);
     text = text.slice((item.marker?.length ?? 0) + (item.gap?.length ?? 0));
   }
-  return { indent: column - base, text: text.trim() };
+  return { base, indent: column - base, text: text.trim() };
+};
+
+/**
+ * What a line is while a fence is open, or null when the line ends the quote
+ * or list item the fence sits in, which ends the block with it. Only a fence
+ * at the opener's own quote depth, indented less than code, closes the block.
+ */
+const within = (line: Quoted, open: Open): "close" | "inside" | null => {
+  const text = line.rest.trim();
+  const lead = line.rest.length - line.rest.trimStart().length;
+  const column = widthOf(line.rest.slice(0, lead));
+  if (line.depth > open.depth) {
+    return "inside";
+  }
+  if (line.depth < open.depth || (text !== "" && column < open.base)) {
+    return null;
+  }
+  return column - open.base < CODE_INDENT && closes(text, open)
+    ? "close"
+    : "inside";
 };
 
 /** Reads a Markdown file line by line. */
@@ -80,20 +123,19 @@ export const linesOf = (markdown: string): Line[] => {
   const items: number[] = [];
   let open: Open | null = null;
   return markdown.split("\n").map((raw): Line => {
-    const unquoted = raw.replace(QUOTE, "");
-    if (open !== null) {
-      const text = unquoted.trim();
-      if (closes(text, open)) {
-        open = null;
-        return { kind: "close", text };
-      }
-      return { kind: "inside", text };
+    const line = unquote(raw);
+    const kind = open === null ? null : within(line, open);
+    if (kind !== null) {
+      open = kind === "close" ? null : open;
+      return { kind, text: line.rest.trim() };
     }
-    if (unquoted.trim() === "") {
+    if (line.rest.trim() === "") {
+      open = null;
       return { kind: "text", text: "" };
     }
-    const { indent, text } = inItems(unquoted, items);
-    open = indent < CODE_INDENT ? opens(text) : null;
+    const { base, indent, text } = inItems(line.rest, items);
+    const fence = indent < CODE_INDENT ? opens(text) : null;
+    open = fence === null ? null : { ...fence, base, depth: line.depth };
     return { kind: open === null ? "text" : "open", text };
   });
 };
