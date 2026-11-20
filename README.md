@@ -11,7 +11,7 @@ The Outfitter CLI and the quality tool it is built around.
 
 ## Status
 
-Early. `cinch explain`, `cinch check` and `cinch fix` work on Markdown, and `cinch init` and `cinch preset` set a repository up. The `outfitter` package does not exist yet. Nothing is published.
+Early. `cinch explain`, `cinch check` and `cinch fix` work on Markdown, `cinch check` also lints TOML, and `cinch init` and `cinch preset` set a repository up. The `outfitter` package does not exist yet. Nothing is published.
 
 ## What Cinch does
 
@@ -28,7 +28,7 @@ Given a path, Cinch resolves one plan: which policy applies, where each value ca
 
 Every command prints plain text that can be piped, or one JSON document with `--json`. [Output](docs/output.md) has the contract and jq examples. Exit codes are 0 for clean, 1 when findings remain, and 2 when the run is incomplete or unusable. A check that could not run never counts as a pass. [Outcomes and exit codes](docs/exit-codes.md) has the full contract, and [Selecting files](docs/selection.md) says which files a command looks at. Markdown is held to [the Markdown standard](docs/markdown-standard.md), which also formats fenced TypeScript and JavaScript.
 
-The first profile is Markdown.
+The first profile is Markdown. TOML is the second: every TOML file must parse, and one with a schema must fit it. Formatting TOML stays with the formatter.
 
 ## The JSON shapes are unstable
 
@@ -40,13 +40,16 @@ Cinch reads the `[cinch]` table in `outfitter.toml`, or a standalone `cinch.toml
 
 ```toml
 pilot = 0
-include = ["**/*.md"]
+include = ["**/*.md", "**/*.toml"]
 exclude = ["vendor/**"]
 
 [markdown]
 enabled = true
 # Keep the shared Markdown standard in the repository. On unless set to false.
 preset = true
+
+[toml]
+enabled = true
 
 [[overrides]]
 paths = ["docs/legacy/**"]
@@ -82,7 +85,7 @@ bun run check
 bun run cinch --help
 ```
 
-`bun run check` ends with `cinch check` on this repository, reading the root `cinch.toml`. That step needs the pinned rumdl on `PATH`. With mise activated in your shell it is. Otherwise run `mise exec -- bun run check`. Without rumdl the step is incomplete and the check fails, which is the point: a check that could not run is not a pass.
+`bun run check` ends with `cinch check` on this repository, reading the root `cinch.toml`. That step needs the pinned rumdl and Taplo on `PATH`. With mise activated in your shell it is. Otherwise run `mise exec -- bun run check`. Without them the step is incomplete and the check fails, which is the point: a check that could not run is not a pass.
 
 The pre-commit hook runs `cinch fix` on the Markdown you staged, after the formatter. It stages what it fixed and stops the commit when a finding is left or the engine could not run. It works on the file in your working tree, so a partly staged Markdown file is staged whole.
 

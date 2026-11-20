@@ -50,6 +50,7 @@ test("no config file gives the defaults, each marked as a default", async () => 
   expect(await load({})).toEqual({ ok: true, value: DEFAULT_CONFIG });
   expect(DEFAULT_CONFIG.settings).toEqual([
     { key: "markdown.enabled", source: { kind: "default" }, value: true },
+    { key: "toml.enabled", source: { kind: "default" }, value: true },
   ]);
 });
 
@@ -98,6 +99,7 @@ test("a valid cinch.toml is read with the file and key behind each value", async
         },
       ],
       settings: [
+        { key: "toml.enabled", source: { kind: "default" }, value: true },
         {
           key: "markdown.enabled",
           source: { file: "cinch.toml", key: "markdown.enabled", kind: "file" },
@@ -122,6 +124,7 @@ test("the [cinch] table in outfitter.toml is read, with keys under cinch", async
   });
   expect(loaded.ok && loaded.value.file).toBe("outfitter.toml");
   expect(loaded.ok && loaded.value.settings).toEqual([
+    { key: "toml.enabled", source: { kind: "default" }, value: true },
     {
       key: "markdown.enabled",
       source: {
@@ -208,12 +211,36 @@ test("this repository's own cinch.toml loads", async () => {
   expect(loaded.ok && loaded.value.file).toBe("cinch.toml");
 });
 
+test("the toml table is read at the top and in an override", async () => {
+  const loaded = await load({
+    "cinch.toml":
+      'pilot = 0\n[toml]\nenabled = false\n[[overrides]]\npaths = ["a/**"]\n[overrides.toml]\nenabled = true\n',
+  });
+  expect(loaded.ok && loaded.value.settings.at(-1)).toEqual({
+    key: "toml.enabled",
+    source: { file: "cinch.toml", key: "toml.enabled", kind: "file" },
+    value: false,
+  });
+  expect(loaded.ok && loaded.value.overrides[0]?.settings).toEqual([
+    {
+      key: "toml.enabled",
+      source: {
+        file: "cinch.toml",
+        key: "overrides.0.toml.enabled",
+        kind: "file",
+      },
+      value: true,
+    },
+  ]);
+});
+
 test("the preset switch is read, and the defaults it does not state remain", async () => {
   const loaded = await load({
     "cinch.toml": "pilot = 0\n[markdown]\npreset = false\n",
   });
   expect(loaded.ok && loaded.value.settings).toEqual([
     { key: "markdown.enabled", source: { kind: "default" }, value: true },
+    { key: "toml.enabled", source: { kind: "default" }, value: true },
     {
       key: "markdown.preset",
       source: { file: "cinch.toml", key: "markdown.preset", kind: "file" },

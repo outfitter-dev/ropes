@@ -110,6 +110,7 @@ proof(
         },
         value: false,
       },
+      { key: "toml.enabled", source: { kind: "default" }, value: true },
     ]);
     expect(stepsOf(plan, "README.md")).toEqual(["rumdl"]);
 

@@ -4,8 +4,8 @@ import path from "node:path";
 
 import { z } from "zod";
 
+import { exec } from "../exec.ts";
 import type { Wanted } from "../managed.ts";
-import { exec } from "./exec.ts";
 import { render } from "./markdownlint-render.ts";
 import { findSource } from "./markdownlint-source.ts";
 import type { Rules } from "./markdownlint-source.ts";

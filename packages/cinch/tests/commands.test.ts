@@ -8,7 +8,7 @@ test("check exits 0 when every step passes, and never asks an adapter to write",
     const before = await snapshot(root);
     const response = await run("check");
     expect(response.exitCode).toBe(0);
-    expect(response.output).toContain("2 files selected, 2 steps ran");
+    expect(response.output).toContain("3 files selected, 2 steps ran");
     expect(adapter.calls).toEqual(["probe", "check", "check"]);
     expect(await snapshot(root)).toEqual(before);
   });
@@ -58,7 +58,7 @@ test("explain shows policy, origin, steps and the root without running a step", 
     expect(response.output).toBe(
       [
         `Root: ${root}\nConfig: cinch.toml`,
-        "a.md\n  policy\n    markdown.enabled = true  (default)\n  steps\n    fake  fake-tool *  checks and fixes",
+        "a.md\n  policy\n    markdown.enabled = true  (default)\n    toml.enabled = true  (default)\n  steps\n    fake  fake-tool *  checks and fixes",
         "Tools\n  fake-tool  available, needs *",
         "1 file, 1 step planned. Nothing was run.",
       ].join("\n\n")
@@ -75,7 +75,7 @@ test("explain still shows the whole plan when the tool is missing", async () => 
       const response = await run("explain");
       expect(response.exitCode).toBe(0);
       expect(response.output).toContain("fake-tool  unavailable: not here");
-      expect(response.output).toContain("2 files, 2 steps planned");
+      expect(response.output).toContain("3 files, 2 steps planned");
     }
   );
 });
@@ -100,7 +100,12 @@ test("a kept file joins the workspace before it exists, and only the workspace",
   const keeps = { descriptor: { extensions: [], owns: [".kept.toml"] } };
   await withRepo(BASE, keeps, async ({ run }) => {
     const all = await run("explain", [], { json: true });
-    expect(planPaths(all)).toEqual([".kept.toml", "a.md", "docs/b.md"]);
+    expect(planPaths(all)).toEqual([
+      ".kept.toml",
+      "a.md",
+      "cinch.toml",
+      "docs/b.md",
+    ]);
     const named = await run("explain", ["a.md"], { json: true });
     expect(planPaths(named)).toEqual(["a.md"]);
   });

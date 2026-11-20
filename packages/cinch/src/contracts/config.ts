@@ -66,7 +66,10 @@ const DEFAULT: Provenance = { kind: "default" };
 export const DEFAULT_CONFIG: CinchConfig = {
   exclude: { source: DEFAULT, value: [] },
   file: null,
-  include: { source: DEFAULT, value: ["**/*.md"] },
+  include: { source: DEFAULT, value: ["**/*.md", "**/*.toml"] },
   overrides: [],
-  settings: [{ key: "markdown.enabled", source: DEFAULT, value: true }],
+  settings: [
+    { key: "markdown.enabled", source: DEFAULT, value: true },
+    { key: "toml.enabled", source: DEFAULT, value: true },
+  ],
 };

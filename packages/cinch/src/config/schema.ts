@@ -4,8 +4,8 @@ import { ConfigFileSchema } from "./parse.ts";
 
 /**
  * The JSON Schema of `cinch.toml`, made from the definition the loader reads
- * with. Draft 7, because that is what TOML tooling such as Taplo validates
- * against. Unstable, like the format it describes.
+ * with. Draft 7, because that is what TOML tooling validates against.
+ * Unstable, like the format it describes.
  */
 export const configJsonSchema = (): unknown =>
   z.toJSONSchema(

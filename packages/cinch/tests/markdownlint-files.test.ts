@@ -4,9 +4,14 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { chosenFiles } from "../src/adapters/rumdl/markdownlint-files.ts";
-import { starterConfig, STARTER_CONFIG } from "../src/commands/starter.ts";
+import {
+  inheritedBy,
+  starterConfig,
+  STARTER_CONFIG,
+} from "../src/commands/starter.ts";
 import { loadConfig } from "../src/config/load.ts";
 import { compileGlobs } from "../src/policy/glob.ts";
+import { fakeAdapter } from "./fake-adapter.ts";
 
 const RUNNER = ".markdownlint-cli2.jsonc";
 
@@ -147,4 +152,24 @@ test("the starter config states carried choices once and loads", async () => {
       include: { value: ["**/*.md", "**/*.mdx"] },
     },
   });
+});
+
+test("a carried include keeps the default for every other kind of file", async () => {
+  const carried = { exclude: [], from: RUNNER, include: ["docs/**/*.md"] };
+  const adapter = {
+    ...fakeAdapter(),
+    inherits: () => Promise.resolve({ ...carried, notes: [] }),
+  };
+  const [found] = await inheritedBy([adapter], root);
+  expect(found?.include).toEqual(["docs/**/*.md", "**/*.toml"]);
+  const [none] = await inheritedBy(
+    [
+      {
+        ...adapter,
+        inherits: () => Promise.resolve({ ...carried, include: [], notes: [] }),
+      },
+    ],
+    root
+  );
+  expect(none?.include).toEqual([]);
 });
