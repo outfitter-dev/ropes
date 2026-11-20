@@ -3,14 +3,18 @@ import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { BUILT_ON_RULE } from "../src/adapters/built-on.ts";
 import { adaptersFor } from "../src/adapters/registry.ts";
 import type { CommandRequest } from "../src/commands/command.ts";
 import { createCommands } from "../src/commands/registry.ts";
 import { DoctorReportSchema } from "../src/contracts/doctor.ts";
+import { PresetReportSchema } from "../src/contracts/preset.ts";
+import { checkoutAt, fixtureGit } from "./acceptance-repo.ts";
 
 const ON =
   "pilot = 0\n[markdown]\npreset = false\n[lint]\npreset = true\n[format]\npreset = true\n[typescript]\npreset = true\n";
 const ROOTS = ["oxlint.config.ts", "oxfmt.config.ts", "tsconfig.json"];
+const ULTRACITE = "node_modules/ultracite/package.json";
 const TS_PRESET = "./.outfitter/configs/presets/tsconfig.json";
 
 const commands = createCommands({ adapters: adaptersFor });
@@ -21,7 +25,7 @@ beforeEach(async () => {
   await mkdir(path.join(root, ".git"));
   await Bun.write(path.join(root, "cinch.toml"), ON);
   await Bun.write(
-    path.join(root, "node_modules/ultracite/package.json"),
+    path.join(root, ULTRACITE),
     JSON.stringify({ name: "ultracite", version: "8.1.1" })
   );
 });
@@ -34,17 +38,21 @@ const put = (file: string, text: string): Promise<number> =>
 const text = (file: string): Promise<string> =>
   Bun.file(path.join(root, file)).text();
 
-const doctor = async (request: Partial<CommandRequest> = {}) => {
-  const command = commands.doctor;
+const run = (verb: string, request: Partial<CommandRequest> = {}) => {
+  const command = commands[verb];
   if (!command) {
-    throw new Error("no doctor command");
+    throw new Error(`no ${verb} command`);
   }
-  const response = await command({
+  return command({
     cwd: root,
     json: true,
     paths: [],
     ...request,
   });
+};
+
+const doctor = async (request: Partial<CommandRequest> = {}) => {
+  const response = await run("doctor", request);
   const { result } = DoctorReportSchema.parse(
     JSON.parse(response.output ?? "null")
   );
@@ -85,6 +93,43 @@ test("doctor --fix writes each missing root config, and then it is clean", async
   expect(again.exitCode).toBe(0);
 });
 
+test.each([
+  { state: "missing", version: null },
+  { state: "incompatible", version: "9.0.0" },
+])("$state Ultracite only blocks the kept presets", async ({ version }) => {
+  await (version === null
+    ? rm(path.join(root, ULTRACITE))
+    : put(ULTRACITE, JSON.stringify({ name: "ultracite", version })));
+  const fixed = await doctor({ fix: true });
+  const kept = [
+    ".outfitter/configs/presets/oxfmt.ts",
+    ".outfitter/configs/presets/oxlint.ts",
+  ];
+  expect(fixed.exitCode).toBe(1);
+  expect(
+    fixed.result.steps
+      .flatMap((step) => step.findings)
+      .filter((finding) => finding.rule === BUILT_ON_RULE)
+      .map((finding) => finding.path)
+      .toSorted()
+  ).toEqual(kept);
+
+  const listed = await run("preset", { action: "list" });
+  const { presets } = PresetReportSchema.parse(
+    JSON.parse(listed.output ?? "null")
+  );
+  const files = presets.flatMap((preset) => preset.files);
+  expect(
+    files
+      .filter((file) => file.state === "blocked")
+      .map((file) => file.path)
+      .toSorted()
+  ).toEqual(kept);
+  for (const file of ROOTS) {
+    expect(files).toContainEqual({ path: file, state: "current" });
+  }
+});
+
 test.each(["oxlint.config.ts", "oxfmt.config.ts"])(
   "%s without the preset is a finding doctor --fix leaves alone",
   async (file) => {
@@ -122,11 +167,19 @@ test("a config the tool reads from another file stops the new one", async () => 
 });
 
 test("a dry run sees a config git ignores, as the real run does", async () => {
-  Bun.spawnSync(["git", "init", "-q"], { cwd: root });
+  await fixtureGit(root, "init", "--quiet", "--template=");
   await put(".gitignore", ".oxlintrc.json\nnode_modules\n");
   await put(".oxlintrc.json", "{}\n");
-  const preview = await doctor({ dryRun: true, fix: true });
-  const found = preview.result.steps
+  await fixtureGit(root, "check-ignore", "--quiet", ".oxlintrc.json");
+  const preview = await checkoutAt(root).cinch([
+    "doctor",
+    "--fix",
+    "--dry-run",
+    "--json",
+  ]);
+  expect(preview.exitCode).toBe(1);
+  const { result } = DoctorReportSchema.parse(JSON.parse(preview.stdout));
+  const found = result.steps
     .filter((step) => step.path === "oxlint.config.ts")
     .flatMap((step) => step.findings.map((finding) => finding.message));
   expect(found).toHaveLength(1);

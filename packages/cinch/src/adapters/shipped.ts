@@ -36,21 +36,30 @@ export const shippedHeader = (comment: string): string =>
   ].join("\n");
 
 /**
- * Adds, to each file that is as Cinch keeps it, a finding when the package
+ * Adds a finding to the kept preset when the package
  * the preset imports is missing or is not a version the preset can count
  * on. A file that still differs says so first. Cinch installs no package,
  * so the finding is never fixable.
  */
 const withPackage =
-  (id: string, needs: BuiltOn, run: Adapter["check"]): Adapter["check"] =>
+  (
+    id: string,
+    presetPath: string,
+    needs: BuiltOn,
+    run: Adapter["check"]
+  ): Adapter["check"] =>
   async (input: StepInput): Promise<readonly FileOutcome[]> => {
     const outcomes = await run(input);
+    const preset = outcomes.find((outcome) => outcome.path === presetPath);
+    if (preset?.status !== "passed" && preset?.status !== "fixed") {
+      return outcomes;
+    }
     const found = await installedVersion(needs.name, input.root);
     const message = builtOnProblem(needs, found);
     return message === null
       ? outcomes
       : outcomes.map((outcome) =>
-          outcome.status === "passed" || outcome.status === "fixed"
+          outcome === preset
             ? {
                 findings: [
                   {
@@ -98,7 +107,7 @@ export const shippedPreset = (options: ShippedOptions): Adapter => {
     ? kept
     : {
         ...kept,
-        check: withPackage(options.id, builtOn, kept.check),
-        fix: withPackage(options.id, builtOn, kept.fix),
+        check: withPackage(options.id, options.path, builtOn, kept.check),
+        fix: withPackage(options.id, options.path, builtOn, kept.fix),
       };
 };
