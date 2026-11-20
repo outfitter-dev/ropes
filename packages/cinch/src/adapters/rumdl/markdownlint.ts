@@ -115,6 +115,8 @@ export interface Carried {
   readonly same: Sections;
   /** The IDs of the rules the old config switched off. */
   readonly off: readonly string[];
+  /** The IDs of the rules the old config switched on by name. */
+  readonly on: readonly string[];
 }
 
 type Failed = Exclude<Wanted, { readonly ok: true }>;
@@ -166,6 +168,7 @@ export const gathered = async (
     notes: [...result.notes, ...source.notes],
     off: result.off,
     ok: true,
+    on: result.on,
     same: result.same,
     sections: result.sections,
     settled: source.settled,

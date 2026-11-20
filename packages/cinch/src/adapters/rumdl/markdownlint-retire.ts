@@ -75,5 +75,10 @@ export const retired = async (setup: Setup): Promise<Retired | null> => {
   const files = await present(setup.root, CONFIG_FILES);
   return files.length === 0
     ? null
-    : { files, keep: await reasons(setup, files), leftovers: [] };
+    : {
+        files,
+        keep: await reasons(setup, files),
+        leftovers: [],
+        needs: [setup.config],
+      };
 };

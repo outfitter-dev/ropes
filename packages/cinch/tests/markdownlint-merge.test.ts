@@ -161,6 +161,20 @@ test("a rule the old config switched off and this list leaves on is named", () =
   );
 });
 
+test("a rule the old config switched on and the lists here switch off is named", () => {
+  const result = merge({
+    current: '[global]\nenable = ["MD013"]\nextend-disable = ["ul-indent"]\n',
+    file: OLD,
+    known: KNOWN,
+    notes: [],
+    on: ["MD007", "MD013", "MD033"],
+    sections: {},
+  });
+  expect(result.ok && result.notes).toEqual([
+    `${OLD} switches on MD007, MD033, and the lists of rules here switch that off. The lists here were kept.`,
+  ]);
+});
+
 test("nothing to add leaves the file as it was", () => {
   const current = "[MD013]\nline-length = 100\n";
   expect(merged(current, { MD013: { "line-length": 100 } })).toBe(current);

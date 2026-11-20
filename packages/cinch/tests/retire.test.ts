@@ -10,6 +10,7 @@ import { createCommands } from "../src/commands/registry.ts";
 import { InitReportSchema } from "../src/contracts/init.ts";
 
 const KEPT = ".outfitter/configs/notes.toml";
+const NEED = "notes.toml";
 const OLD = "old-linter.json";
 const HAND = "Remove it by hand.";
 
@@ -30,6 +31,7 @@ const retires = async (dir: string): Promise<Retired | null> => {
     files: [OLD],
     keep: text.includes("custom") ? [HAND] : [],
     leftovers: text.includes("hook") ? ["A hook still calls it."] : [],
+    needs: [NEED],
   };
 };
 
@@ -52,6 +54,10 @@ const commands = createCommands({
             (await Bun.file(path.join(dir, "broken")).exists())
               ? { message: "Cinch cannot keep this file.", ok: false }
               : { ok: true, text: "width = 80\n" },
+        },
+        {
+          path: NEED,
+          want: () => Promise.resolve({ ok: true, text: "extends = true\n" }),
         },
       ],
       id: "notes-preset",
@@ -166,4 +172,20 @@ test("a preset that is switched off is not asked", async () => {
     removed: false,
   });
   expect(await exists(OLD)).toBe(true);
+});
+
+test("leaving out the file that holds what was carried keeps the old one", async () => {
+  await put(OLD, "{}");
+  await put("cinch.toml", `pilot = 0\nexclude = [${JSON.stringify(NEED)}]\n`);
+  expect(await init({ yes: true })).toEqual({
+    files: [OLD],
+    leftovers: [],
+    reasons: [
+      `${NEED} is left out of this setup, so nothing was carried over from ${OLD}. Take it out of \`exclude\` and any override that switches it off, or move the settings by hand.`,
+    ],
+    removed: false,
+  });
+  expect(await exists(OLD)).toBe(true);
+  expect(await exists(KEPT)).toBe(true);
+  expect(await exists(NEED)).toBe(false);
 });

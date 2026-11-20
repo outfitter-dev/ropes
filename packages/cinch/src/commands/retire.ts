@@ -12,28 +12,51 @@ export interface Old {
   readonly leftovers: readonly string[];
 }
 
-/** The adapters with a step in the plan. One that is switched off has none. */
-const planned = (adapters: readonly Adapter[], plan: Plan): Adapter[] => {
-  const ids = new Set(
-    plan.paths.flatMap((entry) => entry.steps.map((step) => step.adapter))
-  );
-  return adapters.filter((adapter) => ids.has(adapter.descriptor.id));
+/** The paths each adapter has a step on in the plan. */
+const planned = (plan: Plan): Map<string, Set<string>> => {
+  const paths = new Map<string, Set<string>>();
+  for (const entry of plan.paths) {
+    for (const step of entry.steps) {
+      paths.set(
+        step.adapter,
+        (paths.get(step.adapter) ?? new Set<string>()).add(entry.path)
+      );
+    }
+  }
+  return paths;
 };
 
 /**
  * Asks each adapter in the plan for the config of the tool it replaces. This
  * runs before the first write, while the adapters can still see what the new
- * files will be made from.
+ * files will be made from. An adapter that is switched off has no step and is
+ * not asked. One whose own file is left out of the run cannot carry anything
+ * into it, and that is a reason to keep the old files.
  */
 export const oldConfigs = async (
   adapters: readonly Adapter[],
   plan: Plan,
   root: string
 ): Promise<Old> => {
+  const paths = planned(plan);
   const found = await Promise.all(
-    planned(adapters, plan).map(
-      async (adapter) => (await adapter.retires?.(root)) ?? null
-    )
+    adapters.map(async (adapter) => {
+      const mine = paths.get(adapter.descriptor.id);
+      const old = mine === undefined ? null : await adapter.retires?.(root);
+      if (mine === undefined || old === null || old === undefined) {
+        return null;
+      }
+      const missing = old.needs.filter((need) => !mine.has(need));
+      return missing.length === 0 || old.files.length === 0
+        ? old
+        : {
+            ...old,
+            keep: [
+              `${missing.join(", ")} is left out of this setup, so nothing was carried over from ${old.files.join(", ")}. Take it out of \`exclude\` and any override that switches it off, or move the settings by hand.`,
+              ...old.keep,
+            ],
+          };
+    })
   );
   const all = found.flatMap((one) => (one === null ? [] : [one]));
   return {

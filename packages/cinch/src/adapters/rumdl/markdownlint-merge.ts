@@ -1,4 +1,4 @@
-import { leftOn } from "./markdownlint-off.ts";
+import { leftOff, leftOn } from "./markdownlint-off.ts";
 import { comment, render } from "./markdownlint-render.ts";
 import { lookup, option } from "./markdownlint-stated.ts";
 import type { KnownRule } from "./markdownlint-stated.ts";
@@ -86,6 +86,7 @@ const planned = (input: {
   readonly sections: Sections;
   readonly same: Sections;
   readonly off: readonly string[];
+  readonly on: readonly string[];
   readonly headers: ReadonlySet<string>;
 }): Plan => {
   const { file, have, headers, sections } = input;
@@ -134,6 +135,12 @@ const planned = (input: {
       global: isTable(global) ? global : {},
       idOf,
       off: input.off,
+    }),
+    ...leftOff({
+      file,
+      global: isTable(global) ? global : {},
+      idOf,
+      on: input.on,
     })
   );
   return plan;
@@ -188,6 +195,8 @@ export const merge = (input: {
   readonly same?: Sections;
   /** The IDs of the rules the old config switched off. */
   readonly off?: readonly string[];
+  /** The IDs of the rules the old config switched on. */
+  readonly on?: readonly string[];
 }):
   | {
       readonly ok: true;
@@ -207,6 +216,7 @@ export const merge = (input: {
     headers,
     known: input.known,
     off: input.off ?? [],
+    on: input.on ?? [],
     same: input.same ?? {},
     sections: input.sections,
   });

@@ -37,3 +37,35 @@ export const leftOn = (input: {
       ]
     : [];
 };
+
+/**
+ * The other direction: a rule the old config switched on that the lists in
+ * the file being adopted switch off. Its `disable` lists name it, or its
+ * `enable` list names the only rules to run and leaves it out.
+ */
+export const leftOff = (input: {
+  /** The old config, for messages. */
+  readonly file: string;
+  /** The IDs of the rules the old config switched on. */
+  readonly on: readonly string[];
+  /** The `[global]` table of the file being adopted. */
+  readonly global: Readonly<Record<string, unknown>>;
+  readonly idOf: (name: string) => string | undefined;
+}): string[] => {
+  const { file, global, idOf } = input;
+  const ids = (names: unknown): string[] =>
+    strings(names).map((name) => idOf(name) ?? name);
+  const off = new Set([
+    ...ids(global.disable),
+    ...ids(global["extend-disable"]),
+  ]);
+  const only = ids(global.enable);
+  const stopped = input.on.filter(
+    (id) => off.has(id) || (only.length > 0 && !only.includes(id))
+  );
+  return stopped.length > 0
+    ? [
+        `${file} switches on ${stopped.join(", ")}, and the lists of rules here switch that off. The lists here were kept.`,
+      ]
+    : [];
+};

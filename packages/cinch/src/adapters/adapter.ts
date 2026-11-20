@@ -75,6 +75,11 @@ export interface Retired {
   readonly files: readonly string[];
   /** Why they should stay for now, one line each. Empty when they can go. */
   readonly keep: readonly string[];
+  /**
+   * Root-relative files of the adapter's own that hold what was carried
+   * over. The old files stay unless each of them is part of the run.
+   */
+  readonly needs: readonly string[];
   /** Other traces of the old tool, which Cinch reports and does not remove. */
   readonly leftovers: readonly string[];
 }

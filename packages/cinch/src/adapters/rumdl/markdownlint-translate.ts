@@ -18,6 +18,8 @@ export interface Translated {
   readonly same: Sections;
   /** The IDs of the rules the old config switched off. */
   readonly off: readonly string[];
+  /** The IDs of the rules the old config switched on by name. */
+  readonly on: readonly string[];
   readonly notes: readonly string[];
   readonly leftover: readonly Leftover[];
 }
@@ -161,5 +163,5 @@ export const translate = (input: {
   const off = sorted(
     strings(imported[GLOBAL]?.disable).flatMap((name) => idOf(name) ?? [])
   );
-  return { leftover, notes, off, same, sections };
+  return { leftover, notes, off, on: sorted(said.enabled), same, sections };
 };

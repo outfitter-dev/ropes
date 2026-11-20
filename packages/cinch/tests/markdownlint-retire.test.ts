@@ -77,6 +77,7 @@ withEngine("rules that all carry over leave no reason to keep", async () => {
     files: [OLD],
     keep: [],
     leftovers: [],
+    needs: [CONFIG_PATH],
   });
 });
 
@@ -90,7 +91,12 @@ withEngine(
         ignores: ["CHANGELOG.md"],
       }),
     });
-    expect(found).toEqual({ files: [RUNNER], keep: [], leftovers: [] });
+    expect(found).toEqual({
+      files: [RUNNER],
+      keep: [],
+      leftovers: [],
+      needs: [CONFIG_PATH],
+    });
   }
 );
 
@@ -113,6 +119,45 @@ withEngine(
     expect(found?.keep).toEqual([
       `\`indent\` on MD007 is 4 in ${OLD} and 2 here. The value here was kept.`,
     ]);
+  }
+);
+
+withEngine(
+  "a rule the old config switches on and this config off keeps it",
+  async () => {
+    const found = await asked({
+      [CONFIG_PATH]: '[global]\ndisable = ["ul-indent"]\n',
+      [OLD]: JSON.stringify({ MD007: true }),
+    });
+    expect(found?.keep).toEqual([
+      `${OLD} switches on MD007, and the lists of rules here switch that off. The lists here were kept.`,
+    ]);
+  }
+);
+
+withEngine(
+  "init --yes keeps the old config when its target is excluded",
+  async () => {
+    const files = {
+      [OLD]: RULES,
+      "cinch.toml": `pilot = 0\nexclude = [${JSON.stringify(CONFIG_PATH)}]\n`,
+    };
+    await inRoot(files, async (root) => {
+      const commands = createCommands({ adapters: adaptersFor });
+      const done = await commands.init?.({
+        cwd: root,
+        json: true,
+        paths: [],
+        yes: true,
+      });
+      const report = InitReportSchema.parse(JSON.parse(done?.output ?? "null"));
+      expect(report.retired.removed).toBe(false);
+      expect(report.retired.reasons[0]).toStartWith(
+        `${CONFIG_PATH} is left out of this setup`
+      );
+      expect(await Bun.file(path.join(root, OLD)).exists()).toBe(true);
+      expect(await Bun.file(path.join(root, CONFIG_PATH)).exists()).toBe(false);
+    });
   }
 );
 
