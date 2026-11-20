@@ -15,12 +15,19 @@ const HOOK_FILES = [
   ".lefthook.yml",
   ".lefthook.yaml",
   ".pre-commit-config.yaml",
-  ".lintstagedrc",
-  ".lintstagedrc.json",
-  ".lintstagedrc.yaml",
-  ".lintstagedrc.yml",
 ];
-const HOOK_GLOBS = [".husky/*", `${WORKFLOWS}/*.yml`, `${WORKFLOWS}/*.yaml`];
+/**
+ * The lint-staged globs take in its script configs as well. Those are read
+ * as text and never run.
+ */
+const HOOK_GLOBS = [
+  ".husky/*",
+  ".lintstagedrc",
+  ".lintstagedrc.*",
+  "lint-staged.config.*",
+  `${WORKFLOWS}/*.yml`,
+  `${WORKFLOWS}/*.yaml`,
+];
 
 const Names = z.record(z.string(), z.unknown());
 const Package = z.looseObject({

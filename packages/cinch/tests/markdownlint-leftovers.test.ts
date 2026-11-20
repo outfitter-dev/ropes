@@ -83,6 +83,23 @@ test("hooks and workflows that call it are named, and others are not", async () 
   ]);
 });
 
+test("a lint-staged config is named whatever form it is written in", async () => {
+  expect(
+    await found({
+      ".lintstagedrc": '{ "*.md": "markdownlint-cli2 --fix" }\n',
+      ".lintstagedrc.cjs":
+        "module.exports = { '*.md': 'markdownlint-cli2 --fix' };\n",
+      ".lintstagedrc.yml": "'*.ts': oxlint\n",
+      "lint-staged.config.js":
+        "export default { '*.md': 'markdownlint-cli2 --fix' };\n",
+    })
+  ).toEqual([
+    ".lintstagedrc still mentions markdownlint.",
+    ".lintstagedrc.cjs still mentions markdownlint.",
+    "lint-staged.config.js still mentions markdownlint.",
+  ]);
+});
+
 test("leftovers are reported even when no config file is left", async () => {
   const preset = rumdlPresetAdapter();
   const result = await inRoot(
