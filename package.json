@@ -9,6 +9,7 @@
   "type": "module",
   "scripts": {
     "bootstrap": "bash scripts/bootstrap.sh",
+    "build:binary": "bun packages/cinch/scripts/build-binary.ts",
     "check": "bun run cinch check && bun run test",
     "cinch": "bun packages/cinch/src/cli.ts",
     "fix": "bun run cinch fix",

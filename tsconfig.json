@@ -3,6 +3,7 @@
   "include": [
     "packages/*/src/**/*.ts",
     "packages/*/tests/**/*.ts",
+    "packages/*/scripts/*.ts",
     "tests/*.ts",
     "tests/fixtures/typed-lint/*.ts",
     "*.config.ts",
