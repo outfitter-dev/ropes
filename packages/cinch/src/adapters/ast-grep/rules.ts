@@ -1,4 +1,4 @@
-import { Glob } from "bun";
+import { shippedFolder } from "../shipped-text.ts";
 
 /** Where this Cinch keeps the rules it ships, one folder for each pack. */
 const SHIPPED = new URL("../../../rules/", import.meta.url);
@@ -9,11 +9,10 @@ const SHIPPED = new URL("../../../rules/", import.meta.url);
  * version and no copy can go stale.
  */
 export const shippedRules = async (): Promise<string> => {
-  const files = await Array.fromAsync(
-    new Glob("*/*.yml").scan({ cwd: SHIPPED.pathname })
-  );
-  const texts = await Promise.all(
-    files.toSorted().map((file) => Bun.file(new URL(file, SHIPPED)).text())
-  );
-  return texts.map((text) => text.trim()).join("\n---\n");
+  const files = await shippedFolder(SHIPPED);
+  return [...files.entries()]
+    .filter(([file]) => file.endsWith(".yml"))
+    .toSorted(([left], [right]) => (left < right ? -1 : 1))
+    .map(([, text]) => text.trim())
+    .join("\n---\n");
 };

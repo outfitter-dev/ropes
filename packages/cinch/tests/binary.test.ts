@@ -96,3 +96,23 @@ test("the binary finds what the package finds", async () => {
   expect(alone.exitCode).toBe(1);
   expect(alone).toEqual(packaged);
 });
+
+test("the binary carries the rules Cinch ships", async () => {
+  const engine = Bun.which("ast-grep");
+  const searchPath = engine === null ? null : path.dirname(engine);
+  if (searchPath === null || Bun.which("bun", { PATH: searchPath }) !== null) {
+    console.warn(
+      "skipped: needs ast-grep on PATH, in a folder that holds no bun"
+    );
+    return;
+  }
+  const root = await repo("rules");
+  await Bun.write(
+    path.join(root, "cinch.toml"),
+    'pilot = 0\ninclude = ["**/*.json"]\n\n[rules]\nenabled = true\n'
+  );
+  await Bun.write(path.join(root, "tsconfig.json"), "{}\n");
+  const alone = await run([binary, "check", "tsconfig.json"], root, searchPath);
+  expect(alone.stdout).toContain("config/tsconfig-extends");
+  expect(alone.exitCode).toBe(1);
+});
