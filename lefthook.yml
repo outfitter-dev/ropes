@@ -9,25 +9,15 @@
 
 pre-commit:
   commands:
-    format:
-      glob: "*.{ts,js,mjs,cjs,json,jsonc,md,yml,yaml,toml}"
-      run: bun fmt --no-script {staged_files}
-      stage_fixed: true
-      env:
-        GIT_PAGER: cat
-    # Runs after `format`, on the Markdown that is staged. It fixes what the
-    # plan allows, stages the result, and stops the commit when a finding is
-    # left or the engine could not run. It writes no file Cinch keeps: when
-    # the setup needs repair it stops and says to run `cinch doctor --fix`.
-    markdown:
-      glob: "*.md"
+    # Lints, type checks and formats what is staged, through the same plan
+    # `bun run check` uses. It fixes what the plan allows, stages the result,
+    # and stops the commit when a finding is left or an engine could not run.
+    # It writes no file Cinch keeps: when the setup needs repair it stops and
+    # says to run `cinch doctor --fix`.
+    cinch:
+      glob: "*.{ts,json,md,yml,yaml,toml}"
       run: bun run cinch fix {staged_files}
       stage_fixed: true
-      env:
-        GIT_PAGER: cat
-    lint:
-      glob: "*.{ts,js,mjs,cjs}"
-      run: bunx oxlint --deny-warnings --no-error-on-unmatched-pattern {staged_files}
       env:
         GIT_PAGER: cat
 

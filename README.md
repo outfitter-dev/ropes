@@ -11,7 +11,7 @@ The Outfitter CLI and the quality tool it is built around.
 
 ## Status
 
-Early. `cinch explain`, `cinch check` and `cinch fix` work on Markdown, `cinch check` also lints TOML, `cinch init` and `cinch preset` set a repository up, and `cinch doctor` keeps that setup right. The `outfitter` package does not exist yet. Nothing is published.
+Early. `cinch explain`, `cinch check` and `cinch fix` work on Markdown, TOML and TypeScript, `cinch init` and `cinch preset` set a repository up, and `cinch doctor` keeps that setup right. The `outfitter` package does not exist yet. Nothing is published.
 
 ## What Cinch does
 
@@ -35,7 +35,7 @@ Every command prints plain text that can be piped, or one JSON document with `--
 | `fix` | The repository's own files: what the plan's engines fix |
 | `doctor --fix` | The presets and generated configs Cinch keeps under `.outfitter/configs/`, a root config Cinch creates when there is none, and the `extends` line in one a person wrote |
 
-`init` and `preset add` or `update` write the same files as `doctor --fix`, through the same steps. Only `init` also carries an older tool's settings over. [Outcomes and exit codes](docs/exit-codes.md) has the full contract, and [Selecting files](docs/selection.md) says which files a command looks at. Markdown is held to [the Markdown standard](docs/markdown-standard.md), which also formats fenced TypeScript and JavaScript. A TypeScript repository can ask for the shared lint, formatter and compiler presets, and have Cinch run the linter and the formatter: see [the TypeScript standard](docs/typescript-standard.md).
+`init` and `preset add` or `update` write the same files as `doctor --fix`, through the same steps. Only `init` also carries an older tool's settings over. [Outcomes and exit codes](docs/exit-codes.md) has the full contract, and [Selecting files](docs/selection.md) says which files a command looks at. Markdown is held to [the Markdown standard](docs/markdown-standard.md), which also formats fenced TypeScript and JavaScript. A TypeScript repository can ask for the shared lint, formatter and compiler presets, and have Cinch run the linter, the type check and the formatter: see [the TypeScript standard](docs/typescript-standard.md).
 
 The first profile is Markdown. TOML is the second: every TOML file must parse, and one with a schema must fit it. Formatting TOML stays with the formatter.
 
@@ -107,9 +107,9 @@ bun run check
 bun run cinch --help
 ```
 
-`bun run check` ends with `cinch check` on this repository, reading the root `cinch.toml`. That step needs the pinned rumdl and Taplo on `PATH`. With mise activated in your shell it is. Otherwise run `mise exec -- bun run check`. Without them the step is incomplete and the check fails, which is the point: a check that could not run is not a pass.
+`bun run check` is `cinch check` on this repository, then the tests. `cinch check` reads the root `cinch.toml` and runs the linters, the type check and the formatter, so there is no separate lint, format or type check script. `bun run fix` is `cinch fix`. `cinch check` needs the pinned rumdl and Taplo on `PATH`. With mise activated in your shell it is. Otherwise run `mise exec -- bun run check`. Without them the step is incomplete and the check fails, which is the point: a check that could not run is not a pass.
 
-The pre-commit hook runs `cinch fix` on the Markdown you staged, after the formatter. It stages what it fixed and stops the commit when a finding is left or the engine could not run. It also stops, without fixing anything, when the Cinch setup needs repair, and says to run `cinch doctor --fix`. It works on the file in your working tree, so a partly staged Markdown file is staged whole.
+The pre-commit hook runs `cinch fix` on the files you staged. It stages what it fixed and stops the commit when a finding is left, a type error included, or an engine could not run. It also stops, without fixing anything, when the Cinch setup needs repair, and says to run `cinch doctor --fix`. It works on the file in your working tree, so a partly staged file is staged whole.
 
 [Rolling Cinch out](docs/rollout.md) lists the other Outfitter repositories and what each needs first.
 

@@ -216,6 +216,16 @@
               }
             },
             "additionalProperties": false
+          },
+          "typescript": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "description": "Whether the matching files are type checked.",
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
           }
         },
         "required": ["paths"],
@@ -257,6 +267,10 @@
       "properties": {
         "preset": {
           "description": "Whether Cinch keeps the shared TypeScript compiler options in the repository. Off unless set to true.",
+          "type": "boolean"
+        },
+        "enabled": {
+          "description": "Whether TypeScript is type checked. Off unless set to true.",
           "type": "boolean"
         }
       },

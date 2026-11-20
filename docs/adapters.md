@@ -130,6 +130,18 @@ An adapter takes a root and the files of a batch and returns data. It does not r
 - Oxlint states how many files it linted. When that is not the number it was given, it left a file out without saying which, and every file of that run is incomplete. A report that cannot be read, or an exit code of 1 with nothing in the report, is incomplete too.
 - A warning is a finding. `cinch check` exits 1 on one, as `oxlint --deny-warnings` does.
 
+## The type check
+
+`adapters/bun-check/` type checks TypeScript with [`bun check`](https://bun.com/docs/runtime/check). It runs once for the files of a batch, from the repository root. The compiler takes each file's options from the nearest `tsconfig.json` above it, and reads what the files import. It never writes, so `fix` only checks. There is no `tsc` step.
+
+- It is off until the Cinch config sets `typescript.enabled = true`, and `include` has to name the files.
+- The tool is Bun itself, so the `bun` pin in `mise.toml` is the pin. Without one the adapter accepts the 1.x releases from 1.4.4, the version its output mapping was checked against. It runs `bun check --no-script`, so a `check` script in `package.json` is never run in its place.
+- A finding keeps the compiler's own code, such as `TS2322`, with the lines that continue the message.
+- An error in a file the run was not given, one that a given file imports, is not reported. It belongs to the run that is given that file. `cinch check` on the workspace is given every file.
+- When a file does not parse, the compiler checks no types at all. That file has its finding, and the adapter checks the others again without it. A file that is still unchecked, because something it imports does not parse, is incomplete.
+- On GitHub Actions the compiler prints each error a second time, as a workflow command that annotates the pull request. The adapter passes those lines over, and does not use a run that has a different number of them than of errors.
+- The run is used only when its exit code, the number of errors it says it found and the errors it printed agree. An error with no place, or one in a `tsconfig.json`, makes every file of the run incomplete, with the compiler's message.
+
 ## The formatter
 
 `adapters/bun-fmt/` formats with `bun fmt`, which is [oxfmt](https://oxc.rs/docs/guide/usage/formatter) as Bun ships it. It runs once for the files of a batch, from the repository root, and reads the repository's own `oxfmt.config.ts` there. It covers TypeScript and JavaScript, JSON, YAML, TOML, Markdown, CSS, HTML, Vue, GraphQL and Handlebars. In `fix` it writes.
@@ -140,4 +152,4 @@ An adapter takes a root and the files of a batch and returns data. It does not r
 - The formatter passes over a file that an ignore file or its own config leaves out, and says nothing. So the adapter first asks which of the files it would format (`--list-files`). A file that is there and that the formatter leaves out is incomplete, never passed. Leave such a file out of the Cinch config too, with `exclude` or an override that sets `format.enabled = false`.
 - Each file is handed over as `./file`. The formatter reads a name that starts with `!` as files to leave out, and would then take the whole folder.
 - A fixing run is followed by a check, and the adapter reports what the check finds. A file the formatter could not write is incomplete, with the reason it gave.
-- Markdown and TOML also have a linter. The linter runs first and the formatter after it, so the formatter has the last word on layout.
+- The formatter is the last step on a file. Markdown, TOML and TypeScript have a linter that runs before it, so the formatter has the last word on layout.
