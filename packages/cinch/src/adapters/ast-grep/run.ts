@@ -10,6 +10,14 @@ import { shippedIds, shippedRules } from "./rules.ts";
 
 type Local = Extract<LocalRules, { ok: true }>;
 
+/**
+ * What one batch has asked about its local rules. A rule the engine refuses
+ * is refused for every file, so the question is put once for the batch.
+ */
+interface Asked {
+  refused: Promise<string | null> | null;
+}
+
 const firstLine = (text: string): string =>
   text
     .split("\n")
@@ -41,8 +49,13 @@ const start = async (
   binary: string,
   source: string,
   input: StepInput,
-  local: Local
+  local: Local,
+  asked: Asked
 ): Promise<FileOutcome[]> => {
+  const known = asked.refused === null ? null : await asked.refused;
+  if (known !== null) {
+    return allIncomplete(input, known);
+  }
   const rules = [shippedRules(input.rules), ...local.texts]
     .filter((text) => text !== "")
     .join("\n---\n");
@@ -52,7 +65,8 @@ const start = async (
   );
   const said = errorCount(exitCode, stderr);
   if (said === null) {
-    const refused = await refusedFile(binary, input.root, local.files);
+    asked.refused ??= refusedFile(binary, input.root, local.files);
+    const refused = await asked.refused;
     return allIncomplete(
       input,
       refused ?? `${source} exited ${exitCode}: ${firstLine(stderr)}`
@@ -100,12 +114,13 @@ export const scanBatch = async (
     input.paths.map((file) => Bun.file(path.join(input.root, file)).exists())
   );
   const paths = input.paths.filter((_, index) => present[index] === true);
+  const asked: Asked = { refused: null };
   const scanned =
     paths.length === 0 ||
     (input.rules?.length === 0 && local.texts.length === 0)
       ? []
       : await inChunks({ ...input, paths }, (part) =>
-          start(binary, source, part, local)
+          start(binary, source, part, local, asked)
         );
   const byPath = new Map(scanned.map((outcome) => [outcome.path, outcome]));
   // Only a file another adapter keeps is planned before it exists. Its
