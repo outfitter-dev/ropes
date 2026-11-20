@@ -15,6 +15,15 @@ pre-commit:
       stage_fixed: true
       env:
         GIT_PAGER: cat
+    # Runs after `format`, on the Markdown that is staged. It fixes what the
+    # plan allows, stages the result, and stops the commit when a finding is
+    # left or the engine could not run.
+    markdown:
+      glob: "*.md"
+      run: bun run cinch fix {staged_files}
+      stage_fixed: true
+      env:
+        GIT_PAGER: cat
     lint:
       glob: "*.{ts,js,mjs,cjs}"
       run: bunx oxlint --deny-warnings --no-error-on-unmatched-pattern {staged_files}
