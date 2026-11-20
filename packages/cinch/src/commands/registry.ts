@@ -6,6 +6,7 @@ import { fix } from "./fix.ts";
 import { init } from "./init.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { preset } from "./preset.ts";
+import { schema } from "./schema.ts";
 
 /**
  * Commands take a typed request and return data. They never parse arguments
@@ -19,6 +20,7 @@ export const createCommands = (
   fix: fix(deps),
   init: init(deps),
   preset: preset(deps),
+  schema,
 });
 
 export const commands = createCommands({ adapters: adaptersFor });
