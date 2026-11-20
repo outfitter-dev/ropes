@@ -2,6 +2,7 @@ import type { Adapter, FileOutcome, StepOutcome } from "../adapters/adapter.ts";
 import type { Plan, PlanBatch } from "../contracts/plan.ts";
 import { outcomeOf } from "../contracts/result.ts";
 import type { Result, StepResult } from "../contracts/result.ts";
+import { compareFacts } from "./facts.ts";
 import { probeAdapter, threw, versionProblem } from "./ready.ts";
 import type { Readiness } from "./ready.ts";
 
@@ -102,7 +103,8 @@ const runBatch = async (
 /**
  * Runs a plan through adapters, one start of an engine for each batch. It
  * never branches on which adapter it holds. A step that could not run marks
- * every file of its batch incomplete, never passed.
+ * every file of its batch incomplete, never passed. When the plan names
+ * shared facts, it then compares what the tools resolve for them.
  */
 export const runPlan = async (
   plan: Plan,
@@ -127,7 +129,17 @@ export const runPlan = async (
     }
   }
   // Reported file by file, in the order the plan lists them.
-  const steps = plan.paths.flatMap((planned) => byPath.get(planned.path) ?? []);
+  const ran = plan.paths.flatMap((planned) => byPath.get(planned.path) ?? []);
+  // Compared last, so a config a step of this run wrote is the one read.
+  const compared =
+    plan.facts === undefined
+      ? []
+      : await compareFacts(plan.facts, plan.root, async (id) => {
+          const { adapter, probe } = ready(id);
+          const found = await probe;
+          return found?.problem === undefined ? adapter : undefined;
+        });
+  const steps = [...ran, ...compared];
   return {
     outcome: outcomeOf(steps),
     plan,

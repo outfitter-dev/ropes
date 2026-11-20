@@ -1,3 +1,4 @@
+import type { FactReport } from "../contracts/facts.ts";
 import type { Finding } from "../contracts/finding.ts";
 import type { Layer } from "../contracts/plan.ts";
 import type { StepStatus } from "../contracts/result.ts";
@@ -59,6 +60,13 @@ export interface AdapterDescriptor {
    * through, by root-relative path. `explain` names it.
    */
   readonly layers?: Readonly<Record<string, Layer>>;
+  /**
+   * The shared facts this adapter can report its tool's value for, by the
+   * names the `[editor]` table uses. An empty list says the tool has such
+   * settings and the adapter cannot report them. Leave it out for a tool
+   * that has none.
+   */
+  readonly reports?: readonly string[];
 }
 
 export interface ProbeResult {
@@ -167,4 +175,9 @@ export interface Adapter {
    * it found and never learns which tool it reads.
    */
   readonly migrates?: readonly MigrationSource[];
+  /**
+   * What the tool resolves for the facts the descriptor says it reports,
+   * each with the file that sets it. It reads, and never writes.
+   */
+  readonly facts?: (root: string) => Promise<FactReport>;
 }

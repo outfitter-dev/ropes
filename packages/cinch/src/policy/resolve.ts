@@ -9,6 +9,7 @@ import type {
   Selection,
 } from "../contracts/plan.ts";
 import { batchesFor, inRunOrder, packageOf, toStep } from "./batches.ts";
+import { sharedFacts } from "./facts.ts";
 import { compileGlobs } from "./glob.ts";
 import type { Matcher } from "./glob.ts";
 
@@ -164,8 +165,11 @@ export const resolvePlan = (input: ResolveInput): Plan => {
     ...paths.filter((path) => kept.has(path)),
     ...paths.filter((path) => !kept.has(path)),
   ].map((path) => plan(path, input, scope));
+  const batches = batchesFor(planned, input.descriptors);
+  const facts = sharedFacts(input.config, input.descriptors, batches);
   return {
-    batches: batchesFor(planned, input.descriptors),
+    batches,
+    ...(facts === undefined ? {} : { facts }),
     paths: planned,
     root: input.root,
     schemaVersion: SCHEMA_VERSION,

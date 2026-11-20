@@ -36,5 +36,6 @@ Every key is optional. Cinch writes only what the table states, and ships no def
 ## Not yet
 
 - `cinch init` does not yet read an existing `.editorconfig` into the table. Move the values by hand.
+- Cinch does not yet write these facts into other tools' configs. It does report a tool's config that states one differently: see [shared facts](shared-facts.md).
 - Cinch does not yet hold files to these facts. The checks that will do so read the same table, so there stays one source.
 - A key the table does not know, such as `tab_width`, cannot be stated.

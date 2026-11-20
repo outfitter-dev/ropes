@@ -7,6 +7,7 @@ import type {
   PolicyValue,
   Provenance,
 } from "../contracts/plan.ts";
+import { factsBlock } from "./facts.ts";
 
 export type { ToolStatus } from "../contracts/doctor.ts";
 
@@ -113,6 +114,7 @@ export const renderPlan = (plan: Plan, context: PlanContext): string =>
       `Config: ${context.configFile ?? "none, so the defaults apply"}`,
     ].join("\n"),
     ...plan.paths.map(pathBlock(plan.batches)),
+    ...(plan.facts === undefined ? [] : [factsBlock(plan.facts)]),
     ...(context.tools.length === 0
       ? []
       : [["Tools", ...context.tools.map(toolLine)].join("\n")]),
