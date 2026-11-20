@@ -10,8 +10,9 @@ const quoted = (globs: readonly string[]): string =>
 /**
  * One line for each named pack that would not run on any file here, because
  * the config leaves out every file the pack reads. A pack runs only on a
- * file the plan covers, so naming it is not enough on its own. A pack whose
- * files could not be planned gets no line.
+ * file the plan covers, so naming it is not enough on its own. A file an
+ * adapter keeps is Cinch setup, so it is not one of those files and never
+ * counts as covered. A pack whose files could not be planned gets no line.
  */
 export const unreached = async (
   request: CommandRequest,
@@ -25,12 +26,16 @@ export const unreached = async (
     readonly root: string;
   }
 ): Promise<string[]> => {
+  const kept = new Set(
+    given.adapters.flatMap(({ descriptor }) => descriptor.owns ?? [])
+  );
+  const own = given.present.filter((file) => !kept.has(file));
   const packs = given.adapters
     .flatMap(({ descriptor }) => descriptor.packs ?? [])
     .filter((pack) => given.names.includes(pack.name))
     .map((pack) => ({
       ...pack,
-      files: given.present.filter(compileGlobs(pack.relevant)),
+      files: own.filter(compileGlobs(pack.relevant)),
     }))
     .filter((pack) => pack.files.length > 0);
   if (packs.length === 0) {

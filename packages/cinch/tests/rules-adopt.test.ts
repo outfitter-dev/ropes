@@ -241,6 +241,17 @@ test("a pack with one file the config covers gets no such note", async () => {
   expect(await report().then((one) => one.notes)).toEqual([]);
 });
 
+test("a kept preset the plan covers still notes the files left beside it", async () => {
+  await put(".outfitter/configs/presets/tsconfig.json", "{}\n");
+  await put(
+    "cinch.toml",
+    "pilot = 0\n\n[rules]\nenabled = true\n\n[typescript]\npreset = true\n"
+  );
+  expect(await report().then((one) => one.notes)).toEqual([
+    'config will not run yet: cinch.toml leaves out the files it reads, such as tsconfig.json. Add "**/tsconfig.json" to `include` to run it.',
+  ]);
+});
+
 test("the same note is given from a directory under the root", async () => {
   await put("cinch.toml", "pilot = 0\n\n[rules]\nenabled = true\n");
   await mkdir(path.join(root, "docs"));
