@@ -11,6 +11,7 @@ import { renderFailureJson } from "./render/failure.ts";
 const HELP = `cinch ${manifest.version}
 
 Usage: cinch <command> [path...] [--json] [--dry-run] [--yes] [--fix]
+       [--strict]
 
 Commands:
   explain   Show the plan for a path without running anything
@@ -29,6 +30,10 @@ Commands:
             preset eject <name>    Move them back out (--yes to write it)
   schema    Print the JSON Schema of a command's --json output
             schema [command]       With no command, list the names
+
+A tool newer than its pin still runs, with a note, while it is inside the
+range Cinch was tested on. With --strict, or when CI=true, only the exact pin
+will do.
 
 Every command prints plain text, or one JSON document with --json. A command
 that could not run prints its reason on stderr, as JSON when --json is given.
@@ -56,6 +61,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
       fix: { type: "boolean" },
       help: { short: "h", type: "boolean" },
       json: { type: "boolean" },
+      strict: { type: "boolean" },
       version: { short: "v", type: "boolean" },
       yes: { short: "y", type: "boolean" },
     },
@@ -87,6 +93,8 @@ const main = async (argv: readonly string[]): Promise<number> => {
     fix: values.fix === true,
     json: values.json === true,
     paths: name === "preset" ? names : paths,
+    // CI holds tools to their exact pins without being asked.
+    strict: values.strict === true || process.env.CI === "true",
     yes: values.yes === true,
   };
   const response = await command(request);

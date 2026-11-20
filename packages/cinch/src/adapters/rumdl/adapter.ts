@@ -7,6 +7,7 @@ import type {
 } from "../adapter.ts";
 import { markFixed } from "../changed.ts";
 import { exec } from "../exec.ts";
+import { heldTo } from "../pins.ts";
 import { REPORTS, readFacts } from "./facts.ts";
 import { runBatch } from "./run.ts";
 
@@ -35,6 +36,7 @@ const VERSION = /\d+\.\d+\.\d+/u;
 export const rumdlAdapter = (options: RumdlOptions = {}): Adapter => {
   const command = options.command ?? ID;
   const descriptor: AdapterDescriptor = {
+    ...heldTo(options.version, SUPPORTED_RANGE),
     enabledBy: "markdown.enabled",
     extensions: [".md"],
     id: ID,
@@ -42,7 +44,6 @@ export const rumdlAdapter = (options: RumdlOptions = {}): Adapter => {
     reports: REPORTS,
     tool: ID,
     unit: "file",
-    versionRange: options.version ?? SUPPORTED_RANGE,
     writes: true,
   };
   const probe = async (): Promise<ProbeResult> => {

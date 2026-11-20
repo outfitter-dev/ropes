@@ -1,4 +1,4 @@
-import type { Adapter } from "../adapters/adapter.ts";
+import type { Adapter, AdapterDescriptor } from "../adapters/adapter.ts";
 import { readPins } from "../adapters/pins.ts";
 import type { Pins, PinsResult } from "../adapters/pins.ts";
 import { loadConfig } from "../config/load.ts";
@@ -40,13 +40,23 @@ const pinsFor = async (root: RepoRoot): Promise<PinsResult> => {
   return settled ? near : await readPins(root.vcsRoot);
 };
 
+/** The descriptor held to its pin alone, as a strict run reads it. */
+const exactly = ({
+  tested: _tested,
+  ...descriptor
+}: AdapterDescriptor): AdapterDescriptor => descriptor;
+
 /**
  * Everything `explain`, `check` and `fix` share: find the root, load the
  * config and the pins, expand the selection and resolve the plan. All three
  * verbs get their plan here, so none can run what another would not show.
  */
 export const prepare = async (
-  request: { readonly cwd: string; readonly paths: readonly string[] },
+  request: {
+    readonly cwd: string;
+    readonly paths: readonly string[];
+    readonly strict?: boolean;
+  },
   deps: CommandDeps
 ): Promise<PrepareResult> => {
   const found = await discoverRoot(request.cwd);
@@ -83,7 +93,9 @@ export const prepare = async (
   const resolve = (paths: readonly string[]): Plan =>
     resolvePlan({
       config: config.value,
-      descriptors: adapters.map((adapter) => adapter.descriptor),
+      descriptors: adapters.map(({ descriptor }) =>
+        request.strict === true ? exactly(descriptor) : descriptor
+      ),
       packages,
       paths,
       root: root.root,

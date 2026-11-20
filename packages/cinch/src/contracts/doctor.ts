@@ -5,6 +5,8 @@ import { FixReportSchema } from "./fix.ts";
 /** Whether a tool the plan needs can run here. */
 export const ToolStatusSchema = z
   .object({
+    /** Present when the tool runs although it is newer than its pin. */
+    notice: z.string().optional(),
     /** Why the tool cannot run. Absent when it can. */
     problem: z.string().optional(),
     tool: z.string().min(1),

@@ -55,6 +55,11 @@ export const PlanStepSchema = z
      * writes it, and `fix` only checks it.
      */
     setup: z.boolean().optional(),
+    /**
+     * A wider range the step also accepts, with a notice, when the installed
+     * tool is newer than the pin in `versionRange`. Absent in a strict run.
+     */
+    tolerates: z.string().min(1).optional(),
     /** The external tool the adapter drives. */
     tool: z.string().min(1),
     /** The version of the tool the step needs. */

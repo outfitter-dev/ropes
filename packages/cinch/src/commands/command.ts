@@ -4,6 +4,11 @@ export interface CommandRequest {
   readonly cwd: string;
   readonly paths: readonly string[];
   readonly json: boolean;
+  /**
+   * Hold every tool to its exact pin. Without it a tool newer than its pin
+   * and inside the range its adapter was tested on runs, with a notice.
+   */
+  readonly strict?: boolean;
   /** Run on a copy and show the change without writing it. */
   readonly dryRun?: boolean;
   /** `doctor` only: repair the setup. Without it, `doctor` only reports. */

@@ -96,6 +96,7 @@ export const renderHuman = (result: Result): string => {
   return [
     ...pathBlocks(result),
     ...conflictBlocks(result),
+    ...(result.notices ?? []).map((notice) => `Note: ${notice}`),
     summary(result),
     `${verdict} Exit code ${exitCodeOf(result)}.`,
   ].join("\n\n");

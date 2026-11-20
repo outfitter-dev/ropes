@@ -12,6 +12,7 @@ export const packageOf = (path: string, packages: readonly string[]): string =>
 export const toStep = (descriptor: AdapterDescriptor): PlanStep => ({
   adapter: descriptor.id,
   ...(descriptor.setup === true ? { setup: true } : {}),
+  ...(descriptor.tested === undefined ? {} : { tolerates: descriptor.tested }),
   tool: descriptor.tool,
   versionRange: descriptor.versionRange,
   writes: descriptor.writes,
