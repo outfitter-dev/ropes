@@ -1,3 +1,5 @@
+import { enginePath } from "./stand-in.ts";
+
 export interface Exit {
   readonly exitCode: number;
   readonly stdout: string;
@@ -9,8 +11,13 @@ export const exec = async (
   command: readonly string[],
   cwd?: string
 ): Promise<Exit> => {
+  const searchPath = await enginePath();
   const child = Bun.spawn([...command], {
     ...(cwd === undefined ? {} : { cwd }),
+    env: {
+      ...Bun.env,
+      ...(searchPath === undefined ? {} : { PATH: searchPath }),
+    },
     stderr: "pipe",
     stdin: "ignore",
     stdout: "pipe",
