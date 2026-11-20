@@ -25,7 +25,7 @@ A command that could not run at all prints nothing on stdout. Its reason goes to
 ```json
 {
   "error": { "message": "no-such-file.md does not exist." },
-  "schemaVersion": 1
+  "schemaVersion": 2
 }
 ```
 

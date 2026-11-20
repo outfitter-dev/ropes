@@ -67,7 +67,7 @@ process.exit(await child.exited);
     expect(json(traced)).toMatchObject({
       evidence: "planned",
       plan: json(normal),
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
     const excluded = data.value.plan.paths.find(
       (entry) => entry.path === "excluded/old.ts"
