@@ -147,8 +147,8 @@ test("every shipped rule sits in a pack that has a manifest", async () => {
   }
 });
 
-const explain = async (root: string) => {
-  const child = Bun.spawn(["bun", CLI, "explain"], {
+const explain = async (root: string, ...paths: readonly string[]) => {
+  const child = Bun.spawn(["bun", CLI, "explain", ...paths], {
     cwd: root,
     stderr: "pipe",
     stdout: "pipe",
@@ -184,6 +184,23 @@ test("explain names the shipped packs, and refuses a name nothing has", async ()
       'cinch.toml: rules.off: Cinch ships no rule pack or rule named "config/nope".'
     );
     expect(refused.exitCode).toBe(2);
+  } finally {
+    await rm(root, { force: true, recursive: true });
+  }
+});
+
+test("a named file git ignores still makes its pack relevant", async () => {
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-pk-")));
+  try {
+    await Bun.spawn(["git", "init", "--quiet"], { cwd: root }).exited;
+    await Bun.write(path.join(root, ".gitignore"), "tsconfig.json\n");
+    await Bun.write(path.join(root, "tsconfig.json"), "{}\n");
+    await Bun.write(
+      path.join(root, "cinch.toml"),
+      'pilot = 0\ninclude = ["**/*.json"]\n\n[rules]\nenabled = true\n'
+    );
+    const shown = await explain(root, "tsconfig.json");
+    expect(shown.stdout).toContain("config  on, since tsconfig.json is here");
   } finally {
     await rm(root, { force: true, recursive: true });
   }

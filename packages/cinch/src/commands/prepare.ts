@@ -104,7 +104,11 @@ export const prepare = async (
   // of it was selected.
   const shipsPacks = descriptors.some(({ packs }) => packs !== undefined);
   const everything = selection.kind === "workspace" || !shipsPacks;
-  const present = everything ? walked : await filesUnder(root, "");
+  // A file named outright counts even where git ignores it.
+  const present = [
+    ...named,
+    ...(everything ? walked : await filesUnder(root, "")),
+  ];
   const packages = await packagesAbove(root.root, all);
   const resolve = (paths: readonly string[]): Plan =>
     resolvePlan({
