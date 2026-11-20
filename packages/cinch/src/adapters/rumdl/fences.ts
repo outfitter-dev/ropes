@@ -1,4 +1,4 @@
-import type { Unchecked } from "../../contracts/result.ts";
+import type { Finding } from "../../contracts/finding.ts";
 
 /**
  * What rumdl 0.3.5 prints on stderr, with `on-error = "warn"`, when a tool it
@@ -20,8 +20,14 @@ const ERROR = /^error: (?<text>.+)$/mu;
  */
 const CONFIG = /^error: Cannot load the configuration file/mu;
 
+/**
+ * The rule a block that does not parse is reported under. It is Cinch's own
+ * name: rumdl prints a warning for such a block and gives it no rule.
+ */
+export const PARSE_RULE = "code-block-parse";
+
 export type Fences =
-  | { readonly ok: true; readonly unchecked: readonly Unchecked[] }
+  | { readonly ok: true; readonly findings: readonly Finding[] }
   | { readonly ok: false; readonly message: string };
 
 interface Warned {
@@ -58,20 +64,28 @@ const problem = (warned: Warned): string => {
 };
 
 /**
- * Reads the fence warnings of one run. A block that does not parse is left
- * unchecked and named. Any other failure means the formatter did not do its
- * work, so the run is not usable as a result.
+ * Reads the fence warnings of one run. A block that does not parse is a
+ * finding at the line the block starts on. Any other failure means the
+ * formatter did not do its work, so the run is not usable as a result.
  */
-export const readFences = (stderr: string): Fences => {
-  const byLine = new Map<number, Unchecked>();
+export const readFences = (
+  stderr: string,
+  context: { readonly path: string; readonly source: string }
+): Fences => {
+  const byLine = new Map<number, Finding>();
   for (const warned of warnings(stderr)) {
     if (CONFIG.test(warned.body) || !IN_BLOCK.test(warned.body)) {
       return { message: problem(warned), ok: false };
     }
     byLine.set(warned.line, {
-      line: warned.line,
-      reason: `the fenced block does not parse, so it was not formatted: ${detailOf(warned)}`,
+      fixable: false,
+      message: `Code block does not parse, so it was not formatted: ${detailOf(warned)}`,
+      path: context.path,
+      range: { start: { column: 1, line: warned.line } },
+      rule: PARSE_RULE,
+      severity: "error",
+      source: context.source,
     });
   }
-  return { ok: true, unchecked: [...byLine.values()] };
+  return { findings: [...byLine.values()], ok: true };
 };

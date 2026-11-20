@@ -97,16 +97,6 @@ test("a fixed step is reported", () => {
   expect(text).toEndWith("Clean. Exit code 0.");
 });
 
-test("an unchecked part is shown under its file and counted", () => {
-  const unchecked = [{ line: 12, reason: "the fenced block does not parse" }];
-  const text = renderHuman(resultOf([{ ...passed, unchecked }]));
-  expect(text).toContain(
-    "README.md\n  12:1  unchecked  fake: the fenced block does not parse"
-  );
-  expect(text).toContain("1 part left unchecked");
-  expect(text).toEndWith("Clean. Exit code 0.");
-});
-
 test("an empty selection is clean and says nothing ran", () => {
   expect(renderHuman(resultOf([]))).toBe(
     "No files selected, so nothing ran.\n\nClean. Exit code 0."

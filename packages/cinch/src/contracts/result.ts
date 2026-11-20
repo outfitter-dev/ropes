@@ -11,20 +11,6 @@ export const StepStatusSchema = z.enum([
 ]);
 export type StepStatus = z.infer<typeof StepStatusSchema>;
 
-/**
- * A part of the file the step left alone on purpose and says so, such as a
- * fenced block that is not valid code. It is not a finding and it does not
- * change the status.
- */
-export const UncheckedSchema = z
-  .object({
-    /** One-based line in the authored file where the part starts. */
-    line: z.number().int().min(1),
-    reason: z.string().min(1),
-  })
-  .readonly();
-export type Unchecked = z.infer<typeof UncheckedSchema>;
-
 export const StepResultSchema = z
   .object({
     adapter: z.string().min(1),
@@ -33,8 +19,6 @@ export const StepResultSchema = z
     /** Why the step is incomplete, when it is. */
     reason: z.string().optional(),
     status: StepStatusSchema,
-    /** Absent when the step checked everything it was given. */
-    unchecked: z.array(UncheckedSchema).readonly().optional(),
   })
   .readonly();
 export type StepResult = z.infer<typeof StepResultSchema>;

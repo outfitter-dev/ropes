@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { readFences } from "../src/adapters/rumdl/fences.ts";
+import type { Finding } from "../src/contracts/finding.ts";
 
 const PARSE = [
   "Warning: docs/a.md:5: [bun] error: '}' expected.",
@@ -14,38 +15,48 @@ const PARSE = [
   "",
 ].join("\n");
 
-const reason = (detail: string): string =>
-  `the fenced block does not parse, so it was not formatted: ${detail}`;
+const context = { path: "docs/a.md", source: "rumdl" };
+const read = (stderr: string) => readFences(stderr, context);
 
-test("no warnings is nothing left unchecked", () => {
-  expect(readFences("")).toEqual({ ok: true, unchecked: [] });
+const finding = (line: number, detail: string): Finding => ({
+  fixable: false,
+  message: `Code block does not parse, so it was not formatted: ${detail}`,
+  path: "docs/a.md",
+  range: { start: { column: 1, line } },
+  rule: "code-block-parse",
+  severity: "error",
+  source: "rumdl",
 });
 
-test("a block that does not parse is named with its line and the error", () => {
-  expect(readFences(PARSE)).toEqual({
-    ok: true,
-    unchecked: [
-      { line: 5, reason: reason("'}' expected.") },
-      { line: 15, reason: reason("Expression expected.") },
+test("no warnings is no findings", () => {
+  expect(read("")).toEqual({ findings: [], ok: true });
+});
+
+test("a block that does not parse is a finding at the line it starts on", () => {
+  expect(read(PARSE)).toEqual({
+    findings: [
+      finding(5, "'}' expected."),
+      finding(15, "Expression expected."),
     ],
+    ok: true,
   });
 });
 
-test("fix prints each warning twice, and each block is named once", () => {
-  const read = readFences(`${PARSE}\n${PARSE}`);
-  expect(read.ok ? read.unchecked.length : 0).toBe(2);
+test("fix prints each warning twice, and each block is reported once", () => {
+  const twice = read(`${PARSE}\n${PARSE}`);
+  expect(twice.ok ? twice.findings.length : 0).toBe(2);
 });
 
-test("a config that did not load is a failure, not a skipped block", () => {
+test("a config that did not load is a failure, not a finding", () => {
   const stderr = [
     "Warning: a.md:5: [bun] error: Cannot load the configuration file /r/oxfmt.config.ts:",
     "1 | export default {",
     "error: Unexpected end of file",
     "    at /r/oxfmt.config.ts:1:17",
   ].join("\n");
-  const read = readFences(stderr);
-  expect(read.ok).toBe(false);
-  expect(read.ok ? "" : read.message).toContain("config did not load");
+  const failed = read(stderr);
+  expect(failed.ok).toBe(false);
+  expect(failed.ok ? "" : failed.message).toContain("config did not load");
 });
 
 test("a block that quotes the config message is still a block", () => {
@@ -54,14 +65,14 @@ test("a block that quotes the config message is still a block", () => {
     "error: Expression expected.",
     "    at _.ts:1:55",
   ].join("\n");
-  expect(readFences(stderr)).toEqual({
+  expect(read(stderr)).toEqual({
+    findings: [finding(5, "Expression expected.")],
     ok: true,
-    unchecked: [{ line: 5, reason: reason("Expression expected.") }],
   });
 });
 
 test("a failure that is not placed in the block is a failure", () => {
-  expect(readFences("Warning: a.md:5: [bun] error: out of memory\n")).toEqual({
+  expect(read("Warning: a.md:5: [bun] error: out of memory\n")).toEqual({
     message: "it could not check the fenced block at line 5: out of memory",
     ok: false,
   });
@@ -72,10 +83,10 @@ test("a block cannot forge the place of its own error", () => {
     "Warning: a.md:5: [bun] 1 |     at _.ts:1:1",
     "error: something else broke",
   ].join("\n");
-  expect(readFences(stderr).ok).toBe(false);
+  expect(read(stderr).ok).toBe(false);
 });
 
 test("other warnings and plain text are left alone", () => {
   const stderr = "Warning: unknown config key\nsome detail\nnote\n";
-  expect(readFences(stderr)).toEqual({ ok: true, unchecked: [] });
+  expect(read(stderr)).toEqual({ findings: [], ok: true });
 });

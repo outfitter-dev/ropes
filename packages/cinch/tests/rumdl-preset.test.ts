@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { rumdlAdapter } from "../src/adapters/rumdl/adapter.ts";
+import type { Finding } from "../src/contracts/finding.ts";
 
 const PRESET = path.join(import.meta.dir, "..", "presets", "rumdl.toml");
 const CONFIG = `extends = ${JSON.stringify(PRESET)}\n`;
@@ -120,10 +121,8 @@ withEngines(
   }
 );
 
-const BROKEN = "the fenced block does not parse, so it was not formatted: ";
-
 withEngines(
-  "a fence that does not parse is named as unchecked, and the rest is checked",
+  "a fence that does not parse is a finding, and the rest is checked",
   async () => {
     const text = `${fence("const x = {")}\n\`\`\`ts\nconst   y=1\n\`\`\`\n`;
     const [checked, fixed, after] = await inRepo(text, async (root, read) => [
@@ -131,13 +130,22 @@ withEngines(
       await rumdlAdapter().fix(input(root)),
       await read(),
     ]);
-    const unchecked = [{ line: 3, reason: `${BROKEN}'}' expected.` }];
+    const broken: Finding = {
+      fixable: false,
+      message:
+        "Code block does not parse, so it was not formatted: '}' expected.",
+      path: "a.md",
+      range: { start: { column: 1, line: 3 } },
+      rule: "code-block-parse",
+      severity: "error",
+      source: "rumdl",
+    };
     expect(checked.status).toBe("findings");
-    expect(checked.findings.map((finding) => finding.range.start.line)).toEqual(
-      [7]
-    );
-    expect(checked.unchecked).toEqual(unchecked);
-    expect(fixed).toEqual({ findings: [], status: "fixed", unchecked });
+    expect(checked.findings.map((finding) => finding.rule)).toEqual([
+      "code-block-parse",
+      "bun-fmt:ts",
+    ]);
+    expect(fixed).toEqual({ findings: [broken], status: "findings" });
     expect(after).toBe(text.replace("const   y=1", "const y = 1;"));
   }
 );
