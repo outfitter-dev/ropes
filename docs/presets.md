@@ -10,14 +10,20 @@ The first preset is `markdown`. See [markdown-standard.md](markdown-standard.md)
 cinch init
 ```
 
-This prints what Cinch would write, then asks before it writes anything. With no Cinch config it proposes a starting `cinch.toml`. It then proposes every preset that is switched on. Running it again changes nothing, and a config that is already there is never rewritten.
+This is a dry run. It prints what Cinch would write and writes nothing. With no Cinch config it proposes a starting `cinch.toml`. It then proposes every preset that is switched on. A config that is already there is never rewritten.
 
-| Flag        | What it does                                           |
-| ----------- | ------------------------------------------------------ |
-| `--yes`     | Writes without asking. Use this in scripts and from CI |
-| `--dry-run` | Shows the change and stops. It never asks or writes    |
+```sh
+cinch init --yes
+```
 
-Cinch only asks a person at a terminal. When the output is piped, or with `--json`, plain `cinch init` shows the change and writes nothing. It then says to run `cinch init --yes`. With `--json` that line goes to stderr, so stdout stays one JSON report. `--dry-run` wins when both flags are given.
+This writes the change. Running it again changes nothing.
+
+| Flag | What it does |
+| --- | --- |
+| `--yes` | Writes the change. `-y` is the short form |
+| `--dry-run` | States the default out loud. It only shows the change, and it wins over `--yes` |
+
+Cinch never asks a question, so `init` behaves the same at a terminal, in a script and with `--json`.
 
 ## See what a repository has
 

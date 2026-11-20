@@ -18,12 +18,6 @@ export interface CommandResponse {
   readonly output?: string;
   /** Printed to stderr when present. */
   readonly error?: string;
-  /**
-   * Set when the command only showed a change it could make. A caller with a
-   * person at a terminal asks `question` and, on yes, runs the command again
-   * with `yes`. Any other caller prints `otherwise`.
-   */
-  readonly confirm?: { readonly question: string; readonly otherwise: string };
 }
 
 export type Command = (request: CommandRequest) => Promise<CommandResponse>;

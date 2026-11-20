@@ -67,21 +67,17 @@ test("init shows what it would write and writes nothing", async () => {
   expect(await textOf(KEPT)).toBeNull();
 });
 
-test("init offers to write, and --dry-run only shows", async () => {
+test("init only shows the change unless --yes is given", async () => {
+  const hint =
+    "Dry run: nothing was written. Run `cinch init --yes` to write this.";
   const plain = await run("init", { json: false });
-  expect(plain.confirm).toEqual({
-    otherwise: "Run `cinch init --yes` to write this.",
-    question: "Write these files?",
-  });
+  expect(plain.output).toEndWith(hint);
   const dry = await run("init", { dryRun: true, json: false });
-  expect(dry.confirm).toBeUndefined();
-  expect(dry.output).toEndWith("Dry run: nothing was written.");
-  const both = await run("init", { dryRun: true, yes: true });
-  expect(both.confirm).toBeUndefined();
+  expect(dry.output).toBe(plain.output);
+  await run("init", { dryRun: true, yes: true });
   expect(await textOf("cinch.toml")).toBeNull();
   await run("init", { yes: true });
   const settled = await run("init", { json: false });
-  expect(settled.confirm).toBeUndefined();
   expect(settled.output).toEndWith("Nothing to set up.");
 });
 
