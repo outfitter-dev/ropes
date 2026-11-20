@@ -105,6 +105,7 @@ const runBatch = async (
     package: batch.package,
     paths: batch.paths,
     root,
+    ...(batch.rules === undefined ? {} : { rules: batch.rules }),
   };
   try {
     return answered(

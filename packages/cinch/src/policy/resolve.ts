@@ -12,6 +12,7 @@ import { batchesFor, inRunOrder, packageOf, toStep } from "./batches.ts";
 import { sharedFacts } from "./facts.ts";
 import { compileGlobs } from "./glob.ts";
 import type { Matcher } from "./glob.ts";
+import { packStates, rulesOn } from "./packs.ts";
 
 export interface ResolveInput {
   readonly root: string;
@@ -27,6 +28,11 @@ export interface ResolveInput {
    * nearest one above it, or to the workspace when there is none.
    */
   readonly packages: readonly string[];
+  /**
+   * Every root-relative file in the repository. A rule pack applies where
+   * one matches. Left out, there are none and no pack applies.
+   */
+  readonly present?: readonly string[];
 }
 
 interface Scope {
@@ -183,7 +189,22 @@ const plan = (path: string, input: ResolveInput, scope: Scope): PlannedPath => {
  * the plan, including the ones the config leaves out, so `explain` can say
  * why nothing runs on them.
  */
-export const resolvePlan = (input: ResolveInput): Plan => {
+export const resolvePlan = (given: ResolveInput): Plan => {
+  const rules = packStates(
+    given.config,
+    given.descriptors,
+    given.present ?? []
+  );
+  // An adapter that ships rule packs has nothing to run when none is on.
+  const input = {
+    ...given,
+    descriptors: given.descriptors.filter(
+      ({ id, packs }) => packs === undefined || rulesOn(rules, id).length > 0
+    ),
+  };
+  const withPacks = new Set(
+    input.descriptors.flatMap(({ id, packs }) => (packs ? [id] : []))
+  );
   const scope: Scope = {
     excluded: compileGlobs(input.config.exclude.value),
     included: compileGlobs(input.config.include.value),
@@ -199,13 +220,18 @@ export const resolvePlan = (input: ResolveInput): Plan => {
     ...paths.filter((path) => kept.has(path)),
     ...paths.filter((path) => !kept.has(path)),
   ].map((path) => plan(path, input, scope));
-  const batches = batchesFor(planned, input.descriptors);
+  const batches = batchesFor(planned, input.descriptors).map((batch) =>
+    withPacks.has(batch.adapter)
+      ? { ...batch, rules: rulesOn(rules, batch.adapter) }
+      : batch
+  );
   const facts = sharedFacts(input.config, input.descriptors, batches);
   return {
     batches,
     ...(facts === undefined ? {} : { facts }),
     paths: planned,
     root: input.root,
+    ...(rules.length === 0 ? {} : { rules }),
     schemaVersion: SCHEMA_VERSION,
     selection: input.selection,
   };

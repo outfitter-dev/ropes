@@ -44,6 +44,8 @@ export interface CinchConfig {
    * are nested there: `cinch.` in the shared file. Absent when they are not.
    */
   readonly prefix?: string;
+  /** Shipped rule packs and rules, by name, that are not run. */
+  readonly rulesOff?: Sourced<readonly string[]>;
   readonly settings: readonly PolicyValue[];
   /**
    * What the file states for each tool. An adapter copies its table into the
