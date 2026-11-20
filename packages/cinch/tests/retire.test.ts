@@ -119,7 +119,16 @@ test("--yes removes an old file that was carried over whole", async () => {
 test("an old file that ignores hide is still there in the preview's copy", async () => {
   await put(OLD, "{}");
   await put(".gitignore", `${OLD}\n`);
-  Bun.spawnSync(["git", "init", "-q"], { cwd: root });
+  // A hook's `GIT_DIR` or a developer's Git config must not reach the fixture.
+  const env = {
+    ...Object.fromEntries(
+      Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_"))
+    ),
+    GIT_CONFIG_GLOBAL: "/dev/null",
+    GIT_CONFIG_NOSYSTEM: "1",
+  };
+  const made = Bun.spawnSync(["git", "init", "-q"], { cwd: root, env });
+  expect(made.exitCode).toBe(0);
   expect(await init()).toMatchObject({ files: [OLD], removed: true });
 });
 
