@@ -13,7 +13,7 @@ import { CopyError, withCopy } from "./scratch.ts";
 import { prepareSetup } from "./setup.ts";
 
 /** `fix` writes the repository's files, and `doctor` the Cinch setup. */
-export type WriteMode = "doctor" | "fix";
+export type WriteMode = "doctor" | "fix" | "init";
 
 /** The text of each file a step may write. Null when it cannot be read. */
 const snapshot = (

@@ -104,16 +104,18 @@ const isKept = (
 
 const plan = (path: string, input: ResolveInput, scope: Scope): PlannedPath => {
   const inPackage = packageOf(path, input.packages);
+  const policy = policyFor(path, input.config, scope);
   if (scope.excluded(path)) {
+    // The policy is still stated, so a reader can tell a kept file that is
+    // excluded while its adapter is on from one whose adapter is off.
     return {
       package: inPackage,
       path,
-      policy: [],
+      policy,
       skipped: { reason: "excluded", source: input.config.exclude.source },
       steps: [],
     };
   }
-  const policy = policyFor(path, input.config, scope);
   // A kept file needs no `include` entry. When policy switches its adapter
   // off, the path is treated like any other.
   if (!isKept(path, policy, input.descriptors) && !scope.included(path)) {

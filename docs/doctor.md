@@ -8,7 +8,7 @@
 - The repository's own config extends the kept one. Today that is the `extends` line in `.rumdl.toml`.
 - The tools the workspace's plan needs are installed, at the versions `mise.toml` pins. See [tool versions](tool-versions.md).
 
-A preset the config switches off is no part of the setup. A kept file that `exclude` covers stops the run with exit code 2, naming the file and the setting: Cinch cannot keep a file the config tells it to leave alone, and saying nothing would read as a pass.
+A preset the config switches off is no part of the setup, whether or not `exclude` covers its files. A kept file that `exclude` covers while its preset is on stops the run with exit code 2, naming the file and the setting: Cinch cannot keep a file the config tells it to leave alone, and saying nothing would read as a pass.
 
 ```text
 .outfitter/configs/rumdl.toml

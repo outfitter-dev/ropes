@@ -1,7 +1,6 @@
 import type { DoctorReport } from "../contracts/doctor.ts";
 import type { FixReport } from "../contracts/fix.ts";
 import { EXIT_CODE } from "../contracts/result.ts";
-import { setupOf } from "../policy/setup.ts";
 import {
   doctorOutcome,
   renderDoctor,
@@ -13,9 +12,7 @@ import { writePlan } from "./fix.ts";
 import type { FixRun } from "./fix.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps, Prepared } from "./prepare.ts";
-import { describeGap, gapsOf } from "./preset-gaps.ts";
-import { locate } from "./presets.ts";
-import { setupFiles } from "./setup.ts";
+import { prepareSetup } from "./setup.ts";
 import { toolStatuses } from "./tools.ts";
 
 const unusable = (message: string): CommandResponse => ({
@@ -64,24 +61,12 @@ export const doctor =
     if (request.paths.length > 0) {
       return unusable("doctor checks the whole setup, so it takes no paths.");
     }
-    const located = await locate(request.cwd, deps);
-    if (!located.ok) {
-      return unusable(located.error);
+    const prepared = await prepareSetup(request.cwd, deps);
+    if (!prepared.ok) {
+      return unusable(prepared.error);
     }
-    const { root } = located.root;
-    const full = await prepare({ cwd: root, paths: setupFiles(deps) }, deps);
-    if (!full.ok) {
-      return unusable(full.error);
-    }
-    // A file the config leaves out cannot be kept, and saying nothing about
-    // it would read as a pass. A preset that is switched off is not a gap.
-    const gaps = gapsOf(located.presets, full.value.plan).filter(
-      (gap) => gap.why === "left-out"
-    );
-    if (gaps.length > 0) {
-      return unusable(gaps.map(describeGap).join("\ncinch: "));
-    }
-    const setup = { ...full.value, plan: setupOf(full.value.plan) };
+    const setup = prepared.value;
+    const { root } = setup.root;
     const fixing = request.fix === true;
     const ran: FixRun = fixing
       ? await writePlan(setup, {

@@ -71,6 +71,13 @@ export interface StepInput {
   readonly package: string;
   /** Root-relative files, all in that package. Never empty. */
   readonly paths: readonly string[];
+  /**
+   * True only while `init` takes a repository over from an older setup. It
+   * is the one time an adapter may carry an old config's settings into a
+   * file a person wrote. Every other run leaves such a file's own content
+   * as it is.
+   */
+  readonly migrate?: boolean;
 }
 
 /** What a step found out about one of the files it was handed. */

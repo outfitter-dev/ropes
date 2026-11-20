@@ -7,15 +7,18 @@ import type { Readiness } from "./ready.ts";
 
 /**
  * `fix` writes the repository's own files and `doctor` writes the Cinch
- * setup. Each only checks what the other writes.
+ * setup. Each only checks what the other writes. `init` writes what
+ * `doctor` does, and is the one run in which an adapter may migrate.
  */
-export type RunMode = "check" | "doctor" | "fix";
+export type RunMode = "check" | "doctor" | "fix" | "init";
 
 /** Whether a batch may write in this mode. */
 export const writesIn = (
   mode: RunMode,
   step: { readonly setup?: boolean | undefined; readonly writes: boolean }
-): boolean => step.writes && mode === (step.setup === true ? "doctor" : "fix");
+): boolean =>
+  step.writes &&
+  (step.setup === true ? mode === "doctor" || mode === "init" : mode === "fix");
 
 export interface RunOptions {
   readonly mode: RunMode;
@@ -78,7 +81,12 @@ const runBatch = async (
   if (reason !== undefined) {
     return all(reason);
   }
-  const input = { package: batch.package, paths: batch.paths, root };
+  const input = {
+    ...(mode === "init" ? { migrate: true } : {}),
+    package: batch.package,
+    paths: batch.paths,
+    root,
+  };
   try {
     return answered(
       batch,

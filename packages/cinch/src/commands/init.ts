@@ -65,7 +65,7 @@ export const init =
     const ran = await runWrite(
       { cwd: root, dryRun: !apply, json: request.json, paths },
       deps,
-      { also: old.files, mode: "doctor" }
+      { also: old.files, mode: "init" }
     );
     if (!ran.ok) {
       return ran.response;

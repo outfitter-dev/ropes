@@ -138,6 +138,17 @@ withEngine(
   }
 );
 
+test("doctor --fix adds the line to a person's config and nothing else", async () => {
+  const mine = "[MD013]\nline-length = 100\n";
+  await inRoot({ [CONFIG_PATH]: mine, [OLD]: RULES }, async (root) => {
+    const { doctor } = createCommands({ adapters: adaptersFor });
+    await doctor?.({ cwd: root, fix: true, json: true, paths: [] });
+    const text = await Bun.file(path.join(root, CONFIG_PATH)).text();
+    expect(text).toBe(`extends = ${JSON.stringify(PRESET_PATH)}\n\n${mine}`);
+    expect(await Bun.file(path.join(root, OLD)).text()).toBe(RULES);
+  });
+});
+
 withEngine(
   "init --yes keeps the old config when its target is excluded",
   async () => {

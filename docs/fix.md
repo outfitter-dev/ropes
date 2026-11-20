@@ -33,6 +33,8 @@ Nothing was fixed: the Cinch setup needs repair first. Run `cinch doctor --fix`,
 
 With `--json` the report has `stopped`, holding that first line, and `result` holds the setup steps.
 
+A kept file that `exclude` covers while its preset is on cannot be judged at all. `fix` then exits 2 with the same message `cinch doctor` gives, naming the file and the setting.
+
 ## Dry run
 
 `cinch fix --dry-run` does the same work on a temporary copy of the root and prints the change as a unified diff. The checkout is not touched. Because the same steps run on the same content, the diff is the change a real `fix` would write.

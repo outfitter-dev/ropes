@@ -124,7 +124,7 @@ test("an excluded path stays in the plan with the setting that excluded it", () 
   expect(only("vendor/lib/README.md")).toEqual({
     package: ".",
     path: "vendor/lib/README.md",
-    policy: [],
+    policy: [enabled(true, "markdown.enabled")],
     skipped: { reason: "excluded", source: file("exclude") },
     steps: [],
   });

@@ -24,8 +24,13 @@ export interface ManagedFile {
   /**
    * Given what the file holds now, or null when it is missing, and the root
    * it sits in, for a file whose content depends on what is beside it.
+   * `migrate` is `StepInput.migrate`.
    */
-  readonly want: (current: string | null, root: string) => Promise<Wanted>;
+  readonly want: (
+    current: string | null,
+    root: string,
+    migrate: boolean
+  ) => Promise<Wanted>;
 }
 
 export interface ManagedOptions {
@@ -94,7 +99,7 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
     }
     const target = path.join(input.root, input.path);
     const current = await read(target);
-    const wanted = await managed.want(current, input.root);
+    const wanted = await managed.want(current, input.root, input.migrate);
     if (!wanted.ok && wanted.unknown === true) {
       return {
         findings: [],

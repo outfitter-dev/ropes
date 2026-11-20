@@ -176,4 +176,24 @@ test("a preset that is switched off is no part of the setup", async () => {
   expect(await exit("doctor")).toBe(0);
   expect(await exit("fix")).toBe(0);
   expect(await exists(KEPT)).toBe(false);
+  // Leaving the file out as well changes nothing: there is nothing to keep.
+  await Bun.write(
+    path.join(root, "cinch.toml"),
+    'pilot = 0\nexclude = [".outfitter/**"]\n\n[markdown]\npreset = false\n'
+  );
+  expect(await exit("doctor")).toBe(0);
+  expect(await exit("doctor", { fix: true })).toBe(0);
+  expect(await exit("fix")).toBe(0);
+});
+
+test("fix stops when the config leaves a kept file out", async () => {
+  await Bun.write(path.join(root, KEPT), "width = 60\n");
+  await Bun.write(
+    path.join(root, "cinch.toml"),
+    'pilot = 0\nexclude = [".outfitter/**"]\n'
+  );
+  const response = await run("fix");
+  expect(response.exitCode).toBe(2);
+  expect(response.error).toContain(`leaves ${KEPT} out`);
+  expect(await Bun.file(path.join(root, "a.md")).text()).toBe("TODO\n");
 });

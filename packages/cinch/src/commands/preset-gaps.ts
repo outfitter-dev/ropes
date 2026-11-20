@@ -16,9 +16,17 @@ export type Gap =
  * the preset's adapter still keeps the others. A kept file needs no `include`
  * entry while its adapter is on, so one that is in the plan with no step from
  * that adapter, or left out as not included, has had the preset switched off.
+ * An excluded file whose preset is off is switched off too: there is nothing
+ * to keep there.
  */
 export const gapOf = (preset: Preset, file: string, plan: Plan): Gap | null => {
   const entry = plan.paths.find((planned) => planned.path === file);
+  const off = entry?.policy.some(
+    (setting) => setting.key === preset.enabledBy && setting.value === false
+  );
+  if (off === true && entry?.skipped !== undefined) {
+    return { file, preset, why: "off" };
+  }
   if (!entry || entry.skipped?.reason === "excluded") {
     return { file, preset, skipped: entry?.skipped, why: "left-out" };
   }
