@@ -205,7 +205,7 @@ test("an exit code that is not 0 or 1, or a report that cannot be read, is incom
     expect(
       await checkOne(oxlintAdapter({ command: silent }), { path: "a.ts", root })
     ).toMatchObject({
-      reason: "oxlint exited 1 without reporting an error",
+      reason: "oxlint exited 1 without reporting a finding",
       status: "incomplete",
     });
   });
@@ -320,3 +320,23 @@ test("a kept preset gets a lint step that only reads", async () => {
     expect(lint((entry) => entry.path === "a.ts")).toEqual([true]);
   });
 });
+
+withEngine(
+  "a run that fails on warnings alone reports them as findings",
+  async () => {
+    const strict = JSON.stringify({
+      options: { denyWarnings: true },
+      rules: { "no-var": "warn" },
+    });
+    await inRepo(
+      { ".oxlintrc.json": strict, "a.ts": "var a = 1;\nexport { a };\n" },
+      async (root) => {
+        const outcome = await checkOne(oxlintAdapter(), { path: "a.ts", root });
+        expect(outcome.status).toBe("findings");
+        expect(outcome.findings.map((finding) => finding.severity)).toEqual([
+          "warning",
+        ]);
+      }
+    );
+  }
+);

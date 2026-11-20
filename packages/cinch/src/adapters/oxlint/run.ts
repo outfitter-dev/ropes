@@ -23,8 +23,9 @@ const byLine = (findings: FileOutcome["findings"]): FileOutcome["findings"] =>
   findings.toSorted((a, b) => a.range.start.line - b.range.start.line);
 
 /**
- * One start on some files that exist. The linter exits 0 when no error
- * remains and 1 when one does. It counts the files it linted, and a count
+ * One start on some files that exist. The linter exits 0 when the run
+ * passes and 1 when it does not: on an error, or on a warning where the
+ * repository's config makes warnings fail. It counts the files it linted, and a count
  * that differs from the number handed in means it left one out without
  * saying which, so none of them can count as passed.
  */
@@ -59,11 +60,11 @@ const start = async (
       `${ID} linted ${parsed.linted} of the ${input.paths.length} files it was given`
     );
   }
-  const errors = [...parsed.files.values()]
-    .flat()
-    .some((finding) => finding.severity === "error");
-  if (exitCode === 1 && !errors) {
-    return allIncomplete(input, `${ID} exited 1 without reporting an error`);
+  // A config can make warnings fail the run, so exit 1 needs a finding of
+  // either kind behind it, and not an error.
+  const found = [...parsed.files.values()].some((list) => list.length > 0);
+  if (exitCode === 1 && !found) {
+    return allIncomplete(input, `${ID} exited 1 without reporting a finding`);
   }
   return input.paths.map((file) => {
     const findings = byLine(parsed.files.get(file) ?? []);

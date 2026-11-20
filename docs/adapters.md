@@ -127,5 +127,5 @@ An adapter takes a root and the files of a batch and returns data. It does not r
 - A finding keeps Oxlint's own rule id, such as `eslint(no-var)` or `typescript(no-floating-promises)`. A file that does not parse is a finding under the rule `syntax`.
 - The JSON report does not say which diagnostics a fix would clear, so no lint finding is marked fixable. `cinch fix` still applies what Oxlint can fix.
 - A fixing run reports what it saw before it wrote. The adapter runs a second time without `--fix` and reports what that run finds. A file the fixing run could not take stays incomplete, and the others are still checked again.
-- Oxlint states how many files it linted. When that is not the number it was given, it left a file out without saying which, and every file of that run is incomplete. A report that cannot be read, or an exit code of 1 with no error in the report, is incomplete too.
+- Oxlint states how many files it linted. When that is not the number it was given, it left a file out without saying which, and every file of that run is incomplete. A report that cannot be read, or an exit code of 1 with nothing in the report, is incomplete too.
 - A warning is a finding. `cinch check` exits 1 on one, as `oxlint --deny-warnings` does.
