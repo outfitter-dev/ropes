@@ -8,7 +8,7 @@ On 2026-11-19 each repository was cloned into a temporary directory, `cinch init
 
 - The clones were the copies this session had on disk. Most were current to within two days. `monorepo`, `dispatch`, `biner` and `actions` were older, and are marked.
 - No dependencies were installed in the clones. A repository whose formatter config is a TypeScript file that imports a package could not format its fenced code, and those steps came back incomplete. They are counted separately below.
-- The old `ignores` lists were not applied. `cinch init` carries rules over from a markdownlint config and says which ignores it left behind, but it does not yet write them into `cinch.toml`. Counts for `trails` and `skillset` include changelogs and generated files that those repositories ignore today.
+- The old `ignores` lists were not applied. When the trial ran, `cinch init` did not yet write them into `cinch.toml`. It does now, so a rerun will give lower numbers. Counts for `trails` and `skillset` include changelogs and generated files that those repositories ignore today.
 
 ## What each repository needs
 
@@ -33,7 +33,7 @@ Not surveyed: `outpost`, because the copy on disk was the retired gateway and no
 
 These are gaps in Cinch, not in the repositories. Each one blocks part of the rollout.
 
-1. **Ignores are not carried over.** A repository that moves from markdownlint keeps its rules but loses its ignore list, so its first check reports changelogs and build output. This is already part of [FIT-41](https://linear.app/outfitter/issue/FIT-41). It has to land before `trails`, `skillset` and `monorepo`.
+1. **Ignores were not carried over.** Closed: `cinch init` now writes a markdownlint-cli2 config's `ignores` and `globs` into the `cinch.toml` it creates. The rest of the migration (removing the old config files, merging into a `.rumdl.toml` that is already there) is still [FIT-41](https://linear.app/outfitter/issue/FIT-41).
 2. **A fenced block that is not valid code made the whole file incomplete.** Documentation often shows a fragment: one object literal, a line with `...` in it, SQL inside a block labelled `typescript`. The formatter cannot parse these. At the time of the trial the step was incomplete and the run exited 2, so the only way to get green was to relabel the fence. `trails` had 44 such files and `actions` had 3. Cinch now reports such a block as a finding under `code-block-parse` and checks the rest of the file (see [the Markdown standard](markdown-standard.md)), so the blocks can be found and fixed one by one. The incomplete counts in the table are from before that change: rerun on the same clones, `trails` has 112 such blocks in 44 files and `actions` has 18 in 3.
 3. **The formatter needs the repository's dependencies.** `forge` and `skillset` configure oxfmt in a TypeScript file. Without `node_modules` the config does not load and fenced code cannot be checked. In CI this is fine, since dependencies are installed first. The reason text now says so.
 4. **Cinch only installs through Bun.** `dispatch` is a Python repository run with uv. It needs Cinch as a pinned tool it can get without a `package.json`, which is the install question in [FIT-32](https://linear.app/outfitter/issue/FIT-32).

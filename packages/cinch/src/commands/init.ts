@@ -11,31 +11,20 @@ import { runFix } from "./fix.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { locate } from "./presets.ts";
-
-/**
- * What a repository with no Cinch config starts with. It states the defaults,
- * so the plan is the same before and after the file is written.
- */
-export const STARTER_CONFIG = [
-  "# Cinch config. This is the unstable pilot format and will change.",
-  "pilot = 0",
-  "",
-  "[markdown]",
-  "enabled = true",
-  "preset = true",
-  "",
-].join("\n");
+import { inheritedBy, sparing, starterConfig } from "./starter.ts";
 
 /** Puts the config file first in a report about the files Cinch keeps. */
-const withConfig = (report: FixReport): FixReport => ({
+const withConfig = (report: FixReport, config: string): FixReport => ({
   ...report,
   changed: [STANDALONE_FILE, ...report.changed],
-  diff: `${unifiedDiff(STANDALONE_FILE, "", STARTER_CONFIG)}${report.diff}`,
+  diff: `${unifiedDiff(STANDALONE_FILE, "", config)}${report.diff}`,
 });
 
 /**
  * Sets a repository up: a starting config when there is none, then every
- * preset that is switched on. It only shows the change unless `yes` is set,
+ * preset that is switched on. The starting config takes the file choices of
+ * a config an adapter replaces, except a choice that would leave out a file
+ * Cinch keeps. It only shows the change unless `yes` is set,
  * and `dryRun` wins over `yes`. A config that is already there is never
  * rewritten.
  */
@@ -61,9 +50,14 @@ export const init =
         exitCode: EXIT_CODE.incomplete,
       };
     }
-    const starting = (await configFileIn(root)) === null;
-    if (starting && apply) {
-      await Bun.write(path.join(root, STANDALONE_FILE), STARTER_CONFIG);
+    const starter =
+      (await configFileIn(root)) === null
+        ? starterConfig(
+            sparing(await inheritedBy(planned.value.adapters, root), paths)
+          )
+        : null;
+    if (starter !== null && apply) {
+      await Bun.write(path.join(root, STANDALONE_FILE), starter);
     }
     const ran = await runFix(
       { cwd: root, dryRun: !apply, json: request.json, paths },
@@ -72,7 +66,8 @@ export const init =
     if (!ran.ok) {
       return ran.response;
     }
-    const report = starting ? withConfig(ran.report) : ran.report;
+    const report =
+      starter === null ? ran.report : withConfig(ran.report, starter);
     const exitCode = EXIT_CODE[report.result.outcome];
     const changes = report.changed.length;
     if (request.json) {

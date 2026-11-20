@@ -38,6 +38,8 @@ export interface ManagedOptions {
   readonly files: readonly ManagedFile[];
   /** The name a person uses for this set of files, when it is a preset. */
   readonly preset?: string;
+  /** See `Adapter.inherits`. */
+  readonly inherits?: Adapter["inherits"];
 }
 
 /** The rule every finding about a kept file is reported under. */
@@ -56,7 +58,7 @@ const read = async (file: string): Promise<string | null> => {
  * to install.
  */
 export const managedAdapter = (options: ManagedOptions): Adapter => {
-  const { enabledBy, files, id, preset } = options;
+  const { enabledBy, files, id, inherits, preset } = options;
   const descriptor: AdapterDescriptor = {
     enabledBy,
     extensions: [],
@@ -127,6 +129,7 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
     check: (input): Promise<StepOutcome> => inspect(input, false),
     descriptor,
     fix: (input): Promise<StepOutcome> => inspect(input, true),
+    ...(inherits === undefined ? {} : { inherits }),
     probe: () => Promise.resolve({ available: true }),
   };
 };

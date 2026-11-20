@@ -21,7 +21,6 @@ const PACKAGE = "package.json";
 const PACKAGE_KEY = "markdownlint-cli2";
 
 const Table = z.record(z.string(), z.unknown());
-const Globs = z.array(z.string());
 
 export type Rules = Readonly<Record<string, unknown>>;
 
@@ -53,21 +52,26 @@ const parse = (name: string, text: string): unknown =>
     ? Bun.YAML.parse(text)
     : Bun.JSONC.parse(text);
 
-const globsLine = (file: string, key: string, value: unknown): string => {
-  const globs = Globs.safeParse(value);
-  const list = globs.success ? JSON.stringify(globs.data) : "[...]";
-  return `\`${key}\` in ${file} chooses files, which is the Cinch config's job. Add \`${key === "globs" ? "include" : "exclude"} = ${list}\` there.`;
+const CHOOSES: Readonly<Record<string, string>> = {
+  globs: "include",
+  ignores: "exclude",
+};
+
+const runnerNote = (file: string, key: string): string => {
+  const ours = CHOOSES[key];
+  if (ours !== undefined) {
+    return `\`${key}\` in ${file} chooses files, which is the Cinch config's job. \`cinch init\` writes it as \`${ours}\` in a new Cinch config. Add it by hand to one that is already there.`;
+  }
+  return key === "gitignore"
+    ? `\`gitignore\` in ${file} needs no line here: Cinch leaves out the files git ignores.`
+    : `\`${key}\` in ${file} is a markdownlint-cli2 setting with no equivalent here.`;
 };
 
 /** A note for each runner setting. Only its `config` block holds rules. */
 const runnerNotes = (file: string, table: Rules): string[] =>
-  Object.entries(table)
-    .filter(([key]) => key !== "config" && key !== "$schema")
-    .map(([key, value]) =>
-      key === "globs" || key === "ignores"
-        ? globsLine(file, key, value)
-        : `\`${key}\` in ${file} is a markdownlint-cli2 setting with no equivalent here.`
-    );
+  Object.keys(table)
+    .filter((key) => key !== "config" && key !== "$schema")
+    .map((key) => runnerNote(file, key));
 
 const unreadable = (file: string): Source => ({
   kind: "blocked",
@@ -126,6 +130,28 @@ const runnerOf = async (
   const table =
     file === undefined ? undefined : await tableOf(root, file, inPackage);
   return { file, spare, table };
+};
+
+/**
+ * The runner file the old linter reads, with its table. Undefined when there
+ * is none, when it cannot be read, or when a script stands in for it.
+ */
+export const runnerIn = async (
+  root: string
+): Promise<{ file: string; table: Rules } | undefined> => {
+  const [scripts, runners, inPackage] = await Promise.all([
+    present(root, SCRIPTS),
+    present(root, RUNNER_FILES),
+    packageTable(root),
+  ]);
+  const { file, table } = await runnerOf(
+    root,
+    [...runners, ...(inPackage === undefined ? [] : [PACKAGE])],
+    inPackage
+  );
+  return scripts.length > 0 || file === undefined || table === undefined
+    ? undefined
+    : { file, table };
 };
 
 /**

@@ -3,15 +3,35 @@ import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import type { Inherited } from "../src/adapters/adapter.ts";
 import { managedAdapter } from "../src/adapters/managed.ts";
 import type { CommandRequest } from "../src/commands/command.ts";
-import { STARTER_CONFIG } from "../src/commands/init.ts";
 import { createCommands } from "../src/commands/registry.ts";
+import { STARTER_CONFIG } from "../src/commands/starter.ts";
 import { FixReportSchema } from "../src/contracts/fix.ts";
 import { PresetReportSchema } from "../src/contracts/preset.ts";
 
 const KEPT = ".outfitter/configs/notes.toml";
 const SHIPPED = "width = 80\n";
+
+const OLD = "old-linter.json";
+
+/** Stands in for a config the adapter takes over from. */
+const oldLinter = async (dir: string): Promise<Inherited | null> => {
+  const file = Bun.file(path.join(dir, OLD));
+  if (!(await file.exists())) {
+    return null;
+  }
+  const text = await file.text();
+  return {
+    exclude: text.includes("kept")
+      ? [".outfitter/**"]
+      : ["vendor", "vendor/**"],
+    from: OLD,
+    include: [],
+    notes: [],
+  };
+};
 
 const commands = createCommands({
   adapters: () => [
@@ -24,6 +44,7 @@ const commands = createCommands({
         },
       ],
       id: "notes-preset",
+      inherits: oldLinter,
       preset: "notes",
     }),
   ],
@@ -90,6 +111,33 @@ test("init --yes writes the config and the preset, once", async () => {
   const again = await run("init", { yes: true });
   const report = FixReportSchema.parse(JSON.parse(again.output ?? "null"));
   expect(report.changed).toEqual([]);
+});
+
+test("init carries the file choices of a config an adapter replaces", async () => {
+  await Bun.write(path.join(root, OLD), "{}");
+  const shown = await run("init");
+  const report = FixReportSchema.parse(JSON.parse(shown.output ?? "null"));
+  expect(report.diff).toContain('+  "vendor/**",');
+  expect(await textOf("cinch.toml")).toBeNull();
+  expect(await run("init", { yes: true })).toMatchObject({ exitCode: 0 });
+  expect(await textOf("cinch.toml")).toContain(
+    'exclude = [\n  "vendor",\n  "vendor/**",\n]'
+  );
+  expect(await run("check")).toMatchObject({ exitCode: 0 });
+});
+
+test("init does not carry an exclude that covers a file Cinch keeps", async () => {
+  await Bun.write(path.join(root, OLD), '"kept"');
+  const shown = await run("init");
+  const report = FixReportSchema.parse(JSON.parse(shown.output ?? "null"));
+  expect(report.changed).toEqual(["cinch.toml", KEPT]);
+  expect(await run("init", { yes: true })).toMatchObject({ exitCode: 0 });
+  expect(await textOf(KEPT)).toBe(SHIPPED);
+  const config = (await textOf("cinch.toml")) ?? "";
+  expect(config).not.toContain("exclude = [");
+  expect(config).toContain(
+    `# From ${OLD}: ".outfitter/**" was not carried over, because it would leave out ${KEPT}, which Cinch keeps.`
+  );
 });
 
 test("init keeps a config that is already there", async () => {
