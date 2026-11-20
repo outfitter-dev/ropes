@@ -8,13 +8,20 @@ const stateOf = (pack: PackState, enabled: boolean): string => {
   if (pack.off !== undefined) {
     return `off (${origin(pack.off)})`;
   }
-  return pack.found === undefined
-    ? `not relevant: no file matches ${pack.relevant.join(", ")}`
-    : `${enabled ? "on" : "would run"}, since ${pack.found} is here`;
+  if (pack.found === undefined) {
+    return `not relevant: no file matches ${pack.relevant.join(", ")}`;
+  }
+  if (pack.named === undefined) {
+    return `not adopted, and ${pack.found} is here. Run \`cinch rules adopt ${pack.name}\` to run it`;
+  }
+  return `${enabled ? "on" : "would run"}, since ${pack.found} is here (${origin(pack.named)})`;
 };
 
 const packLines = (pack: PackState, enabled: boolean): string[] => {
-  const runs = pack.off === undefined && pack.found !== undefined;
+  const runs =
+    pack.off === undefined &&
+    pack.found !== undefined &&
+    pack.named !== undefined;
   return [
     `  ${pack.name}  ${stateOf(pack, enabled)}`,
     `    ${pack.about}`,

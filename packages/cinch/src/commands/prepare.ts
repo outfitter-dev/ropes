@@ -7,7 +7,7 @@ import type { CinchConfig, ToolTables } from "../contracts/config.ts";
 import type { EditorSettings } from "../contracts/editor.ts";
 import type { Plan } from "../contracts/plan.ts";
 import type { RepoRoot } from "../contracts/root.ts";
-import { unknownOff } from "../policy/packs.ts";
+import { unknownOff, unknownPacks } from "../policy/packs.ts";
 import { resolvePlan } from "../policy/resolve.ts";
 import { describeConfigError, describeRootError } from "./errors.ts";
 import { filesUnder } from "./files.ts";
@@ -102,6 +102,14 @@ export const prepare = async (
     const file = config.value.file ?? "the Cinch config";
     return {
       error: `${file}: rules.off: Cinch ships no rule pack or rule named "${unknown}".`,
+      ok: false,
+    };
+  }
+  const [missing] = unknownPacks(config.value, descriptors);
+  if (missing !== undefined) {
+    const file = config.value.file ?? "the Cinch config";
+    return {
+      error: `${file}: rules.packs: Cinch ships no rule pack named "${missing}".`,
       ok: false,
     };
   }

@@ -132,7 +132,7 @@ const build = (
   table: z.infer<typeof ConfigFileSchema>,
   origin: TableOrigin
 ): CinchConfig => {
-  const { local, off, ...rules } = table.rules ?? {};
+  const { local, off, packs, ...rules } = table.rules ?? {};
   const base = settingsOf({ ...table, rules }, origin, "");
   const overrides: ConfigOverride[] = (table.overrides ?? []).map(
     (override, index) => ({
@@ -161,6 +161,9 @@ const build = (
     ...(off === undefined
       ? {}
       : { rulesOff: { source: from(origin, "rules.off"), value: off } }),
+    ...(packs === undefined
+      ? {}
+      : { rulesPacks: { source: from(origin, "rules.packs"), value: packs } }),
     settings: overDefaults(base),
     tools: table.tools ?? {},
   };

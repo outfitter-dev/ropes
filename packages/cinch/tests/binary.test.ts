@@ -109,7 +109,7 @@ test("the binary carries the rules Cinch ships", async () => {
   const root = await repo("rules");
   await Bun.write(
     path.join(root, "cinch.toml"),
-    'pilot = 0\ninclude = ["**/*.json"]\n\n[rules]\nenabled = true\n'
+    'pilot = 0\ninclude = ["**/*.json"]\n\n[rules]\nenabled = true\npacks = ["config"]\n'
   );
   await Bun.write(path.join(root, "tsconfig.json"), "{}\n");
   const alone = await run([binary, "check", "tsconfig.json"], root, searchPath);

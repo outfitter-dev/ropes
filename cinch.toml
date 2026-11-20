@@ -49,6 +49,7 @@ preset = true
 # The structural rules Cinch ships, run through ast-grep.
 [rules]
 enabled = true
+packs = ["config"]
 
 # The compiler options Cinch ships are the base, so they extend nothing.
 [[overrides]]

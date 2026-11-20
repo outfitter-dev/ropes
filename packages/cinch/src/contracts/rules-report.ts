@@ -4,13 +4,15 @@ import { PackStateSchema, ProvenanceSchema, SCHEMA_VERSION } from "./plan.ts";
 
 /**
  * `on` runs. `off` is named in the config's `rules.off`. `not-relevant` has
- * no file here that it is about. `not-enabled` would run, and does not
+ * no file here that it is about. `not-adopted` has such a file, and the
+ * config does not name the pack. `not-enabled` would run, and does not
  * because the repository has not switched rules on.
  */
 export const RuleStandingSchema = z.enum([
   "on",
   "off",
   "not-relevant",
+  "not-adopted",
   "not-enabled",
 ]);
 export type RuleStanding = z.infer<typeof RuleStandingSchema>;

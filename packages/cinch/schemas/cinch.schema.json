@@ -269,6 +269,14 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "packs": {
+          "description": "Shipped rule packs, by name, that are run. `cinch rules adopt` writes this.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       },
       "additionalProperties": false

@@ -19,6 +19,9 @@ const standing = (pack: PackState, enabled: boolean): RuleStanding => {
   if (pack.found === undefined) {
     return "not-relevant";
   }
+  if (pack.named === undefined) {
+    return "not-adopted";
+  }
   return enabled ? "on" : "not-enabled";
 };
 
