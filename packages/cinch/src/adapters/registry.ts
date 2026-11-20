@@ -2,6 +2,7 @@ import type { Adapter } from "./adapter.ts";
 import type { Pins } from "./pins.ts";
 import { rumdlAdapter } from "./rumdl/adapter.ts";
 import { rumdlPresetAdapter } from "./rumdl/preset.ts";
+import { taploAdapter } from "./taplo/adapter.ts";
 
 /**
  * The only place adapters are listed. Adding an engine is one new folder under
@@ -12,4 +13,5 @@ import { rumdlPresetAdapter } from "./rumdl/preset.ts";
 export const adaptersFor = (pins: Pins): readonly Adapter[] => [
   rumdlPresetAdapter(),
   rumdlAdapter({ version: pins.rumdl }),
+  taploAdapter({ version: pins.taplo }),
 ];

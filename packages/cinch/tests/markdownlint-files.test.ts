@@ -4,9 +4,15 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { chosenFiles } from "../src/adapters/rumdl/markdownlint-files.ts";
-import { starterConfig, STARTER_CONFIG } from "../src/commands/starter.ts";
+import { rumdlPresetAdapter } from "../src/adapters/rumdl/preset.ts";
+import {
+  inheritedBy,
+  starterConfig,
+  STARTER_CONFIG,
+} from "../src/commands/starter.ts";
 import { loadConfig } from "../src/config/load.ts";
 import { compileGlobs } from "../src/policy/glob.ts";
+import { fakeAdapter } from "./fake-adapter.ts";
 
 const RUNNER = ".markdownlint-cli2.jsonc";
 
@@ -38,6 +44,7 @@ test("ignores become exclude, and a directory covers what is under it", async ()
     ],
     from: RUNNER,
     include: [],
+    kinds: [".md"],
     notes: [],
   });
   const excluded = compileGlobs(found?.exclude ?? []);
@@ -65,6 +72,7 @@ test("the root, however it is spelled, is everything", async () => {
   expect(found).toMatchObject({
     exclude: ["out", "out/**"],
     include: ["**"],
+    kinds: [".md"],
   });
 });
 
@@ -75,6 +83,7 @@ test("globs become include, and a negated glob becomes exclude", async () => {
   expect(found).toMatchObject({
     exclude: ["drafts", "drafts/**"],
     include: ["**/*.md", "**/*.mdx"],
+    kinds: [".md"],
   });
 });
 
@@ -130,9 +139,16 @@ test("the starter config states carried choices once and loads", async () => {
       exclude: ["dist", "dist/**"],
       from: RUNNER,
       include: ["**/*.md", "**/*.mdx"],
+      kinds: [".md"],
       notes: ['"/abs" in `ignores` was not carried over.'],
     },
-    { exclude: ["dist", "out/**"], from: "other.json", include: [], notes: [] },
+    {
+      exclude: ["dist", "out/**"],
+      from: "other.json",
+      include: [],
+      kinds: [".md"],
+      notes: [],
+    },
   ]);
   expect(text.match(/^exclude = \[$/gmu)).toHaveLength(1);
   expect(text).toContain(
@@ -147,4 +163,44 @@ test("the starter config states carried choices once and loads", async () => {
       include: { value: ["**/*.md", "**/*.mdx"] },
     },
   });
+});
+
+test("a carried include keeps the default for every other kind of file", async () => {
+  const carried = {
+    exclude: [],
+    from: RUNNER,
+    include: ["docs/**/*.md"],
+    kinds: [".md"],
+  };
+  const adapter = {
+    ...fakeAdapter({ descriptor: { extensions: [] } }),
+    inherits: () => Promise.resolve({ ...carried, notes: [] }),
+  };
+  const [found] = await inheritedBy([adapter], root);
+  expect(found?.include).toEqual(["docs/**/*.md", "**/*.toml"]);
+  const [none] = await inheritedBy(
+    [
+      {
+        ...adapter,
+        inherits: () =>
+          Promise.resolve({
+            ...carried,
+            include: [],
+            kinds: [".md"],
+            notes: [],
+          }),
+      },
+    ],
+    root
+  );
+  expect(none?.include).toEqual([]);
+});
+
+test("the adapter that carries the old choices does not widen them", async () => {
+  await Bun.write(
+    path.join(root, RUNNER),
+    JSON.stringify({ globs: ["docs/**/*.md"] })
+  );
+  const [found] = await inheritedBy([rumdlPresetAdapter()], root);
+  expect(found?.include).toEqual(["docs/**/*.md", "**/*.toml"]);
 });

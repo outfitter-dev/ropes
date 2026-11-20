@@ -1,4 +1,5 @@
 import type { Adapter, Inherited } from "../adapters/adapter.ts";
+import { DEFAULT_CONFIG } from "../contracts/config.ts";
 import { compileGlob } from "../policy/glob.ts";
 
 const HEAD = [
@@ -6,7 +7,15 @@ const HEAD = [
   "pilot = 0",
   "",
 ];
-const PROFILE = ["[markdown]", "enabled = true", "preset = true", ""];
+const PROFILE = [
+  "[markdown]",
+  "enabled = true",
+  "preset = true",
+  "",
+  "[toml]",
+  "enabled = true",
+  "",
+];
 
 /**
  * What a repository with no Cinch config and nothing to carry over starts
@@ -51,13 +60,34 @@ const carried = (inherited: readonly Inherited[]): string[] => {
 export const starterConfig = (inherited: readonly Inherited[]): string =>
   [...HEAD, ...carried(inherited), ...PROFILE].join("\n");
 
+/**
+ * An old tool chose only its own kinds of file. A carried `include` replaces
+ * the whole default, so the default for every kind the old tool did not
+ * cover is added back beside it.
+ */
+const withOtherKinds = (one: Inherited): Inherited =>
+  one.include.length === 0
+    ? one
+    : {
+        ...one,
+        include: [
+          ...one.include,
+          ...DEFAULT_CONFIG.include.value.filter(
+            (glob) => !one.kinds.some((kind) => glob.endsWith(kind))
+          ),
+        ],
+      };
+
 /** What each adapter found to carry over, in adapter order. */
 export const inheritedBy = async (
   adapters: readonly Adapter[],
   root: string
 ): Promise<Inherited[]> => {
   const found = await Promise.all(
-    adapters.map(async (adapter) => (await adapter.inherits?.(root)) ?? null)
+    adapters.map(async (adapter) => {
+      const one = (await adapter.inherits?.(root)) ?? null;
+      return one === null ? null : withOtherKinds(one);
+    })
   );
   return found.flatMap((one) => (one === null ? [] : [one]));
 };

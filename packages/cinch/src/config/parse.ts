@@ -22,11 +22,18 @@ const ProfileSchema = z.strictObject({
       "Whether Cinch keeps the shared Markdown standard in the repository."
     ),
 });
+const TomlSchema = z.strictObject({
+  enabled: z
+    .boolean()
+    .optional()
+    .describe("Whether TOML is checked. On unless set to false."),
+});
 const OverrideSchema = z.strictObject({
   markdown: ProfileSchema.optional(),
   paths: Globs.min(1).describe(
     "Root-relative globs. The settings beside them apply to matching files."
   ),
+  toml: TomlSchema.optional(),
 });
 /**
  * The shape of `cinch.toml`, and of the `[cinch]` table in `outfitter.toml`.
@@ -47,10 +54,9 @@ export const ConfigFileSchema = z.strictObject({
   pilot: z
     .literal(PILOT_VERSION)
     .describe("The version of this unstable format. It must be stated."),
+  toml: TomlSchema.optional(),
 });
 const VersionedSchema = z.looseObject({ pilot: z.unknown().optional() });
-
-type Profile = z.infer<typeof ProfileSchema>;
 
 /** Where a config table sits: its file, and the key prefix inside that file. */
 export interface TableOrigin {
@@ -72,26 +78,32 @@ const sourced = <T>(
   source: Provenance
 ): Sourced<T> => (value === undefined ? fallback : { source, value });
 
-const KEYS: readonly (keyof Profile)[] = ["enabled", "preset"];
+/** The tables that hold settings, as a file or an override states them. */
+interface Tables {
+  readonly markdown?: z.infer<typeof ProfileSchema> | undefined;
+  readonly toml?: z.infer<typeof TomlSchema> | undefined;
+}
 
-/** One setting per key the profile states, sourced under `prefix`. */
-const markdownSettings = (
-  profile: Profile | undefined,
+/** One setting per key the tables state, sourced under `prefix`. */
+const settingsOf = (
+  tables: Tables,
   origin: TableOrigin,
   prefix: string
 ): PolicyValue[] =>
-  KEYS.flatMap((key) => {
-    const value = profile?.[key];
-    return value === undefined
-      ? []
-      : [
-          {
-            key: `markdown.${key}`,
-            source: from(origin, `${prefix}markdown.${key}`),
-            value,
-          },
-        ];
-  });
+  Object.entries({ markdown: tables.markdown, toml: tables.toml }).flatMap(
+    ([table, profile]) =>
+      Object.entries(profile ?? {}).flatMap(([key, value]) =>
+        value === undefined
+          ? []
+          : [
+              {
+                key: `${table}.${key}`,
+                source: from(origin, `${prefix}${table}.${key}`),
+                value,
+              },
+            ]
+      )
+  );
 
 /** The defaults, with every key the file states replacing its default. */
 const overDefaults = (stated: readonly PolicyValue[]): PolicyValue[] => {
@@ -106,15 +118,11 @@ const build = (
   table: z.infer<typeof ConfigFileSchema>,
   origin: TableOrigin
 ): CinchConfig => {
-  const base = markdownSettings(table.markdown, origin, "");
+  const base = settingsOf(table, origin, "");
   const overrides: ConfigOverride[] = (table.overrides ?? []).map(
     (override, index) => ({
       paths: override.paths,
-      settings: markdownSettings(
-        override.markdown,
-        origin,
-        `overrides.${index}.`
-      ),
+      settings: settingsOf(override, origin, `overrides.${index}.`),
     })
   );
   return {

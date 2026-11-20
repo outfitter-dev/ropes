@@ -71,6 +71,7 @@ test("with no config file the default policy applies and names its origin", () =
   const planned = only("README.md", { config: DEFAULT_CONFIG });
   expect(planned.policy).toEqual([
     { key: "markdown.enabled", source: { kind: "default" }, value: true },
+    { key: "toml.enabled", source: { kind: "default" }, value: true },
   ]);
   expect(planned.steps.map((step) => step.adapter)).toEqual([
     "fake-markdown",

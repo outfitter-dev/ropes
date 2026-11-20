@@ -7,7 +7,7 @@ import type {
   StepInput,
   StepOutcome,
 } from "../adapter.ts";
-import { exec } from "./exec.ts";
+import { exec } from "../exec.ts";
 import { readFences } from "./fences.ts";
 import { parseOutput } from "./output.ts";
 

@@ -66,13 +66,19 @@ const sort = (key: string, value: unknown, into: Sorted): void => {
   }
 };
 
+/** The part of the default `include` that chooses Markdown. */
+const MARKDOWN_DEFAULT = DEFAULT_CONFIG.include.value.filter((glob) =>
+  glob.endsWith(".md")
+);
+
 const same = (left: readonly string[], right: readonly string[]): boolean =>
   left.length === right.length && left.every((glob) => right.includes(glob));
 
 /**
  * The files the old Markdown linter was told to check and to leave alone, as
  * `include` and `exclude` globs for a new Cinch config. Null when its config
- * chooses none. An `include` equal to the Cinch default is left out.
+ * chooses none. An `include` equal to the Cinch default for Markdown is left
+ * out.
  */
 export const chosenFiles = async (root: string): Promise<Inherited | null> => {
   const runner = await runnerIn(root);
@@ -89,7 +95,8 @@ export const chosenFiles = async (root: string): Promise<Inherited | null> => {
   const chosen: Inherited = {
     exclude: [...new Set(sorted.exclude)],
     from: runner.file,
-    include: same(include, DEFAULT_CONFIG.include.value) ? [] : include,
+    include: same(include, MARKDOWN_DEFAULT) ? [] : include,
+    kinds: [".md"],
     notes: sorted.notes,
   };
   const empty =

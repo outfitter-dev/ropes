@@ -15,7 +15,9 @@ import type { Fixture, Ran } from "./acceptance-repo.ts";
  * process, and every Markdown step runs the real engine.
  */
 
-const TOOLS = ["rumdl", "git"].filter((tool) => Bun.which(tool) === null);
+const TOOLS = ["rumdl", "taplo", "git"].filter(
+  (tool) => Bun.which(tool) === null
+);
 
 const proof = (name: string, body: (fixture: Fixture) => Promise<void>) => {
   test(
@@ -110,6 +112,7 @@ proof(
         },
         value: false,
       },
+      { key: "toml.enabled", source: { kind: "default" }, value: true },
     ]);
     expect(stepsOf(plan, "README.md")).toEqual(["rumdl"]);
 

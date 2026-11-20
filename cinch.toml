@@ -2,8 +2,11 @@
 # The pilot format is unstable and will change without notice.
 pilot = 0
 
-include = ["**/*.md"]
+include = ["**/*.md", "**/*.toml"]
 exclude = ["packages/cinch/tests/fixtures/**"]
 
 [markdown]
+enabled = true
+
+[toml]
 enabled = true
