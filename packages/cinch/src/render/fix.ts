@@ -20,7 +20,10 @@ const changedBlock = (report: FixReport): string[] => {
  * wrote, including when a later step could not run.
  */
 export const renderFix = (report: FixReport): string =>
-  [...changedBlock(report), renderHuman(report.result)].join("\n\n");
+  [
+    ...(report.stopped === undefined ? changedBlock(report) : [report.stopped]),
+    renderHuman(report.result),
+  ].join("\n\n");
 
 /** The whole report, and nothing else, so stdout stays machine-readable. */
 export const renderFixJson = (report: FixReport): string =>

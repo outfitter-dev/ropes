@@ -1,6 +1,6 @@
 # Fix
 
-`cinch fix [path...]` runs the same plan `explain` shows and `check` runs, with one difference: a step whose adapter writes is asked to fix, not to check. Steps run in the order of the plan's batches: one start of an engine for the files of one package, with the adapters that keep files first. This is provisional, like the plan it runs.
+`cinch fix [path...]` fixes the repository's own files. It runs the same plan `explain` shows and `check` runs, with one difference: a step whose adapter writes is asked to fix, not to check. A step that keeps one of Cinch's own files is the exception. `fix` only checks it, because writing those files is [`cinch doctor --fix`](doctor.md). Steps run in the order of the plan's batches: one start of an engine for the files of one package, with the adapters that keep files first. This is provisional, like the plan it runs.
 
 ## What it reports
 
@@ -20,6 +20,19 @@ Clean. Exit code 0.
 
 The exit code follows [the usual rule](exit-codes.md): 0 when nothing remains, 1 when findings remain after fixing, 2 when a step could not run. Running `fix` again on a fixed tree changes nothing and exits 0.
 
+## When the setup needs repair
+
+Before it writes anything, `fix` checks the Cinch setup: every file Cinch keeps at the root, whatever paths were named. When one is missing or behind, or could not be judged, `fix` changes nothing, reports the setup problem and exits 1, or 2 when a file could not be judged. An engine reading a missing or stale config would fix files by the wrong rules, so stopping is the safe default.
+
+```text
+Nothing was fixed: the Cinch setup needs repair first. Run `cinch doctor --fix`, then run this again.
+
+.outfitter/configs/rumdl.toml
+  1:1  error  cinch/managed-file  This file is missing. Run `cinch doctor --fix`.  [rumdl-preset]  (fixable)
+```
+
+With `--json` the report has `stopped`, holding that first line, and `result` holds the setup steps.
+
 ## Dry run
 
 `cinch fix --dry-run` does the same work on a temporary copy of the root and prints the change as a unified diff. The checkout is not touched. Because the same steps run on the same content, the diff is the change a real `fix` would write.
@@ -37,5 +50,6 @@ The copy holds what git would let you commit: tracked files and untracked files 
 | `dryRun` | `true` when the steps ran on a copy |
 | `result` | The same result `check --json` prints, with remaining findings in its steps |
 | `schemaVersion` | `1` |
+| `stopped` | Only when nothing was fixed because the setup needs repair: the reason |
 
 A real run and a dry run of the same tree print the same `changed`, `diff` and `result`.

@@ -42,8 +42,8 @@ markdown
 | State     | Meaning                                                        |
 | --------- | -------------------------------------------------------------- |
 | `current` | The file matches what this Cinch ships                         |
-| `stale`   | The file differs. `cinch preset update` rewrites it            |
-| `missing` | The file is not there. `cinch preset update` writes it         |
+| `stale`   | The file differs. `cinch doctor --fix` rewrites it             |
+| `missing` | The file is not there. `cinch doctor --fix` writes it          |
 | `blocked` | Cinch will not change the file by itself. The message says why |
 | `off`     | The config switches the preset off                             |
 | `unknown` | The file could not be checked                                  |
@@ -60,10 +60,10 @@ cinch preset update
 cinch preset update markdown --dry-run
 ```
 
-`add` writes one preset's files. `update` rewrites what is behind, for one preset or for all of them. `--dry-run` shows the diff and writes nothing. To take a newer standard, upgrade Cinch and run `cinch preset update`.
+`add` writes one preset's files. `update` rewrites what is behind, for one preset or for all of them. `--dry-run` shows the diff and writes nothing. `cinch doctor --fix` does what `preset update` does for every preset, and is the command to reach for once a repository is set up. To take a newer standard, upgrade Cinch and run it.
 
 A preset that the config switches off is not written. Cinch names the setting to remove and does not edit a hand-written config.
 
 ## How this fits the plan
 
-These commands have no way of their own to write a file. The preset files are steps in the plan, so `cinch explain` lists them, `cinch check` fails when one is behind, and `cinch fix` writes them along with everything else. `init` and `preset` run that same plan with the preset files as the selection.
+These commands have no way of their own to write a file. The preset files are steps in the plan, so `cinch explain` lists them, `cinch check` fails when one is behind, and `cinch doctor --fix` writes them. `init` and `preset` run that same plan with the preset files as the selection. `cinch fix` only checks them: see [Doctor](doctor.md).

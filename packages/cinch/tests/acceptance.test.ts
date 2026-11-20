@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect } from "bun:test";
 import path from "node:path";
 
 import { FixReportSchema } from "../src/contracts/fix.ts";
@@ -6,36 +6,14 @@ import { parsePlan, parseResult } from "../src/contracts/parse.ts";
 import type { Plan } from "../src/contracts/plan.ts";
 import { exitCodeOf } from "../src/contracts/result.ts";
 import type { Result } from "../src/contracts/result.ts";
-import { CONFIG, FILES, withFixture } from "./acceptance-repo.ts";
-import type { Fixture, Ran } from "./acceptance-repo.ts";
+import { CONFIG, FILES, json, proof } from "./acceptance-repo.ts";
+import type { Ran } from "./acceptance-repo.ts";
 
 /**
- * The five proofs the Forge pilot asks for, rehearsed on a fixture
+ * The proofs the Forge pilot asks for, rehearsed on a fixture
  * repository. Every run goes through the `cinch` executable in a child
  * process, and every Markdown step runs the real engine.
  */
-
-const TOOLS = ["rumdl", "taplo", "git"].filter(
-  (tool) => Bun.which(tool) === null
-);
-
-const proof = (name: string, body: (fixture: Fixture) => Promise<void>) => {
-  test(
-    name,
-    async () => {
-      if (TOOLS.length > 0) {
-        console.warn(
-          `skipped: ${TOOLS.join(" and ")} not on PATH, so "${name}" did not run`
-        );
-        return;
-      }
-      await withFixture(body);
-    },
-    30_000
-  );
-};
-
-const json = (ran: Ran): unknown => JSON.parse(ran.stdout);
 
 const planOf = (ran: Ran): Plan => {
   const parsed = parsePlan(json(ran));
@@ -135,8 +113,9 @@ proof(
 proof(
   "proof 3: fix is previewed, then applied, then has nothing left to do",
   async ({ main }) => {
+    expect(await main.files()).toEqual({ ...FILES });
+    await main.cinch(["doctor", "--fix"]);
     const before = await main.files();
-    expect(before).toEqual({ ...FILES });
 
     const preview = await main.cinch(["fix", "--dry-run", "--json"]);
     const previewed = FixReportSchema.parse(json(preview));
@@ -145,6 +124,7 @@ proof(
     expect(previewed.changed).toContain(NOTES);
     expect(previewed.diff).toContain("-# Second title\n+## Second title");
     expect(await main.files()).toEqual(before);
+    expect(before["README.md"]).toBe(FILES["README.md"]);
 
     const apply = await main.cinch(["fix", "--json"]);
     const applied = FixReportSchema.parse(json(apply));
@@ -183,6 +163,7 @@ proof(
     expect(text.exitCode).toBe(2);
     expect(text.stdout).toContain("Exit code 2");
 
+    await main.cinch(["doctor", "--fix"]);
     const fix = await main.cinch(["fix"], { path: emptyPath });
     expect(fix.exitCode).toBe(2);
     const left = await main.files();

@@ -6,6 +6,8 @@ export interface CommandRequest {
   readonly json: boolean;
   /** Run on a copy and show the change without writing it. */
   readonly dryRun?: boolean;
+  /** `doctor` only: repair the setup. Without it, `doctor` only reports. */
+  readonly fix?: boolean;
   /** `init` only: write without asking. `dryRun` wins when both are set. */
   readonly yes?: boolean;
   /** `preset` only: `list`, `add` or `update`. The names follow in `paths`. */

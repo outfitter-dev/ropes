@@ -26,7 +26,7 @@ const noticeLines = (step: StepResult): string[] => {
  * appear. A finding sits under the file it names, which is not always the
  * file its step ran on.
  */
-const pathBlocks = (result: Result): string[] => {
+export const pathBlocks = (result: Result): string[] => {
   const byPath = new Map<string, string[]>();
   const add = (path: string, line: string) => {
     byPath.set(path, [...(byPath.get(path) ?? []), line]);

@@ -17,7 +17,8 @@ pre-commit:
         GIT_PAGER: cat
     # Runs after `format`, on the Markdown that is staged. It fixes what the
     # plan allows, stages the result, and stops the commit when a finding is
-    # left or the engine could not run.
+    # left or the engine could not run. It writes no file Cinch keeps: when
+    # the setup needs repair it stops and says to run `cinch doctor --fix`.
     markdown:
       glob: "*.md"
       run: bun run cinch fix {staged_files}

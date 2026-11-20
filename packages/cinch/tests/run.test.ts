@@ -52,6 +52,16 @@ test("check never calls fix, and fix does", async () => {
   expect(adapter.calls).toEqual(["probe", "check", "probe", "fix"]);
 });
 
+test("fix only checks the Cinch setup, and doctor writes nothing else", async () => {
+  const setup = fakeAdapter({ descriptor: { setup: true } });
+  await runPlan(planFor(setup), [setup], fix);
+  await runPlan(planFor(setup), [setup], { ...fix, mode: "doctor" });
+  expect(setup.calls).toEqual(["probe", "check", "probe", "fix"]);
+  const own = fakeAdapter();
+  await runPlan(planFor(own), [own], { ...fix, mode: "doctor" });
+  expect(own.calls).toEqual(["probe", "check"]);
+});
+
 test("fix only checks with an adapter that does not write", async () => {
   const adapter = fakeAdapter({ descriptor: { writes: false } });
   await runPlan(planFor(adapter), [adapter], fix);

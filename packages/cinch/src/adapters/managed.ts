@@ -51,8 +51,9 @@ const read = async (file: string): Promise<string | null> => {
 /**
  * An adapter for files Cinch keeps in a repository, such as a shared config
  * preset. `check` reports a file that is missing or differs from what Cinch
- * ships, and `fix` writes it. The engine is Cinch itself, so there is nothing
- * to install.
+ * ships, and `fix` writes it. The runner calls `fix` only for `doctor --fix`,
+ * because these files are the Cinch setup. The engine is Cinch itself, so
+ * there is nothing to install.
  */
 export const managedAdapter = (options: ManagedOptions): Adapter => {
   const { enabledBy, files, id, migrates, preset } = options;
@@ -63,6 +64,7 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
     owns: files.map((file) => file.path),
     platforms: ["darwin", "linux", "win32"],
     ...(preset === undefined ? {} : { preset }),
+    setup: true,
     tool: TOOL,
     unit: "file",
     versionRange: "*",
@@ -117,7 +119,11 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
       current === null ? "is missing" : `differs from what ${TOOL} keeps here`;
     return {
       findings: [
-        finding(input, `This file ${problem}. Run \`${TOOL} fix\`.`, true),
+        finding(
+          input,
+          `This file ${problem}. Run \`${TOOL} doctor --fix\`.`,
+          true
+        ),
       ],
       status: "findings",
     } satisfies StepOutcome;

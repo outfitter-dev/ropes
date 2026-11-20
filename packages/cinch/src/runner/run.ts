@@ -5,7 +5,17 @@ import type { Result, StepResult } from "../contracts/result.ts";
 import { probeAdapter, threw, versionProblem } from "./ready.ts";
 import type { Readiness } from "./ready.ts";
 
-export type RunMode = "check" | "fix";
+/**
+ * `fix` writes the repository's own files and `doctor` writes the Cinch
+ * setup. Each only checks what the other writes.
+ */
+export type RunMode = "check" | "doctor" | "fix";
+
+/** Whether a batch may write in this mode. */
+export const writesIn = (
+  mode: RunMode,
+  step: { readonly setup?: boolean | undefined; readonly writes: boolean }
+): boolean => step.writes && mode === (step.setup === true ? "doctor" : "fix");
 
 export interface RunOptions {
   readonly mode: RunMode;
@@ -72,7 +82,7 @@ const runBatch = async (
   try {
     return answered(
       batch,
-      mode === "fix" && batch.writes
+      writesIn(mode, batch)
         ? await adapter.fix(input)
         : await adapter.check(input)
     );

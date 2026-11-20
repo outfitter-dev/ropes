@@ -21,7 +21,8 @@ The descriptor is plain data. It is all the resolver sees.
 | `id` | The name the plan and the result use for this adapter. |
 | `tool` | The external tool the adapter drives. It appears in messages. |
 | `versionRange` | A semver range the installed tool must satisfy. `*` accepts any version. |
-| `writes` | Whether `fix` may change files. When it is `false`, `fix` runs `check` instead. |
+| `writes` | Whether the adapter may change files. When it is `false`, every verb runs `check`. |
+| `setup` | Optional. `true` when what the adapter writes is the Cinch setup, not the repository's content. Then `doctor --fix` is the one verb that calls its `fix`, and `cinch fix` runs `check` instead. |
 | `unit` | What one step works on: `file`, `package` or `workspace`. Only `file` steps are planned today, so an adapter with another unit gets no steps yet. |
 | `platforms` | Where the tool can run, from `darwin`, `linux` and `win32`. |
 | `extensions` | The file extensions, with the dot, that get a step from this adapter. |
@@ -30,7 +31,7 @@ The descriptor is plain data. It is all the resolver sees.
 
 ## Kept files
 
-Some files in a repository belong to Cinch, such as the copy of a shared config preset. `adapters/managed.ts` builds an adapter for them from a list of paths and, for each, a function that says what the file should hold. `check` reports a file that is missing or differs, and `fix` writes it. There is no engine to install, so the probe always succeeds.
+Some files in a repository belong to Cinch, such as the copy of a shared config preset. `adapters/managed.ts` builds an adapter for them from a list of paths and, for each, a function that says what the file should hold. `check` reports a file that is missing or differs, and `fix` writes it. The descriptor sets `setup`, so the runner calls that `fix` only for `cinch doctor --fix`. There is no engine to install, so the probe always succeeds.
 
 An engine's preset lives in the engine's own folder and is listed in the registry like any adapter. `adapters/rumdl/preset.ts` is the first one. Kept files go in `.outfitter/configs/`, and the repository's own config stays at the root and extends the kept one. See [the Markdown standard](markdown-standard.md).
 

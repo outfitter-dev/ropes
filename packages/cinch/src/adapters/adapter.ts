@@ -36,6 +36,12 @@ export interface AdapterDescriptor {
    */
   readonly owns?: readonly string[];
   /**
+   * True when what this adapter writes is the Cinch setup, not the
+   * repository's own content. `fix` then only checks its files, and
+   * `doctor --fix` is the one verb that writes them.
+   */
+  readonly setup?: true;
+  /**
    * The name a person uses for the shared config this adapter keeps in its
    * `owns` files, such as `markdown`. Adapters that keep none leave it out.
    */
