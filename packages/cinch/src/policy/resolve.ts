@@ -12,7 +12,7 @@ import { batchesFor, inRunOrder, packageOf, toStep } from "./batches.ts";
 import { sharedFacts } from "./facts.ts";
 import { compileGlobs } from "./glob.ts";
 import type { Matcher } from "./glob.ts";
-import { packStates, rulesOn } from "./packs.ts";
+import { localRules, packStates, rulesOn } from "./packs.ts";
 
 export interface ResolveInput {
   readonly root: string;
@@ -195,11 +195,15 @@ export const resolvePlan = (given: ResolveInput): Plan => {
     given.descriptors,
     given.present ?? []
   );
-  // An adapter that ships rule packs has nothing to run when none is on.
+  // An adapter that ships rule packs has nothing to run when none is on
+  // and the repository names no rules of its own.
   const input = {
     ...given,
     descriptors: given.descriptors.filter(
-      ({ id, packs }) => packs === undefined || rulesOn(rules, id).length > 0
+      (descriptor) =>
+        descriptor.packs === undefined ||
+        rulesOn(rules, descriptor.id).length > 0 ||
+        (descriptor.localRules ?? []).length > 0
     ),
   };
   const withPacks = new Set(
@@ -226,9 +230,11 @@ export const resolvePlan = (given: ResolveInput): Plan => {
       : batch
   );
   const facts = sharedFacts(input.config, input.descriptors, batches);
+  const local = localRules(input.config, input.descriptors);
   return {
     batches,
     ...(facts === undefined ? {} : { facts }),
+    ...(local === undefined ? {} : { localRules: local }),
     paths: planned,
     root: input.root,
     ...(rules.length === 0 ? {} : { rules }),

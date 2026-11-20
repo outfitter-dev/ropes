@@ -254,6 +254,14 @@
           "description": "Whether the structural rules Cinch ships are run. Off unless set to true.",
           "type": "boolean"
         },
+        "local": {
+          "description": "Root-relative folders of the repository's own rules. They run beside the shipped ones.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
         "off": {
           "description": "Shipped rule packs and rules, by name, that are not run.",
           "type": "array",

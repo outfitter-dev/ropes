@@ -1,4 +1,4 @@
-import type { PackState, Provenance } from "../contracts/plan.ts";
+import type { PackState, Plan, Provenance } from "../contracts/plan.ts";
 
 const origin = (source: Provenance): string =>
   source.kind === "default" ? "default" : `${source.file}: ${source.key}`;
@@ -27,3 +27,12 @@ const packLines = (pack: PackState): string[] => {
 /** The rule packs the plan's adapters ship, and why each runs or does not. */
 export const rulesBlock = (packs: readonly PackState[]): string =>
   ["Rule packs", ...packs.flatMap(packLines)].join("\n");
+
+/** The folders of its own rules the repository names. */
+export const localRulesBlock = (
+  local: NonNullable<Plan["localRules"]>
+): string =>
+  [
+    "Local rules",
+    ...local.folders.map((folder) => `  ${folder}  (${origin(local.source)})`),
+  ].join("\n");
