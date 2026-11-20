@@ -1,5 +1,5 @@
 import type { FileOutcome, StepInput, StepOutcome } from "../adapter.ts";
-import { allIncomplete } from "../batch.ts";
+import { allIncomplete, inChunks } from "../batch.ts";
 import { exec } from "../exec.ts";
 import { readFences } from "./fences.ts";
 import type { Fences } from "./fences.ts";
@@ -7,12 +7,6 @@ import { parseOutput } from "./output.ts";
 import type { Parsed } from "./output.ts";
 
 const ID = "rumdl";
-
-/**
- * How many files one start is given. A command line has a length limit, and
- * this stays far below it for paths of ordinary length.
- */
-const CHUNK = 200;
 
 const incomplete = (reason: string): StepOutcome => ({
   findings: [],
@@ -91,50 +85,12 @@ const start = async (
   });
 };
 
-const chunks = (paths: readonly string[]): string[][] => {
-  const parts: string[][] = [];
-  for (let from = 0; from < paths.length; from += CHUNK) {
-    parts.push(paths.slice(from, from + CHUNK));
-  }
-  return parts;
-};
-
-/** Each file by itself, one after another. */
-const apart = async (
-  command: string,
-  input: StepInput,
-  flags: readonly string[]
-): Promise<FileOutcome[]> => {
-  const outcomes: FileOutcome[] = [];
-  for (const path of input.paths) {
-    // eslint-disable-next-line no-await-in-loop
-    const one = await start(command, { ...input, paths: [path] }, flags);
-    outcomes.push(...one);
-  }
-  return outcomes;
-};
-
 /**
- * Runs rumdl on a batch, with one start for every 200 files. When a start of
- * several files could not run at all, each of its files is run by itself, so
- * one file rumdl cannot read does not leave the rest unchecked.
+ * Runs rumdl on a batch. See `inChunks` for how the files are split.
  */
-export const runBatch = async (
+export const runBatch = (
   command: string,
   input: StepInput,
   flags: readonly string[]
-): Promise<FileOutcome[]> => {
-  const outcomes: FileOutcome[] = [];
-  for (const paths of chunks(input.paths)) {
-    const part = { ...input, paths };
-    // One start at a time: with `--fix`, rumdl writes the files it is given.
-    // eslint-disable-next-line no-await-in-loop
-    const together = await start(command, part, flags);
-    const failed =
-      paths.length > 1 &&
-      together.every((outcome) => outcome.status === "incomplete");
-    // eslint-disable-next-line no-await-in-loop
-    outcomes.push(...(failed ? await apart(command, part, flags) : together));
-  }
-  return outcomes;
-};
+): Promise<FileOutcome[]> =>
+  inChunks(input, (part) => start(command, part, flags));

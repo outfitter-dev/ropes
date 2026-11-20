@@ -35,7 +35,7 @@ Every command prints plain text that can be piped, or one JSON document with `--
 | `fix` | The repository's own files: what the plan's engines fix |
 | `doctor --fix` | The presets and generated configs Cinch keeps under `.outfitter/configs/`, a root config Cinch creates when there is none, and the `extends` line in one a person wrote |
 
-`init` and `preset add` or `update` write the same files as `doctor --fix`, through the same steps. Only `init` also carries an older tool's settings over. [Outcomes and exit codes](docs/exit-codes.md) has the full contract, and [Selecting files](docs/selection.md) says which files a command looks at. Markdown is held to [the Markdown standard](docs/markdown-standard.md), which also formats fenced TypeScript and JavaScript. A TypeScript repository can ask for the shared lint, formatter and compiler presets: see [the TypeScript standard](docs/typescript-standard.md).
+`init` and `preset add` or `update` write the same files as `doctor --fix`, through the same steps. Only `init` also carries an older tool's settings over. [Outcomes and exit codes](docs/exit-codes.md) has the full contract, and [Selecting files](docs/selection.md) says which files a command looks at. Markdown is held to [the Markdown standard](docs/markdown-standard.md), which also formats fenced TypeScript and JavaScript. A TypeScript repository can ask for the shared lint, formatter and compiler presets, and have Cinch run the linter: see [the TypeScript standard](docs/typescript-standard.md).
 
 The first profile is Markdown. TOML is the second: every TOML file must parse, and one with a schema must fit it. Formatting TOML stays with the formatter.
 

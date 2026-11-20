@@ -115,3 +115,15 @@ An adapter takes a root and the files of a batch and returns data. It does not r
 - Taplo carries on with no config when it cannot use its own, which would skip every schema. The adapter reports the step incomplete with what Taplo said was wrong.
 - Taplo reads a file argument as a glob. The adapter passes the full path with its glob characters made literal, so a name such as `config[1].toml` is the file that gets checked.
 - `[toml] enabled = false` in the Cinch config switches the adapter off, for the whole repository or for the paths of an override.
+
+## Oxlint
+
+`adapters/oxlint/` lints TypeScript and JavaScript with [Oxlint](https://oxc.rs/docs/guide/usage/linter). It runs once for the files of a batch, from the repository root, and reads the repository's own `oxlint.config.ts` there, type-aware rules included. In `fix` it runs with `--fix`.
+
+- It is off until the Cinch config sets `lint.enabled = true`, and `include` has to name the files, for example `**/*.ts`. Not every repository has TypeScript, and the default `include` is Markdown and TOML.
+- Cinch does not install Oxlint. It is a package, so the adapter looks for it in the repository's `node_modules/.bin` first and then on `PATH`. The lockfile pins it. Without a pin in `mise.toml` the adapter accepts the 1.x releases from 1.93.0, the version its report mapping was checked against.
+- A finding keeps Oxlint's own rule id, such as `eslint(no-var)` or `typescript(no-floating-promises)`. A file that does not parse is a finding under the rule `syntax`.
+- The JSON report does not say which diagnostics a fix would clear, so no lint finding is marked fixable. `cinch fix` still applies what Oxlint can fix.
+- A fixing run reports what it saw before it wrote. The adapter runs a second time without `--fix` and reports what that run finds.
+- Oxlint states how many files it linted. When that is not the number it was given, it left a file out without saying which, and every file of that run is incomplete. A report that cannot be read, or an exit code of 1 with no error in the report, is incomplete too.
+- A warning is a finding. `cinch check` exits 1 on one, as `oxlint --deny-warnings` does.

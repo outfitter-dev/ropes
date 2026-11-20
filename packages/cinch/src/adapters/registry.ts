@@ -3,6 +3,7 @@ import type { EditorSettings } from "../contracts/editor.ts";
 import type { Adapter } from "./adapter.ts";
 import { editorFileAdapter } from "./editorconfig/adapter.ts";
 import { oxfmtPreset } from "./oxfmt/preset.ts";
+import { oxlintAdapter } from "./oxlint/adapter.ts";
 import { oxlintPreset } from "./oxlint/preset.ts";
 import type { Pins } from "./pins.ts";
 import { rumdlAdapter } from "./rumdl/adapter.ts";
@@ -18,7 +19,7 @@ import { tsconfigPreset } from "./tsconfig/preset.ts";
  * and it is handed the table the Cinch config states for that engine. The
  * editor settings file is kept only when the config states its facts. The
  * presets for the lint, format and TypeScript configs are off until the
- * config asks for each.
+ * config asks for each, and so is the lint engine.
  */
 export const adaptersFor = (
   pins: Pins,
@@ -32,4 +33,5 @@ export const adaptersFor = (
   tsconfigPreset(),
   rumdlAdapter({ version: pins.rumdl }),
   taploAdapter({ version: pins.taplo }),
+  oxlintAdapter({ version: pins.oxlint }),
 ];

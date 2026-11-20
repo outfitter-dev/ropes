@@ -127,7 +127,7 @@ test("a hand edit to a kept preset is a finding that doctor repairs", async () =
   expect(await Bun.file(file).text()).toContain('"strict": true');
 });
 
-test("the preset tables take only the preset key", () => {
+test("the preset tables take no key they do not know", () => {
   const origin = { file: "cinch.toml", prefix: "" };
   const stated = parseConfigTable(
     { lint: { preset: true }, pilot: 0, typescript: { preset: false } },
