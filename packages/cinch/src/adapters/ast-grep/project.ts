@@ -22,7 +22,11 @@ export const tidy = (folder: string): string =>
   path.posix.normalize(folder.replaceAll("\\", "/")).replace(/\/$/u, "") || ".";
 
 const foldersIn = (parsed: unknown): readonly unknown[] | null => {
-  if (typeof parsed !== "object" || parsed === null) {
+  // An empty file, or one with comments only, names no folders.
+  if (parsed === null || parsed === undefined) {
+    return [];
+  }
+  if (typeof parsed !== "object") {
     return null;
   }
   if (!(KEY in parsed) || parsed[KEY] === null) {

@@ -124,6 +124,10 @@ test("the project config's rule folders are read and tidied", async () => {
   expect(await readProject(root)).toEqual({ ok: true });
   await write(PROJECT, "utilDirs:\n  - utils\n");
   expect(await readProject(root)).toEqual({ ok: true });
+  await write(PROJECT, "# nothing yet\n");
+  expect(await readProject(root)).toEqual({ ok: true });
+  await write(PROJECT, "");
+  expect(await readProject(root)).toEqual({ ok: true });
   await write(PROJECT, "ruleDirs:\n  - ./rules/\n  - rules\n  - more\n");
   expect(await readProject(root)).toEqual({
     found: { file: PROJECT, folders: ["rules", "more"], key: "ruleDirs" },
