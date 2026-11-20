@@ -142,6 +142,7 @@ An adapter takes a root and the files of a batch and returns data. It does not r
 - ast-grep exits 0 when no error-level rule matched and 1 when one did, and says how many. A run whose exit code, count and printed matches do not agree is incomplete, and so is one where it refuses a rule or cannot read a file.
 - ast-grep does not say which files it read, and a file that does not parse matches nothing. A broken JSON file is the formatter's finding, not this step's.
 - The first rule, `config/tsconfig-extends`, reports a `tsconfig.json` with no `extends` line.
+- Each rule has a cases file at `packages/cinch/tests/rules/<pack>/<rule>.yml`, in the form `ast-grep test` reads: the rule's `id`, some `valid` text it must pass and some `invalid` text it must report. The tests fail a rule that has no cases file, or one with no case on either side, and run every rule against its cases on the real engine. The cases sit outside the rules folder because ast-grep reads every YAML file there as a rule.
 
 ## The type check
 
