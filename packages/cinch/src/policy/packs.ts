@@ -99,15 +99,28 @@ export const unknownOff = (
   return (config.rulesOff?.value ?? []).filter((name) => !known.has(name));
 };
 
-/** The folders of its own rules the config names, when an adapter runs them. */
-export const localRules = (
+/**
+ * The folders of its own rules the config names, as they would stand if
+ * policy asked for every adapter given.
+ */
+export const namedLocalRules = (
   config: CinchConfig,
   descriptors: readonly AdapterDescriptor[]
 ): Plan["localRules"] => {
-  const folders = descriptors
-    .filter((descriptor) => isWanted(descriptor, config))
-    .flatMap((descriptor) => descriptor.localRules ?? []);
+  const folders = descriptors.flatMap(
+    (descriptor) => descriptor.localRules ?? []
+  );
   return config.rulesLocal === undefined || folders.length === 0
     ? undefined
     : { folders: [...new Set(folders)], source: config.rulesLocal.source };
 };
+
+/** The folders of its own rules the config names, when an adapter runs them. */
+export const localRules = (
+  config: CinchConfig,
+  descriptors: readonly AdapterDescriptor[]
+): Plan["localRules"] =>
+  namedLocalRules(
+    config,
+    descriptors.filter((descriptor) => isWanted(descriptor, config))
+  );

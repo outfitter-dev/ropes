@@ -110,6 +110,21 @@ test("the text names the local rule folders", async () => {
   );
 });
 
+test("a shared config is told its own table, and local folders show before rules are on", async () => {
+  await put(
+    "outfitter.toml",
+    '[cinch]\npilot = 0\n\n[cinch.rules]\nlocal = ["rules"]\n'
+  );
+  await put("tsconfig.json", "{}\n");
+  const shown = await run({ json: false });
+  expect(shown.output).toStartWith(
+    "Rules are not switched on here, so none of these run. Set `enabled = true` under `[cinch.rules]` in outfitter.toml to run them."
+  );
+  expect(shown.output).toContain(
+    "Local rules\n  rules  (outfitter.toml: cinch.rules.local)"
+  );
+});
+
 test("an action it does not have is refused", async () => {
   await config("enabled = true\n");
   const refused = await run({ action: "nope" });

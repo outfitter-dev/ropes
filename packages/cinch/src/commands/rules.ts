@@ -6,7 +6,7 @@ import type {
   RulesPack,
   RulesReport,
 } from "../contracts/rules-report.ts";
-import { shippedStates } from "../policy/packs.ts";
+import { namedLocalRules, shippedStates } from "../policy/packs.ts";
 import { renderRules } from "../render/rules.ts";
 import type { Command } from "./command.ts";
 import { prepare } from "./prepare.ts";
@@ -58,16 +58,12 @@ export const rules =
     }
     const { adapters, config, plan, present, root } = prepared.value;
     const enabled = plan.rules !== undefined;
-    const packs =
-      plan.rules ??
-      shippedStates(
-        config,
-        adapters.map(({ descriptor }) => descriptor),
-        present
-      );
+    const descriptors = adapters.map(({ descriptor }) => descriptor);
+    const packs = plan.rules ?? shippedStates(config, descriptors, present);
+    const local = plan.localRules ?? namedLocalRules(config, descriptors);
     const report: RulesReport = {
       enabled,
-      ...(plan.localRules === undefined ? {} : { localRules: plan.localRules }),
+      ...(local === undefined ? {} : { localRules: local }),
       packs: packs.map((pack) => withStates(pack, enabled)),
       schemaVersion: SCHEMA_VERSION,
     };
@@ -75,6 +71,9 @@ export const rules =
       exitCode: EXIT_CODE.clean,
       output: request.json
         ? JSON.stringify(report, null, 2)
-        : renderRules(report, root.configFile ?? "cinch.toml"),
+        : renderRules(report, {
+            file: root.configFile ?? "cinch.toml",
+            table: `${config.prefix ?? ""}rules`,
+          }),
     };
   };

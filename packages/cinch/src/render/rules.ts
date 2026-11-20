@@ -44,12 +44,15 @@ export const localRulesBlock = (
   ].join("\n");
 
 /** What `cinch rules` prints: every pack Cinch ships and how it stands here. */
-export const renderRules = (report: RulesReport, configFile: string): string =>
+export const renderRules = (
+  report: RulesReport,
+  config: { readonly file: string; readonly table: string }
+): string =>
   [
     ...(report.enabled
       ? []
       : [
-          `Rules are not switched on here, so none of these run. Set \`enabled = true\` under \`[rules]\` in ${configFile} to run them.`,
+          `Rules are not switched on here, so none of these run. Set \`enabled = true\` under \`[${config.table}]\` in ${config.file} to run them.`,
         ]),
     report.packs.length === 0
       ? "Cinch ships no rule pack."
