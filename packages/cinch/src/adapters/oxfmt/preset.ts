@@ -1,4 +1,5 @@
 import type { Adapter } from "../adapter.ts";
+import { PRESET_BASE } from "../preset-base.ts";
 import { shippedPreset } from "../shipped.ts";
 
 /** The copy of the preset as this Cinch ships it. */
@@ -11,6 +12,7 @@ export const PRESET_PATH = ".outfitter/configs/presets/oxfmt.ts";
  */
 export const oxfmtPreset = (): Adapter =>
   shippedPreset({
+    builtOn: PRESET_BASE,
     comment: "//",
     enabledBy: "format.preset",
     id: "oxfmt-preset",

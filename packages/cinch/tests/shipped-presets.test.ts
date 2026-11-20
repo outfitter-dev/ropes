@@ -37,6 +37,13 @@ const run = (verb: string, request: Partial<CommandRequest> = {}) => {
 const config = (text: string): Promise<number> =>
   Bun.write(path.join(root, "cinch.toml"), `pilot = 0\n${text}`);
 
+/** Puts a package at one version where the repository would import it. */
+const install = (name: string, version: string): Promise<number> =>
+  Bun.write(
+    path.join(root, "node_modules", name, "package.json"),
+    JSON.stringify({ name, version })
+  );
+
 const exists = (file: string): Promise<boolean> =>
   Bun.file(path.join(root, PRESETS, file)).exists();
 
@@ -73,6 +80,7 @@ test("adding a preset that is off says which setting switches it on", async () =
 
 test("an update that names no preset passes over the ones that are off", async () => {
   await config("[lint]\npreset = true\n");
+  await install("ultracite", "8.1.1");
   const updated = await run("preset", { action: "update" });
   expect(updated.exitCode).toBe(0);
   expect(await exists("oxlint.ts")).toBe(true);
@@ -86,6 +94,7 @@ test("an update that names no preset passes over the ones that are off", async (
 
 test("a preset the config asks for is written with a header, then current", async () => {
   await config(ON);
+  await install("ultracite", "8.1.1");
   const before = await run("check");
   expect(before.exitCode).toBe(1);
   const fixed = await run("doctor", { fix: true });
