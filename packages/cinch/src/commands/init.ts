@@ -11,7 +11,7 @@ import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { locate } from "./presets.ts";
 import { choiceReasons, oldConfigs, retire } from "./retire.ts";
-import { unadopted } from "./rules-adopt.ts";
+import { readBy, unadopted } from "./rules-adopt.ts";
 import { setupFiles } from "./setup.ts";
 import { inheritedBy, sparing, starterConfig } from "./starter.ts";
 
@@ -63,10 +63,11 @@ export const init =
     const kept = [...paths, ...found.flatMap((one) => one.keeps ?? [])];
     const carried =
       (await configFileIn(root)) === null ? sparing(found, kept) : null;
+    const packs = unadopted(config, adapters, present);
     const starter =
       carried === null
         ? null
-        : starterConfig(carried, unadopted(config, adapters, present));
+        : starterConfig(carried, packs, readBy(adapters, packs));
     // The old config is judged now: once the new files are written, an
     // adapter can no longer tell what they were made from.
     const old = await oldConfigs(adapters, plan, root);

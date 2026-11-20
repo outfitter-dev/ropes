@@ -55,6 +55,16 @@ export const unadopted = (
     []
   ).map(({ name }) => name);
 
+/** The globs for the files the named packs are about. */
+export const readBy = (
+  adapters: readonly Adapter[],
+  names: readonly string[]
+): string[] =>
+  adapters
+    .flatMap(({ descriptor }) => descriptor.packs ?? [])
+    .filter((pack) => names.includes(pack.name))
+    .flatMap((pack) => pack.relevant);
+
 /** Whether the config itself states that rules are off. */
 export const declined = (config: CinchConfig): boolean =>
   config.settings.some(

@@ -7,6 +7,7 @@ import type { CommandRequest } from "../src/commands/command.ts";
 import { commands } from "../src/commands/registry.ts";
 import { starterConfig, STARTER_CONFIG } from "../src/commands/starter.ts";
 import { DoctorReportSchema } from "../src/contracts/doctor.ts";
+import { parsePlan } from "../src/contracts/parse.ts";
 
 const RULES = '[rules]\nenabled = true\npacks = ["config"]\n';
 
@@ -49,6 +50,24 @@ test("the starting config names the packs given, and none when there are none", 
   expect(starterConfig([], ["config"])).toBe(`${STARTER_CONFIG}\n${RULES}`);
 });
 
+test("the files a named pack reads join the default include, or the carried one", () => {
+  const fresh = starterConfig([], ["config"], ["**/tsconfig.json"]);
+  expect(fresh).toContain(
+    '# The files the rule packs named below read are included too.\ninclude = [\n  "**/*.md",\n  "**/*.toml",\n  "**/tsconfig.json",\n]\n'
+  );
+  expect(fresh).toEndWith(RULES);
+  const old = { exclude: [], from: "old.json", kinds: [".md"], notes: [] };
+  const carried = starterConfig(
+    [{ ...old, include: ["docs/**/*.md"] }],
+    ["config"],
+    ["**/tsconfig.json"]
+  );
+  expect(carried).toContain(
+    'include = [\n  "docs/**/*.md",\n  "**/tsconfig.json",\n]\n'
+  );
+  expect(starterConfig([], [], ["**/tsconfig.json"])).toBe(STARTER_CONFIG);
+});
+
 test("init starts a new config with the packs that apply here", async () => {
   await put("tsconfig.json", "{}\n");
   const shown = await run("init", { json: false });
@@ -57,6 +76,14 @@ test("init starts a new config with the packs that apply here", async () => {
   await run("init", { yes: true });
   expect(await config()).toEndWith(RULES);
   expect(await notAdopted()).toEqual([]);
+  const explained = await run("explain", { paths: ["tsconfig.json"] });
+  const plan = parsePlan(JSON.parse(explained.output ?? "null"));
+  if (!plan.ok) {
+    throw new Error("the plan did not parse");
+  }
+  expect(plan.value.paths[0]?.steps.map((step) => step.adapter)).toEqual([
+    "ast-grep",
+  ]);
 });
 
 test("init names no pack where none applies", async () => {
