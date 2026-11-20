@@ -53,7 +53,9 @@ const OPT_IN = {
   lint: optInPreset("lint config").extend(
     optInSwitch("TypeScript and JavaScript are linted")
   ),
-  typescript: optInPreset("TypeScript compiler options"),
+  typescript: optInPreset("TypeScript compiler options").extend(
+    optInSwitch("TypeScript is type checked")
+  ),
 };
 const overrideSwitch = (what: string) =>
   z
@@ -69,6 +71,7 @@ const OverrideSchema = z.strictObject({
     "Root-relative globs. The settings beside them apply to matching files."
   ),
   toml: TomlSchema.optional(),
+  typescript: overrideSwitch("the matching files are type checked"),
 });
 /**
  * The shape of `cinch.toml`, and of the `[cinch]` table in `outfitter.toml`.

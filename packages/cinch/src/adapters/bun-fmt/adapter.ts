@@ -2,12 +2,11 @@ import type {
   Adapter,
   AdapterDescriptor,
   FileOutcome,
-  ProbeResult,
   StepInput,
 } from "../adapter.ts";
 import { allIncomplete } from "../batch.ts";
 import { markFixed } from "../changed.ts";
-import { exec } from "../exec.ts";
+import { probeOnPath } from "../on-path.ts";
 import { checkBatch, fixBatch } from "./run.ts";
 
 const ID = "bun-fmt";
@@ -33,8 +32,6 @@ export interface BunFmtOptions {
   readonly command?: string;
 }
 
-const VERSION = /\d+\.\d+\.\d+/u;
-
 /**
  * Formatting through `bun fmt`, which reads the repository's formatter
  * config from the root. It runs once for the files of a batch. In `fix` it
@@ -56,17 +53,6 @@ export const bunFmtAdapter = (options: BunFmtOptions = {}): Adapter => {
     versionRange: options.version ?? SUPPORTED_RANGE,
     writes: true,
   };
-  const probe = async (): Promise<ProbeResult> => {
-    const binary = Bun.which(command);
-    if (binary === null) {
-      return { available: false, reason: `${command} is not on PATH` };
-    }
-    const { exitCode, stdout } = await exec([binary, "--version"]);
-    const version = VERSION.exec(stdout)?.[0];
-    return exitCode === 0 && version !== undefined
-      ? { available: true, version }
-      : { available: false, reason: `${command} --version did not answer` };
-  };
   const withBinary = (
     input: StepInput,
     body: (binary: string) => Promise<FileOutcome[]>
@@ -83,6 +69,6 @@ export const bunFmtAdapter = (options: BunFmtOptions = {}): Adapter => {
       withBinary(input, (binary) =>
         markFixed(input, () => fixBatch(binary, input))
       ),
-    probe,
+    probe: () => probeOnPath(command),
   };
 };

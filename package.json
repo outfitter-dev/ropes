@@ -9,13 +9,10 @@
   "type": "module",
   "scripts": {
     "bootstrap": "bash scripts/bootstrap.sh",
-    "check": "bun run lint && bun run format:check && bun run typecheck && bun run test && bun run cinch check",
+    "check": "bun run cinch check && bun run test",
     "cinch": "bun packages/cinch/src/cli.ts",
-    "format": "bun fmt --no-script",
-    "format:check": "bun fmt --no-script --check",
-    "lint": "oxlint --deny-warnings .",
-    "test": "bun test",
-    "typecheck": "bun check --no-script"
+    "fix": "bun run cinch fix",
+    "test": "bun test"
   },
   "devDependencies": {
     "@types/bun": "1.4.4",

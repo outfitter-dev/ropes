@@ -1,6 +1,7 @@
 import type { ToolTables } from "../contracts/config.ts";
 import type { EditorSettings } from "../contracts/editor.ts";
 import type { Adapter } from "./adapter.ts";
+import { bunCheckAdapter } from "./bun-check/adapter.ts";
 import { bunFmtAdapter } from "./bun-fmt/adapter.ts";
 import { editorFileAdapter } from "./editorconfig/adapter.ts";
 import { oxfmtPreset } from "./oxfmt/preset.ts";
@@ -20,7 +21,8 @@ import { tsconfigPreset } from "./tsconfig/preset.ts";
  * and it is handed the table the Cinch config states for that engine. The
  * editor settings file is kept only when the config states its facts. The
  * presets for the lint, format and TypeScript configs are off until the
- * config asks for each, and so are the lint engine and the formatter. The
+ * config asks for each, and so are the lint engine, the type check and the
+ * formatter. The
  * formatter is last, so in a fix it formats what the others wrote.
  */
 export const adaptersFor = (
@@ -36,5 +38,6 @@ export const adaptersFor = (
   rumdlAdapter({ version: pins.rumdl }),
   taploAdapter({ version: pins.taplo }),
   oxlintAdapter({ version: pins.oxlint }),
+  bunCheckAdapter({ version: pins.bun }),
   bunFmtAdapter({ version: pins.bun }),
 ];

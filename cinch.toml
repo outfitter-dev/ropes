@@ -43,4 +43,5 @@ enabled = true
 preset = true
 
 [typescript]
+enabled = true
 preset = true
