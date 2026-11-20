@@ -6,6 +6,7 @@ files:
   - "**/tsconfig.json"
 ignores:
   - "**/.outfitter/**"
+  - "**/.ropes/**"
 rule:
   kind: document
   not:
