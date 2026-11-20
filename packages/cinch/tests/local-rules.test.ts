@@ -36,7 +36,14 @@ test("the config names folders of local rules, and only ones inside the reposito
     source: LOCAL,
     value: ["rules"],
   });
-  for (const folder of ["../rules", "/rules", "a/../../rules"]) {
+  const outside = [
+    "../rules",
+    "/rules",
+    "a/../../rules",
+    "\\rules",
+    "\\\\server\\share",
+  ];
+  for (const folder of outside) {
     const refused = parseConfigTable(
       { pilot: 0, rules: { local: [folder] } },
       ORIGIN

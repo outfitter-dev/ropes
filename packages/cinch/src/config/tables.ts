@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /** Whether a root-relative path stays under the root it is read from. */
 const isInside = (folder: string): boolean =>
-  !folder.startsWith("/") &&
+  !/^[\\/]/u.test(folder) &&
   !/^[A-Za-z]:/u.test(folder) &&
   !folder.split(/[\\/]/u).includes("..");
 
