@@ -28,6 +28,8 @@ The engines are not inside. A repository still pins and installs rumdl, Taplo an
 
 Markdown and TOML work: the binary plans, checks, fixes and keeps the Markdown preset with only the engines on `PATH`. A test builds the binary, runs it with no Bun in reach, and compares its `check` output with the package's.
 
+One part of Markdown does not work yet. The Markdown preset formats JavaScript and TypeScript fenced blocks by calling `bun`, and the binary does not put one on `PATH`. A file with such a block is reported as incomplete, never as passing. The binary can stand in for `bun` when it is started with `BUN_BE_BUN=1`, which is the planned fix.
+
 The lint, format and TypeScript presets are TypeScript or build on packages from npm. The binary can write those files, but a repository with no Bun or Node has nothing to run them with. They are off unless the Cinch config asks for them.
 
 ## Measured
@@ -40,5 +42,6 @@ On Linux x64 with Bun 1.4.4, on 2026-11-20:
 
 ## Still open
 
+- JavaScript and TypeScript fenced blocks in Markdown, as above.
 - How a release is cut and how a repository installs and pins the binary. mise is where tool versions live, so a release asset mise can install is the first choice.
 - Builds for macOS arm64 and Linux arm64 in CI.
