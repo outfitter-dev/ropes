@@ -149,6 +149,16 @@ export const PackStateSchema = z
   .readonly();
 export type PackState = z.infer<typeof PackStateSchema>;
 
+/**
+ * Folders of the repository's own rules, each with the setting that names
+ * it: the Cinch config, or an engine's own project config.
+ */
+export const LocalRulesSchema = z
+  .array(
+    z.object({ folder: z.string().min(1), source: ProvenanceSchema }).readonly()
+  )
+  .readonly();
+
 /** What `explain` prints and what `check` and `fix` execute. */
 export const PlanSchema = z
   .object({
@@ -160,13 +170,7 @@ export const PlanSchema = z
      */
     facts: SharedFactsSchema.optional(),
     /** The folders of its own rules the repository names, when it does. */
-    localRules: z
-      .object({
-        folders: z.array(z.string().min(1)).readonly(),
-        source: ProvenanceSchema,
-      })
-      .readonly()
-      .optional(),
+    localRules: LocalRulesSchema.optional(),
     paths: z.array(PlannedPathSchema).readonly(),
     root: z.string().min(1),
     /** Present when policy asks for an adapter that ships rule packs. */

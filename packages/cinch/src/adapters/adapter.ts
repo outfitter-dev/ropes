@@ -3,6 +3,7 @@ import type { Finding } from "../contracts/finding.ts";
 import type { Layer } from "../contracts/plan.ts";
 import type { StepStatus } from "../contracts/result.ts";
 import type { RulePack } from "../contracts/rules.ts";
+import type { FoundRules, Settled } from "./found.ts";
 import type { Relocates } from "./relocation.ts";
 
 export type Platform = "darwin" | "linux" | "win32";
@@ -99,6 +100,8 @@ export interface AdapterDescriptor {
    * runs beside its own. With one, it has a step even when no pack is on.
    */
   readonly localRules?: readonly string[];
+  /** More such folders, which the engine's own project config names. */
+  readonly foundRules?: FoundRules;
 }
 
 export interface ProbeResult {
@@ -233,4 +236,9 @@ export interface Adapter {
    * its table in the Cinch config. An adapter with no such table has none.
    */
   readonly relocates?: Relocates;
+  /**
+   * The adapter as it stands once it has read what the repository says to
+   * its engine in the engine's own files. It reads, and never writes.
+   */
+  readonly settled?: (root: string) => Promise<Settled>;
 }

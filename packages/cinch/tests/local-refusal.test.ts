@@ -25,7 +25,7 @@ test("a refused local rule is looked for once, not once for each file", async ()
       binary,
       "engine",
       { package: ".", paths, root, rules: [] },
-      ["rules"]
+      [{ folder: "rules", namedBy: "rules.local" }]
     );
     expect(outcomes.map((outcome) => outcome.status)).toEqual([
       "incomplete",

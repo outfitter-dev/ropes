@@ -203,7 +203,8 @@ export const resolvePlan = (given: ResolveInput): Plan => {
       (descriptor) =>
         descriptor.packs === undefined ||
         rulesOn(rules, descriptor.id).length > 0 ||
-        (descriptor.localRules ?? []).length > 0
+        (descriptor.localRules ?? []).length > 0 ||
+        descriptor.foundRules !== undefined
     ),
   };
   const withPacks = new Set(

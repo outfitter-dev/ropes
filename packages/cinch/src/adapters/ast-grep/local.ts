@@ -16,6 +16,12 @@ export type LocalRules =
     }
   | { readonly ok: false; readonly message: string };
 
+/** A folder of rules, and the setting that names it. */
+export interface RuleFolder {
+  readonly folder: string;
+  readonly namedBy: string;
+}
+
 const NONE: LocalRules = { files: [], ids: new Set(), ok: true, texts: [] };
 const RULE_FILES = new Glob("**/*.{yml,yaml}");
 
@@ -59,24 +65,24 @@ const filesOf = async (root: string, folder: string): Promise<string[]> => {
  */
 export const readLocal = async (
   root: string,
-  folders: readonly string[],
+  folders: readonly RuleFolder[],
   shipped: ReadonlySet<string>
 ): Promise<LocalRules> => {
   if (folders.length === 0) {
     return NONE;
   }
   const real = await Promise.all(
-    folders.map((folder) => isFolder(path.join(root, folder)))
+    folders.map(({ folder }) => isFolder(path.join(root, folder)))
   );
   const missing = folders.find((_, index) => real[index] !== true);
   if (missing !== undefined) {
     return {
-      message: `rules.local names ${missing}, which is not a folder here`,
+      message: `${missing.namedBy} names ${missing.folder}, which is not a folder here`,
       ok: false,
     };
   }
   const listed = await Promise.all(
-    folders.map((folder) => filesOf(root, folder))
+    folders.map(({ folder }) => filesOf(root, folder))
   );
   const files = [...new Set(listed.flat())];
   const texts = await Promise.all(

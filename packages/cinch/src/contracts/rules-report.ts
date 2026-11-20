@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-import { PackStateSchema, ProvenanceSchema, SCHEMA_VERSION } from "./plan.ts";
+import {
+  LocalRulesSchema,
+  PackStateSchema,
+  ProvenanceSchema,
+  SCHEMA_VERSION,
+} from "./plan.ts";
 
 /**
  * `on` runs. `off` is named in the config's `rules.off`. `not-relevant` has
@@ -41,13 +46,7 @@ export const RulesReportSchema = z
     /** Whether the repository has switched rules on. */
     enabled: z.boolean(),
     /** The folders of its own rules the repository names, when it does. */
-    localRules: z
-      .object({
-        folders: z.array(z.string().min(1)).readonly(),
-        source: ProvenanceSchema,
-      })
-      .readonly()
-      .optional(),
+    localRules: LocalRulesSchema.optional(),
     /** What a person should know, one line each, such as a pack named in the config whose files the config leaves out. */
     notes: z.array(z.string()).readonly(),
     packs: z.array(RulesPackSchema).readonly(),
