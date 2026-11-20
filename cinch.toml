@@ -2,8 +2,14 @@
 # The pilot format is unstable and will change without notice.
 pilot = 0
 
-include = ["**/*.md", "**/*.toml", "**/*.ts"]
-exclude = ["packages/cinch/tests/fixtures/**"]
+include = [
+  "**/*.md",
+  "**/*.toml",
+  "**/*.ts",
+  "**/*.json",
+  "**/*.yml",
+  "**/*.yaml",
+]
 
 [markdown]
 enabled = true
@@ -33,6 +39,7 @@ enabled = true
 preset = true
 
 [format]
+enabled = true
 preset = true
 
 [typescript]

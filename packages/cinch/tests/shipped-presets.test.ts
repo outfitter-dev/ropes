@@ -139,7 +139,7 @@ test("the preset tables take no key they do not know", () => {
   expect(keys).toContainEqual(["lint.preset", true]);
   expect(keys).toContainEqual(["typescript.preset", false]);
   const unknown = parseConfigTable(
-    { format: { enabled: true }, pilot: 0 },
+    { format: { check: true }, pilot: 0 },
     origin
   );
   expect(unknown).toMatchObject({ error: { kind: "invalid" }, ok: false });
