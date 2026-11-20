@@ -59,13 +59,21 @@ const planned = async (
   if (!prepared.ok) {
     return { error: prepared.error };
   }
-  const gaps = gapsOf([preset], prepared.value.plan);
+  const keeper = prepared.value.adapters.find(
+    (adapter) => adapter.descriptor.id === preset.adapter
+  );
+  // A file the adapter does not keep yet has no step to be missing. It can
+  // still be excluded, and the move would then leave a file Cinch cannot keep.
+  const owned = new Set(keeper?.descriptor.owns);
+  const gaps = gapsOf([preset], prepared.value.plan).filter(
+    (gap) =>
+      owned.has(gap.file) ||
+      (gap.why === "left-out" && gap.skipped?.reason === "excluded")
+  );
   if (gaps.length > 0) {
     return { error: gaps.map(describeGap).join("\ncinch: ") };
   }
-  const relocates = prepared.value.adapters.find(
-    (adapter) => adapter.descriptor.id === preset.adapter
-  )?.relocates;
+  const relocates = keeper?.relocates;
   if (relocates === undefined) {
     return {
       error: `the ${preset.name} preset has no table in the Cinch config, so there is nothing to ${action}.`,

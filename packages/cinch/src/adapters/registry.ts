@@ -19,7 +19,8 @@ import { tsconfigPreset } from "./tsconfig/preset.ts";
  * adapter is handed the version the repository pins for its tool. An engine's
  * shared config preset is an adapter too, kept in the engine's own folder,
  * and it is handed the table the Cinch config states for that engine. The
- * editor settings file is kept only when the config states its facts. The
+ * editor settings file is kept only when the config states its facts, and
+ * until then its adapter keeps nothing. The
  * presets for the lint, format and TypeScript configs are off until the
  * config asks for each, and so are the lint engine, the type check and the
  * formatter. The
@@ -30,7 +31,7 @@ export const adaptersFor = (
   tables: ToolTables = {},
   editor?: EditorSettings
 ): readonly Adapter[] => [
-  ...(editor === undefined ? [] : [editorFileAdapter(editor)]),
+  editorFileAdapter(editor),
   rumdlPresetAdapter({ table: tables[RUMDL_TABLE] }),
   oxlintPreset(),
   oxfmtPreset(),
