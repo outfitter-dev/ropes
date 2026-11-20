@@ -45,3 +45,14 @@ preset = true
 [typescript]
 enabled = true
 preset = true
+
+# The structural rules Cinch ships, run through ast-grep.
+[rules]
+enabled = true
+
+# The compiler options Cinch ships are the base, so they extend nothing.
+[[overrides]]
+paths = ["packages/cinch/presets/tsconfig.json"]
+
+[overrides.rules]
+enabled = false

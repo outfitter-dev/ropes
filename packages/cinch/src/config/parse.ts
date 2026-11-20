@@ -53,6 +53,9 @@ const OPT_IN = {
   lint: optInPreset("lint config").extend(
     optInSwitch("TypeScript and JavaScript are linted")
   ),
+  rules: z.strictObject(
+    optInSwitch("the structural rules Cinch ships are run")
+  ),
   typescript: optInPreset("TypeScript compiler options").extend(
     optInSwitch("TypeScript is type checked")
   ),
@@ -70,6 +73,7 @@ const OverrideSchema = z.strictObject({
   paths: Globs.min(1).describe(
     "Root-relative globs. The settings beside them apply to matching files."
   ),
+  rules: overrideSwitch("the shipped rules are run on the matching files"),
   toml: TomlSchema.optional(),
   typescript: overrideSwitch("the matching files are type checked"),
 });
@@ -97,6 +101,7 @@ export const ConfigFileSchema = z.strictObject({
   pilot: z
     .literal(PILOT_VERSION)
     .describe("The version of this unstable format. It must be stated."),
+  rules: OPT_IN.rules.optional(),
   toml: TomlSchema.optional(),
   tools: z
     .record(z.string().min(1), z.record(z.string(), z.unknown()))
@@ -136,6 +141,7 @@ const SETTING_TABLES = [
   "toml",
   "format",
   "lint",
+  "rules",
   "typescript",
 ] as const;
 type Tables = Readonly<
