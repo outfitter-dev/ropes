@@ -55,6 +55,12 @@ export const ConfigFileSchema = z.strictObject({
     .literal(PILOT_VERSION)
     .describe("The version of this unstable format. It must be stated."),
   toml: TomlSchema.optional(),
+  tools: z
+    .record(z.string().min(1), z.record(z.string(), z.unknown()))
+    .optional()
+    .describe(
+      "One table for each tool, in the tool's own settings. Cinch copies it into the config it generates for that tool."
+    ),
 });
 const VersionedSchema = z.looseObject({ pilot: z.unknown().optional() });
 
@@ -139,6 +145,7 @@ const build = (
     ),
     overrides,
     settings: overDefaults(base),
+    tools: table.tools ?? {},
   };
 };
 

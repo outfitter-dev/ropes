@@ -1,13 +1,26 @@
 import path from "node:path";
 
 import type { Finding } from "../contracts/finding.ts";
-import type { Adapter, AdapterDescriptor, StepOutcome } from "./adapter.ts";
+import type {
+  Adapter,
+  AdapterDescriptor,
+  Layer,
+  StepOutcome,
+} from "./adapter.ts";
 import { eachFile } from "./batch.ts";
 import type { FileInput } from "./batch.ts";
 
 /** What a kept file should hold, or why Cinch will not decide that itself. */
 export type Wanted =
-  | { readonly ok: true; readonly text: string }
+  | {
+      readonly ok: true;
+      readonly text: string;
+      /**
+       * What a check says when the file holds something else, in place of
+       * the general sentence. For a file a person wrote, it names the edit.
+       */
+      readonly why?: string;
+    }
   | {
       readonly ok: false;
       readonly message: string;
@@ -21,6 +34,8 @@ export type Wanted =
 export interface ManagedFile {
   /** Root-relative. */
   readonly path: string;
+  /** See `AdapterDescriptor.layers`. */
+  readonly layer?: Layer;
   /**
    * Given what the file holds now, or null when it is missing, and the root
    * it sits in, for a file whose content depends on what is beside it.
@@ -42,6 +57,8 @@ export interface ManagedOptions {
   readonly preset?: string;
   /** See `Adapter.migrates`. */
   readonly migrates?: Adapter["migrates"];
+  /** See `AdapterDescriptor.table`. */
+  readonly table?: string;
 }
 
 /** The rule every finding about a kept file is reported under. */
@@ -61,15 +78,22 @@ const read = async (file: string): Promise<string | null> => {
  * there is nothing to install.
  */
 export const managedAdapter = (options: ManagedOptions): Adapter => {
-  const { enabledBy, files, id, migrates, preset } = options;
+  const { enabledBy, files, id, migrates, preset, table } = options;
+  const layers = Object.fromEntries(
+    files.flatMap((file) =>
+      file.layer === undefined ? [] : [[file.path, file.layer]]
+    )
+  );
   const descriptor: AdapterDescriptor = {
     enabledBy,
     extensions: [],
     id,
+    ...(Object.keys(layers).length === 0 ? {} : { layers }),
     owns: files.map((file) => file.path),
     platforms: ["darwin", "linux", "win32"],
     ...(preset === undefined ? {} : { preset }),
     setup: true,
+    ...(table === undefined ? {} : { table }),
     tool: TOOL,
     unit: "file",
     versionRange: "*",
@@ -126,7 +150,7 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
       findings: [
         finding(
           input,
-          `This file ${problem}. Run \`${TOOL} doctor --fix\`.`,
+          wanted.why ?? `This file ${problem}. Run \`${TOOL} doctor --fix\`.`,
           true
         ),
       ],

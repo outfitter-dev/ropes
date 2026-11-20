@@ -127,11 +127,18 @@ const plan = (path: string, input: ResolveInput, scope: Scope): PlannedPath => {
       steps: [],
     };
   }
+  const steps = stepsFor(path, policy, input.descriptors);
+  const layer = input.descriptors.find(
+    (descriptor) =>
+      descriptor.layers?.[path] !== undefined &&
+      steps.some((step) => step.adapter === descriptor.id)
+  )?.layers?.[path];
   return {
+    ...(layer === undefined ? {} : { layer }),
     package: inPackage,
     path,
     policy,
-    steps: stepsFor(path, policy, input.descriptors),
+    steps,
   };
 };
 

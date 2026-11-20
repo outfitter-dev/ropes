@@ -6,6 +6,7 @@ import path from "node:path";
 import { adaptersFor } from "../src/adapters/registry.ts";
 import {
   CONFIG_PATH,
+  GENERATED_PATH,
   PRESET_PATH,
   rumdlPresetAdapter,
 } from "../src/adapters/rumdl/preset.ts";
@@ -13,7 +14,7 @@ import { createCommands } from "../src/commands/registry.ts";
 import { FixReportSchema } from "../src/contracts/fix.ts";
 import { checkOne, fixOne } from "./one-file.ts";
 
-const EXTENDS = `extends = ${JSON.stringify(PRESET_PATH)}\n`;
+const EXTENDS = `extends = ${JSON.stringify(GENERATED_PATH)}\n`;
 
 const ready = Bun.which("rumdl") !== null;
 /** A real-engine test. It says so when the engine is not there to run it. */
@@ -125,6 +126,7 @@ withEngine("the migrated config is one the engine accepts", async () => {
   };
   await inRoot(files, async (root) => {
     await fixOne(preset, { path: PRESET_PATH, root });
+    await fixOne(preset, { path: GENERATED_PATH, root });
     await fixOne(preset, { path: CONFIG_PATH, root });
     const text = await written(root);
     expect(text).toContain(
@@ -223,6 +225,7 @@ withEngine(
     };
     await inRoot(files, async (root) => {
       await fixOne(preset, { path: PRESET_PATH, root });
+      await fixOne(preset, { path: GENERATED_PATH, root });
       await fixOne(preset, { path: CONFIG_PATH, root });
       expect(await written(root)).toContain('enable = ["MD001"]');
       expect(await lint(root, "a.md")).toBe("passed");
@@ -240,6 +243,7 @@ withEngine(
     };
     await inRoot(files, async (root) => {
       await fixOne(preset, { path: PRESET_PATH, root });
+      await fixOne(preset, { path: GENERATED_PATH, root });
       await fixOne(preset, { path: CONFIG_PATH, root });
       expect(await written(root)).toContain("enable = []");
       expect(await lint(root, "a.md")).toBe("passed");

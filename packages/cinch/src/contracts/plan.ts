@@ -86,8 +86,18 @@ export const PlanBatchSchema = PlanStepSchema.unwrap()
   .readonly();
 export type PlanBatch = z.infer<typeof PlanBatchSchema>;
 
+/**
+ * The part a kept file plays in a tool's config. `preset` is what Cinch
+ * ships, `generated` is written from the Cinch config and extends it, and
+ * `root` is the file the tool finds first, which extends the generated one.
+ */
+export const LayerSchema = z.enum(["preset", "generated", "root"]);
+export type Layer = z.infer<typeof LayerSchema>;
+
 export const PlannedPathSchema = z
   .object({
+    /** Present for a file that is one layer of a tool's config. */
+    layer: LayerSchema.optional(),
     /** The package the file is checked with. `.` is the workspace itself. */
     package: z.string().min(1),
     /** Root-relative path. */

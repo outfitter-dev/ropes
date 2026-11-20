@@ -1,6 +1,6 @@
 # Presets
 
-A preset is a shared config that Cinch ships and keeps in a repository. Cinch writes a managed copy under `.outfitter/configs/` and the repository's own config extends it. The copy is committed, so the tool works without Cinch installed. Do not edit the copy. Put a repository's own choices in its root config.
+A preset is a shared config that Cinch ships and keeps in a repository. Cinch writes a managed copy under `.outfitter/configs/presets/`. Beside it, under `.outfitter/configs/`, Cinch writes a config generated from the `[tools.<tool>]` table of the Cinch config, which extends the copy. The tool's root config extends the generated one. All of it is committed, so the tool works without Cinch installed. Do not edit the copy or the generated config. Put a repository's own choices in the Cinch config.
 
 The first preset is `markdown`. See [markdown-standard.md](markdown-standard.md) for what it sets.
 
@@ -35,6 +35,7 @@ cinch preset
 
 ```text
 markdown
+  current  .outfitter/configs/presets/rumdl.toml
   stale    .outfitter/configs/rumdl.toml
   current  .rumdl.toml
 ```

@@ -4,8 +4,9 @@
 
 ## What it checks
 
-- Every file Cinch keeps is present and matches what this Cinch ships. Today that is the copy of [the Markdown standard](markdown-standard.md) at `.outfitter/configs/rumdl.toml`.
-- The repository's own config extends the kept one. Today that is the `extends` line in `.rumdl.toml`.
+- Every preset Cinch keeps is present and matches what this Cinch ships. Today that is the copy of [the Markdown standard](markdown-standard.md) at `.outfitter/configs/presets/rumdl.toml`.
+- Every generated config matches the Cinch config. Today that is `.outfitter/configs/rumdl.toml`, written from `[tools.rumdl]`. Changing that table leaves the file stale until `cinch doctor --fix` runs.
+- The root config extends the generated one. Today that is the `extends` line in `.rumdl.toml`.
 - The tools the workspace's plan needs are installed, at the versions `mise.toml` pins. See [tool versions](tool-versions.md).
 
 A preset the config switches off is no part of the setup, whether or not `exclude` covers its files. A kept file that `exclude` covers while its preset is on stops the run with exit code 2, naming the file and the setting: Cinch cannot keep a file the config tells it to leave alone, and saying nothing would read as a pass.
@@ -25,8 +26,8 @@ The exit code is 0 when the setup is in good shape, 1 when a file needs repair, 
 
 ## What `--fix` writes
 
-- The files Cinch keeps. They are rewritten whole.
-- A root config that is missing. Cinch creates it with the `extends` line.
+- The presets and the generated configs. They are rewritten whole.
+- A root config that is missing. Cinch creates it as a pointer with the `extends` line, marked as generated.
 - The `extends` line in a root config a person wrote that has none. Nothing else in that file changes.
 
 It never overwrites anything else in a file a person wrote. A config that extends something else is reported and left alone, and so is one that is not valid TOML. Those need a person, and `doctor --fix` exits 1 with the finding.

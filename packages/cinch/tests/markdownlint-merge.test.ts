@@ -6,7 +6,7 @@ import path from "node:path";
 import { merge } from "../src/adapters/rumdl/migrate/markdownlint/merge.ts";
 import {
   CONFIG_PATH,
-  PRESET_PATH,
+  GENERATED_PATH,
   rumdlPresetAdapter,
 } from "../src/adapters/rumdl/preset.ts";
 import { checkOne, fixOne } from "./one-file.ts";
@@ -214,7 +214,7 @@ test("init merges the old rules into a config, and doctor adds one line", async 
     const plain = await fixOne(preset, { path: CONFIG_PATH, root });
     expect(plain.status).toBe("fixed");
     expect(await Bun.file(target).text()).toBe(
-      `extends = ${JSON.stringify(PRESET_PATH)}\n\n${mine}`
+      `extends = ${JSON.stringify(GENERATED_PATH)}\n\n${mine}`
     );
     await Bun.write(target, mine);
     const first = await fixOne(preset, {
@@ -225,7 +225,7 @@ test("init merges the old rules into a config, and doctor adds one line", async 
     expect(first.status).toBe("fixed");
     const text = await Bun.file(target).text();
     expect(text).toStartWith(
-      `extends = ${JSON.stringify(PRESET_PATH)}\n\n[MD013]\nline-length = 100\n`
+      `extends = ${JSON.stringify(GENERATED_PATH)}\n\n[MD013]\nline-length = 100\n`
     );
     expect(text).toContain("[MD007]\nindent = 4\n");
     expect(text).toContain(
