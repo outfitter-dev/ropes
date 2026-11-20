@@ -48,6 +48,8 @@ export interface CinchConfig {
   readonly rulesLocal?: Sourced<readonly string[]>;
   /** Shipped rule packs and rules, by name, that are not run. */
   readonly rulesOff?: Sourced<readonly string[]>;
+  /** Shipped rule packs, by name, that are run. */
+  readonly rulesPacks?: Sourced<readonly string[]>;
   readonly settings: readonly PolicyValue[];
   /**
    * What the file states for each tool. An adapter copies its table into the

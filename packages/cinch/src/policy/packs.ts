@@ -25,10 +25,15 @@ export const shippedStates = (
   descriptors: readonly AdapterDescriptor[],
   present: readonly string[]
 ): PackState[] => {
-  const named = new Set(config.rulesOff?.value);
+  const stopped = new Set(config.rulesOff?.value);
   const off = (name: string) =>
-    config.rulesOff !== undefined && named.has(name)
+    config.rulesOff !== undefined && stopped.has(name)
       ? { off: config.rulesOff.source }
+      : {};
+  const asked = new Set(config.rulesPacks?.value);
+  const named = (name: string) =>
+    config.rulesPacks !== undefined && asked.has(name)
+      ? { named: config.rulesPacks.source }
       : {};
   const kept = new Set(descriptors.flatMap(({ owns }) => owns ?? []));
   const own = present.filter((file) => !kept.has(file));
@@ -40,6 +45,7 @@ export const shippedStates = (
         adapter: descriptor.id,
         ...(found === undefined ? {} : { found }),
         name: pack.name,
+        ...named(pack.name),
         ...off(pack.name),
         relevant: pack.relevant,
         rules: pack.rules.map((id) => ({ id, ...off(id) })),
@@ -50,8 +56,8 @@ export const shippedStates = (
 
 /**
  * Each pack of each adapter policy asks for, and whether it runs: it does
- * where a file of the repository matches what makes it relevant, unless the
- * config names it as off. `present` is every root-relative file there is.
+ * where the config names it and a file of the repository matches what makes
+ * it relevant, unless the config also names it as off. `present` is every root-relative file there is.
  * A file an adapter keeps is part of the Cinch setup and makes no pack
  * relevant.
  */
@@ -79,6 +85,7 @@ export const rulesOn = (
     .filter(
       (pack) =>
         pack.adapter === adapter &&
+        pack.named !== undefined &&
         pack.found !== undefined &&
         pack.off === undefined
     )
@@ -97,6 +104,19 @@ export const unknownOff = (
       .flatMap((pack) => [pack.name, ...pack.rules])
   );
   return (config.rulesOff?.value ?? []).filter((name) => !known.has(name));
+};
+
+/** The names the config asks for that no shipped pack has. */
+export const unknownPacks = (
+  config: CinchConfig,
+  descriptors: readonly AdapterDescriptor[]
+): string[] => {
+  const known = new Set(
+    descriptors
+      .flatMap((descriptor) => descriptor.packs ?? [])
+      .map(({ name }) => name)
+  );
+  return (config.rulesPacks?.value ?? []).filter((name) => !known.has(name));
 };
 
 /**

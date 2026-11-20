@@ -29,7 +29,7 @@ const textAt = async (root: string, file: string): Promise<string | null> => {
 };
 
 /** The Cinch config as it is on disk, or the one a new repository gets. */
-const configText = async (
+export const configText = async (
   root: string
 ): Promise<ConfigText | { readonly error: string }> => {
   const config = await loadConfig(root);
@@ -104,7 +104,7 @@ const settled = async (
 };
 
 /** The first file of the move that leads out of the repository, if any. */
-const outside = async (
+export const outside = async (
   root: string,
   files: readonly { readonly path: string }[]
 ): Promise<string | undefined> => {

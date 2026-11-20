@@ -133,6 +133,8 @@ export const PackStateSchema = z
     /** The first file found that makes the pack apply. Absent when none. */
     found: z.string().min(1).optional(),
     name: z.string().min(1),
+    /** The setting that names the pack, so it runs. Absent when none does. */
+    named: ProvenanceSchema.optional(),
     /** The setting that turns the whole pack off. */
     off: ProvenanceSchema.optional(),
     relevant: z.array(z.string().min(1)).readonly(),

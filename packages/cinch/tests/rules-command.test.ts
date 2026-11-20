@@ -10,8 +10,11 @@ import { RulesReportSchema } from "../src/contracts/rules-report.ts";
 let root = "";
 const put = (name: string, text: string): Promise<number> =>
   Bun.write(path.join(root, name), text);
-const config = (rules: string): Promise<number> =>
-  put("cinch.toml", `pilot = 0\n\n[rules]\n${rules}`);
+const config = (
+  rules: string,
+  packs = 'packs = ["config"]\n'
+): Promise<number> =>
+  put("cinch.toml", `pilot = 0\n\n[rules]\n${packs}${rules}`);
 
 const run = async (request: Partial<CommandRequest> = {}) => {
   const response = await commands.rules?.({
@@ -76,7 +79,7 @@ test("a name the config turns off is off, pack or rule", async () => {
 });
 
 test("with rules not switched on, the packs are still listed", async () => {
-  await put("cinch.toml", "pilot = 0\n");
+  await put("cinch.toml", 'pilot = 0\n\n[rules]\npacks = ["config"]\n');
   await put("tsconfig.json", "{}\n");
   const listed = await report();
   expect(listed.enabled).toBe(false);
@@ -86,7 +89,26 @@ test("with rules not switched on, the packs are still listed", async () => {
     "Rules are not switched on here, so none of these run. Set `enabled = true` under `[rules]` in cinch.toml to run them."
   );
   expect(shown.output).toContain(
-    "config  would run, since tsconfig.json is here"
+    "config  would run, since tsconfig.json is here (cinch.toml: rules.packs)"
+  );
+});
+
+test("a relevant pack the config does not name is not adopted", async () => {
+  await config("enabled = true\n", "");
+  await put("tsconfig.json", "{}\n");
+  expect(await state()).toBe("not-adopted");
+  const shown = await run({ json: false });
+  expect(shown.output).toContain(
+    "config  not adopted, and tsconfig.json is here. Run `cinch rules adopt config` to run it"
+  );
+});
+
+test("a pack name nothing has is refused", async () => {
+  await config("enabled = true\n", 'packs = ["nope"]\n');
+  const refused = await run();
+  expect(refused.exitCode).toBe(2);
+  expect(refused.error).toBe(
+    'cinch: cinch.toml: rules.packs: Cinch ships no rule pack named "nope".'
   );
 });
 
@@ -129,5 +151,7 @@ test("an action it does not have is refused", async () => {
   await config("enabled = true\n");
   const refused = await run({ action: "nope" });
   expect(refused.exitCode).toBe(2);
-  expect(refused.error).toBe('cinch: unknown rules action "nope". Use list.');
+  expect(refused.error).toBe(
+    'cinch: unknown rules action "nope". Use list or adopt.'
+  );
 });

@@ -66,6 +66,12 @@ export const OPT_IN = {
       .array(z.string().min(1))
       .optional()
       .describe("Shipped rule packs and rules, by name, that are not run."),
+    packs: z
+      .array(z.string().min(1))
+      .optional()
+      .describe(
+        "Shipped rule packs, by name, that are run. `cinch rules adopt` writes this."
+      ),
   }),
   typescript: optInPreset("TypeScript compiler options").extend(
     optInSwitch("TypeScript is type checked")

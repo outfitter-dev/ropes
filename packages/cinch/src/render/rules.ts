@@ -1,5 +1,8 @@
 import type { PackState, Plan, Provenance } from "../contracts/plan.ts";
-import type { RulesReport } from "../contracts/rules-report.ts";
+import type {
+  RulesAdoptReport,
+  RulesReport,
+} from "../contracts/rules-report.ts";
 
 const origin = (source: Provenance): string =>
   source.kind === "default" ? "default" : `${source.file}: ${source.key}`;
@@ -8,13 +11,20 @@ const stateOf = (pack: PackState, enabled: boolean): string => {
   if (pack.off !== undefined) {
     return `off (${origin(pack.off)})`;
   }
-  return pack.found === undefined
-    ? `not relevant: no file matches ${pack.relevant.join(", ")}`
-    : `${enabled ? "on" : "would run"}, since ${pack.found} is here`;
+  if (pack.found === undefined) {
+    return `not relevant: no file matches ${pack.relevant.join(", ")}`;
+  }
+  if (pack.named === undefined) {
+    return `not adopted, and ${pack.found} is here. Run \`cinch rules adopt ${pack.name}\` to run it`;
+  }
+  return `${enabled ? "on" : "would run"}, since ${pack.found} is here (${origin(pack.named)})`;
 };
 
 const packLines = (pack: PackState, enabled: boolean): string[] => {
-  const runs = pack.off === undefined && pack.found !== undefined;
+  const runs =
+    pack.off === undefined &&
+    pack.found !== undefined &&
+    pack.named !== undefined;
   return [
     `  ${pack.name}  ${stateOf(pack, enabled)}`,
     `    ${pack.about}`,
@@ -61,3 +71,28 @@ export const renderRules = (
       ? []
       : [localRulesBlock(report.localRules)]),
   ].join("\n\n");
+
+/** What `cinch rules adopt` prints: the packs, the change, and what to know. */
+export const renderAdopt = (report: RulesAdoptReport): string => {
+  const { adopted, changed, diff, notes, stopped, written } = report;
+  if (stopped !== undefined) {
+    return [
+      "No rule pack was adopted:",
+      ...stopped.map((one) => `  ${one}`),
+    ].join("\n");
+  }
+  if (adopted.length === 0) {
+    return ["There is no rule pack to adopt.", ...notes].join("\n\n");
+  }
+  const packs = adopted.map((name) => `  ${name}`);
+  return [
+    [written ? "Adopted:" : "Would adopt:", ...packs].join("\n"),
+    ...(written ? [`Changed:\n  ${changed.join("\n  ")}`] : [diff.trimEnd()]),
+    ...notes,
+    ...(written
+      ? []
+      : [
+          "Nothing was written. Run the same command with `--yes` to write it.",
+        ]),
+  ].join("\n\n");
+};
