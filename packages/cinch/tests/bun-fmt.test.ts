@@ -29,6 +29,18 @@ const inRepo = async <T>(
   }
 };
 
+const onPath = Bun.which("bun") !== null;
+/** A real-engine test. It says so when the engine is not there to run it. */
+const withEngine = (name: string, body: () => Promise<void>) => {
+  test(name, async () => {
+    if (!onPath) {
+      console.warn(`skipped: bun is not on PATH, so "${name}" did not run`);
+      return;
+    }
+    await body();
+  });
+};
+
 const unformatted = (file: string): Finding => ({
   fixable: true,
   message: "The file is not formatted. `cinch fix` formats it.",
@@ -65,96 +77,113 @@ test("a command that is not on PATH is not available, and its steps are incomple
   });
 });
 
-test("the probe reads the version of the Bun on PATH", async () => {
+withEngine("the probe reads the version of the Bun on PATH", async () => {
   const probe = await bunFmtAdapter().probe();
   expect(probe).toMatchObject({ available: true });
   expect(probe.version).toMatch(/^\d+\.\d+\.\d+$/u);
 });
 
-test("a formatted file passes and one that is not is a fixable finding", async () => {
-  await inRepo(
-    { "a.ts": "export const a = 1;\n", "b.ts": "export const b  =  1\n" },
-    async (root) => {
-      const outcomes = await bunFmtAdapter().check({
-        package: ".",
-        paths: ["a.ts", "b.ts"],
-        root,
-      });
-      expect(outcomes).toEqual([
-        { findings: [], path: "a.ts", status: "passed" },
-        {
-          findings: [unformatted("b.ts")],
-          path: "b.ts",
-          status: "findings",
-        },
-      ]);
-    }
-  );
-});
-
-test("fix formats the file, and a second run changes nothing", async () => {
-  await inRepo({ "a.ts": "export const a  =  1\n" }, async (root) => {
-    const adapter = bunFmtAdapter();
-    expect(await fixOne(adapter, { path: "a.ts", root })).toEqual({
-      findings: [],
-      status: "fixed",
-    });
-    expect(await Bun.file(path.join(root, "a.ts")).text()).toBe(
-      "export const a = 1;\n"
-    );
-    expect(await fixOne(adapter, { path: "a.ts", root })).toEqual({
-      findings: [],
-      status: "passed",
-    });
-  });
-});
-
-test("a file that does not parse is a finding, and the others are still judged", async () => {
-  await inRepo(
-    { "a.ts": "export const a = (;\n", "b.ts": "export const b  =  1\n" },
-    async (root) => {
-      const outcomes = await bunFmtAdapter().fix({
-        package: ".",
-        paths: ["a.ts", "b.ts"],
-        root,
-      });
-      expect(outcomes[0]).toMatchObject({
-        findings: [
+withEngine(
+  "a formatted file passes and one that is not is a fixable finding",
+  async () => {
+    await inRepo(
+      { "a.ts": "export const a = 1;\n", "b.ts": "export const b  =  1\n" },
+      async (root) => {
+        const outcomes = await bunFmtAdapter().check({
+          package: ".",
+          paths: ["a.ts", "b.ts"],
+          root,
+        });
+        expect(outcomes).toEqual([
+          { findings: [], path: "a.ts", status: "passed" },
           {
-            fixable: false,
-            range: { start: { column: 19, line: 1 } },
-            rule: "syntax",
+            findings: [unformatted("b.ts")],
+            path: "b.ts",
+            status: "findings",
           },
-        ],
-        status: "findings",
-      });
-      expect(outcomes[1]).toMatchObject({ findings: [], status: "fixed" });
-    }
-  );
-});
+        ]);
+      }
+    );
+  }
+);
 
-test("a file the formatter leaves out is incomplete, never passed", async () => {
-  await inRepo(
-    { ".gitignore": "out/\n", "out/a.ts": "export const a  =  1\n" },
-    async (root) => {
-      const outcome = await checkOne(bunFmtAdapter(), {
-        path: "out/a.ts",
-        root,
+withEngine(
+  "fix formats the file, and a second run changes nothing",
+  async () => {
+    await inRepo({ "a.ts": "export const a  =  1\n" }, async (root) => {
+      const adapter = bunFmtAdapter();
+      expect(await fixOne(adapter, { path: "a.ts", root })).toEqual({
+        findings: [],
+        status: "fixed",
       });
-      expect(outcome).toMatchObject({ status: "incomplete" });
-      expect(outcome.reason).toContain("leaves it out");
-    }
-  );
-});
-
-test("a file that is not there yet is left to the adapter that keeps it", async () => {
-  await inRepo({}, async (root) => {
-    expect(await checkOne(bunFmtAdapter(), { path: "kept.ts", root })).toEqual({
-      findings: [],
-      status: "passed",
+      expect(await Bun.file(path.join(root, "a.ts")).text()).toBe(
+        "export const a = 1;\n"
+      );
+      expect(await fixOne(adapter, { path: "a.ts", root })).toEqual({
+        findings: [],
+        status: "passed",
+      });
     });
-  });
-});
+  }
+);
+
+withEngine(
+  "a file that does not parse is a finding, and the others are still judged",
+  async () => {
+    await inRepo(
+      { "a.ts": "export const a = (;\n", "b.ts": "export const b  =  1\n" },
+      async (root) => {
+        const outcomes = await bunFmtAdapter().fix({
+          package: ".",
+          paths: ["a.ts", "b.ts"],
+          root,
+        });
+        expect(outcomes[0]).toMatchObject({
+          findings: [
+            {
+              fixable: false,
+              range: { start: { column: 19, line: 1 } },
+              rule: "syntax",
+            },
+          ],
+          status: "findings",
+        });
+        expect(outcomes[1]).toMatchObject({ findings: [], status: "fixed" });
+      }
+    );
+  }
+);
+
+withEngine(
+  "a file the formatter leaves out is incomplete, never passed",
+  async () => {
+    await inRepo(
+      { ".gitignore": "out/\n", "out/a.ts": "export const a  =  1\n" },
+      async (root) => {
+        const outcome = await checkOne(bunFmtAdapter(), {
+          path: "out/a.ts",
+          root,
+        });
+        expect(outcome).toMatchObject({ status: "incomplete" });
+        expect(outcome.reason).toContain("leaves it out");
+      }
+    );
+  }
+);
+
+withEngine(
+  "a file that is not there yet is left to the adapter that keeps it",
+  async () => {
+    await inRepo({}, async (root) => {
+      expect(
+        await checkOne(bunFmtAdapter(), { path: "kept.ts", root })
+      ).toEqual({
+        findings: [],
+        status: "passed",
+      });
+    });
+  }
+);
 
 test("the output of a run is read into findings for the files it was given", () => {
   const context = { paths: ["a.ts", "b.json"], source: "bun-fmt" };
