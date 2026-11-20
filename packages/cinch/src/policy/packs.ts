@@ -17,13 +17,10 @@ const isWanted = (
 };
 
 /**
- * Each pack of each adapter policy asks for, and whether it runs: it does
- * where a file of the repository matches what makes it relevant, unless the
- * config names it as off. `present` is every root-relative file there is.
- * A file an adapter keeps is part of the Cinch setup and makes no pack
- * relevant.
+ * Each pack of the adapters given, as it would stand if policy asked for
+ * all of them. `cinch rules` shows these where rules are not switched on.
  */
-export const packStates = (
+export const shippedStates = (
   config: CinchConfig,
   descriptors: readonly AdapterDescriptor[],
   present: readonly string[]
@@ -35,22 +32,42 @@ export const packStates = (
       : {};
   const kept = new Set(descriptors.flatMap(({ owns }) => owns ?? []));
   const own = present.filter((file) => !kept.has(file));
-  return descriptors
-    .filter((descriptor) => isWanted(descriptor, config))
-    .flatMap((descriptor) =>
-      (descriptor.packs ?? []).map((pack): PackState => {
-        const found = own.find(compileGlobs(pack.relevant));
-        return {
-          about: pack.about,
-          adapter: descriptor.id,
-          ...(found === undefined ? {} : { found }),
-          name: pack.name,
-          ...off(pack.name),
-          relevant: pack.relevant,
-          rules: pack.rules.map((id) => ({ id, ...off(id) })),
-        };
-      })
-    );
+  return descriptors.flatMap((descriptor) =>
+    (descriptor.packs ?? []).map((pack): PackState => {
+      const found = own.find(compileGlobs(pack.relevant));
+      return {
+        about: pack.about,
+        adapter: descriptor.id,
+        ...(found === undefined ? {} : { found }),
+        name: pack.name,
+        ...off(pack.name),
+        relevant: pack.relevant,
+        rules: pack.rules.map((id) => ({ id, ...off(id) })),
+      };
+    })
+  );
+};
+
+/**
+ * Each pack of each adapter policy asks for, and whether it runs: it does
+ * where a file of the repository matches what makes it relevant, unless the
+ * config names it as off. `present` is every root-relative file there is.
+ * A file an adapter keeps is part of the Cinch setup and makes no pack
+ * relevant.
+ */
+export const packStates = (
+  config: CinchConfig,
+  descriptors: readonly AdapterDescriptor[],
+  present: readonly string[]
+): PackState[] => {
+  const wanted = new Set(
+    descriptors
+      .filter((descriptor) => isWanted(descriptor, config))
+      .map(({ id }) => id)
+  );
+  return shippedStates(config, descriptors, present).filter((pack) =>
+    wanted.has(pack.adapter)
+  );
 };
 
 /** The ids of an adapter's rules that run. */
@@ -82,15 +99,28 @@ export const unknownOff = (
   return (config.rulesOff?.value ?? []).filter((name) => !known.has(name));
 };
 
-/** The folders of its own rules the config names, when an adapter runs them. */
-export const localRules = (
+/**
+ * The folders of its own rules the config names, as they would stand if
+ * policy asked for every adapter given.
+ */
+export const namedLocalRules = (
   config: CinchConfig,
   descriptors: readonly AdapterDescriptor[]
 ): Plan["localRules"] => {
-  const folders = descriptors
-    .filter((descriptor) => isWanted(descriptor, config))
-    .flatMap((descriptor) => descriptor.localRules ?? []);
+  const folders = descriptors.flatMap(
+    (descriptor) => descriptor.localRules ?? []
+  );
   return config.rulesLocal === undefined || folders.length === 0
     ? undefined
     : { folders: [...new Set(folders)], source: config.rulesLocal.source };
 };
+
+/** The folders of its own rules the config names, when an adapter runs them. */
+export const localRules = (
+  config: CinchConfig,
+  descriptors: readonly AdapterDescriptor[]
+): Plan["localRules"] =>
+  namedLocalRules(
+    config,
+    descriptors.filter((descriptor) => isWanted(descriptor, config))
+  );

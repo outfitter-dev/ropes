@@ -1,21 +1,22 @@
 import type { PackState, Plan, Provenance } from "../contracts/plan.ts";
+import type { RulesReport } from "../contracts/rules-report.ts";
 
 const origin = (source: Provenance): string =>
   source.kind === "default" ? "default" : `${source.file}: ${source.key}`;
 
-const stateOf = (pack: PackState): string => {
+const stateOf = (pack: PackState, enabled: boolean): string => {
   if (pack.off !== undefined) {
     return `off (${origin(pack.off)})`;
   }
   return pack.found === undefined
     ? `not relevant: no file matches ${pack.relevant.join(", ")}`
-    : `on, since ${pack.found} is here`;
+    : `${enabled ? "on" : "would run"}, since ${pack.found} is here`;
 };
 
-const packLines = (pack: PackState): string[] => {
+const packLines = (pack: PackState, enabled: boolean): string[] => {
   const runs = pack.off === undefined && pack.found !== undefined;
   return [
-    `  ${pack.name}  ${stateOf(pack)}`,
+    `  ${pack.name}  ${stateOf(pack, enabled)}`,
     `    ${pack.about}`,
     ...pack.rules.map((rule) => {
       const off = rule.off === undefined ? "" : `  off (${origin(rule.off)})`;
@@ -25,8 +26,13 @@ const packLines = (pack: PackState): string[] => {
 };
 
 /** The rule packs the plan's adapters ship, and why each runs or does not. */
-export const rulesBlock = (packs: readonly PackState[]): string =>
-  ["Rule packs", ...packs.flatMap(packLines)].join("\n");
+export const rulesBlock = (
+  packs: readonly PackState[],
+  enabled = true
+): string =>
+  ["Rule packs", ...packs.flatMap((pack) => packLines(pack, enabled))].join(
+    "\n"
+  );
 
 /** The folders of its own rules the repository names. */
 export const localRulesBlock = (
@@ -36,3 +42,22 @@ export const localRulesBlock = (
     "Local rules",
     ...local.folders.map((folder) => `  ${folder}  (${origin(local.source)})`),
   ].join("\n");
+
+/** What `cinch rules` prints: every pack Cinch ships and how it stands here. */
+export const renderRules = (
+  report: RulesReport,
+  config: { readonly file: string; readonly table: string }
+): string =>
+  [
+    ...(report.enabled
+      ? []
+      : [
+          `Rules are not switched on here, so none of these run. Set \`enabled = true\` under \`[${config.table}]\` in ${config.file} to run them.`,
+        ]),
+    report.packs.length === 0
+      ? "Cinch ships no rule pack."
+      : rulesBlock(report.packs, report.enabled),
+    ...(report.localRules === undefined
+      ? []
+      : [localRulesBlock(report.localRules)]),
+  ].join("\n\n");

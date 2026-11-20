@@ -28,6 +28,7 @@ Commands:
             preset adopt <name>    Move the settings in a tool's own config
                                    into the Cinch config (--yes to write it)
             preset eject <name>    Move them back out (--yes to write it)
+  rules     List the rule packs Cinch ships and how each stands here
   schema    Print the JSON Schema of a command's --json output
             schema [command]       With no command, list the names
 
@@ -84,15 +85,17 @@ const main = async (argv: readonly string[]): Promise<number> => {
     print({ error, exitCode: EXIT_CODE.incomplete }, values.json === true);
     return EXIT_CODE.incomplete;
   }
-  // `preset` takes an action before its names. Every other command takes paths.
-  const [action, ...names] = name === "preset" ? paths : [];
+  // `preset` and `rules` take an action before their names. Every other
+  // command takes paths.
+  const acts = name === "preset" || name === "rules";
+  const [action, ...names] = acts ? paths : [];
   const request = {
     ...(action === undefined ? {} : { action }),
     cwd: process.cwd(),
     dryRun: values["dry-run"] === true,
     fix: values.fix === true,
     json: values.json === true,
-    paths: name === "preset" ? names : paths,
+    paths: acts ? names : paths,
     // CI holds tools to their exact pins without being asked.
     strict: values.strict === true || process.env.CI === "true",
     yes: values.yes === true,
