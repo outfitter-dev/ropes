@@ -256,7 +256,10 @@ test("a file Cinch keeps does not stand in for the repository's own", async () =
     "pilot = 0\n\n[typescript]\npreset = true\n\n[rules]\nenabled = true\n"
   );
   await put(".outfitter/configs/presets/tsconfig.json", "{}\n");
+  // The root config is kept with the preset, so the pack reaches that one.
+  await rm(path.join(root, "tsconfig.json"));
+  await put("pkg/tsconfig.json", "{}\n");
   expect(await report().then((one) => one.notes)).toEqual([
-    'config will not run yet: cinch.toml leaves out the files it reads, such as tsconfig.json. Add "**/tsconfig.json" to `include` to run it.',
+    'config will not run yet: cinch.toml leaves out the files it reads, such as pkg/tsconfig.json. Add "**/tsconfig.json" to `include` to run it.',
   ]);
 });

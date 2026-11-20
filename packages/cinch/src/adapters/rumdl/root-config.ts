@@ -30,6 +30,9 @@ const OWN = `${CONFIG_PATH} is the repository's own, so Cinch will not overwrite
 const SIBLINGS = ["rumdl.toml", ".config/rumdl.toml"];
 const PYPROJECT = "pyproject.toml";
 
+/** Every other file the engine could read its config from. */
+export const ELSEWHERE = [...SIBLINGS, PYPROJECT];
+
 const namesTool = (text: string): boolean => {
   try {
     const table: unknown = Bun.TOML.parse(text);

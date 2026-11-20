@@ -106,7 +106,16 @@ export const writePlan = async (
     };
   }
   try {
-    const paths = [...plan.paths.map((entry) => entry.path), ...also];
+    // A file an adapter reads beside its own decides what it writes, so the
+    // copy holds it even where git ignores it. A missing one is left out.
+    const beside = prepared.adapters.flatMap(
+      ({ descriptor }) => descriptor.beside ?? []
+    );
+    const paths = [
+      ...plan.paths.map((entry) => entry.path),
+      ...also,
+      ...beside,
+    ];
     const report = await withCopy(root, paths, (copy) =>
       apply(prepared, copy, { dryRun, mode })
     );

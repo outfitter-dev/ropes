@@ -149,7 +149,7 @@ const write = async (
   const paths = filesOf(presets);
   const gaps = gapsOf(presets, prepared.value.plan);
   if (gaps.length > 0) {
-    return unusable(gaps.map(describeGap).join("\ncinch: "));
+    return unusable([...new Set(gaps.map(describeGap))].join("\ncinch: "));
   }
   const ran = await runWrite({ ...request, cwd: root, paths }, deps, {
     mode: "doctor",

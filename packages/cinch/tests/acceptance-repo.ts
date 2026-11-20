@@ -81,7 +81,10 @@ const spawn = async (
   return { exitCode, stderr, stdout };
 };
 
-const git = async (cwd: string, ...args: string[]): Promise<void> => {
+export const fixtureGit = async (
+  cwd: string,
+  ...args: string[]
+): Promise<void> => {
   const ran = await spawn(
     [
       "git",
@@ -100,7 +103,7 @@ const git = async (cwd: string, ...args: string[]): Promise<void> => {
   }
 };
 
-const checkoutAt = (root: string): Checkout => ({
+export const checkoutAt = (root: string): Checkout => ({
   cinch: (args, { cwd = "", path: searchPath } = {}) =>
     spawn([process.execPath, CLI, ...args], path.join(root, cwd), searchPath),
   files: async () => {
@@ -134,15 +137,23 @@ export const withFixture = async <T>(
         Bun.write(path.join(root, name), text)
       )
     );
-    await git(root, "init", "--quiet");
-    await git(root, "add", "--all");
-    await git(root, "commit", "--quiet", "--message", "fixture");
+    await fixtureGit(root, "init", "--quiet");
+    await fixtureGit(root, "add", "--all");
+    await fixtureGit(root, "commit", "--quiet", "--message", "fixture");
     return await body({
       emptyPath,
       main: checkoutAt(root),
       worktree: async () => {
         const linked = path.join(base, "linked");
-        await git(root, "worktree", "add", "--quiet", "-b", "linked", linked);
+        await fixtureGit(
+          root,
+          "worktree",
+          "add",
+          "--quiet",
+          "-b",
+          "linked",
+          linked
+        );
         return checkoutAt(linked);
       },
     });

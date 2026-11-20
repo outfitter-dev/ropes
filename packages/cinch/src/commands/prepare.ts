@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import type { Adapter, AdapterDescriptor } from "../adapters/adapter.ts";
 import { readPins } from "../adapters/pins.ts";
 import type { Pins, PinsResult } from "../adapters/pins.ts";
@@ -126,9 +128,17 @@ export const prepare = async (
   // of it was selected.
   const shipsPacks = descriptors.some(({ packs }) => packs !== undefined);
   const everything = selection.kind === "workspace" || !shipsPacks;
-  // A file named outright counts even where git ignores it.
+  // A file named outright counts even where git ignores it. A kept file
+  // can be named before it exists, and is not here until it does.
+  const there = await Promise.all(
+    named.map(
+      async (file) =>
+        !owned.includes(file) ||
+        (await Bun.file(path.join(root.root, file)).exists())
+    )
+  );
   const present = [
-    ...named,
+    ...named.filter((_, index) => there[index] === true),
     ...(everything ? walked : await filesUnder(root, "")),
   ];
   const packages = await packagesAbove(root.root, all);
