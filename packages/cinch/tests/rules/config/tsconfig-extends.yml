@@ -1,0 +1,8 @@
+id: config/tsconfig-extends
+valid:
+  - '{ "extends": "./tsconfig.base.json" }'
+  - '{ "compilerOptions": { "strict": true }, "extends": ["@scope/base", "./local.json"] }'
+invalid:
+  - "{}"
+  - '{ "compilerOptions": { "strict": true } }'
+  - '{ "compilerOptions": { "paths": { "extends": ["./src"] } }, "include": ["extends"] }'
