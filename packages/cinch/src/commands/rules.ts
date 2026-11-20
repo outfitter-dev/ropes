@@ -11,6 +11,7 @@ import { renderRules } from "../render/rules.ts";
 import type { Command } from "./command.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
+import { adopt } from "./rules-adopt.ts";
 
 const standing = (pack: PackState, enabled: boolean): RuleStanding => {
   if (pack.off !== undefined) {
@@ -46,9 +47,12 @@ export const rules =
   (deps: CommandDeps): Command =>
   async (request) => {
     const action = request.action ?? "list";
+    if (action === "adopt") {
+      return await adopt(request, deps);
+    }
     if (action !== "list") {
       return {
-        error: `cinch: unknown rules action "${action}". Use list.`,
+        error: `cinch: unknown rules action "${action}". Use list or adopt.`,
         exitCode: EXIT_CODE.incomplete,
       };
     }

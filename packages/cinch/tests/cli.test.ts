@@ -129,6 +129,7 @@ test("schema prints the JSON Schema of a command's --json output", async () => {
       "preset list",
       "preset update",
       "rules",
+      "rules adopt",
       "rules list",
     ],
     files: ["config"],

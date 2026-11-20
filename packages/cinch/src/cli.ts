@@ -29,6 +29,8 @@ Commands:
                                    into the Cinch config (--yes to write it)
             preset eject <name>    Move them back out (--yes to write it)
   rules     List the rule packs Cinch ships and how each stands here
+            rules adopt [pack]     Name the packs that apply here in the
+                                   Cinch config (--yes to write it)
   schema    Print the JSON Schema of a command's --json output
             schema [command]       With no command, list the names
 

@@ -151,5 +151,7 @@ test("an action it does not have is refused", async () => {
   await config("enabled = true\n");
   const refused = await run({ action: "nope" });
   expect(refused.exitCode).toBe(2);
-  expect(refused.error).toBe('cinch: unknown rules action "nope". Use list.');
+  expect(refused.error).toBe(
+    'cinch: unknown rules action "nope". Use list or adopt.'
+  );
 });

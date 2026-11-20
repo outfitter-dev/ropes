@@ -29,7 +29,7 @@ const textAt = async (root: string, file: string): Promise<string | null> => {
 };
 
 /** The Cinch config as it is on disk, or the one a new repository gets. */
-const configText = async (
+export const configText = async (
   root: string
 ): Promise<ConfigText | { readonly error: string }> => {
   const config = await loadConfig(root);

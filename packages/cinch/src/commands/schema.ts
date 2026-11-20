@@ -9,7 +9,10 @@ import { PlanSchema, SCHEMA_VERSION } from "../contracts/plan.ts";
 import { PresetReportSchema } from "../contracts/preset.ts";
 import { RelocateReportSchema } from "../contracts/relocate.ts";
 import { EXIT_CODE, ResultSchema } from "../contracts/result.ts";
-import { RulesReportSchema } from "../contracts/rules-report.ts";
+import {
+  RulesAdoptReportSchema,
+  RulesReportSchema,
+} from "../contracts/rules-report.ts";
 import type { Command } from "./command.ts";
 
 /**
@@ -30,6 +33,7 @@ export const OUTPUT_SCHEMAS: Readonly<Record<string, z.ZodType>> = {
   "preset list": PresetReportSchema,
   "preset update": FixReportSchema,
   rules: RulesReportSchema,
+  "rules adopt": RulesAdoptReportSchema,
   "rules list": RulesReportSchema,
 };
 

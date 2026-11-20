@@ -1,5 +1,8 @@
 import type { PackState, Plan, Provenance } from "../contracts/plan.ts";
-import type { RulesReport } from "../contracts/rules-report.ts";
+import type {
+  RulesAdoptReport,
+  RulesReport,
+} from "../contracts/rules-report.ts";
 
 const origin = (source: Provenance): string =>
   source.kind === "default" ? "default" : `${source.file}: ${source.key}`;
@@ -68,3 +71,28 @@ export const renderRules = (
       ? []
       : [localRulesBlock(report.localRules)]),
   ].join("\n\n");
+
+/** What `cinch rules adopt` prints: the packs, the change, and what to know. */
+export const renderAdopt = (report: RulesAdoptReport): string => {
+  const { adopted, changed, diff, notes, stopped, written } = report;
+  if (stopped !== undefined) {
+    return [
+      "No rule pack was adopted:",
+      ...stopped.map((one) => `  ${one}`),
+    ].join("\n");
+  }
+  if (adopted.length === 0) {
+    return ["There is no rule pack to adopt.", ...notes].join("\n\n");
+  }
+  const packs = adopted.map((name) => `  ${name}`);
+  return [
+    [written ? "Adopted:" : "Would adopt:", ...packs].join("\n"),
+    ...(written ? [`Changed:\n  ${changed.join("\n  ")}`] : [diff.trimEnd()]),
+    ...notes,
+    ...(written
+      ? []
+      : [
+          "Nothing was written. Run the same command with `--yes` to write it.",
+        ]),
+  ].join("\n\n");
+};
