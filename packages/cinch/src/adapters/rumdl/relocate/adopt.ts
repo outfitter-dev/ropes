@@ -3,14 +3,9 @@ import path from "node:path";
 import type { ToolTable } from "../../../contracts/config.ts";
 import type { ConfigText, Relocation } from "../../relocation.ts";
 import { generated, preset } from "../generated.ts";
-import {
-  CONFIG_PATH,
-  GENERATED_PATH,
-  PRESET_PATH,
-  RUMDL_TABLE,
-  standard,
-} from "../paths.ts";
-import { POINTER, isMarked, isPointer } from "../root-config.ts";
+import { CINCH_PATHS, CONFIG_PATH, RUMDL_TABLE, standard } from "../paths.ts";
+import type { MarkdownPaths } from "../paths.ts";
+import { isMarked, isPointer, pointerFor } from "../root-config.ts";
 import { blockOf } from "./block.ts";
 import { commentsIn, linesOf, sectionsOf } from "./scan.ts";
 import { sort } from "./sort.ts";
@@ -71,29 +66,36 @@ const notesOf = (
 ];
 
 /** Why the root config is not one whose settings can move, or null. */
-const blocked = (current: string, own: Table | null): string | null => {
+const blocked = (
+  current: string,
+  own: Table | null,
+  generatedPath: string
+): string | null => {
   if (isMarked(current)) {
     return `${CONFIG_PATH} says Cinch generated it, but it holds more than Cinch wrote. Delete its first comment to make the file your own, then run this again.`;
   }
   if (own === null) {
     return `${CONFIG_PATH} is not valid TOML, so Cinch cannot read its settings.`;
   }
-  return own.extends === GENERATED_PATH
+  return own.extends === generatedPath
     ? null
-    : `${CONFIG_PATH} does not extend ${GENERATED_PATH}, so moving its settings there would change what applies. Run \`cinch doctor --fix\` first.`;
+    : `${CONFIG_PATH} does not extend ${generatedPath}, so moving its settings there would change what applies. Run \`cinch doctor --fix\` first.`;
 };
 
 /**
  * A setting is left out when the standard already says the same, so the
  * preset the engine reads has to be that standard. Returns why it is not.
  */
-const stale = async (root: string): Promise<string | null> => {
-  const file = Bun.file(path.join(root, PRESET_PATH));
+const stale = async (
+  root: string,
+  presetPath: string
+): Promise<string | null> => {
+  const file = Bun.file(path.join(root, presetPath));
   const installed = (await file.exists()) ? await file.text() : null;
   const shipped = await preset();
   return shipped.ok && installed === shipped.text
     ? null
-    : `${PRESET_PATH} is not the preset this Cinch ships, so what the settings sit above is not what Cinch would compare them with. Run \`cinch doctor --fix\` first.`;
+    : `${presetPath} is not the preset this Cinch ships, so what the settings sit above is not what Cinch would compare them with. Run \`cinch doctor --fix\` first.`;
 };
 
 /**
@@ -104,15 +106,17 @@ const stale = async (root: string): Promise<string | null> => {
 export const adopt = async (
   root: string,
   config: ConfigText,
-  table: ToolTable = {}
+  table: ToolTable = {},
+  paths: MarkdownPaths = CINCH_PATHS
 ): Promise<Relocation> => {
   const file = Bun.file(path.join(root, CONFIG_PATH));
   const current = (await file.exists()) ? await file.text() : null;
-  if (current === null || isPointer(current)) {
+  if (current === null || isPointer(current, paths)) {
     return { files: [], notes: [], ok: true };
   }
   const own = parsed(current);
-  const reason = blocked(current, own) ?? (await stale(root));
+  const reason =
+    blocked(current, own, paths.generated) ?? (await stale(root, paths.preset));
   const before = parsed(config.text);
   const shipped = parsed(await standard());
   if (reason !== null || own === null || before === null || shipped === null) {
@@ -151,8 +155,8 @@ export const adopt = async (
   return {
     files: [
       { path: config.file, text },
-      { path: GENERATED_PATH, text: below.text },
-      { path: CONFIG_PATH, text: POINTER },
+      { path: paths.generated, text: below.text },
+      { path: CONFIG_PATH, text: pointerFor(paths) },
     ],
     notes: notesOf(sorted.dropped, block.lost),
     ok: true,

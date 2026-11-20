@@ -1,7 +1,7 @@
 # Taplo validates the Cinch config against the schema Cinch publishes.
 # `cinch check` runs it on every TOML file. Formatting stays with `bun fmt`.
 [[rule]]
-include = ["cinch.toml"]
+include = ["cinch.toml", "rope.toml"]
 
 [rule.schema]
 path = "packages/cinch/schemas/cinch.schema.json"

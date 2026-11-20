@@ -1,7 +1,15 @@
 #!/usr/bin/env bun
 import { parseArgs } from "node:util";
 
-import { check, explain, EXIT_CODE, exitCodeOf, fix } from "@ropes/core";
+import {
+  check,
+  explain,
+  EXIT_CODE,
+  exitCodeOf,
+  fix,
+  previewMigration,
+} from "@ropes/core";
+import type { MigrationPreview } from "@ropes/core";
 import {
   renderFailureJson,
   renderFix,
@@ -18,10 +26,12 @@ const HELP = `rope ${manifest.version}
 
 Usage: rope <explain|check|fix> [path...] [--json] [--strict]
        rope fix [path...] --dry-run
+       rope migrate [--dry-run] [--json]
 
   explain   Show which checks apply and where the policy comes from
   check     Check the selected files without writing to the repository
   fix       Fix the selected files or preview changes with --dry-run
+  migrate   Preview a legacy Cinch config migration
 
 Exit codes: 0 clean, 1 findings remain, 2 incomplete or unusable.
 `;
@@ -37,6 +47,43 @@ const fail = (message: string, json: boolean): number => {
     : `rope: ${message.replaceAll("\ncinch: ", "\nrope: ")}`;
   process.stderr.write(`${text}\n`);
   return EXIT_CODE.incomplete;
+};
+
+const renderMigration = (preview: MigrationPreview): string => {
+  const { source, target, managedFiles, rootReferences, recovery } = preview;
+  const table = source.table === undefined ? "" : ` [${source.table}]`;
+  return [
+    `Migration preview from ${source.path}${table} to ${target.path}. No files written.`,
+    "",
+    target.text.trimEnd(),
+    "",
+    ...managedFiles.map(({ from, to }) => `  ${from} -> ${to}`),
+    ...rootReferences.map(
+      ({ from, path, to }) =>
+        `  ${path}: change the reference from ${from} to ${to}`
+    ),
+    "",
+    recovery,
+  ].join("\n");
+};
+
+const migrate = async (
+  cwd: string,
+  paths: readonly string[],
+  json: boolean
+): Promise<number> => {
+  if (paths.length > 0) {
+    return fail(
+      "migrate previews the whole configuration, so it takes no paths.",
+      json
+    );
+  }
+  const ran = await previewMigration(cwd);
+  if (!ran.ok) {
+    return fail(ran.error, json);
+  }
+  print(json ? JSON.stringify(ran.value, null, 2) : renderMigration(ran.value));
+  return EXIT_CODE.clean;
 };
 
 const main = async (argv: readonly string[]): Promise<number> => {
@@ -61,8 +108,8 @@ const main = async (argv: readonly string[]): Promise<number> => {
     return EXIT_CODE.clean;
   }
   const json = values.json === true;
-  if (values["dry-run"] === true && verb !== "fix") {
-    return fail("--dry-run is only for fix.", json);
+  if (values["dry-run"] === true && verb !== "fix" && verb !== "migrate") {
+    return fail("--dry-run is only for fix and migrate.", json);
   }
   const request = {
     cwd: process.cwd(),
@@ -94,6 +141,9 @@ const main = async (argv: readonly string[]): Promise<number> => {
       }
       print(json ? renderFixJson(ran.value) : renderFix(ran.value));
       return exitCodeOf(ran.value.result);
+    }
+    case "migrate": {
+      return await migrate(request.cwd, paths, json);
     }
     default: {
       return fail(`unknown command "${verb}". Run rope --help.`, json);

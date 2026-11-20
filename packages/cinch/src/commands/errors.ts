@@ -34,7 +34,7 @@ export const describeConfigError = (error: ConfigError): string => {
       return `${error.file} is not a valid config: ${error.issues.join("; ")}`;
     }
     case "conflict": {
-      return `${error.files.join(" and ")} both configure Cinch. Keep one.`;
+      return `${error.files.join(" and ")} configure the same run. Keep one.`;
     }
     default: {
       return error satisfies never;

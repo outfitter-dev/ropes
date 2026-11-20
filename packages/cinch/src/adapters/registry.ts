@@ -1,5 +1,7 @@
 import type { ToolTables } from "../contracts/config.ts";
 import type { EditorSettings } from "../contracts/editor.ts";
+import { CINCH_MANAGED_DIR } from "../contracts/managed-config.ts";
+import type { ManagedDir } from "../contracts/managed-config.ts";
 import type { Adapter } from "./adapter.ts";
 import { rulesAdapter } from "./ast-grep/adapter.ts";
 import { bunCheckAdapter } from "./bun-check/adapter.ts";
@@ -32,13 +34,14 @@ export const adaptersFor = (
   pins: Pins,
   tables: ToolTables = {},
   editor?: EditorSettings,
-  localRules?: readonly string[]
+  localRules?: readonly string[],
+  managedDir: ManagedDir = CINCH_MANAGED_DIR
 ): readonly Adapter[] => [
   editorFileAdapter(editor),
-  rumdlPresetAdapter({ table: tables[RUMDL_TABLE] }),
-  oxlintPreset(),
-  oxfmtPreset(),
-  tsconfigPreset(),
+  rumdlPresetAdapter({ managedDir, table: tables[RUMDL_TABLE] }),
+  oxlintPreset(managedDir),
+  oxfmtPreset(managedDir),
+  tsconfigPreset(managedDir),
   rumdlAdapter({ version: pins.rumdl }),
   taploAdapter({ version: pins.taplo }),
   oxlintAdapter({ version: pins.oxlint }),
