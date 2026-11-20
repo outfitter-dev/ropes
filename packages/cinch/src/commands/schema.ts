@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { FailureSchema } from "../contracts/failure.ts";
 import { FixReportSchema } from "../contracts/fix.ts";
+import { InitReportSchema } from "../contracts/init.ts";
 import { PlanSchema, SCHEMA_VERSION } from "../contracts/plan.ts";
 import { PresetReportSchema } from "../contracts/preset.ts";
 import { EXIT_CODE, ResultSchema } from "../contracts/result.ts";
@@ -16,7 +17,7 @@ export const OUTPUT_SCHEMAS: Readonly<Record<string, z.ZodType>> = {
   explain: PlanSchema,
   failure: FailureSchema,
   fix: FixReportSchema,
-  init: FixReportSchema,
+  init: InitReportSchema,
   preset: PresetReportSchema,
   "preset add": FixReportSchema,
   "preset list": PresetReportSchema,

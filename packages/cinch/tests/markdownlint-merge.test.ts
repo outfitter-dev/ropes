@@ -132,6 +132,9 @@ test("a value the preset sets is still named when the file differs", () => {
     sections: {},
   });
   expect(result).toEqual({
+    notes: [
+      `\`indent\` on MD007 is 2 in ${OLD} and 4 here. The value here was kept.`,
+    ],
     ok: true,
     text: [
       "[MD007]",
@@ -156,6 +159,20 @@ test("a rule the old config switched off and this list leaves on is named", () =
   expect(result.ok && result.text).toContain(
     `# - ${OLD} switches off MD007, and the \`disable\` list here does not. The list here was kept, and it replaces the standard's.`
   );
+});
+
+test("a rule the old config switched on and the lists here switch off is named", () => {
+  const result = merge({
+    current: '[global]\nenable = ["MD013"]\nextend-disable = ["ul-indent"]\n',
+    file: OLD,
+    known: KNOWN,
+    notes: [],
+    on: ["MD007", "MD013", "MD033"],
+    sections: {},
+  });
+  expect(result.ok && result.notes).toEqual([
+    `${OLD} switches on MD007, MD033, and the lists of rules here switch that off. The lists here were kept.`,
+  ]);
 });
 
 test("nothing to add leaves the file as it was", () => {

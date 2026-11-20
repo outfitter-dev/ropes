@@ -46,6 +46,7 @@ for (const [name, text] of FORMS) {
       kind: "found",
       notes: [],
       rules: RULES,
+      settled: [],
     });
   });
 }
@@ -92,6 +93,11 @@ test("the runner's own settings are named, with the Cinch key for paths", async 
       "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `cinch init` writes it as `exclude` in a new Cinch config. Add it by hand to one that is already there.",
     ],
     rules: RULES,
+    // The file choices are the Cinch config's to carry.
+    settled: [
+      "`globs` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `cinch init` writes it as `include` in a new Cinch config. Add it by hand to one that is already there.",
+      "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `cinch init` writes it as `exclude` in a new Cinch config. Add it by hand to one that is already there.",
+    ],
   });
 });
 
@@ -107,6 +113,9 @@ test("a rules file replaces the runner's `config` block", async () => {
       "`fix` in .markdownlint-cli2.jsonc is a markdownlint-cli2 setting with no equivalent here.",
     ],
     rules: RULES,
+    settled: [
+      "The `config` block in .markdownlint-cli2.jsonc was not read, because .markdownlint.yaml replaces it.",
+    ],
   });
 });
 

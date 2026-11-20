@@ -5,6 +5,7 @@ import { managedAdapter } from "../managed.ts";
 import type { Wanted } from "../managed.ts";
 import { chosenFiles } from "./markdownlint-files.ts";
 import { merge } from "./markdownlint-merge.ts";
+import { extendsOf, retired } from "./markdownlint-retire.ts";
 import { carriedOver, gathered } from "./markdownlint.ts";
 
 /** The copy of the standard that Cinch keeps in a repository. */
@@ -30,13 +31,6 @@ const preset = async (): Promise<Wanted> => ({
   ok: true,
   text: `${HEADER}${await standard()}`,
 });
-
-const extendsOf = (text: string): unknown => {
-  const table: unknown = Bun.TOML.parse(text);
-  return typeof table === "object" && table !== null && "extends" in table
-    ? table.extends
-    : undefined;
-};
 
 const SIBLINGS = ["rumdl.toml", ".config/rumdl.toml"];
 const PYPROJECT = "pyproject.toml";
@@ -170,4 +164,12 @@ export const rumdlPresetAdapter = (
     id: "rumdl-preset",
     inherits: chosenFiles,
     preset: "markdown",
+    retires: async (root) =>
+      await retired({
+        ...(options.command === undefined ? {} : { command: options.command }),
+        config: CONFIG_PATH,
+        extended: PRESET_PATH,
+        root,
+        standard: await standard(),
+      }),
   });

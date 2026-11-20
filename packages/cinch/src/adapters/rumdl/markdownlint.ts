@@ -107,12 +107,16 @@ export interface Carried {
   readonly file: string;
   readonly known: readonly KnownRule[];
   readonly notes: readonly string[];
+  /** The notes that leave nothing for a person to move over. */
+  readonly settled: readonly string[];
   /** Only where the old config differs from the preset. */
   readonly sections: Sections;
   /** What the old config stated that the preset already sets. */
   readonly same: Sections;
   /** The IDs of the rules the old config switched off. */
   readonly off: readonly string[];
+  /** The IDs of the rules the old config switched on by name. */
+  readonly on: readonly string[];
 }
 
 type Failed = Exclude<Wanted, { readonly ok: true }>;
@@ -164,8 +168,10 @@ export const gathered = async (
     notes: [...result.notes, ...source.notes],
     off: result.off,
     ok: true,
+    on: result.on,
     same: result.same,
     sections: result.sections,
+    settled: source.settled,
   };
 };
 
