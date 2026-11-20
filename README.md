@@ -84,4 +84,8 @@ bun run cinch --help
 
 `bun run check` ends with `cinch check` on this repository, reading the root `cinch.toml`. That step needs the pinned rumdl on `PATH`. With mise activated in your shell it is. Otherwise run `mise exec -- bun run check`. Without rumdl the step is incomplete and the check fails, which is the point: a check that could not run is not a pass.
 
+The pre-commit hook runs `cinch fix` on the Markdown you staged, after the formatter. It stages what it fixed and stops the commit when a finding is left or the engine could not run. It works on the file in your working tree, so a partly staged Markdown file is staged whole.
+
+[Rolling Cinch out](docs/rollout.md) lists the other Outfitter repositories and what each needs first.
+
 Tool versions are pinned in `mise.toml`, and [docs/tool-versions.md](docs/tool-versions.md) says how to change one. See AGENTS.md for the working rules.
