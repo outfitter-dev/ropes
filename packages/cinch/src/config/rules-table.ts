@@ -107,20 +107,39 @@ const within = (
   ];
 };
 
+/** `\n`, `\r\n`, or null when a CRLF file also contains another ending. */
+const endingOf = (value: string): "\n" | "\r\n" | null => {
+  if (!value.includes("\r\n")) {
+    return "\n";
+  }
+  const bare = value.replaceAll("\r\n", "");
+  return bare.includes("\n") || bare.includes("\r") ? null : "\r\n";
+};
+
 /**
  * The config text with `packs` under its rules table naming exactly the
  * packs given, and rules switched on where the table did not say. Every
- * other line is left as it was. It refuses when it cannot make that edit
- * and nothing else, so a person's config is never rewritten by guesswork.
+ * other line is left as it was, including its line ending. It refuses when
+ * it cannot make that edit and nothing else, so a person's config is never
+ * rewritten by guesswork.
  */
 export const namePacks = (
-  text: string,
+  given: string,
   prefix: string,
   packs: readonly string[]
 ): NamedPacks => {
   const names = [...prefix.split("."), "rules"].filter((name) => name !== "");
   const title = names.join(".");
   const line = `packs = [${packs.map((name) => JSON.stringify(name)).join(", ")}]`;
+  const by = `Add \`${line}\` under \`[${title}]\` by hand.`;
+  const ending = endingOf(given);
+  if (ending === null) {
+    return {
+      ok: false,
+      reason: `The file mixes line endings, so Cinch will not edit it. ${by}`,
+    };
+  }
+  const text = ending === "\r\n" ? given.replaceAll("\r\n", "\n") : given;
   const lines = text.split("\n");
   const start = lines.findIndex((one) =>
     new RegExp(
@@ -128,7 +147,6 @@ export const namePacks = (
       "u"
     ).test(one)
   );
-  const by = `Add \`${line}\` under \`[${title}]\` by hand.`;
   if (start === -1 && rulesOf(text, names) !== undefined) {
     return {
       ok: false,
@@ -141,6 +159,9 @@ export const namePacks = (
       : within(lines, start, line).join("\n");
   const kept = isOnlyThat(text, edited, names, packs);
   return kept
-    ? { ok: true, text: edited }
+    ? {
+        ok: true,
+        text: ending === "\r\n" ? edited.replaceAll("\n", "\r\n") : edited,
+      }
     : { ok: false, reason: `Cinch could not make the edit safely. ${by}` };
 };

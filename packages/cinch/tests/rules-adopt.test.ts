@@ -62,6 +62,17 @@ test("the preview names the packs that apply and writes nothing", async () => {
   );
 });
 
+test("--yes keeps the line endings a config already uses", async () => {
+  await put("cinch.toml", "pilot = 0\r\n\r\n[rules]\r\nenabled = true\r\n");
+  expect(await report({ yes: true })).toMatchObject({
+    adopted: ["config"],
+    written: true,
+  });
+  expect(await config()).toBe(
+    'pilot = 0\r\n\r\n[rules]\r\nenabled = true\r\npacks = ["config"]\r\n'
+  );
+});
+
 test("--yes names them, and the pack then runs", async () => {
   await put("cinch.toml", "pilot = 0\n\n[rules]\nenabled = true\n");
   expect(await report({ yes: true })).toMatchObject({
@@ -196,6 +207,23 @@ test("a config that leads out of the repository is not written", async () => {
   } finally {
     await rm(elsewhere, { force: true, recursive: true });
   }
+});
+
+test("a CRLF config keeps that ending on every line, and a mixed one is left", () => {
+  expect(
+    packsOf("pilot = 0\r\n\r\n[rules]\r\nenabled = true\r\n", ["config"])
+  ).toBe(
+    'pilot = 0\r\n\r\n[rules]\r\nenabled = true\r\npacks = ["config"]\r\n'
+  );
+  expect(packsOf("pilot = 0\r\n\r\n[rules]\r\n", ["config"])).toBe(
+    'pilot = 0\r\n\r\n[rules]\r\nenabled = true\r\npacks = ["config"]\r\n'
+  );
+  expect(packsOf("pilot = 0\r\n", ["config"])).toBe(
+    'pilot = 0\r\n\r\n[rules]\r\nenabled = true\r\npacks = ["config"]\r\n'
+  );
+  expect(packsOf("pilot = 0\r\n\n[rules]\n", ["config"])).toBe(
+    'The file mixes line endings, so Cinch will not edit it. Add `packs = ["config"]` under `[rules]` by hand.'
+  );
 });
 
 test("rules written another way are left for a person", () => {
