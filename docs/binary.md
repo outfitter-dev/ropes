@@ -19,6 +19,7 @@ The build writes one file and publishes nothing.
 
 - The `cinch` command, with every verb.
 - The presets, as text. A Cinch version is a preset version, so the binary writes the same `.outfitter/configs/presets/` files as the package of the same version.
+- The rules Cinch ships, as text, for the same reason. The binary still needs `ast-grep` on `PATH` to run them.
 
 The engines are not inside. A repository still pins and installs rumdl, Taplo and the rest itself, and `cinch doctor` still reports one that is missing.
 

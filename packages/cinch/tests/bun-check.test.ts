@@ -64,7 +64,7 @@ test("the adapter is off until asked for, never writes, and follows the pin", ()
   const ids = adaptersFor({ bun: "1.4.4" }).map(
     ({ descriptor }) => descriptor.id
   );
-  expect(ids.slice(-2)).toEqual(["bun-check", "bun-fmt"]);
+  expect(ids.slice(-3)).toEqual(["bun-check", "ast-grep", "bun-fmt"]);
 });
 
 test("a command that is not on PATH is not available, and its steps are incomplete", async () => {

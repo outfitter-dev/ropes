@@ -207,6 +207,16 @@
             },
             "description": "Root-relative globs. The settings beside them apply to matching files."
           },
+          "rules": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "description": "Whether the shipped rules are run on the matching files.",
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          },
           "toml": {
             "type": "object",
             "properties": {
@@ -236,6 +246,16 @@
       "type": "number",
       "const": 0,
       "description": "The version of this unstable format. It must be stated."
+    },
+    "rules": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Whether the structural rules Cinch ships are run. Off unless set to true.",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
     },
     "toml": {
       "type": "object",

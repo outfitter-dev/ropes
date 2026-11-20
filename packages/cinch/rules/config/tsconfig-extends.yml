@@ -1,0 +1,18 @@
+id: config/tsconfig-extends
+language: json
+severity: error
+message: This compiler config builds on nothing. Add an `extends` line that names the shared compiler options, or another config in the repository.
+files:
+  - "**/tsconfig.json"
+ignores:
+  - "**/.outfitter/**"
+rule:
+  kind: document
+  not:
+    has:
+      kind: object
+      has:
+        kind: pair
+        has:
+          field: key
+          regex: ^"extends"$

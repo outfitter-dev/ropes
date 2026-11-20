@@ -132,6 +132,17 @@ An adapter takes a root and the files of a batch and returns data. It does not r
 - Oxlint states how many files it linted. When that is not the number it was given, it left a file out without saying which, and every file of that run is incomplete. A report that cannot be read, or an exit code of 1 with nothing in the report, is incomplete too.
 - A warning is a finding. `cinch check` exits 1 on one, as `oxlint --deny-warnings` does.
 
+## The shipped rules
+
+`adapters/ast-grep/` runs the rules Cinch ships through [ast-grep](https://ast-grep.github.io). A rule is a few lines of YAML that match a shape in a file, for a check no linter has a rule for. It runs once for the files of a batch, from the repository root, and never writes, so `fix` only checks.
+
+- It is off until the Cinch config sets `rules.enabled = true`, and `include` has to name the files, for example `**/*.json`.
+- The rules live in `packages/cinch/rules/<pack>/<rule>.yml`. A rule's id is `<pack>/<rule>`, and a finding carries it. Cinch hands the rules to ast-grep on the command line, so nothing is copied into the repository, and a Cinch version is a rules version.
+- Cinch does not install ast-grep. The binary must be on `PATH`. The `ast-grep` pin in `mise.toml` is the pin, and without one the adapter accepts the 0.51 releases from 0.51.3, the version its output mapping was checked against.
+- ast-grep exits 0 when no error-level rule matched and 1 when one did, and says how many. A run whose exit code, count and printed matches do not agree is incomplete, and so is one where it refuses a rule or cannot read a file.
+- ast-grep does not say which files it read, and a file that does not parse matches nothing. A broken JSON file is the formatter's finding, not this step's.
+- The first rule, `config/tsconfig-extends`, reports a `tsconfig.json` with no `extends` line.
+
 ## The type check
 
 `adapters/bun-check/` type checks TypeScript with [`bun check`](https://bun.com/docs/runtime/check). It runs once for the files of a batch, from the repository root. The compiler takes each file's options from the nearest `tsconfig.json` above it, and reads what the files import. It never writes, so `fix` only checks. There is no `tsc` step.

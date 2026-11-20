@@ -1,6 +1,7 @@
 import type { ToolTables } from "../contracts/config.ts";
 import type { EditorSettings } from "../contracts/editor.ts";
 import type { Adapter } from "./adapter.ts";
+import { rulesAdapter } from "./ast-grep/adapter.ts";
 import { bunCheckAdapter } from "./bun-check/adapter.ts";
 import { bunFmtAdapter } from "./bun-fmt/adapter.ts";
 import { editorFileAdapter } from "./editorconfig/adapter.ts";
@@ -23,7 +24,7 @@ import { tsconfigPreset } from "./tsconfig/preset.ts";
  * until then its adapter keeps nothing. The
  * presets for the lint, format and TypeScript configs are off until the
  * config asks for each, and so are the lint engine, the type check and the
- * formatter. The
+ * formatter, and the rules Cinch ships. The
  * formatter is last, so in a fix it formats what the others wrote.
  */
 export const adaptersFor = (
@@ -40,5 +41,6 @@ export const adaptersFor = (
   taploAdapter({ version: pins.taplo }),
   oxlintAdapter({ version: pins.oxlint }),
   bunCheckAdapter({ version: pins.bun }),
+  rulesAdapter({ version: pins["ast-grep"] }),
   bunFmtAdapter({ version: pins.bun }),
 ];

@@ -2,9 +2,12 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 
+import { Glob } from "bun";
+
 /**
  * Builds `cinch` as one executable that needs no Bun where it runs. The
- * presets go in as text, since a Cinch version is a preset version.
+ * presets and the rules go in as text, since a Cinch version is a preset
+ * version and a rules version.
  *
  *   bun packages/cinch/scripts/build-binary.ts <outfile> [target]
  *
@@ -12,6 +15,7 @@ import path from "node:path";
  */
 const PACKAGE = path.join(import.meta.dir, "..");
 const PRESETS = path.join(PACKAGE, "presets");
+const RULES = path.join(PACKAGE, "rules");
 
 /** The platforms Outfitter uses. The names are Bun's. */
 const TARGETS = [
@@ -29,13 +33,21 @@ if (outfile === undefined || (wanted !== undefined && target === undefined)) {
   process.exit(2);
 }
 
-const found = await readdir(PRESETS);
-const names = found.toSorted();
+/** A preset goes in by its file name, a rule as `rules/<pack>/<rule>.yml`. */
+const presets = await readdir(PRESETS);
+const rules = await Array.fromAsync(new Glob("**/*").scan({ cwd: RULES }));
+const sources = [
+  ...presets.map((name): [string, string] => [name, path.join(PRESETS, name)]),
+  ...rules.map((file): [string, string] => [
+    `rules/${file}`,
+    path.join(RULES, file),
+  ]),
+].toSorted(([left], [right]) => (left < right ? -1 : 1));
 const texts = await Promise.all(
-  names.map((name) => Bun.file(path.join(PRESETS, name)).text())
+  sources.map(([, file]) => Bun.file(file).text())
 );
 const shipped = Object.fromEntries(
-  names.map((name, index) => [name, texts[index] ?? ""])
+  sources.map(([name], index) => [name, texts[index] ?? ""])
 );
 
 const built = await Bun.build({
