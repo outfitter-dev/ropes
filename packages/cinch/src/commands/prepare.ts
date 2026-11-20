@@ -4,9 +4,11 @@ import type { Adapter, AdapterDescriptor } from "../adapters/adapter.ts";
 import { readPins } from "../adapters/pins.ts";
 import type { Pins, PinsResult } from "../adapters/pins.ts";
 import { loadConfig } from "../config/load.ts";
+import { managedDirFor } from "../config/managed.ts";
 import { discoverRoot, toRootRelative } from "../config/root.ts";
 import type { CinchConfig, ToolTables } from "../contracts/config.ts";
 import type { EditorSettings } from "../contracts/editor.ts";
+import type { ManagedDir } from "../contracts/managed-config.ts";
 import type { Plan } from "../contracts/plan.ts";
 import type { RepoRoot } from "../contracts/root.ts";
 import { unknownOff, unknownPacks } from "../policy/packs.ts";
@@ -25,7 +27,8 @@ export interface CommandDeps {
     pins: Pins,
     tables?: ToolTables,
     editor?: EditorSettings,
-    localRules?: readonly string[]
+    localRules?: readonly string[],
+    managedDir?: ManagedDir
   ) => readonly Adapter[];
 }
 
@@ -83,7 +86,8 @@ export const prepare = async (
       pins.pins,
       config.value.tools,
       config.value.editor,
-      config.value.rulesLocal?.value
+      config.value.rulesLocal?.value,
+      managedDirFor(config.value.file)
     ),
     root.root,
     config.value

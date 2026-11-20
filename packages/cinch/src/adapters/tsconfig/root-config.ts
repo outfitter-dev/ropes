@@ -1,13 +1,9 @@
 import path from "node:path";
 
 import type { ManagedFile, Wanted } from "../managed.ts";
-import { PRESET_PATH, ROOT_PATH } from "./paths.ts";
+import { ROOT_PATH } from "./paths.ts";
 
 const KEY = "extends";
-const TARGET = `./${PRESET_PATH}`;
-const WITHOUT_EXTENSION = PRESET_PATH.slice(0, -".json".length);
-const LINE = `"${KEY}": "${TARGET}"`;
-const FRESH = `{\n  ${LINE}\n}\n`;
 
 const OWN = `${ROOT_PATH} is the repository's own, so Cinch will not rewrite it.`;
 const OFF = "set `preset = false` under `[typescript]` in the Cinch config";
@@ -61,29 +57,36 @@ const opening = (text: string): number => {
  */
 const withExtends = (
   text: string,
-  before: Record<string, unknown>
+  before: Record<string, unknown>,
+  target: string,
+  line: string
 ): string | null => {
   const at = opening(text);
   if (at === -1) {
     return null;
   }
   const empty = Object.keys(before).length === 0;
-  const added = `${text.slice(0, at + 1)}\n  ${LINE}${empty ? "\n" : ","}${text.slice(at + 1)}`;
-  return Bun.deepEquals(parse(added), { ...before, [KEY]: TARGET })
+  const added = `${text.slice(0, at + 1)}\n  ${line}${empty ? "\n" : ","}${text.slice(at + 1)}`;
+  return Bun.deepEquals(parse(added), { ...before, [KEY]: target })
     ? added
     : null;
 };
 
-const ADD = `${OWN} It does not extend the preset Cinch keeps. Add \`${LINE}\`, or run \`cinch doctor --fix\`, which adds it and changes nothing else.`;
-
-const want = async (current: string | null, root: string): Promise<Wanted> => {
+const want = async (
+  current: string | null,
+  root: string,
+  preset: string,
+  withoutExtension: string
+): Promise<Wanted> => {
+  const target = `./${preset}`;
+  const line = `"${KEY}": "${target}"`;
   if (current === null) {
-    return { ok: true, text: FRESH };
+    return { ok: true, text: `{\n  ${line}\n}\n` };
   }
   const parsed = parse(current);
   if (parsed === null) {
     return {
-      message: `${OWN} It could not be read, so Cinch cannot tell whether it extends ${PRESET_PATH}.`,
+      message: `${OWN} It could not be read, so Cinch cannot tell whether it extends ${preset}.`,
       ok: false,
     };
   }
@@ -92,22 +95,26 @@ const want = async (current: string | null, root: string): Promise<Wanted> => {
     (Array.isArray(named) ? named : [named]).map(relativeConfigPath)
   );
   if (
-    relative.has(PRESET_PATH) ||
-    (relative.has(WITHOUT_EXTENSION) &&
-      !(await Bun.file(path.join(root, WITHOUT_EXTENSION)).exists()))
+    relative.has(preset) ||
+    (relative.has(withoutExtension) &&
+      !(await Bun.file(path.join(root, withoutExtension)).exists()))
   ) {
     return { ok: true, text: current };
   }
   if (named !== undefined) {
     return {
-      message: `${OWN} It extends ${JSON.stringify(named)}, not the preset Cinch keeps. Make \`${KEY}\` a list with \`"${TARGET}"\` first, so what the repository extends today still wins, or ${OFF}.`,
+      message: `${OWN} It extends ${JSON.stringify(named)}, not the preset Cinch keeps. Make \`${KEY}\` a list with \`"${target}"\` first, so what the repository extends today still wins, or ${OFF}.`,
       ok: false,
     };
   }
-  const added = withExtends(current, parsed);
+  const added = withExtends(current, parsed, target, line);
   return added === null
-    ? { message: `${OWN} Add \`${LINE}\` to it, or ${OFF}.`, ok: false }
-    : { ok: true, text: added, why: ADD };
+    ? { message: `${OWN} Add \`${line}\` to it, or ${OFF}.`, ok: false }
+    : {
+        ok: true,
+        text: added,
+        why: `${OWN} It does not extend the preset Cinch keeps. Add \`${line}\`, or run \`cinch doctor --fix\`, which adds it and changes nothing else.`,
+      };
 };
 
 /**
@@ -116,9 +123,12 @@ const want = async (current: string | null, root: string): Promise<Wanted> => {
  * else. One that extends something else is left for a person, since the
  * order of the two decides which wins.
  */
-export const rootConfig: ManagedFile = {
-  beside: [WITHOUT_EXTENSION],
-  layer: "root",
-  path: ROOT_PATH,
-  want,
+export const rootConfigFor = (preset: string): ManagedFile => {
+  const withoutExtension = preset.slice(0, -".json".length);
+  return {
+    beside: [withoutExtension],
+    layer: "root",
+    path: ROOT_PATH,
+    want: (current, root) => want(current, root, preset, withoutExtension),
+  };
 };
