@@ -76,7 +76,7 @@ test("an unknown command exits 2, including names Object.prototype has", async (
   }
 });
 
-test("init without a terminal shows the change and writes nothing", async () => {
+test("init shows the change and writes nothing", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "cinch-init-"));
   await mkdir(path.join(root, ".git"));
   const child = Bun.spawn(["bun", CLI, "init"], {
@@ -97,12 +97,10 @@ test("init without a terminal shows the change and writes nothing", async () => 
     stdin: "ignore",
     stdout: "pipe",
   });
-  const [report, hint] = await Promise.all([
+  const [report] = await Promise.all([
     new Response(json.stdout).text(),
-    new Response(json.stderr).text(),
     json.exited,
   ]);
   expect(FixReportSchema.parse(JSON.parse(report)).dryRun).toBe(true);
-  expect(hint).toContain("Run `cinch init --yes` to write this.");
   await rm(root, { force: true, recursive: true });
 });

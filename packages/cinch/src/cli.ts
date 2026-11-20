@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 
 import manifest from "../package.json" with { type: "json" };
@@ -15,8 +14,8 @@ Commands:
   explain   Show the plan for a path without running anything
   check     Run the plan read-only and report findings
   fix       Apply what the plan allows (--dry-run to preview)
-  init      Set up the config and presets a repository needs. It shows the
-            change and asks first (--yes to write, --dry-run to only show)
+  init      Set up the config and presets a repository needs. It only shows
+            the change (--yes to write it)
   preset    List the shared configs Cinch keeps here and their state
             preset add <name>      Write one preset's files
             preset update [name]   Rewrite copies that are behind
@@ -31,17 +30,6 @@ const print = (response: CommandResponse): void => {
   if (response.error !== undefined) {
     process.stderr.write(`${response.error}\n`);
   }
-};
-
-/** Asks a yes or no question. Anything but y or yes is a no. */
-const ask = async (question: string): Promise<boolean> => {
-  const lines = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  const answer = await lines.question(`\n${question} [y/N] `);
-  lines.close();
-  return ["y", "yes"].includes(answer.trim().toLowerCase());
 };
 
 const main = async (argv: readonly string[]): Promise<number> => {
@@ -83,26 +71,9 @@ const main = async (argv: readonly string[]): Promise<number> => {
     paths: name === "preset" ? names : paths,
     yes: values.yes === true,
   };
-  const shown = await command(request);
-  print(shown);
-  if (!shown.confirm) {
-    return shown.exitCode;
-  }
-  // Only a person at a terminal is asked. Anything else is told what to run.
-  const canAsk = process.stdin.isTTY && process.stdout.isTTY && !request.json;
-  if (!canAsk) {
-    // JSON keeps stdout for the report, so the line to run goes to stderr.
-    const stream = request.json ? process.stderr : process.stdout;
-    stream.write(`\n${shown.confirm.otherwise}\n`);
-    return shown.exitCode;
-  }
-  if (!(await ask(shown.confirm.question))) {
-    process.stdout.write("Nothing was written.\n");
-    return shown.exitCode;
-  }
-  const written = await command({ ...request, yes: true });
-  print(written);
-  return written.exitCode;
+  const response = await command(request);
+  print(response);
+  return response.exitCode;
 };
 
 process.exitCode = await main(process.argv.slice(2));

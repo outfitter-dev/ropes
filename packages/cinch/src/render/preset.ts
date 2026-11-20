@@ -28,15 +28,7 @@ export const renderPresetsJson = (report: PresetReport): string =>
   JSON.stringify(report, null, 2);
 
 /** What `init` adds below the fix report when it only showed the change. */
-export const renderInitHint = (changes: number, dryRun: boolean): string => {
-  if (changes === 0) {
-    return "Nothing to set up.";
-  }
-  return dryRun ? "Dry run: nothing was written." : "";
-};
-
-/** How `init` asks before it writes, and what to run when it cannot ask. */
-export const INIT_CONFIRM = {
-  otherwise: "Run `cinch init --yes` to write this.",
-  question: "Write these files?",
-};
+export const renderInitHint = (changes: number): string =>
+  changes === 0
+    ? "Nothing to set up."
+    : "Dry run: nothing was written. Run `cinch init --yes` to write this.";

@@ -5,7 +5,7 @@ import type { FixReport } from "../contracts/fix.ts";
 import { EXIT_CODE } from "../contracts/result.ts";
 import { unifiedDiff } from "../render/diff.ts";
 import { renderFix, renderFixJson } from "../render/fix.ts";
-import { INIT_CONFIRM, renderInitHint } from "../render/preset.ts";
+import { renderInitHint } from "../render/preset.ts";
 import type { Command } from "./command.ts";
 import { runFix } from "./fix.ts";
 import { prepare } from "./prepare.ts";
@@ -35,9 +35,9 @@ const withConfig = (report: FixReport): FixReport => ({
 
 /**
  * Sets a repository up: a starting config when there is none, then every
- * preset that is switched on. With `yes` it writes. With `dryRun` it only
- * shows the change. With neither it shows the change and offers to write it,
- * which the caller confirms. A config that is already there is never rewritten.
+ * preset that is switched on. It only shows the change unless `yes` is set,
+ * and `dryRun` wins over `yes`. A config that is already there is never
+ * rewritten.
  */
 export const init =
   (deps: CommandDeps): Command =>
@@ -75,19 +75,12 @@ export const init =
     const report = starting ? withConfig(ran.report) : ran.report;
     const exitCode = EXIT_CODE[report.result.outcome];
     const changes = report.changed.length;
-    const asks = !apply && changes > 0 && request.dryRun !== true;
-    const offer = asks ? { confirm: INIT_CONFIRM } : {};
     if (request.json) {
-      return { ...offer, exitCode, output: renderFixJson(report) };
+      return { exitCode, output: renderFixJson(report) };
     }
     const text = renderFix(report);
-    if (apply) {
-      return { exitCode, output: text };
-    }
-    const hint = renderInitHint(changes, request.dryRun === true);
     return {
-      ...offer,
       exitCode,
-      output: hint === "" ? text : `${text}\n\n${hint}`,
+      output: apply ? text : `${text}\n\n${renderInitHint(changes)}`,
     };
   };
