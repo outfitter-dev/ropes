@@ -12,11 +12,14 @@ const GROUP = /[@+?!*]\(/u;
 const FILES_ONLY = /\.(?:md|mdx|mdc|markdown)$|\*\*$/iu;
 const TRAILING_SLASHES = /\/+$/u;
 
-const trimmed = (pattern: string): string =>
-  (pattern.startsWith("./") ? pattern.slice(2) : pattern).replace(
+/** Without a leading `./` or a trailing slash. The root itself is `**`. */
+const trimmed = (pattern: string): string => {
+  const bare = (pattern.startsWith("./") ? pattern.slice(2) : pattern).replace(
     TRAILING_SLASHES,
     ""
   );
+  return bare === "." || (bare === "" && pattern !== "") ? "**" : bare;
+};
 
 const expressible = (pattern: string): boolean =>
   pattern !== "" &&

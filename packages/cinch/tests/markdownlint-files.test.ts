@@ -60,6 +60,14 @@ test("a trailing slash or a dot in a directory name still covers its contents", 
   expect(excluded("docs/v1.0/notes.md")).toBe(true);
 });
 
+test("the root, however it is spelled, is everything", async () => {
+  const found = await chosen({ globs: [".", "./"], ignores: ["./out/"] });
+  expect(found).toMatchObject({
+    exclude: ["out", "out/**"],
+    include: ["**"],
+  });
+});
+
 test("globs become include, and a negated glob becomes exclude", async () => {
   const found = await chosen({
     globs: ["**/*.md", "**/*.mdx", "!drafts"],
