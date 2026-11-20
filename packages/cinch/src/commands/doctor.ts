@@ -33,9 +33,10 @@ const inspect = async ({ adapters, plan }: Prepared): Promise<FixReport> => ({
 /** The tools the workspace's plan needs, less Cinch's own setup steps. */
 const tools = async (
   root: string,
-  deps: CommandDeps
+  deps: CommandDeps,
+  strict: boolean
 ): Promise<DoctorReport["tools"] | string> => {
-  const workspace = await prepare({ cwd: root, paths: [] }, deps);
+  const workspace = await prepare({ cwd: root, paths: [], strict }, deps);
   if (!workspace.ok) {
     return workspace.error;
   }
@@ -84,7 +85,7 @@ export const doctor =
     if (!ran.ok) {
       return ran.response;
     }
-    const found = await tools(root, deps);
+    const found = await tools(root, deps, request.strict === true);
     if (typeof found === "string") {
       return unusable(found);
     }

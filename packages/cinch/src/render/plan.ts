@@ -95,7 +95,8 @@ export const toolLine = (status: ToolStatus): string => {
     return `  ${status.tool}  unavailable: ${status.problem}`;
   }
   const name = [status.tool, status.version].filter(Boolean).join(" ");
-  return `  ${name}  available, needs ${status.versionRange}`;
+  const line = `  ${name}  available, needs ${status.versionRange}`;
+  return status.notice === undefined ? line : `${line}\n    ${status.notice}`;
 };
 
 const summary = (plan: Plan): string => {

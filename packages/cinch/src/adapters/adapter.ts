@@ -23,6 +23,12 @@ export interface AdapterDescriptor {
   readonly tool: string;
   /** A semver range the installed tool must satisfy. `*` accepts any. */
   readonly versionRange: string;
+  /**
+   * The range the adapter was tested on, present when `versionRange` is a
+   * pin. Outside a strict run, a tool newer than the pin but inside this
+   * range still runs, with a notice.
+   */
+  readonly tested?: string;
   readonly writes: boolean;
   readonly unit: Unit;
   /** Where the tool can run. Elsewhere its steps are incomplete. */

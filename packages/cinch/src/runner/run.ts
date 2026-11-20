@@ -6,6 +6,7 @@ import type { Result, StepResult } from "../contracts/result.ts";
 import { conflictsAfter, textsOf } from "./conflicts.ts";
 import type { Settled } from "./conflicts.ts";
 import { compareFacts } from "./facts.ts";
+import { noticesFor } from "./notices.ts";
 import { probeAdapter, threw, versionProblem } from "./ready.ts";
 import type { Readiness } from "./ready.ts";
 
@@ -90,7 +91,12 @@ const runBatch = async (
   const found = await probe;
   const reason =
     found?.problem ??
-    versionProblem(batch.tool, found?.version, batch.versionRange);
+    versionProblem(
+      batch.tool,
+      found?.version,
+      batch.versionRange,
+      batch.tolerates
+    );
   if (reason !== undefined) {
     return all(reason);
   }
@@ -183,14 +189,17 @@ export const runPlan = async (
                 versionProblem(
                   batch.tool,
                   found?.version,
-                  batch.versionRange
+                  batch.versionRange,
+                  batch.tolerates
                 ) !== undefined
             );
           return unfit ? undefined : adapter;
         });
   const steps = [...ran, ...undone, ...compared];
+  const notices = await noticesFor(plan, (id) => ready(id).probe);
   return {
     ...(conflicts.length === 0 ? {} : { conflicts }),
+    ...(notices.length === 0 ? {} : { notices }),
     outcome: outcomeOf(steps),
     plan,
     schemaVersion: plan.schemaVersion,

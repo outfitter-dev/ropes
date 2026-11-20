@@ -1,6 +1,7 @@
 import type { Adapter, AdapterDescriptor, StepInput } from "../adapter.ts";
 import { allIncomplete } from "../batch.ts";
 import { probeOnPath } from "../on-path.ts";
+import { heldTo } from "../pins.ts";
 import { checkBatch } from "./run.ts";
 
 const ID = "bun-check";
@@ -28,6 +29,7 @@ export interface BunCheckOptions {
 export const bunCheckAdapter = (options: BunCheckOptions = {}): Adapter => {
   const command = options.command ?? TOOL;
   const descriptor: AdapterDescriptor = {
+    ...heldTo(options.version, SUPPORTED_RANGE),
     enabledBy: "typescript.enabled",
     extensions: [".ts", ".tsx", ".mts", ".cts"],
     id: ID,
@@ -35,7 +37,6 @@ export const bunCheckAdapter = (options: BunCheckOptions = {}): Adapter => {
     platforms: ["darwin", "linux", "win32"],
     tool: TOOL,
     unit: "file",
-    versionRange: options.version ?? SUPPORTED_RANGE,
     writes: false,
   };
   const run = (input: StepInput) => {

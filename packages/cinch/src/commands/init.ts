@@ -47,7 +47,8 @@ export const init =
     const paths = await setupFiles(deps, root);
     // Plan before writing anything, so a setup that cannot be planned does
     // not leave a config behind with no presets beside it.
-    const planned = await prepare({ cwd: root, paths }, deps);
+    const strict = request.strict === true;
+    const planned = await prepare({ cwd: root, paths, strict }, deps);
     if (!planned.ok) {
       return {
         error: `cinch: ${planned.error}`,
@@ -69,7 +70,7 @@ export const init =
       await Bun.write(path.join(root, STANDALONE_FILE), starter);
     }
     const ran = await runWrite(
-      { cwd: root, dryRun: !apply, json: request.json, paths },
+      { cwd: root, dryRun: !apply, json: request.json, paths, strict },
       deps,
       { also: old.files, mode: "init" }
     );

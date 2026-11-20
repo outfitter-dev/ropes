@@ -23,7 +23,17 @@ If mise refuses to read `mise.toml` because the file is not trusted, which its p
 
 `adapters/pins.ts` reads the `[tools]` table of `mise.toml`, and the registry hands each adapter the version pinned for its tool. The file is plain TOML, so reading it does not need mise installed. Only an exact three-part version counts as a pin. The runner compares the pin with the version the binary on `PATH` reports. Cinch does not install tools. A required tool that is missing or at the wrong version makes the step incomplete, never passed.
 
+## A tool newer than its pin
+
+A host often has a newer tool than the pin, and that alone should not stop local work. So a tool that is newer than its pin still runs when it is inside the range its adapter was tested on. The run prints a note that names the installed version, the pin and the range, and the exit code does not change. `cinch explain` and `cinch doctor` show the same note beside the tool.
+
+With `--strict`, or when the `CI` environment variable is `true`, only the exact pin will do, and a newer tool makes its steps incomplete as before. A tool older than its pin, or outside the tested range, is always incomplete.
+
 When a repository does not pin a tool, the adapter falls back to the range of versions it was checked against, which it states in its own folder.
+
+## How installs behave
+
+`bunfig.toml` holds the two settings that only Bun can apply to an install. `linker = "isolated"` gives each package only the dependencies it declares. `minimumReleaseAge` makes `bun install` skip any release younger than seven days, which is long enough for most malicious releases to be pulled. When a fix is needed sooner, name the package in `minimumReleaseAgeExcludes` in the same change and say why in the pull request. An install from the lockfile is not affected, so CI installs exactly what was reviewed.
 
 ## Dependency versions across packages
 

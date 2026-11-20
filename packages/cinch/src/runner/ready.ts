@@ -37,15 +37,30 @@ export const probeAdapter = async (
   }
 };
 
+const EXACT = /^\d+\.\d+\.\d+$/u;
+
+/** True when `version` is above an exact pin and inside the wider range. */
+const newerWithin = (
+  version: string,
+  pin: string,
+  tolerates: string | undefined
+): boolean =>
+  tolerates !== undefined &&
+  EXACT.test(pin) &&
+  semver.order(version, pin) === 1 &&
+  semver.satisfies(version, tolerates);
+
 /**
  * Why the installed version does not meet a range, or `undefined` when it
  * does. The range comes from the plan step, so a run holds the tool to what
- * the plan showed, whatever the registry says now.
+ * the plan showed, whatever the registry says now. When the step tolerates a
+ * wider range, a tool newer than the pin and inside that range is no problem.
  */
 export const versionProblem = (
   tool: string,
   version: string | undefined,
-  versionRange: string
+  versionRange: string,
+  tolerates?: string
 ): string | undefined => {
   if (versionRange === "*") {
     return undefined;
@@ -53,7 +68,24 @@ export const versionProblem = (
   if (version === undefined) {
     return `${tool} did not report a version, and ${versionRange} is required`;
   }
-  return semver.satisfies(version, versionRange)
+  return semver.satisfies(version, versionRange) ||
+    newerWithin(version, versionRange, tolerates)
     ? undefined
     : `${tool} ${version} does not satisfy ${versionRange}`;
 };
+
+/**
+ * What to tell the person when a tool newer than its pin was let through.
+ * `undefined` when the tool meets the pin, or when it does not run at all.
+ */
+export const versionNotice = (
+  tool: string,
+  version: string | undefined,
+  versionRange: string,
+  tolerates?: string
+): string | undefined =>
+  version !== undefined &&
+  !semver.satisfies(version, versionRange) &&
+  newerWithin(version, versionRange, tolerates)
+    ? `${tool} ${version} is newer than the pinned ${versionRange}. It is inside the tested range ${tolerates}, so it ran. In CI or with --strict this is incomplete.`
+    : undefined;

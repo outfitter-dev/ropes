@@ -11,6 +11,7 @@ import { eachFile } from "../batch.ts";
 import type { FileInput } from "../batch.ts";
 import { exec } from "../exec.ts";
 import type { Exit } from "../exec.ts";
+import { heldTo } from "../pins.ts";
 import { configProblem, readOnly, parseOutput, ruleOf } from "./output.ts";
 
 const ID = "taplo";
@@ -143,13 +144,13 @@ const check = async (
 export const taploAdapter = (options: TaploOptions = {}): Adapter => {
   const command = options.command ?? ID;
   const descriptor: AdapterDescriptor = {
+    ...heldTo(options.version, SUPPORTED_RANGE),
     enabledBy: "toml.enabled",
     extensions: [".toml"],
     id: ID,
     platforms: ["darwin", "linux", "win32"],
     tool: ID,
     unit: "file",
-    versionRange: options.version ?? SUPPORTED_RANGE,
     writes: false,
   };
   const probe = async (): Promise<ProbeResult> => {

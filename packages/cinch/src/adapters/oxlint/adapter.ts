@@ -7,6 +7,7 @@ import type {
 } from "../adapter.ts";
 import { markFixed } from "../changed.ts";
 import { exec } from "../exec.ts";
+import { heldTo } from "../pins.ts";
 import { fixBatch, locate, runBatch } from "./run.ts";
 
 const ID = "oxlint";
@@ -36,6 +37,7 @@ const VERSION = /\d+\.\d+\.\d+/u;
 export const oxlintAdapter = (options: OxlintOptions = {}): Adapter => {
   const command = options.command ?? ID;
   const descriptor: AdapterDescriptor = {
+    ...heldTo(options.version, SUPPORTED_RANGE),
     enabledBy: "lint.enabled",
     extensions: [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"],
     id: ID,
@@ -43,7 +45,6 @@ export const oxlintAdapter = (options: OxlintOptions = {}): Adapter => {
     platforms: ["darwin", "linux", "win32"],
     tool: ID,
     unit: "file",
-    versionRange: options.version ?? SUPPORTED_RANGE,
     writes: true,
   };
   const probe = async (root?: string): Promise<ProbeResult> => {

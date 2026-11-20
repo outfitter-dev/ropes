@@ -3,6 +3,17 @@ import path from "node:path";
 /** The file that pins tool versions. See docs/tool-versions.md. */
 export const PINS_FILE = "mise.toml";
 
+/**
+ * The version an adapter holds its tool to. With no pin that is the range
+ * the adapter was tested on. With a pin it is the pin, and the tested range
+ * is kept beside it so a run outside CI can accept a newer tool inside it.
+ */
+export const heldTo = (
+  pin: string | undefined,
+  tested: string
+): { readonly tested?: string; readonly versionRange: string } =>
+  pin === undefined ? { versionRange: tested } : { tested, versionRange: pin };
+
 /** Tool name to the exact version the repository pins. */
 export type Pins = Readonly<Record<string, string>>;
 

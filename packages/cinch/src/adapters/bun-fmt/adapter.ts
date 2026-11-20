@@ -7,6 +7,7 @@ import type {
 import { allIncomplete } from "../batch.ts";
 import { markFixed } from "../changed.ts";
 import { probeOnPath } from "../on-path.ts";
+import { heldTo } from "../pins.ts";
 import { checkBatch, fixBatch } from "./run.ts";
 
 const ID = "bun-fmt";
@@ -43,6 +44,7 @@ export interface BunFmtOptions {
 export const bunFmtAdapter = (options: BunFmtOptions = {}): Adapter => {
   const command = options.command ?? TOOL;
   const descriptor: AdapterDescriptor = {
+    ...heldTo(options.version, SUPPORTED_RANGE),
     enabledBy: "format.enabled",
     extensions: EXTENSIONS,
     id: ID,
@@ -50,7 +52,6 @@ export const bunFmtAdapter = (options: BunFmtOptions = {}): Adapter => {
     platforms: ["darwin", "linux", "win32"],
     tool: TOOL,
     unit: "file",
-    versionRange: options.version ?? SUPPORTED_RANGE,
     writes: true,
   };
   const withBinary = (

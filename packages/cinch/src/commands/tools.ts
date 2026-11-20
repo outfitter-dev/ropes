@@ -1,7 +1,11 @@
 import type { Adapter } from "../adapters/adapter.ts";
 import type { Plan, PlanStep } from "../contracts/plan.ts";
 import type { ToolStatus } from "../render/plan.ts";
-import { probeAdapter, versionProblem } from "../runner/ready.ts";
+import {
+  probeAdapter,
+  versionNotice,
+  versionProblem,
+} from "../runner/ready.ts";
 
 /**
  * One status per tool the plan uses, from the same probe and version check
@@ -22,7 +26,7 @@ export const toolStatuses = (
       const adapter = adapters.find(
         (candidate) => candidate.descriptor.id === step.adapter
       );
-      const { tool, versionRange } = step;
+      const { tolerates, tool, versionRange } = step;
       if (!adapter) {
         return {
           problem: `no adapter registered for "${step.adapter}"`,
@@ -31,9 +35,15 @@ export const toolStatuses = (
         };
       }
       const found = await probeAdapter(adapter, process.platform, plan.root);
+      const notice =
+        found.problem === undefined
+          ? versionNotice(tool, found.version, versionRange, tolerates)
+          : undefined;
       return {
+        ...(notice === undefined ? {} : { notice }),
         problem:
-          found.problem ?? versionProblem(tool, found.version, versionRange),
+          found.problem ??
+          versionProblem(tool, found.version, versionRange, tolerates),
         tool,
         version: found.version,
         versionRange,

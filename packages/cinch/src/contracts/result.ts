@@ -46,6 +46,11 @@ export const ResultSchema = z
      * finding in `steps`, so the outcome already counts it.
      */
     conflicts: z.array(ConflictSchema).min(1).readonly().optional(),
+    /**
+     * Things the person should know that are not findings and do not change
+     * the outcome, such as a tool newer than its pin that was let through.
+     */
+    notices: z.array(z.string().min(1)).min(1).readonly().optional(),
     outcome: OutcomeSchema,
     plan: PlanSchema,
     schemaVersion: z.literal(SCHEMA_VERSION),
