@@ -51,19 +51,46 @@ export interface Found {
 const keyOf = (finding: Finding): string =>
   `${finding.rule}\u0000${finding.message}`;
 
-/** What a second look reports that the first did not, however lines moved. */
+const countsOf = (findings: readonly Finding[]): Map<string, number> => {
+  const counts = new Map<string, number>();
+  for (const finding of findings) {
+    counts.set(keyOf(finding), (counts.get(keyOf(finding)) ?? 0) + 1);
+  }
+  return counts;
+};
+
+interface Rewritten {
+  readonly finding: Finding;
+  /** The rewrite of the lines the finding is on. */
+  readonly diff: string;
+}
+
+/**
+ * What a second look reports that the first did not, on lines the rewrite
+ * changed. Lines move, so a finding is known by its rule and message: each
+ * pair may have as many conflicts as it gained findings, and they are the
+ * ones on changed lines, whatever order the findings come in.
+ */
 const fresh = (
   first: readonly Finding[],
-  second: readonly Finding[]
-): Finding[] => {
-  const known = new Map<string, number>();
-  for (const finding of first) {
-    known.set(keyOf(finding), (known.get(keyOf(finding)) ?? 0) + 1);
-  }
-  return second.filter((finding) => {
-    const left = known.get(keyOf(finding)) ?? 0;
-    known.set(keyOf(finding), left - 1);
-    return left <= 0;
+  second: readonly Finding[],
+  diffOf: (finding: Finding) => string
+): Rewritten[] => {
+  const before = countsOf(first);
+  const gained = new Map(
+    [...countsOf(second)].map(([key, count]) => [
+      key,
+      count - (before.get(key) ?? 0),
+    ])
+  );
+  return second.flatMap((finding): Rewritten[] => {
+    const left = gained.get(keyOf(finding)) ?? 0;
+    const diff = left > 0 ? diffOf(finding) : "";
+    if (diff === "") {
+      return [];
+    }
+    gained.set(keyOf(finding), left - 1);
+    return [{ diff, finding }];
   });
 };
 
@@ -126,31 +153,20 @@ const again = async (
       };
     }
     const first = earlier.outcomes.find((outcome) => outcome.path === file);
-    const conflicts = fresh(first?.findings ?? [], now.findings).flatMap(
-      (finding): Conflict[] => {
-        const { end, start } = finding.range;
-        const diff = changeAt(
-          file,
-          before.get(file) ?? "",
-          after.get(file) ?? "",
-          {
-            from: start.line,
-            to: end?.line ?? start.line,
-          }
-        );
-        return diff === ""
-          ? []
-          : [
-              {
-                diff,
-                finding,
-                path: file,
-                reportedBy: earlier.batch.adapter,
-                rewrittenBy: batch.adapter,
-                rule: finding.rule,
-              },
-            ];
-      }
+    const diffOf = ({ range }: Finding): string =>
+      changeAt(file, before.get(file) ?? "", after.get(file) ?? "", {
+        from: range.start.line,
+        to: range.end?.line ?? range.start.line,
+      });
+    const conflicts = fresh(first?.findings ?? [], now.findings, diffOf).map(
+      ({ diff, finding }): Conflict => ({
+        diff,
+        finding,
+        path: file,
+        reportedBy: earlier.batch.adapter,
+        rewrittenBy: batch.adapter,
+        rule: finding.rule,
+      })
     );
     return {
       conflicts,

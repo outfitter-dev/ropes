@@ -67,6 +67,8 @@ const loud = (finds: string): FakeOptions => ({
   fix: (input) => edit(input, (text) => text.replaceAll("loud", "LOUD")),
 });
 
+const PASSED_SOON = Promise.resolve(PASSED);
+
 /** A formatter that writes every word in lower case, or one that tidies. */
 const format = (change: (text: string) => string): FakeOptions => ({
   descriptor: { id: "format", tool: "format-tool" },
@@ -148,13 +150,33 @@ test("a lint fix and a format change that agree are no conflict, and a second ru
   expect(second.adapters[0]?.calls).toEqual(["probe", "fix"]);
 });
 
-test("a finding the linter already had is not a conflict", async () => {
+/** The same linter, with nothing it can fix: its findings stay. */
+const stuck = (finds: string): FakeOptions => {
+  const lint = loud(finds);
+  return { ...lint, fix: (input) => lint.check?.(input) ?? PASSED_SOON };
+};
+
+test("a finding the linter already had is not a conflict, though its line was rewritten", async () => {
   const root = await repo({ "a.md": "the shout word\n", "b.md": "quiet\n" });
-  const { result } = await run(root, [
-    loud("shout"),
-    format((text) => `${text}\n`),
+  const { adapters, result } = await run(root, [
+    stuck("shout"),
+    format((text) => text.replace("word", "words")),
   ]);
+  expect(adapters[0]?.calls).toEqual(["probe", "fix", "check"]);
   expect(result.conflicts).toBeUndefined();
+});
+
+test("a finding the linter already had does not hide the same finding made new above it", async () => {
+  const root = await repo({
+    "a.md": "calm\n\n\n\n\n\n\n\nthe shout word\n",
+    "b.md": "quiet\n",
+  });
+  const { result } = await run(root, [
+    stuck("shout"),
+    format((text) => text.replace("calm", "shout")),
+  ]);
+  expect(result.conflicts).toHaveLength(1);
+  expect(result.conflicts?.[0]?.finding.range.start.line).toBe(1);
 });
 
 test("a new finding on lines the formatter left alone is not a conflict", async () => {
