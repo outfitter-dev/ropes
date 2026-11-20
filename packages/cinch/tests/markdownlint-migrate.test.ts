@@ -11,6 +11,7 @@ import {
 } from "../src/adapters/rumdl/preset.ts";
 import { createCommands } from "../src/commands/registry.ts";
 import { FixReportSchema } from "../src/contracts/fix.ts";
+import { checkOne, fixOne } from "./one-file.ts";
 
 const EXTENDS = `extends = ${JSON.stringify(PRESET_PATH)}\n`;
 
@@ -77,7 +78,7 @@ const FORMS: readonly (readonly [string, string])[] = [
 for (const [name, text] of FORMS) {
   withEngine(`${name} migrates to only the choice that differs`, async () => {
     await inRoot({ [name]: text }, async (root) => {
-      const outcome = await preset.fix({ path: CONFIG_PATH, root });
+      const outcome = await fixOne(preset, { path: CONFIG_PATH, root });
       expect(outcome.status).toBe("fixed");
       expect(await written(root)).toBe(
         [
@@ -106,7 +107,7 @@ withEngine(
     };
     const files = { ".markdownlint.json": JSON.stringify(rules) };
     await inRoot(files, async (root) => {
-      await preset.fix({ path: CONFIG_PATH, root });
+      await fixOne(preset, { path: CONFIG_PATH, root });
       expect(await written(root)).toBe(EXTENDS);
     });
   }
@@ -123,8 +124,8 @@ withEngine("the migrated config is one the engine accepts", async () => {
     "a.md": "# T\n\nText.\n",
   };
   await inRoot(files, async (root) => {
-    await preset.fix({ path: PRESET_PATH, root });
-    await preset.fix({ path: CONFIG_PATH, root });
+    await fixOne(preset, { path: PRESET_PATH, root });
+    await fixOne(preset, { path: CONFIG_PATH, root });
     const text = await written(root);
     expect(text).toContain(
       'disable = ["MD001", "MD026", "MD033", "MD036", "MD041"]'
@@ -134,7 +135,7 @@ withEngine("the migrated config is one the engine accepts", async () => {
     const linter = adaptersFor({}).find(
       (adapter) => adapter.descriptor.id === "rumdl"
     );
-    const outcome = await linter?.check({ path: "a.md", root });
+    const outcome = await checkOne(linter, { path: "a.md", root });
     expect(outcome?.status).toBe("passed");
   });
 });
@@ -142,9 +143,9 @@ withEngine("the migrated config is one the engine accepts", async () => {
 withEngine("a second run after migrating changes nothing", async () => {
   const files = { ".markdownlint.json": JSON_RULES };
   await inRoot(files, async (root) => {
-    await preset.fix({ path: CONFIG_PATH, root });
+    await fixOne(preset, { path: CONFIG_PATH, root });
     const first = await written(root);
-    const again = await preset.fix({ path: CONFIG_PATH, root });
+    const again = await fixOne(preset, { path: CONFIG_PATH, root });
     expect(again.status).toBe("passed");
     expect(await written(root)).toBe(first);
   });
@@ -174,7 +175,7 @@ withEngine("init previews the migration and writes nothing", async () => {
 test("a script config blocks the new file and names the script", async () => {
   const files = { ".markdownlint.cjs": "module.exports = {};" };
   await inRoot(files, async (root) => {
-    const outcome = await preset.fix({ path: CONFIG_PATH, root });
+    const outcome = await fixOne(preset, { path: CONFIG_PATH, root });
     expect(outcome.status).toBe("findings");
     expect(outcome.findings[0]).toMatchObject({ fixable: false });
     expect(outcome.findings[0]?.message).toContain(".markdownlint.cjs");
@@ -186,7 +187,7 @@ const lint = async (root: string, file: string) => {
   const linter = adaptersFor({}).find(
     (adapter) => adapter.descriptor.id === "rumdl"
   );
-  const outcome = await linter?.check({ path: file, root });
+  const outcome = await checkOne(linter, { path: file, root });
   return outcome?.status;
 };
 
@@ -194,7 +195,7 @@ withEngine("an option the engine renames is carried over", async () => {
   const rules = { MD013: { line_length: 100, stern: true } };
   const files = { ".markdownlint.json": JSON.stringify(rules) };
   await inRoot(files, async (root) => {
-    await preset.fix({ path: CONFIG_PATH, root });
+    await fixOne(preset, { path: CONFIG_PATH, root });
     const text = await written(root);
     expect(text).toContain("[MD013]\nline-length = 100\nstrict = true");
     expect(text).not.toContain("Not carried over");
@@ -204,7 +205,7 @@ withEngine("an option the engine renames is carried over", async () => {
 withEngine("the last entry for a rule decides whether it runs", async () => {
   const text = '{ "MD013": true, "line-length": false }';
   await inRoot({ ".markdownlint.json": text }, async (root) => {
-    await preset.fix({ path: CONFIG_PATH, root });
+    await fixOne(preset, { path: CONFIG_PATH, root });
     expect(await written(root)).toBe(EXTENDS);
   });
 });
@@ -221,8 +222,8 @@ withEngine(
       "b.md": "# T\n\n### Skipped a level\n\nBody.\n",
     };
     await inRoot(files, async (root) => {
-      await preset.fix({ path: PRESET_PATH, root });
-      await preset.fix({ path: CONFIG_PATH, root });
+      await fixOne(preset, { path: PRESET_PATH, root });
+      await fixOne(preset, { path: CONFIG_PATH, root });
       expect(await written(root)).toContain('enable = ["MD001"]');
       expect(await lint(root, "a.md")).toBe("passed");
       expect(await lint(root, "b.md")).toBe("findings");
@@ -238,8 +239,8 @@ withEngine(
       "a.md": `${EMPTY_SECTION}\n### Skipped a level\n`,
     };
     await inRoot(files, async (root) => {
-      await preset.fix({ path: PRESET_PATH, root });
-      await preset.fix({ path: CONFIG_PATH, root });
+      await fixOne(preset, { path: PRESET_PATH, root });
+      await fixOne(preset, { path: CONFIG_PATH, root });
       expect(await written(root)).toContain("enable = []");
       expect(await lint(root, "a.md")).toBe("passed");
     });
@@ -249,7 +250,7 @@ withEngine(
 test("without the engine the step is incomplete, and nothing is written", async () => {
   const absent = rumdlPresetAdapter({ command: "cinch-test-no-such-rumdl" });
   await inRoot({ ".markdownlint.json": JSON_RULES }, async (root) => {
-    const outcome = await absent.fix({ path: CONFIG_PATH, root });
+    const outcome = await fixOne(absent, { path: CONFIG_PATH, root });
     expect(outcome.status).toBe("incomplete");
     expect(outcome.findings).toEqual([]);
     expect(outcome.status === "incomplete" ? outcome.reason : "").toContain(
@@ -265,7 +266,7 @@ withEngine(
     const rules = { MD007: { indent: 4 }, extends: "../shared/base.json" };
     const files = { ".markdownlint.json": JSON.stringify(rules) };
     await inRoot(files, async (root) => {
-      const outcome = await preset.fix({ path: CONFIG_PATH, root });
+      const outcome = await fixOne(preset, { path: CONFIG_PATH, root });
       expect(outcome.status).toBe("fixed");
       const text = await written(root);
       expect(text).toContain("[MD007]\nindent = 4");

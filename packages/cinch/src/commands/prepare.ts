@@ -7,6 +7,7 @@ import type { Plan } from "../contracts/plan.ts";
 import type { RepoRoot } from "../contracts/root.ts";
 import { resolvePlan } from "../policy/resolve.ts";
 import { describeConfigError, describeRootError } from "./errors.ts";
+import { packagesAbove } from "./packages.ts";
 import { select } from "./select.ts";
 
 /** What a command needs from outside. Tests pass adapters of their own. */
@@ -63,10 +64,16 @@ export const prepare = async (
     return { error: selected.error, ok: false };
   }
   const { found: walked, named, selection } = selected.value;
+  // A file an adapter keeps is part of the workspace before it exists, so a
+  // check can report that it is missing.
+  const kept = selection.kind === "workspace" ? owned : [];
+  const all = [...named, ...walked, ...kept];
+  const packages = await packagesAbove(root.root, all);
   const resolve = (paths: readonly string[]): Plan =>
     resolvePlan({
       config: config.value,
       descriptors: adapters.map((adapter) => adapter.descriptor),
+      packages,
       paths,
       root: root.root,
       selection,
@@ -75,10 +82,7 @@ export const prepare = async (
   // out, so `explain` can say why. A file that only turned up while expanding
   // a directory does not: the first pass finds those, the second drops them.
   const keep = new Set(named);
-  // A file an adapter keeps is part of the workspace before it exists, so a
-  // check can report that it is missing.
-  const kept = selection.kind === "workspace" ? owned : [];
-  const candidates = resolve([...named, ...walked, ...kept])
+  const candidates = resolve(all)
     .paths.filter(
       (entry) => entry.skipped === undefined || keep.has(entry.path)
     )

@@ -11,6 +11,7 @@ import {
 import type { Plan } from "../src/contracts/plan.ts";
 import { exitCodeOf } from "../src/contracts/result.ts";
 import { runPlan } from "../src/runner/run.ts";
+import { checkOne, fixOne } from "./one-file.ts";
 
 const MESSY = "# A\n\n# B\n\n<b>hi</b>\n";
 const FIXABLE = "# A\n\n# B\n";
@@ -45,25 +46,21 @@ const inRepo = async <T>(
   }
 };
 
-const planFor = (root: string, adapter = rumdlAdapter()): Plan => ({
-  paths: [
-    {
-      path: "a.md",
-      policy: [],
-      steps: [
-        {
-          adapter: adapter.descriptor.id,
-          tool: adapter.descriptor.tool,
-          versionRange: adapter.descriptor.versionRange,
-          writes: adapter.descriptor.writes,
-        },
-      ],
-    },
-  ],
-  root,
-  schemaVersion: 0,
-  selection: { kind: "workspace" },
-});
+const planFor = (root: string, adapter = rumdlAdapter()): Plan => {
+  const step = {
+    adapter: adapter.descriptor.id,
+    tool: adapter.descriptor.tool,
+    versionRange: adapter.descriptor.versionRange,
+    writes: adapter.descriptor.writes,
+  };
+  return {
+    batches: [{ ...step, package: ".", paths: ["a.md"] }],
+    paths: [{ package: ".", path: "a.md", policy: [], steps: [step] }],
+    root,
+    schemaVersion: 1,
+    selection: { kind: "workspace" },
+  };
+};
 
 const lint = (pins: Record<string, string>) =>
   adaptersFor(pins).find((adapter) => adapter.descriptor.id === "rumdl");
@@ -100,14 +97,14 @@ withEngine("probe reports the installed version as plain semver", async () => {
 
 withEngine("check passes a clean file and writes nothing", async () => {
   const outcome = await inRepo({ "a.md": CLEAN }, (root) =>
-    rumdlAdapter().check({ path: "a.md", root })
+    checkOne(rumdlAdapter(), { path: "a.md", root })
   );
   expect(outcome).toEqual({ findings: [], status: "passed" });
 });
 
 withEngine("check reports findings with their positions", async () => {
   const [outcome, after] = await inRepo({ "a.md": MESSY }, async (root) => [
-    await rumdlAdapter().check({ path: "a.md", root }),
+    await checkOne(rumdlAdapter(), { path: "a.md", root }),
     await Bun.file(path.join(root, "a.md")).text(),
   ]);
   expect(after).toBe(MESSY);
@@ -127,7 +124,7 @@ withEngine(
   "fix rewrites what it can and reports the file as fixed",
   async () => {
     const [outcome, after] = await inRepo({ "a.md": FIXABLE }, async (root) => [
-      await rumdlAdapter().fix({ path: "a.md", root }),
+      await fixOne(rumdlAdapter(), { path: "a.md", root }),
       await Bun.file(path.join(root, "a.md")).text(),
     ]);
     expect(outcome).toEqual({ findings: [], status: "fixed" });
@@ -137,7 +134,7 @@ withEngine(
 
 withEngine("fix leaves what it cannot fix as findings", async () => {
   const outcome = await inRepo({ "a.md": MESSY }, (root) =>
-    rumdlAdapter().fix({ path: "a.md", root })
+    fixOne(rumdlAdapter(), { path: "a.md", root })
   );
   expect(outcome.status).toBe("findings");
   expect(outcome.findings.map((finding) => finding.rule)).toEqual(["MD033"]);
@@ -145,7 +142,7 @@ withEngine("fix leaves what it cannot fix as findings", async () => {
 
 withEngine("fix on a clean file passes without calling it fixed", async () => {
   const outcome = await inRepo({ "a.md": CLEAN }, (root) =>
-    rumdlAdapter().fix({ path: "a.md", root })
+    fixOne(rumdlAdapter(), { path: "a.md", root })
   );
   expect(outcome).toEqual({ findings: [], status: "passed" });
 });
@@ -156,7 +153,7 @@ withEngine("the repository's own rumdl config applies", async () => {
     "a.md": "# A\n\n<b>hi</b>\n",
   };
   const outcome = await inRepo(files, (root) =>
-    rumdlAdapter().check({ path: "a.md", root })
+    checkOne(rumdlAdapter(), { path: "a.md", root })
   );
   expect(outcome).toEqual({ findings: [], status: "passed" });
 });
@@ -166,7 +163,7 @@ withEngine(
   async () => {
     const outcome = await inRepo(
       { ".rumdl.toml": "bad = [", "a.md": CLEAN },
-      (root) => rumdlAdapter().check({ path: "a.md", root })
+      (root) => checkOne(rumdlAdapter(), { path: "a.md", root })
     );
     expect(outcome.status).toBe("incomplete");
     expect(outcome.reason).toStartWith("rumdl exited 2: ");
@@ -179,4 +176,64 @@ withEngine("a run through the runner exits 1 on findings", async () => {
     runPlan(planFor(root, adapter), [adapter], { mode: "check" })
   );
   expect(exitCodeOf(result)).toBe(1);
+});
+
+const together = (root: string, paths: readonly string[]) =>
+  rumdlAdapter().check({ package: ".", paths, root });
+
+withEngine("one start answers for every file of the batch", async () => {
+  const files = { "a.md": CLEAN, "b.md": "# B\n\n#bad\n", "sub/c.md": CLEAN };
+  const outcomes = await inRepo(files, (root) =>
+    together(root, ["a.md", "b.md", "sub/c.md"])
+  );
+  expect(outcomes.map((outcome) => [outcome.path, outcome.status])).toEqual([
+    ["a.md", "passed"],
+    ["b.md", "findings"],
+    ["sub/c.md", "passed"],
+  ]);
+  expect(outcomes[1]?.findings.map((finding) => finding.path)).toEqual([
+    "b.md",
+  ]);
+});
+
+withEngine(
+  "a file the engine's own config excludes is still checked",
+  async () => {
+    const files = {
+      ".rumdl.toml": 'exclude = ["b.md"]\n',
+      "a.md": CLEAN,
+      "b.md": "# B\n\n#bad\n",
+    };
+    const outcomes = await inRepo(files, (root) =>
+      together(root, ["a.md", "b.md"])
+    );
+    expect(outcomes.map((outcome) => outcome.status)).toEqual([
+      "passed",
+      "findings",
+    ]);
+  }
+);
+
+withEngine(
+  "one file the engine cannot read does not take the batch",
+  async () => {
+    const outcomes = await inRepo({ "a.md": CLEAN }, (root) =>
+      together(root, ["a.md", "gone.md"])
+    );
+    expect(outcomes.map((outcome) => [outcome.path, outcome.status])).toEqual([
+      ["a.md", "passed"],
+      ["gone.md", "incomplete"],
+    ]);
+  }
+);
+
+withEngine("fix says which files of the batch it changed", async () => {
+  const files = { "a.md": CLEAN, "b.md": "# B\n\n#bad\n" };
+  const outcomes = await inRepo(files, (root) =>
+    rumdlAdapter().fix({ package: ".", paths: ["a.md", "b.md"], root })
+  );
+  expect(outcomes.map((outcome) => [outcome.path, outcome.status])).toEqual([
+    ["a.md", "passed"],
+    ["b.md", "fixed"],
+  ]);
 });

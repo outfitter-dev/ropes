@@ -8,6 +8,7 @@ import type {
   PolicyValue,
   Selection,
 } from "../contracts/plan.ts";
+import { batchesFor, packageOf, toStep } from "./batches.ts";
 import { compileGlobs } from "./glob.ts";
 import type { Matcher } from "./glob.ts";
 
@@ -20,6 +21,11 @@ export interface ResolveInput {
   readonly paths: readonly string[];
   /** In execution order. */
   readonly descriptors: readonly AdapterDescriptor[];
+  /**
+   * Root-relative directories that are packages. A file belongs to the
+   * nearest one above it, or to the workspace when there is none.
+   */
+  readonly packages: readonly string[];
 }
 
 interface Scope {
@@ -34,13 +40,6 @@ const extensionOf = (path: string): string => {
   const dot = name.lastIndexOf(".");
   return dot <= 0 ? "" : name.slice(dot);
 };
-
-const toStep = (descriptor: AdapterDescriptor): PlanStep => ({
-  adapter: descriptor.id,
-  tool: descriptor.tool,
-  versionRange: descriptor.versionRange,
-  writes: descriptor.writes,
-});
 
 /**
  * The base settings, then every override whose globs match the path, in file
@@ -104,8 +103,10 @@ const isKept = (
   ).length > 0;
 
 const plan = (path: string, input: ResolveInput, scope: Scope): PlannedPath => {
+  const inPackage = packageOf(path, input.packages);
   if (scope.excluded(path)) {
     return {
+      package: inPackage,
       path,
       policy: [],
       skipped: { reason: "excluded", source: input.config.exclude.source },
@@ -117,13 +118,19 @@ const plan = (path: string, input: ResolveInput, scope: Scope): PlannedPath => {
   // off, the path is treated like any other.
   if (!isKept(path, policy, input.descriptors) && !scope.included(path)) {
     return {
+      package: inPackage,
       path,
       policy: [],
       skipped: { reason: "not-included", source: input.config.include.source },
       steps: [],
     };
   }
-  return { path, policy, steps: stepsFor(path, policy, input.descriptors) };
+  return {
+    package: inPackage,
+    path,
+    policy,
+    steps: stepsFor(path, policy, input.descriptors),
+  };
 };
 
 /**
@@ -144,13 +151,13 @@ export const resolvePlan = (input: ResolveInput): Plan => {
     input.descriptors.flatMap((descriptor) => descriptor.owns ?? [])
   );
   const paths = [...new Set(input.paths)].toSorted();
+  const planned = [
+    ...paths.filter((path) => kept.has(path)),
+    ...paths.filter((path) => !kept.has(path)),
+  ].map((path) => plan(path, input, scope));
   return {
-    // A kept file is often the config another step reads, so a fix has to
-    // write it before that step runs.
-    paths: [
-      ...paths.filter((path) => kept.has(path)),
-      ...paths.filter((path) => !kept.has(path)),
-    ].map((path) => plan(path, input, scope)),
+    batches: batchesFor(planned, input.descriptors),
+    paths: planned,
     root: input.root,
     schemaVersion: SCHEMA_VERSION,
     selection: input.selection,

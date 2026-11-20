@@ -7,6 +7,8 @@ import type {
   StepInput,
   StepOutcome,
 } from "../adapter.ts";
+import { eachFile } from "../batch.ts";
+import type { FileInput } from "../batch.ts";
 import { exec } from "../exec.ts";
 import { configProblem, readOnly, parseOutput } from "./output.ts";
 
@@ -49,7 +51,7 @@ const literal = (file: string): string =>
 
 const check = async (
   command: string,
-  input: StepInput
+  input: FileInput
 ): Promise<StepOutcome> => {
   // Only a file another adapter keeps is planned before it exists. Its keeper
   // reports that it is missing, and there is no TOML here to be wrong.
@@ -122,6 +124,9 @@ export const taploAdapter = (options: TaploOptions = {}): Adapter => {
       ? { available: true, version }
       : { available: false, reason: `${command} --version did not answer` };
   };
-  const run = (input: StepInput): Promise<StepOutcome> => check(command, input);
+  // One start for each file: a pass counts only when Taplo says it read
+  // that one file, and it does not say which of several it left out.
+  const run = (input: StepInput) =>
+    eachFile(input, (file) => check(command, file));
   return { check: run, descriptor, fix: run, probe };
 };

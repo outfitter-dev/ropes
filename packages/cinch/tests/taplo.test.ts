@@ -8,6 +8,7 @@ import {
   SUPPORTED_RANGE,
   taploAdapter,
 } from "../src/adapters/taplo/adapter.ts";
+import { checkOne, fixOne } from "./one-file.ts";
 
 const SCHEMA = new URL("../schemas/cinch.schema.json", import.meta.url)
   .pathname;
@@ -42,7 +43,7 @@ const inRepo = async <T>(
 };
 
 const checked = (files: Readonly<Record<string, string>>, file: string) =>
-  inRepo(files, (root) => taploAdapter().check({ path: file, root }));
+  inRepo(files, (root) => checkOne(taploAdapter(), { path: file, root }));
 
 test("the adapter checks TOML, never writes, and follows the pin", () => {
   expect(taploAdapter().descriptor).toMatchObject({
@@ -142,7 +143,7 @@ withEngine(
 
 withEngine("fix only checks, and leaves the file as it was", async () => {
   await inRepo({ "a.toml": "name   =   'a'\n" }, async (root) => {
-    const outcome = await taploAdapter().fix({ path: "a.toml", root });
+    const outcome = await fixOne(taploAdapter(), { path: "a.toml", root });
     expect(outcome.status).toBe("passed");
     expect(await Bun.file(path.join(root, "a.toml")).text()).toBe(
       "name   =   'a'\n"

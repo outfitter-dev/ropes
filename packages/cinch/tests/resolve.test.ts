@@ -50,6 +50,7 @@ const resolve = (
   resolvePlan({
     config,
     descriptors: [markdown, fence],
+    packages: [],
     paths,
     root: "/repo",
     selection: { kind: "workspace" },
@@ -121,6 +122,7 @@ test("an override keeps base settings it does not mention", () => {
 
 test("an excluded path stays in the plan with the setting that excluded it", () => {
   expect(only("vendor/lib/README.md")).toEqual({
+    package: ".",
     path: "vendor/lib/README.md",
     policy: [],
     skipped: { reason: "excluded", source: file("exclude") },
@@ -130,6 +132,7 @@ test("an excluded path stays in the plan with the setting that excluded it", () 
 
 test("a path outside include stays in the plan and is marked", () => {
   expect(only("src/a.ts")).toEqual({
+    package: ".",
     path: "src/a.ts",
     policy: [],
     skipped: { reason: "not-included", source: file("include") },
@@ -217,4 +220,54 @@ test("a kept file is still left out when excluded or switched off", () => {
     descriptors,
   });
   expect(excluded.skipped?.reason).toBe("excluded");
+});
+
+test("a file belongs to the nearest package above it, else the workspace", () => {
+  const plan = resolve(
+    [
+      "README.md",
+      "packages/a/README.md",
+      "packages/a/sub/pkg/x.md",
+      "packagesx.md",
+    ],
+    { config: DEFAULT_CONFIG, packages: ["packages/a", "packages/a/sub/pkg"] }
+  );
+  expect(plan.paths.map((planned) => [planned.path, planned.package])).toEqual([
+    ["README.md", "."],
+    ["packages/a/README.md", "packages/a"],
+    ["packages/a/sub/pkg/x.md", "packages/a/sub/pkg"],
+    ["packagesx.md", "."],
+  ]);
+});
+
+test("the batches hold every step once, one for each adapter and package", () => {
+  const plan = resolve(["a.md", "packages/a/b.md", "packages/a/c.md", "x.ts"], {
+    config: DEFAULT_CONFIG,
+    packages: ["packages/a"],
+  });
+  expect(
+    plan.batches.map((batch) => [batch.adapter, batch.package, batch.paths])
+  ).toEqual([
+    ["fake-markdown", ".", ["a.md"]],
+    ["fake-markdown", "packages/a", ["packages/a/b.md", "packages/a/c.md"]],
+    ["fake-fence", ".", ["a.md"]],
+    ["fake-fence", "packages/a", ["packages/a/b.md", "packages/a/c.md"]],
+  ]);
+  const steps = plan.paths.reduce((sum, entry) => sum + entry.steps.length, 0);
+  const batched = plan.batches.reduce(
+    (sum, batch) => sum + batch.paths.length,
+    0
+  );
+  expect(batched).toBe(steps);
+});
+
+test("an adapter that keeps files is batched before the ones that read them", () => {
+  const plan = resolve([".tool.toml", "a.md"], {
+    config: DEFAULT_CONFIG,
+    descriptors: [markdown, keeper],
+  });
+  expect(plan.batches.map((batch) => batch.adapter)).toEqual([
+    "fake-keeper",
+    "fake-markdown",
+  ]);
 });

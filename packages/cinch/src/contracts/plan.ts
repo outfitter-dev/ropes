@@ -5,7 +5,7 @@ import { z } from "zod";
  * and the finding together until the shapes are ratified. A consumer that
  * meets a version it does not know must stop, never guess.
  */
-export const SCHEMA_VERSION = 0;
+export const SCHEMA_VERSION = 1;
 
 /** Where a policy value came from. */
 export const ProvenanceSchema = z.discriminatedUnion("kind", [
@@ -67,8 +67,24 @@ export const SkippedSchema = z
   .readonly();
 export type Skipped = z.infer<typeof SkippedSchema>;
 
+/**
+ * One start of an engine: a step on the selected files of one package. The
+ * batches are what `check` and `fix` run, in this order.
+ */
+export const PlanBatchSchema = PlanStepSchema.unwrap()
+  .extend({
+    /** The root-relative package directory. `.` is the workspace itself. */
+    package: z.string().min(1),
+    /** Root-relative files, in plan order. Never empty. */
+    paths: z.array(z.string().min(1)).min(1).readonly(),
+  })
+  .readonly();
+export type PlanBatch = z.infer<typeof PlanBatchSchema>;
+
 export const PlannedPathSchema = z
   .object({
+    /** The package the file is checked with. `.` is the workspace itself. */
+    package: z.string().min(1),
     /** Root-relative path. */
     path: z.string().min(1),
     /** The resolved policy for this path, each value with its origin. */
@@ -84,6 +100,8 @@ export type PlannedPath = z.infer<typeof PlannedPathSchema>;
 /** What `explain` prints and what `check` and `fix` execute. */
 export const PlanSchema = z
   .object({
+    /** In execution order. Each step of each path is in exactly one. */
+    batches: z.array(PlanBatchSchema).readonly(),
     paths: z.array(PlannedPathSchema).readonly(),
     root: z.string().min(1),
     schemaVersion: z.literal(SCHEMA_VERSION),

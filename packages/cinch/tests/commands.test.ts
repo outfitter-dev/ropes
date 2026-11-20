@@ -9,7 +9,7 @@ test("check exits 0 when every step passes, and never asks an adapter to write",
     const response = await run("check");
     expect(response.exitCode).toBe(0);
     expect(response.output).toContain("3 files selected, 2 steps ran");
-    expect(adapter.calls).toEqual(["probe", "check", "check"]);
+    expect(adapter.calls).toEqual(["probe", "check"]);
     expect(await snapshot(root)).toEqual(before);
   });
 });
@@ -46,7 +46,7 @@ test("the plan inside a check result is the plan explain prints", async () => {
       run("check", ["docs", "a.md"], { json: true }),
     ]);
     const result: unknown = JSON.parse(checked.output ?? "null");
-    expect(result).toMatchObject({ outcome: "clean", schemaVersion: 0 });
+    expect(result).toMatchObject({ outcome: "clean", schemaVersion: 1 });
     expect(result).toHaveProperty("plan", JSON.parse(explained.output ?? ""));
   });
 });
@@ -58,9 +58,9 @@ test("explain shows policy, origin, steps and the root without running a step", 
     expect(response.output).toBe(
       [
         `Root: ${root}\nConfig: cinch.toml`,
-        "a.md\n  policy\n    markdown.enabled = true  (default)\n    toml.enabled = true  (default)\n  steps\n    fake  fake-tool *  checks and fixes",
+        "a.md\n  package: the workspace\n  policy\n    markdown.enabled = true  (default)\n    toml.enabled = true  (default)\n  steps\n    fake  fake-tool *  checks and fixes",
         "Tools\n  fake-tool  available, needs *",
-        "1 file, 1 step planned. Nothing was run.",
+        "1 file, 1 step planned in 1 batch. Nothing was run.",
       ].join("\n\n")
     );
     expect(adapter.calls).toEqual(["probe"]);

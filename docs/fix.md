@@ -1,6 +1,6 @@
 # Fix
 
-`cinch fix [path...]` runs the same plan `explain` shows and `check` runs, with one difference: a step whose adapter writes is asked to fix, not to check. Steps run in plan order, one file at a time. This is provisional, like the plan it runs.
+`cinch fix [path...]` runs the same plan `explain` shows and `check` runs, with one difference: a step whose adapter writes is asked to fix, not to check. Steps run in the order of the plan's batches: one start of an engine for the files of one package, with the adapters that keep files first. This is provisional, like the plan it runs.
 
 ## What it reports
 
@@ -28,7 +28,7 @@ The copy holds what git would let you commit: tracked files and untracked files 
 
 ## JSON
 
-`cinch fix --json` prints one report. It is provisional and carries `schemaVersion: 0`.
+`cinch fix --json` prints one report. It is provisional and carries `schemaVersion: 1`.
 
 | Field | Meaning |
 | --- | --- |
@@ -36,6 +36,6 @@ The copy holds what git would let you commit: tracked files and untracked files 
 | `diff` | Unified diff of every changed file. Empty when nothing changed |
 | `dryRun` | `true` when the steps ran on a copy |
 | `result` | The same result `check --json` prints, with remaining findings in its steps |
-| `schemaVersion` | `0` |
+| `schemaVersion` | `1` |
 
 A real run and a dry run of the same tree print the same `changed`, `diff` and `result`.

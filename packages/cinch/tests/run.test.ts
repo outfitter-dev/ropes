@@ -12,10 +12,15 @@ import { runPlan } from "../src/runner/run.ts";
 import type { RunOptions } from "../src/runner/run.ts";
 import { FINDINGS, fakeAdapter } from "./fake-adapter.ts";
 
-const planFor = (adapter: Adapter, paths: readonly string[] = ["a.md"]) =>
+const planFor = (
+  adapter: Adapter,
+  paths: readonly string[] = ["a.md"],
+  packages: readonly string[] = []
+) =>
   resolvePlan({
     config: DEFAULT_CONFIG,
     descriptors: [adapter.descriptor],
+    packages,
     paths,
     root: "/repo",
     selection: { kind: "workspace" },
@@ -129,11 +134,19 @@ test("a planned adapter that is not registered is incomplete", async () => {
   expect(exitCodeOf(result)).toBe(EXIT_CODE.incomplete);
 });
 
-test("an adapter is probed once per run, however many files it handles", async () => {
+test("an adapter is probed once and started once, however many files it handles", async () => {
   const adapter = fakeAdapter();
   const plan = planFor(adapter, ["a.md", "b.md", "c.md"]);
-  await runPlan(plan, [adapter], check);
-  expect(adapter.calls).toEqual(["probe", "check", "check", "check"]);
+  const result = await runPlan(plan, [adapter], check);
+  expect(adapter.calls).toEqual(["probe", "check"]);
+  expect(adapter.batches).toEqual([
+    { package: ".", paths: ["a.md", "b.md", "c.md"], root: "/repo" },
+  ]);
+  expect(result.steps.map((step) => step.path)).toEqual([
+    "a.md",
+    "b.md",
+    "c.md",
+  ]);
 });
 
 test("a run holds the tool to the range in the plan, not the registry", async () => {
@@ -146,4 +159,61 @@ test("a run holds the tool to the range in the plan, not the registry", async ()
     "fake-tool 1.0.0 does not satisfy >=2.0.0"
   );
   expect(registered.calls).toEqual(["probe"]);
+});
+
+test("each package is one start, and the steps come back in plan order", async () => {
+  const adapter = fakeAdapter();
+  const plan = planFor(
+    adapter,
+    ["z.md", "packages/a/x.md", "packages/a/y.md", "packages/b/x.md"],
+    ["packages/a", "packages/b"]
+  );
+  const result = await runPlan(plan, [adapter], check);
+  expect(adapter.batches.map((batch) => [batch.package, batch.paths])).toEqual([
+    [".", ["z.md"]],
+    ["packages/a", ["packages/a/x.md", "packages/a/y.md"]],
+    ["packages/b", ["packages/b/x.md"]],
+  ]);
+  expect(result.steps.map((step) => step.path)).toEqual(
+    plan.paths.map((planned) => planned.path)
+  );
+});
+
+test("a step that cannot run leaves every file of its batch incomplete", async () => {
+  const missing = fakeAdapter({
+    probe: () => Promise.resolve({ available: false, reason: "not here" }),
+  });
+  const plan = planFor(missing, ["a.md", "b.md"]);
+  const result = await runPlan(plan, [missing], check);
+  expect(result.steps.map((step) => [step.path, step.status])).toEqual([
+    ["a.md", "incomplete"],
+    ["b.md", "incomplete"],
+  ]);
+  expect(missing.calls).toEqual(["probe"]);
+});
+
+test("a file the adapter gave no answer for is incomplete, never passed", async () => {
+  const quiet: Adapter = {
+    ...fakeAdapter(),
+    check: (input) =>
+      Promise.resolve(
+        input.paths
+          .slice(0, 1)
+          .map((path) => ({ findings: [], path, status: "passed" }))
+      ),
+  };
+  const result = await runPlan(
+    planFor(quiet, ["a.md", "b.md"]),
+    [quiet],
+    check
+  );
+  expect(result.steps).toMatchObject([
+    { path: "a.md", status: "passed" },
+    {
+      path: "b.md",
+      reason: "fake-tool gave no answer for this file",
+      status: "incomplete",
+    },
+  ]);
+  expect(exitCodeOf(result)).toBe(EXIT_CODE.incomplete);
 });
