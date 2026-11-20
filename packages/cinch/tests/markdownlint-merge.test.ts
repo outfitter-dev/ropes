@@ -111,6 +111,39 @@ test("the lists of rules switched off are compared like any option", () => {
   );
 });
 
+test("a quoted header is the same table", () => {
+  const text = merged('["MD013"]\nline-length = 100\n', {
+    MD013: { "code-blocks": false },
+  });
+  expect(text).toBe(
+    ['["MD013"]', MARK, "code-blocks = false", "line-length = 100", ""].join(
+      "\n"
+    )
+  );
+});
+
+test("a value the preset sets is still named when the file differs", () => {
+  const result = merge({
+    current: "[MD007]\nindent = 4\n",
+    file: OLD,
+    known: KNOWN,
+    notes: [],
+    same: { MD007: { indent: 2 }, MD013: { "line-length": 80 } },
+    sections: {},
+  });
+  expect(result).toEqual({
+    ok: true,
+    text: [
+      "[MD007]",
+      "indent = 4",
+      "",
+      `# Not carried over from ${OLD}:`,
+      `# - \`indent\` on MD007 is 2 in ${OLD} and 4 here. The value here was kept.`,
+      "",
+    ].join("\n"),
+  });
+});
+
 test("nothing to add leaves the file as it was", () => {
   const current = "[MD013]\nline-length = 100\n";
   expect(merged(current, { MD013: { "line-length": 100 } })).toBe(current);

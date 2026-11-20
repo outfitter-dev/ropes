@@ -14,6 +14,8 @@ export interface Leftover extends Option {
 export interface Translated {
   /** What goes below the `extends` line. Empty when nothing differs. */
   readonly sections: Sections;
+  /** What the old config stated that the preset already sets, by rule ID. */
+  readonly same: Sections;
   readonly notes: readonly string[];
   readonly leftover: readonly Leftover[];
 }
@@ -117,6 +119,7 @@ export const translate = (input: {
   if (Object.keys(global).length > 0) {
     sections[GLOBAL] = global;
   }
+  const same: Record<string, Record<string, unknown>> = {};
   const carried = new Set<string>();
   const names = Object.keys(imported).filter((name) => name !== GLOBAL);
   for (const name of sorted(names)) {
@@ -131,7 +134,9 @@ export const translate = (input: {
       const old = from.get(option(key));
       if (old !== undefined) {
         carried.add(`${id}.${old}`);
-        if (!Bun.deepEquals(presetValue(preset, id, key), value, true)) {
+        if (Bun.deepEquals(presetValue(preset, id, key), value, true)) {
+          same[id] = { ...same[id], [key]: value };
+        } else {
           kept[key] = value;
         }
       }
@@ -151,5 +156,5 @@ export const translate = (input: {
       (old) => `\`${old.key}\` on ${old.id} has no equivalent here.`
     ),
   ];
-  return { leftover, notes, sections };
+  return { leftover, notes, same, sections };
 };

@@ -18,13 +18,29 @@ const line = (key: string, value: unknown): string | null => {
   return text.includes("\n") ? null : text;
 };
 
+const QUOTES = ['"', "'"];
+
 /** The table a line opens, when it is a `[name]` header. */
 const opened = (text: string): string | undefined => {
   const bare = (text.split("#")[0] ?? "").trim();
-  return bare.startsWith("[") && !bare.startsWith("[[") && bare.endsWith("]")
-    ? bare.slice(1, -1).trim()
-    : undefined;
+  if (!bare.startsWith("[") || bare.startsWith("[[") || !bare.endsWith("]")) {
+    return undefined;
+  }
+  const name = bare.slice(1, -1).trim();
+  const quoted = QUOTES.some(
+    (mark) => name.length > 1 && name.startsWith(mark) && name.endsWith(mark)
+  );
+  return quoted ? name.slice(1, -1) : name;
 };
+
+const conflict = (said: {
+  readonly file: string;
+  readonly id: string;
+  readonly key: string;
+  readonly value: unknown;
+  readonly ours: unknown;
+}): string =>
+  `\`${said.key}\` on ${said.id} is ${show(said.value)} in ${said.file} and ${show(said.ours)} here. The value here was kept.`;
 
 interface Plan {
   /** By the table's name in the file, the lines to put under its header. */
@@ -45,6 +61,7 @@ const planned = (input: {
   readonly file: string;
   readonly known: readonly KnownRule[];
   readonly sections: Sections;
+  readonly same: Sections;
   readonly headers: ReadonlySet<string>;
 }): Plan => {
   const { file, have, headers, sections } = input;
@@ -66,7 +83,7 @@ const planned = (input: {
       if (isTable(table) && ours !== undefined) {
         if (!Bun.deepEquals(table[ours], value, true)) {
           plan.notes.push(
-            `\`${key}\` on ${id} is ${show(value)} in ${file} and ${show(table[ours])} here. The value here was kept.`
+            conflict({ file, id, key, ours: table[ours], value })
           );
         }
       } else if (name === undefined) {
@@ -79,6 +96,21 @@ const planned = (input: {
         plan.notes.push(
           `\`${key}\` on ${id} is ${show(value)} in ${file}. Cinch could not add it to the ${name} settings here, so add it by hand.`
         );
+      }
+    }
+  }
+  // A value the preset already sets adds nothing, but the file may still
+  // say otherwise, and that difference is named like any other.
+  for (const [id, stated] of Object.entries(input.same)) {
+    const table = have[nameOf(id) ?? ""];
+    for (const [key, value] of Object.entries(stated)) {
+      const ours = isTable(table) ? keyIn(table, key) : undefined;
+      if (
+        isTable(table) &&
+        ours !== undefined &&
+        !Bun.deepEquals(table[ours], value, true)
+      ) {
+        plan.notes.push(conflict({ file, id, key, ours: table[ours], value }));
       }
     }
   }
@@ -130,6 +162,8 @@ export const merge = (input: {
   readonly known: readonly KnownRule[];
   readonly notes: readonly string[];
   readonly sections: Sections;
+  /** What the old config stated that the preset already sets. */
+  readonly same?: Sections;
 }):
   | { readonly ok: true; readonly text: string }
   | { readonly ok: false; readonly message: string } => {
@@ -143,6 +177,7 @@ export const merge = (input: {
     have,
     headers,
     known: input.known,
+    same: input.same ?? {},
     sections: input.sections,
   });
   const marked = comment([`Carried over from ${file} by Cinch.`]).trimEnd();
