@@ -5,7 +5,7 @@ import path from "node:path";
 
 import { snapshot } from "./repo-bench.ts";
 
-const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
+const CLI = new URL("../src/cli.ts", import.meta.url);
 
 /** The file every proof reads its override from. */
 export const CONFIG = [
@@ -103,9 +103,17 @@ export const fixtureGit = async (
   }
 };
 
+export const runEntry = (
+  entry: URL,
+  args: readonly string[],
+  cwd: string,
+  searchPath?: string
+): Promise<Ran> =>
+  spawn([process.execPath, entry.pathname, ...args], cwd, searchPath);
+
 export const checkoutAt = (root: string): Checkout => ({
   cinch: (args, { cwd = "", path: searchPath } = {}) =>
-    spawn([process.execPath, CLI, ...args], path.join(root, cwd), searchPath),
+    runEntry(CLI, args, path.join(root, cwd), searchPath),
   files: async () => {
     const all = await snapshot(root);
     return Object.fromEntries(

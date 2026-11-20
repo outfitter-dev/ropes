@@ -1,16 +1,22 @@
 import type { ExitCode } from "../contracts/result.ts";
 
-export interface CommandRequest {
+export interface ReadRequest {
   readonly cwd: string;
   readonly paths: readonly string[];
-  readonly json: boolean;
   /**
    * Hold every tool to its exact pin. Without it a tool newer than its pin
    * and inside the range its adapter was tested on runs, with a notice.
    */
   readonly strict?: boolean;
+}
+
+export interface FixRequest extends ReadRequest {
   /** Run on a copy and show the change without writing it. */
   readonly dryRun?: boolean;
+}
+
+export interface CommandRequest extends FixRequest {
+  readonly json: boolean;
   /** `doctor` only: repair the setup. Without it, `doctor` only reports. */
   readonly fix?: boolean;
   /**
@@ -34,3 +40,7 @@ export interface CommandResponse {
 }
 
 export type Command = (request: CommandRequest) => Promise<CommandResponse>;
+
+export type Operation<T> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false; readonly error: string };

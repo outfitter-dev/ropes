@@ -75,15 +75,14 @@ export const init =
       await Bun.write(path.join(root, STANDALONE_FILE), starter);
     }
     const ran = await runWrite(
-      { cwd: root, dryRun: !apply, json: request.json, paths, strict },
+      { cwd: root, dryRun: !apply, paths, strict },
       deps,
       { also: old.files, mode: "init" }
     );
     if (!ran.ok) {
-      return ran.response;
+      return { error: `cinch: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
     }
-    const fixed =
-      starter === null ? ran.report : withConfig(ran.report, starter);
+    const fixed = starter === null ? ran.value : withConfig(ran.value, starter);
     const retired = await retire(
       { ...old, reasons: [...old.reasons, ...choiceReasons(found, carried)] },
       { apply, clean: fixed.result.outcome === "clean", root }

@@ -1,0 +1,16 @@
+{
+  "name": "@ropes/cli",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The rope quality CLI.",
+  "bin": {
+    "rope": "./src/cli.ts"
+  },
+  "type": "module",
+  "dependencies": {
+    "@ropes/core": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

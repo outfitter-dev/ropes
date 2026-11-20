@@ -83,9 +83,9 @@ export const doctor =
           dryRun: request.dryRun === true,
           mode: "doctor",
         })
-      : { ok: true, report: await inspect(setup) };
+      : { ok: true, value: await inspect(setup) };
     if (!ran.ok) {
-      return ran.response;
+      return unusable(ran.error);
     }
     const found = await tools(root, deps, request.strict === true);
     if (typeof found === "string") {
@@ -93,7 +93,7 @@ export const doctor =
     }
     // A repository that states rules are off has made its choice.
     const report: DoctorReport = {
-      ...ran.report,
+      ...ran.value,
       fix: fixing,
       notAdopted: declined(setup.config)
         ? []

@@ -155,11 +155,11 @@ const write = async (
     mode: "doctor",
   });
   if (!ran.ok) {
-    return ran.response;
+    return { error: `cinch: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
   }
   return {
-    exitCode: exitOf(ran.report),
-    output: request.json ? renderFixJson(ran.report) : renderFix(ran.report),
+    exitCode: exitOf(ran.value),
+    output: request.json ? renderFixJson(ran.value) : renderFix(ran.value),
   };
 };
 
