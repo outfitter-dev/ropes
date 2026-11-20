@@ -76,9 +76,11 @@ An adapter takes a root and a path and returns data. It does not read arguments,
 
 `adapters/taplo/` lints TOML with [Taplo](https://taplo.tamasfe.dev). It runs `taplo lint` on one file at a time from the repository root. It never writes: formatting TOML is the formatter's job, so `fix` only checks.
 
-- A file that does not parse is a finding under the rule `syntax`, one for each problem, with what the parser expected. A file that does not fit its schema is a finding under the rule `schema`, in the schema's words.
+- A file that is not sound TOML is a finding under the rule `syntax`, one for each problem: a file that does not parse, with what the parser expected, or one whose keys or tables conflict. A file that does not fit its schema is a finding under the rule `schema`, in the schema's words.
 - Taplo reads its own config, `.taplo.toml`, from the repository root, and that is where a file is given a schema. This repository checks `cinch.toml` against the schema `cinch schema config` prints. Cinch passes no schema of its own, and Taplo's online schema catalogs stay off, so a check needs no network.
 - Cinch does not install Taplo. The binary must be on `PATH`. A repository pins the version in `mise.toml`. Without a pin the adapter accepts the 0.10 releases, the version its output mapping was checked against.
 - Taplo 0.10 has no machine-readable output, so the adapter reads the diagnostics it prints. A problem printed without a place, or an exit code that does not match what was printed, makes the step incomplete.
-- Taplo exits 0 when its own config excludes the file it was given. The adapter counts a pass only when Taplo says it read the file. Otherwise the step is incomplete.
+- Taplo exits 0 when its own config excludes the file it was given. The adapter counts a pass only when Taplo says it read that one file. Otherwise the step is incomplete.
+- Taplo carries on with no config when it cannot use its own, which would skip every schema. The adapter reports the step incomplete with what Taplo said was wrong.
+- Taplo reads a file argument as a glob. The adapter passes the full path with its glob characters made literal, so a name such as `config[1].toml` is the file that gets checked.
 - `[toml] enabled = false` in the Cinch config switches the adapter off, for the whole repository or for the paths of an override.

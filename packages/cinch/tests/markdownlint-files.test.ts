@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { chosenFiles } from "../src/adapters/rumdl/markdownlint-files.ts";
+import { rumdlPresetAdapter } from "../src/adapters/rumdl/preset.ts";
 import {
   inheritedBy,
   starterConfig,
@@ -193,4 +194,13 @@ test("a carried include keeps the default for every other kind of file", async (
     root
   );
   expect(none?.include).toEqual([]);
+});
+
+test("the adapter that carries the old choices does not widen them", async () => {
+  await Bun.write(
+    path.join(root, RUNNER),
+    JSON.stringify({ globs: ["docs/**/*.md"] })
+  );
+  const [found] = await inheritedBy([rumdlPresetAdapter()], root);
+  expect(found?.include).toEqual(["docs/**/*.md", "**/*.toml"]);
 });

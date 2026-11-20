@@ -8,7 +8,7 @@ import type {
   StepOutcome,
 } from "../adapter.ts";
 import { exec } from "../exec.ts";
-import { filesRead, parseOutput } from "./output.ts";
+import { configProblem, readOnly, parseOutput } from "./output.ts";
 
 const ID = "taplo";
 
@@ -40,6 +40,13 @@ const lastLine = (text: string): string => text.trim().split("\n").at(-1) ?? "";
  * when it read no file at all, for one its own config excludes, so a pass
  * counts only when it says it read the file.
  */
+/**
+ * Taplo reads every file argument as a glob, even after `--`. Each glob
+ * character goes in a class of its own, so the path names one file only.
+ */
+const literal = (file: string): string =>
+  file.replaceAll(/[*?[\]]/gu, (character) => `[${character}]`);
+
 const check = async (
   command: string,
   input: StepInput
@@ -56,14 +63,18 @@ const check = async (
       "--colors",
       "never",
       "--",
-      input.path,
+      literal(path.join(input.root, input.path)),
     ],
     input.root
   );
   if (exitCode !== 0 && exitCode !== 1) {
     return incomplete(`${ID} exited ${exitCode}: ${lastLine(stderr)}`);
   }
-  if (filesRead(stderr) !== 1) {
+  const problem = configProblem(stderr);
+  if (problem !== undefined) {
+    return incomplete(`${ID} could not use its own config: ${problem}`);
+  }
+  if (readOnly(stderr, input.path) !== true) {
     return incomplete(`${ID} did not read the file. Its config may exclude it`);
   }
   const parsed = parseOutput(stderr, { path: input.path, source: ID });

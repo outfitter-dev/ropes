@@ -107,6 +107,29 @@ withEngine(
   }
 );
 
+withEngine("a config the engine cannot use is incomplete", async () => {
+  const files = { ".taplo.toml": "exclude = 42\n", "a.toml": "a = 1\n" };
+  const outcome = await checked(files, "a.toml");
+  expect(outcome.status).toBe("incomplete");
+  expect(outcome.reason).toContain("could not use its own config");
+});
+
+withEngine("a path with glob characters names that file only", async () => {
+  const files = { "config1.toml": "a = 1\n", "config[1].toml": "a = \n" };
+  const outcome = await checked(files, "config[1].toml");
+  expect(outcome.status).toBe("findings");
+  expect(outcome.findings[0]?.path).toBe("config[1].toml");
+  const sibling = await checked(files, "config1.toml");
+  expect(sibling.status).toBe("passed");
+});
+
+withEngine("keys that conflict are a syntax finding", async () => {
+  const outcome = await checked({ "a.toml": "a = 1\na = 2\n" }, "a.toml");
+  expect(outcome.findings.map((finding) => finding.rule)).toEqual(["syntax"]);
+  const table = await checked({ "a.toml": "a = 1\n[a.b]\nc = 2\n" }, "a.toml");
+  expect(table.findings.map((finding) => finding.rule)).toEqual(["syntax"]);
+});
+
 withEngine(
   "a kept file that is not written yet has nothing to lint",
   async () => {

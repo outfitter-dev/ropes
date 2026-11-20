@@ -1,6 +1,10 @@
 import { expect, test } from "bun:test";
 
-import { filesRead, parseOutput } from "../src/adapters/taplo/output.ts";
+import {
+  configProblem,
+  parseOutput,
+  readOnly,
+} from "../src/adapters/taplo/output.ts";
 
 const CONTEXT = { path: "mise.toml", source: "taplo" };
 
@@ -93,9 +97,40 @@ test("clean output has no findings", () => {
   });
 });
 
-test("the number of files read comes from the log, or is unknown", () => {
-  expect(filesRead(SYNTAX)).toBe(1);
-  expect(filesRead(" INFO x: found files total=1 excluded=1\n")).toBe(0);
-  expect(filesRead(" INFO x: found files total=0 excluded=0\n")).toBe(0);
-  expect(filesRead("")).toBeUndefined();
+const collected = (total: number, excluded: number, files: string) =>
+  ` INFO x: found files total=${total} excluded=${excluded} files=[${files}] cwd="/repo"\n`;
+
+test("only the one file asked for counts as read", () => {
+  expect(readOnly(SYNTAX, "mise.toml")).toBe(true);
+  expect(readOnly(SYNTAX, "other.toml")).toBe(false);
+  expect(readOnly(collected(1, 1, ""), "mise.toml")).toBe(false);
+  expect(readOnly(collected(0, 0, ""), "mise.toml")).toBe(false);
+  expect(readOnly("", "mise.toml")).toBeUndefined();
+});
+
+const CONFLICT = `${collected(1, 0, '"/repo/a.toml"')}error: conflicting keys
+  ┌─ /repo/a.toml:2:1
+  │
+1 │ a = 1
+  │ - duplicate found here
+2 │ a = 2
+  │ ^ duplicate key
+
+ERROR taplo:lint_files: invalid file error=semantic errors found path="/repo/a.toml"
+`;
+
+test("keys that conflict are a syntax finding, with no schema involved", () => {
+  const parsed = parseOutput(CONFLICT, { path: "a.toml", source: "taplo" });
+  expect(parsed).toMatchObject({
+    findings: [{ message: "conflicting keys", rule: "syntax" }],
+    ok: true,
+  });
+});
+
+test("a config the engine refused is named, and a usable one is not", () => {
+  const refused = ` INFO taplo:load_config: found configuration file path="/repo/.taplo.toml"
+ WARN taplo:load_config: invalid configuration file error=TOML parse error at line 1, column 11
+`;
+  expect(configProblem(refused)).toContain("invalid configuration file");
+  expect(configProblem(SYNTAX)).toBeUndefined();
 });

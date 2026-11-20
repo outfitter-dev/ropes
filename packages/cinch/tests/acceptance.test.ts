@@ -15,7 +15,9 @@ import type { Fixture, Ran } from "./acceptance-repo.ts";
  * process, and every Markdown step runs the real engine.
  */
 
-const TOOLS = ["rumdl", "git"].filter((tool) => Bun.which(tool) === null);
+const TOOLS = ["rumdl", "taplo", "git"].filter(
+  (tool) => Bun.which(tool) === null
+);
 
 const proof = (name: string, body: (fixture: Fixture) => Promise<void>) => {
   test(
