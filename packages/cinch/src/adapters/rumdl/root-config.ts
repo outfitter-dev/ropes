@@ -1,5 +1,6 @@
 import path from "node:path";
 
+import type { ToolTable } from "../../contracts/config.ts";
 import type { Wanted } from "../managed.ts";
 import { merge } from "./migrate/markdownlint/merge.ts";
 import { extendsOf } from "./migrate/markdownlint/retire.ts";
@@ -64,7 +65,8 @@ const configuredElsewhere = async (root: string): Promise<string | null> => {
  * A new config. It carries over what a config for the old Markdown linter
  * says, because the engine stops reading that one once this file exists.
  */
-const fresh = async (root: string, command?: string): Promise<Wanted> => {
+const fresh = async (run: Run): Promise<Wanted> => {
+  const { command, root, table } = run;
   const other = await configuredElsewhere(root);
   if (other !== null) {
     return {
@@ -72,8 +74,9 @@ const fresh = async (root: string, command?: string): Promise<Wanted> => {
       ok: false,
     };
   }
-  const carried = await carriedOver(root, await standard(), command);
-  if (carried === null) {
+  const carried = await carriedOver(root, await standard(), command, table);
+  // With nothing to carry over, the file stays a pointer Cinch owns.
+  if (carried === null || (carried.ok && carried.text === "")) {
     return { ok: true, text: POINTER };
   }
   return carried.ok ? { ok: true, text: `${EXTENDS}${carried.text}` } : carried;
@@ -88,6 +91,8 @@ export interface Run {
   readonly migrate: boolean;
   /** The engine's executable. */
   readonly command?: string;
+  /** What the Cinch config states for the engine. */
+  readonly table?: ToolTable | undefined;
 }
 
 /**
@@ -101,7 +106,12 @@ const withExtends = async (current: string, run: Run): Promise<Wanted> => {
   if (!run.migrate) {
     return { ok: true, text: `${EXTENDS}\n${current}` };
   }
-  const carried = await gathered(run.root, await standard(), run.command);
+  const carried = await gathered(
+    run.root,
+    await standard(),
+    run.command,
+    run.table
+  );
   if (carried === null || (!carried.ok && carried.unknown !== true)) {
     return { ok: true, text: `${EXTENDS}\n${current}` };
   }
@@ -128,7 +138,7 @@ export const rootConfig = async (
   run: Run
 ): Promise<Wanted> => {
   if (current === null) {
-    return await fresh(run.root, run.command);
+    return await fresh(run);
   }
   // The bare line is what Cinch wrote here before it marked its pointers.
   if (current === POINTER || current === EXTENDS) {

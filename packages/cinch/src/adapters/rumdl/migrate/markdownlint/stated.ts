@@ -32,7 +32,9 @@ const SILENT = new Set(["$schema", "default", "extends"]);
 export const option = (key: string): string =>
   key.toLowerCase().replaceAll("_", "-");
 
-const isTable = (value: unknown): value is Readonly<Record<string, unknown>> =>
+export const isTable = (
+  value: unknown
+): value is Readonly<Record<string, unknown>> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 export const lookup = (known: readonly KnownRule[]) => {

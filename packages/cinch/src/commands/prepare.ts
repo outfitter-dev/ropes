@@ -60,10 +60,6 @@ export const prepare = async (
     return { error: pins.message, ok: false };
   }
   const adapters = deps.adapters(pins.pins, config.value.tools);
-  const unread = unreadTable(config.value, adapters);
-  if (unread !== null) {
-    return { error: unread, ok: false };
-  }
   const owned = adapters.flatMap((adapter) => adapter.descriptor.owns ?? []);
   const selected = await select(root, request.cwd, request.paths, owned);
   if (!selected.ok) {
@@ -84,6 +80,10 @@ export const prepare = async (
       root: root.root,
       selection,
     });
+  const unread = unreadTable(config.value, adapters, resolve);
+  if (unread !== null) {
+    return { error: unread, ok: false };
+  }
   // A file the caller named stays in the plan even when the config leaves it
   // out, so `explain` can say why. A file that only turned up while expanding
   // a directory does not: the first pass finds those, the second drops them.

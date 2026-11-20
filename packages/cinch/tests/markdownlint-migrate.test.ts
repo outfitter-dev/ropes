@@ -7,6 +7,7 @@ import { adaptersFor } from "../src/adapters/registry.ts";
 import {
   CONFIG_PATH,
   GENERATED_PATH,
+  POINTER,
   PRESET_PATH,
   rumdlPresetAdapter,
 } from "../src/adapters/rumdl/preset.ts";
@@ -109,7 +110,7 @@ withEngine(
     const files = { ".markdownlint.json": JSON.stringify(rules) };
     await inRoot(files, async (root) => {
       await fixOne(preset, { path: CONFIG_PATH, root });
-      expect(await written(root)).toBe(EXTENDS);
+      expect(await written(root)).toBe(POINTER);
     });
   }
 );
@@ -208,7 +209,7 @@ withEngine("the last entry for a rule decides whether it runs", async () => {
   const text = '{ "MD013": true, "line-length": false }';
   await inRoot({ ".markdownlint.json": text }, async (root) => {
     await fixOne(preset, { path: CONFIG_PATH, root });
-    expect(await written(root)).toBe(EXTENDS);
+    expect(await written(root)).toBe(POINTER);
   });
 });
 
