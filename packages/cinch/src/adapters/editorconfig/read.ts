@@ -36,6 +36,8 @@ interface Section {
 }
 
 interface Walk {
+  /** Whether the file says the search for settings stops at it. */
+  rooted: boolean;
   readonly sections: Section[];
   readonly dropped: string[];
   readonly comments: number[];
@@ -44,9 +46,14 @@ interface Walk {
 const HEADER = /^\[(?<glob>.+)\]$/u;
 const PAIR = /^(?<key>[^=]+?)\s*=\s*(?<value>.*)$/u;
 
-/** A pair before the first section. Only `root = true` is what Cinch writes. */
+const INHERITS =
+  "the settings of a `.editorconfig` in a folder above, which apply until this file states `root = true`";
+
+/** A pair before the first section. Only `root` means anything there. */
 const preamble = (key: string, value: string, walk: Walk): void => {
-  if (key !== "root" || value !== "true") {
+  if (key === "root") {
+    walk.rooted = value === "true";
+  } else {
     walk.dropped.push(`\`${key} = ${value}\` above the first section`);
   }
 };
@@ -74,7 +81,12 @@ const pair = (line: string, at: number, walk: Walk): void => {
 };
 
 const walked = (text: string): Walk => {
-  const walk: Walk = { comments: [], dropped: [], sections: [] };
+  const walk: Walk = {
+    comments: [],
+    dropped: [],
+    rooted: false,
+    sections: [],
+  };
   for (const [index, raw] of text.split(/\r?\n/u).entries()) {
     const line = raw.trim();
     const glob = HEADER.exec(line)?.groups?.glob;
@@ -95,10 +107,12 @@ const walked = (text: string): Walk => {
  * becomes an override. Whatever the table cannot hold is listed and left out:
  * a key it does not know, a value it does not allow, a glob it cannot state,
  * a section for every file that comes after a narrower one, and comments.
+ * The file Cinch writes always states `root = true`, so a file that does not
+ * would lose whatever it takes from a folder above.
  */
 export const readFile = (text: string): ReadFile => {
   const walk = walked(text);
-  const dropped = [...walk.dropped];
+  const dropped = [...walk.dropped, ...(walk.rooted ? [] : [INHERITS])];
   const base: Record<string, boolean | number | string> = {};
   const overrides: Record<string, unknown>[] = [];
   for (const section of walk.sections) {

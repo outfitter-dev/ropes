@@ -79,11 +79,11 @@ test("what the table cannot hold is listed and left out", () => {
     overrides: [{ files: ["*.go"], indent_style: "tab" }],
   });
   expect(read.dropped).toEqual([
-    "`root = false` above the first section",
     "`indent_size = tab` in `[*]`",
     "`tab_width = 4` in `[*]`",
     "`max_line_length = off` in `[*]`",
     "line 14, which Cinch could not read",
+    "the settings of a `.editorconfig` in a folder above, which apply until this file states `root = true`",
     "the section `[[Mm]akefile]`, whose glob the table cannot state",
     "a `[*]` section below a narrower one, where it wins over that one",
     "the comments on lines 1",
@@ -211,4 +211,31 @@ test("a generated file is not read back into a new config", async () => {
   await put(EDITOR_PATH, render({ indent_size: 2 }));
   await run("init", { yes: true });
   expect(await text("cinch.toml")).toBe(STARTER_CONFIG);
+});
+
+test("a file that does not say it is the root keeps what it takes from above", async () => {
+  const inheriting = "[*]\nindent_size = 2\n";
+  expect(readFile(inheriting).lost).toEqual([
+    "the settings of a `.editorconfig` in a folder above, which apply until this file states `root = true`",
+  ]);
+  expect(readFile(`root = false\n${inheriting}`).lost).toHaveLength(1);
+  await put(EDITOR_PATH, inheriting);
+  await run("init", { yes: true });
+  await quiet();
+  const [message] = await messages();
+  expect(message).toContain("root = true");
+  await run("doctor", { fix: true });
+  expect(await text(EDITOR_PATH)).toBe(inheriting);
+});
+
+test("init does not carry an old exclude that leaves the editor file out", async () => {
+  await put(EDITOR_PATH, HAND);
+  await put(".markdownlint-cli2.jsonc", `{"ignores":["${EDITOR_PATH}"]}`);
+  await run("init", { yes: true });
+  const config = await text("cinch.toml");
+  expect(config).toContain("[editor]");
+  expect(config).toContain(`which Cinch keeps`);
+  await quiet();
+  const doctor = await run("doctor");
+  expect(doctor.error).toBeUndefined();
 });

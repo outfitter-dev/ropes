@@ -44,6 +44,7 @@ Above the table it writes one `# Not carried over:` line for each thing the tabl
 - a section whose glob holds `[`, `]`, `#` or `;`
 - a `[*]` section below a narrower one, which the generated file could not keep in that place
 - anything above the first section other than `root = true`
+- what the file takes from a `.editorconfig` in a folder above, when it does not state `root = true`. The file Cinch writes always states it, so add that line first if nothing above should apply
 - comments
 
 `init` leaves `.editorconfig` as it is. When nothing was left out, `cinch doctor` reports that the file states what the table states, and `cinch doctor --fix` replaces it with the generated one. When something was left out, the file stays until you delete it.
@@ -62,6 +63,8 @@ cinch preset adopt editor --yes
 The first shows the `[editor]` table it would add to the Cinch config and the generated `.editorconfig` that would replace the file. The second writes both. It reads the file the way `init` does.
 
 - It stops, writes nothing and exits 1 when the file states a setting the table cannot hold, such as `tab_width`. It names each one. Take them out, or keep the file by hand.
+- It stops the same way when the file does not state `root = true`, because the generated file does and would cut off the settings of a folder above.
+- It stops with exit 2 and writes nothing when the Cinch config excludes `.editorconfig`, since Cinch could not keep the file it would write.
 - Comments are not carried over. The move says which lines held them.
 - When the Cinch config already has an `[editor]` table that states what the file states, only the file is replaced. When the table states something else, it stops: settle the table by hand.
 - `cinch preset eject editor` moves nothing. To keep the file by hand again, delete the `[editor]` table and the first two lines of `.editorconfig`.

@@ -43,6 +43,7 @@ const inherits = async (root: string): Promise<Inherited | null> => {
         exclude: [],
         from: EDITOR_PATH,
         include: [],
+        keeps: [EDITOR_PATH],
         kinds: [],
         notes: [],
         tables: tableOf(text),

@@ -171,3 +171,33 @@ test("the editor settings are no preset to list or add", async () => {
   expect(wrong.error).toContain("Cinch can adopt:");
   expect(wrong.error).toContain("editor");
 });
+
+test("adopt writes nothing when the config leaves the file out", async () => {
+  const config = `pilot = 0\nexclude = ["${EDITOR_PATH}"]\n${QUIET.slice("pilot = 0\n".length)}`;
+  await put("cinch.toml", config);
+  await put(EDITOR_PATH, BY_HAND);
+
+  const response = await run("preset", {
+    action: "adopt",
+    paths: ["editor"],
+    yes: true,
+  });
+
+  expect(response.exitCode).toBe(2);
+  expect(response.error).toContain(`leaves ${EDITOR_PATH} out`);
+  expect(await text("cinch.toml")).toBe(config);
+  expect(await text(EDITOR_PATH)).toBe(BY_HAND);
+});
+
+test("adopt stops at a file that takes settings from a folder above", async () => {
+  const inheriting = "[*]\nindent_size = 2\n";
+  await put("cinch.toml", QUIET);
+  await put(EDITOR_PATH, inheriting);
+
+  const { exitCode, report } = await move("adopt", { yes: true });
+
+  expect(exitCode).toBe(1);
+  expect(report.stopped?.join("\n")).toContain("root = true");
+  expect(await text("cinch.toml")).toBe(QUIET);
+  expect(await text(EDITOR_PATH)).toBe(inheriting);
+});

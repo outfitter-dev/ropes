@@ -137,6 +137,8 @@ export interface Inherited {
    * stated, beyond its file choices. They go in as they are, after the rest.
    */
   readonly tables?: readonly string[];
+  /** Root-relative files Cinch keeps once `tables` are in its config. */
+  readonly keeps?: readonly string[];
 }
 
 /** What is left of a tool an adapter takes over from. */

@@ -56,8 +56,11 @@ export const init =
     }
     const { adapters, plan } = planned.value;
     const found = await inheritedBy(adapters, root);
+    // A table carried into the new config can make Cinch keep a file the
+    // setup did not have yet, and an old exclude must not leave that out.
+    const kept = [...paths, ...found.flatMap((one) => one.keeps ?? [])];
     const carried =
-      (await configFileIn(root)) === null ? sparing(found, paths) : null;
+      (await configFileIn(root)) === null ? sparing(found, kept) : null;
     const starter = carried === null ? null : starterConfig(carried);
     // The old config is judged now: once the new files are written, an
     // adapter can no longer tell what they were made from.

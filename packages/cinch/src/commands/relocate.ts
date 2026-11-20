@@ -62,10 +62,14 @@ const planned = async (
   const keeper = prepared.value.adapters.find(
     (adapter) => adapter.descriptor.id === preset.adapter
   );
-  // A file the adapter does not keep yet has no step to be missing.
+  // A file the adapter does not keep yet has no step to be missing. It can
+  // still be excluded, and the move would then leave a file Cinch cannot keep.
   const owned = new Set(keeper?.descriptor.owns);
-  const files = preset.files.filter((file) => owned.has(file));
-  const gaps = gapsOf([{ ...preset, files }], prepared.value.plan);
+  const gaps = gapsOf([preset], prepared.value.plan).filter(
+    (gap) =>
+      owned.has(gap.file) ||
+      (gap.why === "left-out" && gap.skipped?.reason === "excluded")
+  );
   if (gaps.length > 0) {
     return { error: gaps.map(describeGap).join("\ncinch: ") };
   }
