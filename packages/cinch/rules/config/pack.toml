@@ -1,0 +1,3 @@
+name = "config"
+about = "A config a tool reads builds on the one Cinch keeps for it."
+relevant = ["**/tsconfig.json"]

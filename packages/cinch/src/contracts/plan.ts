@@ -89,6 +89,8 @@ export const PlanBatchSchema = PlanStepSchema.unwrap()
     package: z.string().min(1),
     /** Root-relative files, in plan order. Never empty. */
     paths: z.array(z.string().min(1)).min(1).readonly(),
+    /** The rules the start runs, for an adapter that ships rule packs. */
+    rules: z.array(z.string().min(1)).readonly().optional(),
   })
   .readonly();
 export type PlanBatch = z.infer<typeof PlanBatchSchema>;
@@ -119,6 +121,32 @@ export const PlannedPathSchema = z
   .readonly();
 export type PlannedPath = z.infer<typeof PlannedPathSchema>;
 
+/**
+ * One rule pack an adapter ships, and whether it runs here. A pack is on
+ * when a file in the repository matches `relevant` and no setting turns it
+ * off. A rule is on when its pack is and no setting turns the rule off.
+ */
+export const PackStateSchema = z
+  .object({
+    about: z.string().min(1),
+    adapter: z.string().min(1),
+    /** The first file found that makes the pack apply. Absent when none. */
+    found: z.string().min(1).optional(),
+    name: z.string().min(1),
+    /** The setting that turns the whole pack off. */
+    off: ProvenanceSchema.optional(),
+    relevant: z.array(z.string().min(1)).readonly(),
+    rules: z
+      .array(
+        z
+          .object({ id: z.string().min(1), off: ProvenanceSchema.optional() })
+          .readonly()
+      )
+      .readonly(),
+  })
+  .readonly();
+export type PackState = z.infer<typeof PackStateSchema>;
+
 /** What `explain` prints and what `check` and `fix` execute. */
 export const PlanSchema = z
   .object({
@@ -131,6 +159,8 @@ export const PlanSchema = z
     facts: SharedFactsSchema.optional(),
     paths: z.array(PlannedPathSchema).readonly(),
     root: z.string().min(1),
+    /** Present when policy asks for an adapter that ships rule packs. */
+    rules: z.array(PackStateSchema).readonly().optional(),
     schemaVersion: z.literal(SCHEMA_VERSION),
     selection: SelectionSchema,
   })

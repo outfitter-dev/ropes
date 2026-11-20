@@ -53,9 +53,13 @@ const OPT_IN = {
   lint: optInPreset("lint config").extend(
     optInSwitch("TypeScript and JavaScript are linted")
   ),
-  rules: z.strictObject(
-    optInSwitch("the structural rules Cinch ships are run")
-  ),
+  rules: z.strictObject({
+    ...optInSwitch("the structural rules Cinch ships are run"),
+    off: z
+      .array(z.string().min(1))
+      .optional()
+      .describe("Shipped rule packs and rules, by name, that are not run."),
+  }),
   typescript: optInPreset("TypeScript compiler options").extend(
     optInSwitch("TypeScript is type checked")
   ),
@@ -181,7 +185,8 @@ const build = (
   table: z.infer<typeof ConfigFileSchema>,
   origin: TableOrigin
 ): CinchConfig => {
-  const base = settingsOf(table, origin, "");
+  const { off, ...rules } = table.rules ?? {};
+  const base = settingsOf({ ...table, rules }, origin, "");
   const overrides: ConfigOverride[] = (table.overrides ?? []).map(
     (override, index) => ({
       paths: override.paths,
@@ -203,6 +208,9 @@ const build = (
     ),
     overrides,
     ...(origin.prefix === "" ? {} : { prefix: origin.prefix }),
+    ...(off === undefined
+      ? {}
+      : { rulesOff: { source: from(origin, "rules.off"), value: off } }),
     settings: overDefaults(base),
     tools: table.tools ?? {},
   };

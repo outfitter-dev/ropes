@@ -38,7 +38,7 @@ const start = async (
   source: string,
   input: StepInput
 ): Promise<FileOutcome[]> => {
-  const rules = await shippedRules();
+  const rules = shippedRules(input.rules);
   const { exitCode, stderr, stdout } = await exec(
     [binary, "scan", "--inline-rules", rules, "--json=compact", ...input.paths],
     input.root
@@ -87,7 +87,7 @@ export const scanBatch = async (
   );
   const paths = input.paths.filter((_, index) => present[index] === true);
   const scanned =
-    paths.length === 0
+    paths.length === 0 || input.rules?.length === 0
       ? []
       : await inChunks({ ...input, paths }, (part) =>
           start(binary, source, part)

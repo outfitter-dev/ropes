@@ -7,8 +7,10 @@ import type { ToolTables } from "../contracts/config.ts";
 import type { EditorSettings } from "../contracts/editor.ts";
 import type { Plan } from "../contracts/plan.ts";
 import type { RepoRoot } from "../contracts/root.ts";
+import { unknownOff } from "../policy/packs.ts";
 import { resolvePlan } from "../policy/resolve.ts";
 import { describeConfigError, describeRootError } from "./errors.ts";
+import { filesUnder } from "./files.ts";
 import { packagesAbove } from "./packages.ts";
 import { select } from "./select.ts";
 import { unreadTable } from "./tool-tables.ts";
@@ -89,6 +91,24 @@ export const prepare = async (
   // check can report that it is missing.
   const kept = selection.kind === "workspace" ? owned : [];
   const all = [...named, ...walked, ...kept];
+  const descriptors = adapters.map(({ descriptor }) => descriptor);
+  const [unknown] = unknownOff(config.value, descriptors);
+  if (unknown !== undefined) {
+    const file = config.value.file ?? "the Cinch config";
+    return {
+      error: `${file}: rules.off: Cinch ships no rule pack or rule named "${unknown}".`,
+      ok: false,
+    };
+  }
+  // Which rule packs apply depends on the whole repository, whatever part
+  // of it was selected.
+  const shipsPacks = descriptors.some(({ packs }) => packs !== undefined);
+  const everything = selection.kind === "workspace" || !shipsPacks;
+  // A file named outright counts even where git ignores it.
+  const present = [
+    ...named,
+    ...(everything ? walked : await filesUnder(root, "")),
+  ];
   const packages = await packagesAbove(root.root, all);
   const resolve = (paths: readonly string[]): Plan =>
     resolvePlan({
@@ -98,6 +118,7 @@ export const prepare = async (
       ),
       packages,
       paths,
+      present,
       root: root.root,
       selection,
     });

@@ -2,6 +2,7 @@ import type { Adapter, AdapterDescriptor, StepInput } from "../adapter.ts";
 import { allIncomplete } from "../batch.ts";
 import { probeOnPath } from "../on-path.ts";
 import { heldTo } from "../pins.ts";
+import { shippedPacks } from "./rules.ts";
 import { scanBatch } from "./run.ts";
 
 const ID = "ast-grep";
@@ -33,6 +34,7 @@ export const rulesAdapter = (options: RulesOptions = {}): Adapter => {
     extensions: [".json"],
     id: ID,
     optIn: true,
+    packs: shippedPacks,
     platforms: ["darwin", "linux", "win32"],
     tool: ID,
     unit: "file",

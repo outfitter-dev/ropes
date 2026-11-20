@@ -2,6 +2,7 @@ import type { FactReport } from "../contracts/facts.ts";
 import type { Finding } from "../contracts/finding.ts";
 import type { Layer } from "../contracts/plan.ts";
 import type { StepStatus } from "../contracts/result.ts";
+import type { RulePack } from "../contracts/rules.ts";
 import type { Relocates } from "./relocation.ts";
 
 export type Platform = "darwin" | "linux" | "win32";
@@ -88,6 +89,11 @@ export interface AdapterDescriptor {
    * that has none.
    */
   readonly reports?: readonly string[];
+  /**
+   * The rule packs this adapter ships. The resolver decides which of their
+   * rules are on, and an adapter with none on gets no step.
+   */
+  readonly packs?: readonly RulePack[];
 }
 
 export interface ProbeResult {
@@ -120,6 +126,11 @@ export interface StepInput {
    * as it is.
    */
   readonly migrate?: boolean;
+  /**
+   * The ids of the rules that are on, for an adapter that ships rule packs.
+   * It runs these and no others.
+   */
+  readonly rules?: readonly string[];
 }
 
 /** What a step found out about one of the files it was handed. */

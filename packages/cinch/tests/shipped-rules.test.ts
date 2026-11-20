@@ -58,7 +58,7 @@ test("every shipped rule is named for its pack and says what is wrong", async ()
     expect(text).toMatch(/^severity: (?:error|warning)$/mu);
     expect(text).toMatch(/^message: \S.*\.$/mu);
   }
-  const shipped = await shippedRules();
+  const shipped = shippedRules();
   expect(shipped.split("\n---\n")).toHaveLength(files.length);
 });
 

@@ -253,6 +253,14 @@
         "enabled": {
           "description": "Whether the structural rules Cinch ships are run. Off unless set to true.",
           "type": "boolean"
+        },
+        "off": {
+          "description": "Shipped rule packs and rules, by name, that are not run.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       },
       "additionalProperties": false
