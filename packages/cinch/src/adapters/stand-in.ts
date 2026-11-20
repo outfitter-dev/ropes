@@ -14,8 +14,13 @@ import { STANDALONE } from "./shipped-text.ts";
 const script = (executable: string): string =>
   `#!/bin/sh\nBUN_BE_BUN=1 exec '${executable.replaceAll("'", `'\\''`)}' "$@"\n`;
 
-const cacheFolder = (): string =>
-  Bun.env.XDG_CACHE_HOME ?? path.join(homedir(), ".cache");
+/** An override that is empty or relative would land in the repository. */
+const cacheFolder = (): string => {
+  const configured = Bun.env.XDG_CACHE_HOME;
+  return configured !== undefined && path.isAbsolute(configured)
+    ? configured
+    : path.join(homedir(), ".cache");
+};
 
 const write = async (executable: string): Promise<string | undefined> => {
   const folder = path.join(
