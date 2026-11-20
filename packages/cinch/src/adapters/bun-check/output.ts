@@ -6,6 +6,12 @@ const LOCATED =
 /** An error with no place: a file it could not open, a flag it refused. */
 const GLOBAL = /^error (?<code>TS\d+): (?<message>.*)$/u;
 
+/**
+ * On GitHub Actions each error is printed a second time, after the others,
+ * as a workflow command that annotates the pull request.
+ */
+const ANNOTATION = /^::error (?:file=.*,)?title=TS\d+::/u;
+
 const FOUND = /^Found (?<count>\d+) errors?\b/mu;
 const CLEAN = /No type errors/u;
 const STOPPED = /^note: Stopped before type checking/mu;
@@ -71,16 +77,20 @@ const entryOf = (line: string, source: string): Entry | undefined => {
 
 /**
  * Reads the errors one run printed. An indented line continues the error
- * above it. Any other line it cannot place makes the output unusable: an
- * error would otherwise be dropped unseen.
+ * above it. An annotation repeats an error and is passed over, as long as
+ * there is one for each error. Any other line it cannot place makes the
+ * output unusable: an error would otherwise be dropped unseen.
  */
 export const parseOutput = (stdout: string, source: string): Parsed => {
   const entries: Entry[] = [];
+  let annotations = 0;
   for (const line of stdout.split("\n")) {
     const entry = entryOf(line, source);
     const last = entries.at(-1);
     if (entry !== undefined) {
       entries.push(entry);
+    } else if (ANNOTATION.test(line)) {
+      annotations += 1;
     } else if (/^\s+\S/u.test(line) && last !== undefined) {
       last.lines.push(line.trim());
     } else if (line.trim() !== "") {
@@ -89,6 +99,12 @@ export const parseOutput = (stdout: string, source: string): Parsed => {
         ok: false,
       };
     }
+  }
+  if (annotations > 0 && annotations !== entries.length) {
+    return {
+      message: `it printed ${entries.length} errors and ${annotations} annotations for them`,
+      ok: false,
+    };
   }
   return {
     global: entries

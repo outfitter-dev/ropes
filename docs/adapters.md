@@ -139,6 +139,7 @@ An adapter takes a root and the files of a batch and returns data. It does not r
 - A finding keeps the compiler's own code, such as `TS2322`, with the lines that continue the message.
 - An error in a file the run was not given, one that a given file imports, is not reported. It belongs to the run that is given that file. `cinch check` on the workspace is given every file.
 - When a file does not parse, the compiler checks no types at all. That file has its finding, and the adapter checks the others again without it. A file that is still unchecked, because something it imports does not parse, is incomplete.
+- On GitHub Actions the compiler prints each error a second time, as a workflow command that annotates the pull request. The adapter passes those lines over, and does not use a run that has a different number of them than of errors.
 - The run is used only when its exit code, the number of errors it says it found and the errors it printed agree. An error with no place, or one in a `tsconfig.json`, makes every file of the run incomplete, with the compiler's message.
 
 ## The formatter
