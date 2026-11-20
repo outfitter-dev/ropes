@@ -18,7 +18,7 @@ const isOutside = (folder: string): boolean =>
   folder.split(/[\\/]/u).includes("..");
 
 /** The folder as the root sees it: `./rules/` is `rules`. */
-const tidy = (folder: string): string =>
+export const tidy = (folder: string): string =>
   path.posix.normalize(folder.replaceAll("\\", "/")).replace(/\/$/u, "") || ".";
 
 const foldersIn = (parsed: unknown): readonly unknown[] | null => {

@@ -160,6 +160,19 @@ test("explain shows the project config as the source, and the file is left as wr
   expect(await Bun.file(path.join(root, PROJECT)).text()).toBe(text);
 });
 
+test("a folder both files name, spelled two ways, is listed once", async () => {
+  await write(PROJECT, "ruleDirs:\n  - rules\n");
+  await write("rules/no-log.yml", NO_LOG);
+  await write(
+    "cinch.toml",
+    CONFIG.replace("enabled = true", 'enabled = true\nlocal = ["./rules/"]')
+  );
+  const shown = await cinch("explain");
+  expect(shown.stdout).toContain(
+    "Local rules\n  rules  (cinch.toml: rules.local)\n\n"
+  );
+});
+
 test("a project config that cannot be read stops a run that asks for rules, and no other", async () => {
   await write(PROJECT, "ruleDirs: rules\n");
   const stopped = await cinch("explain");

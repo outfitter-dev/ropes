@@ -3,7 +3,7 @@ import { allIncomplete } from "../batch.ts";
 import type { FoundRules } from "../found.ts";
 import { probeOnPath } from "../on-path.ts";
 import { heldTo } from "../pins.ts";
-import { readProject } from "./project.ts";
+import { readProject, tidy } from "./project.ts";
 import { shippedPacks } from "./rules.ts";
 import { scanBatch } from "./run.ts";
 
@@ -60,7 +60,8 @@ const CONFIG_KEY = "rules.local";
  */
 export const rulesAdapter = (options: RulesOptions = {}): Adapter => {
   const command = options.command ?? ID;
-  const local = options.local ?? [];
+  // One spelling for a folder, so the two files can name the same one.
+  const local = [...new Set((options.local ?? []).map(tidy))];
   const { found } = options;
   const named = new Set(local);
   const folders = [
