@@ -10,6 +10,7 @@ import type {
 import { eachFile } from "../batch.ts";
 import type { FileInput } from "../batch.ts";
 import { exec } from "../exec.ts";
+import type { Exit } from "../exec.ts";
 import { configProblem, readOnly, parseOutput } from "./output.ts";
 
 const ID = "taplo";
@@ -49,16 +50,15 @@ const lastLine = (text: string): string => text.trim().split("\n").at(-1) ?? "";
 const literal = (file: string): string =>
   file.replaceAll(/[*?[\]]/gu, (character) => `[${character}]`);
 
-const check = async (
-  command: string,
-  input: FileInput
-): Promise<StepOutcome> => {
-  // Only a file another adapter keeps is planned before it exists. Its keeper
-  // reports that it is missing, and there is no TOML here to be wrong.
-  if (!(await Bun.file(path.join(input.root, input.path)).exists())) {
-    return { findings: [], status: "passed" };
-  }
-  const { exitCode, stderr } = await exec(
+/**
+ * How often Taplo is asked before its silence counts. Taplo 0.10 now and then
+ * drops the log line that says which files it read, mostly on a busy machine,
+ * though it linted the file. Seen about once in a thousand starts.
+ */
+const ASKS = 3;
+
+const lint = (command: string, input: FileInput) =>
+  exec(
     [
       Bun.which(command) ?? command,
       "lint",
@@ -69,6 +69,31 @@ const check = async (
     ],
     input.root
   );
+
+/** Asks again while Taplo ran but did not say which files it read. */
+const asked = async (
+  command: string,
+  input: FileInput,
+  left = ASKS
+): Promise<Exit> => {
+  const ran = await lint(command, input);
+  const silent =
+    (ran.exitCode === 0 || ran.exitCode === 1) &&
+    configProblem(ran.stderr) === undefined &&
+    readOnly(ran.stderr, input.path) === undefined;
+  return silent && left > 1 ? await asked(command, input, left - 1) : ran;
+};
+
+const check = async (
+  command: string,
+  input: FileInput
+): Promise<StepOutcome> => {
+  // Only a file another adapter keeps is planned before it exists. Its keeper
+  // reports that it is missing, and there is no TOML here to be wrong.
+  if (!(await Bun.file(path.join(input.root, input.path)).exists())) {
+    return { findings: [], status: "passed" };
+  }
+  const { exitCode, stderr } = await asked(command, input);
   if (exitCode !== 0 && exitCode !== 1) {
     return incomplete(`${ID} exited ${exitCode}: ${lastLine(stderr)}`);
   }
@@ -79,7 +104,7 @@ const check = async (
   const read = readOnly(stderr, input.path);
   if (read === undefined) {
     return incomplete(
-      `${ID} did not say which files it read: ${lastLine(stderr) || "it printed nothing"}`
+      `${ID} did not say which files it read in ${ASKS} starts: ${lastLine(stderr) || "it printed nothing"}`
     );
   }
   if (!read) {
