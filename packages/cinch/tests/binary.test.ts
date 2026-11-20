@@ -158,6 +158,31 @@ test("an empty cache override does not put the stand-in in the repository", asyn
   expect(files).toEqual([]);
 });
 
+test("a relative home does not put the stand-in in the repository", async () => {
+  const searchPath = withoutBun();
+  if (searchPath === null) {
+    console.warn(
+      "skipped: needs rumdl, taplo and git on PATH, in folders that hold no bun"
+    );
+    return;
+  }
+  const root = await repo("home");
+  await Bun.write(path.join(root, "README.md"), FORMATTED);
+  await mkdir(path.join(root, "docs"));
+  await run([binary, "init", "--yes"], root, searchPath);
+  const below = await run(
+    [binary, "check"],
+    path.join(root, "docs"),
+    searchPath,
+    { HOME: "relative" }
+  );
+  expect(below.exitCode).toBe(2);
+  const created = await Array.fromAsync(
+    new Bun.Glob("**/bun").scan({ cwd: root, dot: true })
+  );
+  expect(created).toEqual([]);
+});
+
 test("the binary carries the rules Cinch ships", async () => {
   const engine = Bun.which("ast-grep");
   const searchPath = engine === null ? null : path.dirname(engine);
