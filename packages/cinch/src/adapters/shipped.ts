@@ -1,4 +1,6 @@
-import type { Adapter } from "./adapter.ts";
+import type { Adapter, FileOutcome, StepInput } from "./adapter.ts";
+import { BUILT_ON_RULE, builtOnProblem, installedVersion } from "./built-on.ts";
+import type { BuiltOn } from "./built-on.ts";
 import { managedAdapter } from "./managed.ts";
 
 export interface ShippedOptions {
@@ -13,6 +15,8 @@ export interface ShippedOptions {
   readonly source: URL;
   /** What starts a line comment in the file's format. */
   readonly comment: string;
+  /** The package the preset imports, when it imports one. */
+  readonly builtOn?: BuiltOn;
 }
 
 /** The lines that say whose the copy is, in the file's own comment form. */
@@ -25,12 +29,47 @@ export const shippedHeader = (comment: string): string =>
   ].join("\n");
 
 /**
+ * Adds, to each file that is as Cinch keeps it, a finding when the package
+ * the preset imports is missing or is not a version the preset can count
+ * on. A file that still differs says so first. Cinch installs no package,
+ * so the finding is never fixable.
+ */
+const withPackage =
+  (id: string, needs: BuiltOn, run: Adapter["check"]): Adapter["check"] =>
+  async (input: StepInput): Promise<readonly FileOutcome[]> => {
+    const outcomes = await run(input);
+    const found = await installedVersion(needs.name, input.root);
+    const message = builtOnProblem(needs, found);
+    return message === null
+      ? outcomes
+      : outcomes.map((outcome) =>
+          outcome.status === "passed" || outcome.status === "fixed"
+            ? {
+                findings: [
+                  {
+                    fixable: false,
+                    message,
+                    path: outcome.path,
+                    range: { start: { column: 1, line: 1 } },
+                    rule: BUILT_ON_RULE,
+                    severity: "error",
+                    source: id,
+                  },
+                ],
+                path: outcome.path,
+                status: "findings",
+              }
+            : outcome
+        );
+  };
+
+/**
  * Keeps one copy of a preset this Cinch ships, for a tool whose own config
  * extends the copy. The preset is off until the Cinch config asks for it,
  * since not every repository uses the tool.
  */
-export const shippedPreset = (options: ShippedOptions): Adapter =>
-  managedAdapter({
+export const shippedPreset = (options: ShippedOptions): Adapter => {
+  const kept = managedAdapter({
     enabledBy: options.enabledBy,
     files: [
       {
@@ -46,3 +85,12 @@ export const shippedPreset = (options: ShippedOptions): Adapter =>
     optIn: true,
     preset: options.preset,
   });
+  const { builtOn } = options;
+  return builtOn === undefined
+    ? kept
+    : {
+        ...kept,
+        check: withPackage(options.id, builtOn, kept.check),
+        fix: withPackage(options.id, builtOn, kept.fix),
+      };
+};

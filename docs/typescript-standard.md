@@ -31,6 +31,8 @@ Each file starts with a comment that says Cinch manages it. `cinch check` and `c
 
 The lint and formatter presets import from `ultracite`, so the repository needs `ultracite`, `oxlint` and `oxfmt` as dev dependencies.
 
+The presets are written for `ultracite` 8.1.1. `cinch check` and `cinch doctor` report a finding on a kept preset when `ultracite` is not installed, is older than that, or is another major version. A later release of the same major passes. Cinch does not install it, so the finding is not one `doctor --fix` can clear: install the version the message names.
+
 ## Extend them
 
 The root configs stay the repository's own. Cinch does not write them yet, so add the lines by hand.
@@ -91,4 +93,3 @@ preset = true
 
 - Cinch does not yet check that a root config extends the kept copy.
 - There are no `[tools.oxlint]` or `[tools.oxfmt]` tables and no generated layer between the preset and the root config, as Markdown has.
-- Cinch does not yet check that the installed `ultracite` is the version the presets were written for.
