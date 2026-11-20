@@ -11,7 +11,7 @@ import { renderAdopt } from "../render/rules.ts";
 import type { CommandRequest, CommandResponse } from "./command.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
-import { configText } from "./relocate.ts";
+import { configText, outside } from "./relocate.ts";
 
 const unusable = (message: string): CommandResponse => ({
   error: `cinch: ${message}`,
@@ -111,6 +111,12 @@ export const adopt = async (
   ]);
   if (!named.ok) {
     return stop(named.reason);
+  }
+  const beyond = await outside(root.root, [{ path: text.file }]);
+  if (beyond !== undefined) {
+    return unusable(
+      `${beyond} leads outside the repository, so Cinch will not write it.`
+    );
   }
   const target = path.join(root.root, text.file);
   const handle = Bun.file(target);

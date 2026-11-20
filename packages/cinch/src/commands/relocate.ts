@@ -104,7 +104,7 @@ const settled = async (
 };
 
 /** The first file of the move that leads out of the repository, if any. */
-const outside = async (
+export const outside = async (
   root: string,
   files: readonly { readonly path: string }[]
 ): Promise<string | undefined> => {

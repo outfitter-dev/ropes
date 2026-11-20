@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -146,6 +146,7 @@ test("the edit keeps every other line, comments included", () => {
       "# The rules.",
       "[rules] # ours",
       'local = ["rules"]',
+      "enabled = true",
       'packs = ["old", "config"]',
       'off = ["config/a"]',
       "",
@@ -166,6 +167,35 @@ test("a table without the switch gets it, under a prefix too", () => {
   ).toBe(
     '[cinch]\npilot = 0\n\n[cinch.rules]\nenabled = true\npacks = ["config"]\nlocal = ["r"]\n'
   );
+});
+
+test("an empty list without the switch gets the switch with its packs", () => {
+  expect(packsOf("pilot = 0\n\n[rules]\npacks = []\n", ["config"])).toBe(
+    'pilot = 0\n\n[rules]\nenabled = true\npacks = ["config"]\n'
+  );
+  expect(packsOf("[rules]\npacks = []\nenabled = false\n", ["config"])).toBe(
+    '[rules]\npacks = ["config"]\nenabled = false\n'
+  );
+});
+
+test("a config that leads out of the repository is not written", async () => {
+  const elsewhere = await realpath(
+    await mkdtemp(path.join(tmpdir(), "cinch-out-"))
+  );
+  try {
+    const real = path.join(elsewhere, "cinch.toml");
+    const before = "pilot = 0\n\n[rules]\nenabled = true\n";
+    await Bun.write(real, before);
+    await symlink(real, path.join(root, "cinch.toml"));
+    const response = await run({ yes: true });
+    expect(response.exitCode).toBe(2);
+    expect(response.error).toBe(
+      "cinch: cinch.toml leads outside the repository, so Cinch will not write it."
+    );
+    expect(await Bun.file(real).text()).toBe(before);
+  } finally {
+    await rm(elsewhere, { force: true, recursive: true });
+  }
 });
 
 test("rules written another way are left for a person", () => {

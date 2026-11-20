@@ -89,14 +89,15 @@ const within = (
         new RegExp(String.raw`^\s*${name}\s*=`, "u").test(line)
     );
   const stated = key("packs");
+  const enabled = key("enabled");
   if (stated !== -1) {
     return [
       ...lines.slice(0, stated),
+      ...(enabled === -1 ? ["enabled = true"] : []),
       packs,
       ...lines.slice(valueEnd(lines, stated)),
     ];
   }
-  const enabled = key("enabled");
   const after = enabled === -1 ? start : enabled;
   return [
     ...lines.slice(0, after + 1),
