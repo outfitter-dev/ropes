@@ -110,6 +110,15 @@ test("an import in a comment, or of a type only, does not count", async () => {
   expect(await about("oxlint.config.ts")).toHaveLength(1);
 });
 
+test("a bare module specifier cannot import the local preset", async () => {
+  await doctor({ fix: true });
+  await put(
+    "oxlint.config.ts",
+    'import preset from ".outfitter/configs/presets/oxlint.ts";\nexport default preset;\n'
+  );
+  expect(await about("oxlint.config.ts")).toHaveLength(1);
+});
+
 test("a config the tool reads from another file stops the new one", async () => {
   await put(".oxlintrc.json", "{}\n");
   await doctor({ fix: true });

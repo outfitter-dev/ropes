@@ -25,6 +25,9 @@ const importsPreset = (text: string, options: ModuleRoot): boolean => {
   const here = path.posix.dirname(options.path);
   const bare = options.preset.replace(/\.ts$/u, "");
   return scanner.scan(text).imports.some((found) => {
+    if (!found.path.startsWith("./") && !found.path.startsWith("../")) {
+      return false;
+    }
     const target = path.posix.normalize(path.posix.join(here, found.path));
     return target === options.preset || target === bare;
   });
