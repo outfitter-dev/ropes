@@ -14,17 +14,27 @@ import { STANDALONE } from "./shipped-text.ts";
 const script = (executable: string): string =>
   `#!/bin/sh\nBUN_BE_BUN=1 exec '${executable.replaceAll("'", `'\\''`)}' "$@"\n`;
 
-/** An override that is empty or relative would land in the repository. */
-const cacheFolder = (): string => {
+/**
+ * The user's cache folder. A folder that is not absolute would land in the
+ * repository, so an override like that is passed over, and a home folder
+ * like that leaves no cache folder at all.
+ */
+const cacheFolder = (): string | undefined => {
   const configured = Bun.env.XDG_CACHE_HOME;
-  return configured !== undefined && path.isAbsolute(configured)
-    ? configured
-    : path.join(homedir(), ".cache");
+  if (configured !== undefined && path.isAbsolute(configured)) {
+    return configured;
+  }
+  const home = homedir();
+  return path.isAbsolute(home) ? path.join(home, ".cache") : undefined;
 };
 
 const write = async (executable: string): Promise<string | undefined> => {
+  const cache = cacheFolder();
+  if (cache === undefined) {
+    return undefined;
+  }
   const folder = path.join(
-    cacheFolder(),
+    cache,
     "cinch",
     "stand-in",
     Bun.hash(executable).toString(16)
