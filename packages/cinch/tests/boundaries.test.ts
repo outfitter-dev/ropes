@@ -35,6 +35,8 @@ const PURE_LAYERS = new Set(["contracts", "policy", "render"]);
 
 const IMPORT = /from\s+"(?<specifier>[^"]+)"/gu;
 const ENGINE_FOLDER = /^adapters\/(?<engine>[^/]+)\//u;
+const MIGRATION_FOLDER =
+  /^adapters\/(?<engine>[^/]+)\/migrate\/(?<from>[^/]+)\//u;
 const CONCRETE_ADAPTER = /\/adapters\/[^/]+\//u;
 const BUN_GLOBAL = /\bBun\./u;
 
@@ -139,6 +141,47 @@ test("only the registry and an engine's own folder mention the engine", () => {
       .map((source) => `${source.file} mentions ${engine}`)
   );
   expect(offenders).toEqual([]);
+});
+
+test("an engine's folder is imported only from inside it and by the registry", () => {
+  const offenders = sources
+    .filter((source) => source.file !== "adapters/registry.ts")
+    .flatMap((source) =>
+      source.imports
+        .filter((specifier) => specifier.startsWith("."))
+        .map((specifier) =>
+          path.posix.join(path.posix.dirname(source.file), specifier)
+        )
+        .filter((target) => {
+          const engine = ENGINE_FOLDER.exec(target)?.groups?.engine;
+          return (
+            engine !== undefined &&
+            !source.file.startsWith(`adapters/${engine}/`)
+          );
+        })
+        .map((target) => `${source.file} imports ${target}`)
+    );
+  expect(offenders).toEqual([]);
+});
+
+test("only the adapter that takes over from a tool mentions that tool", () => {
+  const taken = sources.flatMap((source) => {
+    const found = MIGRATION_FOLDER.exec(source.file)?.groups;
+    return found?.engine === undefined || found.from === undefined
+      ? []
+      : [{ engine: found.engine, from: found.from }];
+  });
+  expect(taken.length).toBeGreaterThan(0);
+  const offenders = taken.flatMap(({ engine, from }) =>
+    sources
+      .filter(
+        (source) =>
+          !source.file.startsWith(`adapters/${engine}/`) &&
+          source.text.toLowerCase().includes(from)
+      )
+      .map((source) => `${source.file} mentions ${from}`)
+  );
+  expect([...new Set(offenders)]).toEqual([]);
 });
 
 test("the layout has the layers the boundary rules describe", () => {

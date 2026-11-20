@@ -1,4 +1,4 @@
-import type { Rules } from "./markdownlint-source.ts";
+import type { Rules } from "./source.ts";
 
 /** One rule the engine has, with every name it answers to. */
 export interface KnownRule {

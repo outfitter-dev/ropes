@@ -3,10 +3,10 @@ import path from "node:path";
 import type { Adapter } from "../adapter.ts";
 import { managedAdapter } from "../managed.ts";
 import type { Wanted } from "../managed.ts";
-import { chosenFiles } from "./markdownlint-files.ts";
-import { merge } from "./markdownlint-merge.ts";
-import { extendsOf, retired } from "./markdownlint-retire.ts";
-import { carriedOver, gathered } from "./markdownlint.ts";
+import { markdownlintSource } from "./migrate/markdownlint/index.ts";
+import { merge } from "./migrate/markdownlint/merge.ts";
+import { extendsOf } from "./migrate/markdownlint/retire.ts";
+import { carriedOver, gathered } from "./migrate/markdownlint/rules.ts";
 
 /** The copy of the standard that Cinch keeps in a repository. */
 export const PRESET_PATH = ".outfitter/configs/rumdl.toml";
@@ -162,14 +162,13 @@ export const rumdlPresetAdapter = (
       },
     ],
     id: "rumdl-preset",
-    inherits: chosenFiles,
-    preset: "markdown",
-    retires: async (root) =>
-      await retired({
+    migrates: [
+      markdownlintSource(async () => ({
         ...(options.command === undefined ? {} : { command: options.command }),
         config: CONFIG_PATH,
         extended: PRESET_PATH,
-        root,
         standard: await standard(),
-      }),
+      })),
+    ],
+    preset: "markdown",
   });

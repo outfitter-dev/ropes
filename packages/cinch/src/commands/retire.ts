@@ -27,7 +27,7 @@ const planned = (plan: Plan): Map<string, Set<string>> => {
 };
 
 /**
- * Asks each adapter in the plan for the config of the tool it replaces. This
+ * Asks each migration source of an adapter in the plan what it holds. This
  * runs before the first write, while the adapters can still see what the new
  * files will be made from. An adapter that is switched off has no step and is
  * not asked. One whose own file is left out of the run cannot carry anything
@@ -39,10 +39,15 @@ export const oldConfigs = async (
   root: string
 ): Promise<Old> => {
   const paths = planned(plan);
+  const asked = adapters.flatMap((adapter) =>
+    (adapter.migrates ?? []).map((source) => ({
+      mine: paths.get(adapter.descriptor.id),
+      source,
+    }))
+  );
   const found = await Promise.all(
-    adapters.map(async (adapter) => {
-      const mine = paths.get(adapter.descriptor.id);
-      const old = mine === undefined ? null : await adapter.retires?.(root);
+    asked.map(async ({ mine, source }) => {
+      const old = mine === undefined ? null : await source.retires?.(root);
       if (mine === undefined || old === null || old === undefined) {
         return null;
       }

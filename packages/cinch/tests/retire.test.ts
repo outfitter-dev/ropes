@@ -67,9 +67,8 @@ const commands = createCommands({
         },
       ],
       id: "notes-preset",
-      inherits,
+      migrates: [{ id: "old-notes", inherits, retires }],
       preset: "notes",
-      retires,
     }),
   ],
 });

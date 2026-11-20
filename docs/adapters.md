@@ -42,6 +42,17 @@ An engine's preset lives in the engine's own folder and is listed in the registr
 
 Any file may come back `incomplete` with a reason when the adapter could not do its work on it.
 
+## Taking over from another tool
+
+An adapter that replaces a tool, or adopts a hand-written config of its own tool, lists a migration source for each in `migrates`. A source only reads. It has an `id` and two optional questions that `cinch init` asks:
+
+- `inherits(root)` returns the file choices the old config made, as `include` and `exclude` globs for a new `cinch.toml`, with a note for each choice it could not carry.
+- `retires(root)` returns the old config files, each reason they should stay, the adapter's own files that the carried settings land in, and what else still names the old tool. `init` asks before it writes anything, and removes the files only when no reason was given and the setup ended clean.
+
+`init` knows only this interface. It never names the tool a source reads, and `tests/boundaries.test.ts` fails when a file outside the engine's folder does.
+
+A source lives in its own folder under the adapter: `adapters/<engine>/migrate/<tool>/`, with an `index.ts` that exports the source. Adding one is that folder and one entry in the adapter's `migrates` list. The Markdown preset has one today, for markdownlint. It writes the carried rules itself, in the step that keeps `.rumdl.toml`, because a source never writes.
+
 ## Batches
 
 The input is a batch: a root, a package and the selected files of that package. An engine starts once for all of them, which is what makes a large repository quick. A package is a directory above a selected file that holds a `package.json`, `pyproject.toml`, `Cargo.toml` or `go.mod`. A file with none above it belongs to the workspace, written `.`. The plan lists the batches in the order they run, and `cinch explain` shows each file's package and how many other files its step runs with.

@@ -1,4 +1,4 @@
-import type { Sections, Translated } from "./markdownlint-translate.ts";
+import type { Sections, Translated } from "./translate.ts";
 
 export const comment = (lines: readonly string[]): string =>
   lines.map((line) => `# ${line}\n`).join("");

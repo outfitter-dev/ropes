@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { findSource } from "../src/adapters/rumdl/markdownlint-source.ts";
+import { findSource } from "../src/adapters/rumdl/migrate/markdownlint/source.ts";
 
 const inRoot = async <T>(
   files: Readonly<Record<string, string>>,

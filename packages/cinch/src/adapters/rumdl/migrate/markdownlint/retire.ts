@@ -1,10 +1,10 @@
 import path from "node:path";
 
-import type { Retired } from "../adapter.ts";
-import { leftovers } from "./markdownlint-leftovers.ts";
-import { merge } from "./markdownlint-merge.ts";
-import { CONFIG_FILES, present } from "./markdownlint-source.ts";
-import { gathered } from "./markdownlint.ts";
+import type { Retired } from "../../../adapter.ts";
+import { leftovers } from "./leftovers.ts";
+import { merge } from "./merge.ts";
+import { gathered } from "./rules.ts";
+import { CONFIG_FILES, present } from "./source.ts";
 
 /** What a config says it extends. Throws when the text is not TOML. */
 export const extendsOf = (text: string): unknown => {

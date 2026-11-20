@@ -45,7 +45,7 @@ const commands = createCommands({
         },
       ],
       id: "notes-preset",
-      inherits: oldLinter,
+      migrates: [{ id: "old-linter", inherits: oldLinter }],
       preset: "notes",
     }),
   ],
