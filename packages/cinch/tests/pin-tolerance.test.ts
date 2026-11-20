@@ -103,3 +103,14 @@ test("check lets a newer tool through, and check --strict does not", async () =>
     );
   });
 });
+
+test("init --strict holds a newer tool to its pin too", async () => {
+  await withRepo(BASE, {}, async ({ root }) => {
+    const commands = createCommands({ adapters: () => [pinned("0.3.5")] });
+    const request = { cwd: root, json: false, paths: [] };
+    const loose = await commands.init?.(request);
+    const strict = await commands.init?.({ ...request, strict: true });
+    expect(loose?.exitCode).toBe(EXIT_CODE.clean);
+    expect(strict?.exitCode).toBe(EXIT_CODE.incomplete);
+  });
+});
