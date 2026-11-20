@@ -197,3 +197,47 @@ test("the layout has the layers the boundary rules describe", () => {
     expect(layers.has(layer)).toBe(true);
   }
 });
+
+test("rope uses core through its package exports, and core does not depend on rope", async () => {
+  const cliPackage = new URL("../../cli/", import.meta.url);
+  const cliRoot = new URL("src/", cliPackage);
+  const cliSources = await Array.fromAsync(
+    new Glob("**/*.ts").scan({ cwd: cliRoot.pathname })
+  );
+  const importsByFile = await Promise.all(
+    cliSources.map(async (file) => {
+      const url = new URL(file, cliRoot);
+      const text = await Bun.file(url).text();
+      const imports = [...text.matchAll(IMPORT)].map(
+        (match) => match.groups?.specifier ?? ""
+      );
+      return { imports, url };
+    })
+  );
+  expect(importsByFile.flatMap(({ imports }) => imports)).toContain(
+    "@ropes/core"
+  );
+  expect(
+    importsByFile.flatMap(({ imports, url }) =>
+      imports.filter((specifier) =>
+        specifier.startsWith(".")
+          ? !new URL(specifier, url).href.startsWith(cliPackage.href)
+          : !["node:util", "@ropes/core", "@ropes/core/render"].includes(
+              specifier
+            )
+      )
+    )
+  ).toEqual([]);
+  const coreRoot = new URL("../src/", import.meta.url);
+  expect(
+    sources.flatMap(({ file, imports }) =>
+      imports.filter((specifier) => {
+        const target = new URL(specifier, new URL(file, coreRoot));
+        return (
+          specifier.startsWith("@ropes/cli") ||
+          target.href.startsWith(cliPackage.href)
+        );
+      })
+    )
+  ).toEqual([]);
+});

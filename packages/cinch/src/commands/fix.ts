@@ -6,7 +6,13 @@ import { EXIT_CODE, exitCodeOf } from "../contracts/result.ts";
 import { changeAt, unifiedDiff } from "../render/diff.ts";
 import { renderFix, renderFixJson } from "../render/fix.ts";
 import { runPlan, writesIn } from "../runner/run.ts";
-import type { Command, CommandRequest, CommandResponse } from "./command.ts";
+import type {
+  Command,
+  CommandRequest,
+  CommandResponse,
+  FixRequest,
+  Operation,
+} from "./command.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps, Prepared } from "./prepare.ts";
 import { CopyError, withCopy } from "./scratch.ts";
@@ -72,14 +78,7 @@ const respond = (
   output: request.json ? renderFixJson(report) : renderFix(report),
 });
 
-export type FixRun =
-  | { readonly ok: true; readonly report: FixReport }
-  | { readonly ok: false; readonly response: CommandResponse };
-
-const failed = (message: string): FixRun => ({
-  ok: false,
-  response: { error: `cinch: ${message}`, exitCode: EXIT_CODE.incomplete },
-});
+export type FixRun = Operation<FixReport>;
 
 export interface WriteOptions {
   readonly dryRun: boolean;
@@ -102,7 +101,7 @@ export const writePlan = async (
   if (!dryRun) {
     return {
       ok: true,
-      report: await apply(prepared, root.root, { dryRun, mode }),
+      value: await apply(prepared, root.root, { dryRun, mode }),
     };
   }
   try {
@@ -119,10 +118,10 @@ export const writePlan = async (
     const report = await withCopy(root, paths, (copy) =>
       apply(prepared, copy, { dryRun, mode })
     );
-    return { ok: true, report };
+    return { ok: true, value: report };
   } catch (error) {
     if (error instanceof CopyError) {
-      return failed(error.message);
+      return { error: error.message, ok: false };
     }
     throw error;
   }
@@ -130,7 +129,7 @@ export const writePlan = async (
 
 /** Plans the request's paths, then writes what the mode allows. */
 export const runWrite = async (
-  request: CommandRequest,
+  request: FixRequest,
   deps: CommandDeps,
   options: Omit<WriteOptions, "dryRun">
 ): Promise<FixRun> => {
@@ -140,7 +139,7 @@ export const runWrite = async (
         ...options,
         dryRun: request.dryRun === true,
       })
-    : failed(prepared.error);
+    : prepared;
 };
 
 const STOPPED =
@@ -152,12 +151,12 @@ const STOPPED =
  * rules, so `fix` stops and leaves the repair to `doctor --fix`.
  */
 const brokenSetup = async (
-  request: CommandRequest,
+  request: FixRequest,
   deps: CommandDeps
 ): Promise<FixRun | null> => {
   const setup = await prepareSetup(request.cwd, deps);
   if (!setup.ok) {
-    return failed(setup.error);
+    return setup;
   }
   const { adapters, plan } = setup.value;
   const result = await runPlan(plan, adapters, { mode: "check" });
@@ -166,7 +165,7 @@ const brokenSetup = async (
   }
   return {
     ok: true,
-    report: {
+    value: {
       changed: [],
       diff: "",
       dryRun: request.dryRun === true,
@@ -178,14 +177,21 @@ const brokenSetup = async (
 };
 
 /**
- * `cinch fix` fixes the repository's own files. It never writes a file
+ * Fix the repository's own files. This never writes a file
  * Cinch keeps: that is `cinch doctor --fix`.
  */
+export const runFix = async (
+  request: FixRequest,
+  deps: CommandDeps
+): Promise<FixRun> =>
+  (await brokenSetup(request, deps)) ??
+  (await runWrite(request, deps, { mode: "fix" }));
+
 export const fix =
   (deps: CommandDeps): Command =>
   async (request) => {
-    const ran =
-      (await brokenSetup(request, deps)) ??
-      (await runWrite(request, deps, { mode: "fix" }));
-    return ran.ok ? respond(request, ran.report) : ran.response;
+    const ran = await runFix(request, deps);
+    return ran.ok
+      ? respond(request, ran.value)
+      : { error: `cinch: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
   };

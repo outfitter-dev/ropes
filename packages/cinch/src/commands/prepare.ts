@@ -11,6 +11,7 @@ import type { Plan } from "../contracts/plan.ts";
 import type { RepoRoot } from "../contracts/root.ts";
 import { unknownOff, unknownPacks } from "../policy/packs.ts";
 import { resolvePlan } from "../policy/resolve.ts";
+import type { Operation, ReadRequest } from "./command.ts";
 import { describeConfigError, describeRootError } from "./errors.ts";
 import { filesUnder } from "./files.ts";
 import { packagesAbove } from "./packages.ts";
@@ -37,9 +38,7 @@ export interface Prepared {
   readonly root: RepoRoot;
 }
 
-export type PrepareResult =
-  | { readonly ok: true; readonly value: Prepared }
-  | { readonly ok: false; readonly error: string };
+export type PrepareResult = Operation<Prepared>;
 
 /** The pins nearest the root: its own `mise.toml`, else the repository's. */
 const pinsFor = async (root: RepoRoot): Promise<PinsResult> => {
@@ -61,11 +60,7 @@ const exactly = ({
  * verbs get their plan here, so none can run what another would not show.
  */
 export const prepare = async (
-  request: {
-    readonly cwd: string;
-    readonly paths: readonly string[];
-    readonly strict?: boolean;
-  },
+  request: ReadRequest,
   deps: CommandDeps
 ): Promise<PrepareResult> => {
   const found = await discoverRoot(request.cwd);
