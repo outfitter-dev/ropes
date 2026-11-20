@@ -69,6 +69,16 @@ export interface Inherited {
   readonly notes: readonly string[];
 }
 
+/** What is left of a tool an adapter takes over from. */
+export interface Retired {
+  /** Root-relative config files nothing reads once the adapter's are kept. */
+  readonly files: readonly string[];
+  /** Why they should stay for now, one line each. Empty when they can go. */
+  readonly keep: readonly string[];
+  /** Other traces of the old tool, which Cinch reports and does not remove. */
+  readonly leftovers: readonly string[];
+}
+
 /**
  * The one seam engines plug into. The runner knows only this interface, and
  * nothing outside an adapter's own folder and the registry names an engine.
@@ -84,4 +94,9 @@ export interface Adapter {
    * config that is about to be written. Null when there are none.
    */
   readonly inherits?: (root: string) => Promise<Inherited | null>;
+  /**
+   * The old tool's config, judged before this adapter's files are written:
+   * `init` asks first, writes, and then removes. Null when there is none.
+   */
+  readonly retires?: (root: string) => Promise<Retired | null>;
 }

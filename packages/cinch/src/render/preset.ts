@@ -26,9 +26,3 @@ export const renderPresets = (report: PresetReport): string => {
 
 export const renderPresetsJson = (report: PresetReport): string =>
   JSON.stringify(report, null, 2);
-
-/** What `init` adds below the fix report when it only showed the change. */
-export const renderInitHint = (changes: number): string =>
-  changes === 0
-    ? "Nothing to set up."
-    : "Dry run: nothing was written. Run `cinch init --yes` to write this.";

@@ -77,7 +77,9 @@ const failed = (message: string): FixRun => ({
  */
 export const runFix = async (
   request: CommandRequest,
-  deps: CommandDeps
+  deps: CommandDeps,
+  /** Files a dry run's copy must hold even when git ignores them. */
+  also: readonly string[] = []
 ): Promise<FixRun> => {
   const prepared = await prepare(request, deps);
   if (!prepared.ok) {
@@ -88,7 +90,7 @@ export const runFix = async (
     return { ok: true, report: await apply(prepared.value, root.root, false) };
   }
   try {
-    const paths = plan.paths.map((entry) => entry.path);
+    const paths = [...plan.paths.map((entry) => entry.path), ...also];
     const report = await withCopy(root, paths, (copy) =>
       apply(prepared.value, copy, true)
     );

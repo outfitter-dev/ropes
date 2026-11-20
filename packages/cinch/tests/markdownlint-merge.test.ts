@@ -132,6 +132,9 @@ test("a value the preset sets is still named when the file differs", () => {
     sections: {},
   });
   expect(result).toEqual({
+    notes: [
+      `\`indent\` on MD007 is 2 in ${OLD} and 4 here. The value here was kept.`,
+    ],
     ok: true,
     text: [
       "[MD007]",

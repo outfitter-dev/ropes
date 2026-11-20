@@ -189,7 +189,12 @@ export const merge = (input: {
   /** The IDs of the rules the old config switched off. */
   readonly off?: readonly string[];
 }):
-  | { readonly ok: true; readonly text: string }
+  | {
+      readonly ok: true;
+      readonly text: string;
+      /** What the merge itself could not carry: conflicts and the like. */
+      readonly notes: readonly string[];
+    }
   | { readonly ok: false; readonly message: string } => {
   const { current, file } = input;
   const parsed: unknown = Bun.TOML.parse(current);
@@ -216,7 +221,7 @@ export const merge = (input: {
   });
   const text = `${kept.join("\n")}\n${tail}`;
   return holds(text, have, plan)
-    ? { ok: true, text }
+    ? { notes: plan.notes, ok: true, text }
     : {
         message: `Cinch could not add the Markdown rules in ${file} to this file and keep it valid. Add \`extends\` and those rules by hand.`,
         ok: false,

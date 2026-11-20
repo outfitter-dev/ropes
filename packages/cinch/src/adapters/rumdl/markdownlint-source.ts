@@ -35,9 +35,11 @@ export type Source =
       readonly rules: Rules;
       /** Settings beside the rules that have no place in the new config. */
       readonly notes: readonly string[];
+      /** The notes that leave nothing for a person to move over. */
+      readonly settled: readonly string[];
     };
 
-const present = async (
+export const present = async (
   root: string,
   names: readonly string[]
 ): Promise<string[]> => {
@@ -67,10 +69,20 @@ const runnerNote = (file: string, key: string): string => {
     : `\`${key}\` in ${file} is a markdownlint-cli2 setting with no equivalent here.`;
 };
 
+/**
+ * Settings whose note asks nothing more of the rules: git's ignore list is
+ * already honored, and the file choices are the Cinch config's to carry.
+ */
+const SETTLED = new Set(["gitignore", ...Object.keys(CHOOSES)]);
+
 /** A note for each runner setting. Only its `config` block holds rules. */
-const runnerNotes = (file: string, table: Rules): string[] =>
+const runnerNotes = (
+  file: string,
+  table: Rules,
+  only: (key: string) => boolean = () => true
+): string[] =>
   Object.keys(table)
-    .filter((key) => key !== "config" && key !== "$schema")
+    .filter((key) => key !== "config" && key !== "$schema" && only(key))
     .map((key) => runnerNote(file, key));
 
 const unreadable = (file: string): Source => ({
@@ -110,10 +122,14 @@ const tableOf = async (
 };
 
 /** The rules in a runner's `config` block, when no rules file replaces it. */
-const fromRunner = (file: string, table: Rules, notes: string[]): Source => {
+const fromRunner = (
+  file: string,
+  table: Rules,
+  notes: Pick<Source & { kind: "found" }, "notes" | "settled">
+): Source => {
   const rules = Table.safeParse(table.config ?? {});
   return rules.success
-    ? { file, kind: "found", notes, rules: rules.data }
+    ? { file, kind: "found", ...notes, rules: rules.data }
     : {
         kind: "blocked",
         message: `The \`config\` block in ${file} is not a table of rules.`,
@@ -153,6 +169,9 @@ export const runnerIn = async (
     ? undefined
     : { file, table };
 };
+
+/** Every file the old linter reads its config from, scripts included. */
+export const CONFIG_FILES = [...SCRIPTS, ...RUNNER_FILES, ...RULE_FILES];
 
 /**
  * Finds the config the old linter would have used and reads its rules. A
@@ -194,10 +213,14 @@ export const findSource = async (root: string): Promise<Source> => {
       (name) => `${name} also holds Markdown rules and was not read.`
     ),
   ];
+  const settled =
+    held === undefined
+      ? []
+      : runnerNotes(held.file, held.table, (key) => SETTLED.has(key));
   if (rulesFile === undefined) {
     return held === undefined
       ? { kind: "none" }
-      : fromRunner(held.file, held.table, notes);
+      : fromRunner(held.file, held.table, { notes, settled });
   }
   const rules = await tableOf(root, rulesFile, inPackage);
   if (rules === undefined) {
@@ -214,5 +237,7 @@ export const findSource = async (root: string): Promise<Source> => {
     kind: "found",
     notes: [...replaced, ...notes],
     rules,
+    // The old linter did not read that block either.
+    settled: [...replaced, ...settled],
   };
 };

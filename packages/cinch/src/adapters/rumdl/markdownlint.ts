@@ -107,6 +107,8 @@ export interface Carried {
   readonly file: string;
   readonly known: readonly KnownRule[];
   readonly notes: readonly string[];
+  /** The notes that leave nothing for a person to move over. */
+  readonly settled: readonly string[];
   /** Only where the old config differs from the preset. */
   readonly sections: Sections;
   /** What the old config stated that the preset already sets. */
@@ -166,6 +168,7 @@ export const gathered = async (
     ok: true,
     same: result.same,
     sections: result.sections,
+    settled: source.settled,
   };
 };
 
