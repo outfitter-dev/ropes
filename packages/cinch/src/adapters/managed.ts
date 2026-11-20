@@ -11,7 +11,15 @@ import type {
 /** What a kept file should hold, or why Cinch will not decide that itself. */
 export type Wanted =
   | { readonly ok: true; readonly text: string }
-  | { readonly ok: false; readonly message: string };
+  | {
+      readonly ok: false;
+      readonly message: string;
+      /**
+       * True when Cinch could not work out what the file should hold, which
+       * leaves the step incomplete. Otherwise the file itself is the problem.
+       */
+      readonly unknown?: true;
+    };
 
 export interface ManagedFile {
   /** Root-relative. */
@@ -86,6 +94,13 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
     const target = path.join(input.root, input.path);
     const current = await read(target);
     const wanted = await managed.want(current, input.root);
+    if (!wanted.ok && wanted.unknown === true) {
+      return {
+        findings: [],
+        reason: wanted.message,
+        status: "incomplete",
+      } satisfies StepOutcome;
+    }
     if (!wanted.ok) {
       return {
         findings: [finding(input, wanted.message, false)],

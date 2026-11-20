@@ -53,36 +53,26 @@ const parse = (name: string, text: string): unknown =>
     ? Bun.YAML.parse(text)
     : Bun.JSONC.parse(text);
 
-const globsLine = (key: string, value: unknown): string => {
+const globsLine = (file: string, key: string, value: unknown): string => {
   const globs = Globs.safeParse(value);
   const list = globs.success ? JSON.stringify(globs.data) : "[...]";
-  return `\`${key}\` chooses files, which is the Cinch config's job. Add \`${key === "globs" ? "include" : "exclude"} = ${list}\` there.`;
+  return `\`${key}\` in ${file} chooses files, which is the Cinch config's job. Add \`${key === "globs" ? "include" : "exclude"} = ${list}\` there.`;
 };
 
 /** A note for each runner setting. Only its `config` block holds rules. */
-const runnerNotes = (table: Rules): string[] =>
+const runnerNotes = (file: string, table: Rules): string[] =>
   Object.entries(table)
     .filter(([key]) => key !== "config" && key !== "$schema")
     .map(([key, value]) =>
       key === "globs" || key === "ignores"
-        ? globsLine(key, value)
-        : `\`${key}\` is a markdownlint-cli2 setting with no equivalent here.`
+        ? globsLine(file, key, value)
+        : `\`${key}\` in ${file} is a markdownlint-cli2 setting with no equivalent here.`
     );
 
-const fromRunner = (file: string, table: Rules, others: string[]): Source => {
-  const rules = Table.safeParse(table.config ?? {});
-  return rules.success
-    ? {
-        file,
-        kind: "found",
-        notes: [...runnerNotes(table), ...others],
-        rules: rules.data,
-      }
-    : {
-        kind: "blocked",
-        message: `The \`config\` block in ${file} is not a table of rules.`,
-      };
-};
+const unreadable = (file: string): Source => ({
+  kind: "blocked",
+  message: `Cinch could not read the old Markdown rules in ${file}. Fix or remove that file, or write a .rumdl.toml by hand.`,
+});
 
 const packageTable = async (root: string): Promise<unknown> => {
   const file = Bun.file(path.join(root, PACKAGE));
@@ -105,10 +95,45 @@ const readFile = async (root: string, name: string): Promise<unknown> => {
   }
 };
 
+const tableOf = async (
+  root: string,
+  name: string,
+  inPackage: unknown
+): Promise<Rules | undefined> => {
+  const raw = name === PACKAGE ? inPackage : await readFile(root, name);
+  const table = Table.safeParse(raw);
+  return table.success ? table.data : undefined;
+};
+
+/** The rules in a runner's `config` block, when no rules file replaces it. */
+const fromRunner = (file: string, table: Rules, notes: string[]): Source => {
+  const rules = Table.safeParse(table.config ?? {});
+  return rules.success
+    ? { file, kind: "found", notes, rules: rules.data }
+    : {
+        kind: "blocked",
+        message: `The \`config\` block in ${file} is not a table of rules.`,
+      };
+};
+
+/** The runner file the old linter reads, and what it holds. */
+const runnerOf = async (
+  root: string,
+  names: readonly string[],
+  inPackage: unknown
+) => {
+  const [file, ...spare] = names;
+  const table =
+    file === undefined ? undefined : await tableOf(root, file, inPackage);
+  return { file, spare, table };
+};
+
 /**
- * Finds the config the old linter would have used and reads its rules. Only
- * the first file is read, and any other is named in the notes, so nothing is
- * passed over in silence. A script is never run.
+ * Finds the config the old linter would have used and reads its rules. A
+ * rules file replaces the `config` block of a runner file beside it, as it
+ * does for the old linter, and the runner's other settings still get a note.
+ * Any file that was not read is named, so nothing is passed over in silence.
+ * A script is never run.
  */
 export const findSource = async (root: string): Promise<Source> => {
   const [scripts, runners, plain, inPackage] = await Promise.all([
@@ -124,27 +149,44 @@ export const findSource = async (root: string): Promise<Source> => {
       message: `${script} is a script, and Cinch does not run it to read the old Markdown rules. Write the rules this repository still wants into a new .rumdl.toml by hand.`,
     };
   }
-  const files = [
-    ...runners,
-    ...plain,
-    ...(inPackage === undefined ? [] : [PACKAGE]),
-  ];
-  const [file, ...rest] = files;
-  if (file === undefined) {
-    return { kind: "none" };
-  }
-  const others = rest.map(
-    (name) => `${name} also holds Markdown rules and was not read.`
+  const runner = await runnerOf(
+    root,
+    [...runners, ...(inPackage === undefined ? [] : [PACKAGE])],
+    inPackage
   );
-  const raw = file === PACKAGE ? inPackage : await readFile(root, file);
-  const table = Table.safeParse(raw);
-  if (!table.success) {
-    return {
-      kind: "blocked",
-      message: `Cinch could not read the old Markdown rules in ${file}. Fix or remove that file, or write a .rumdl.toml by hand.`,
-    };
+  const [rulesFile, ...spareRules] = plain;
+  if (runner.file !== undefined && runner.table === undefined) {
+    return unreadable(runner.file);
   }
-  return runners.includes(file) || file === PACKAGE
-    ? fromRunner(file, table.data, others)
-    : { file, kind: "found", notes: others, rules: table.data };
+  const held =
+    runner.file !== undefined && runner.table !== undefined
+      ? { file: runner.file, table: runner.table }
+      : undefined;
+  const notes = [
+    ...(held === undefined ? [] : runnerNotes(held.file, held.table)),
+    ...[...runner.spare, ...spareRules].map(
+      (name) => `${name} also holds Markdown rules and was not read.`
+    ),
+  ];
+  if (rulesFile === undefined) {
+    return held === undefined
+      ? { kind: "none" }
+      : fromRunner(held.file, held.table, notes);
+  }
+  const rules = await tableOf(root, rulesFile, inPackage);
+  if (rules === undefined) {
+    return unreadable(rulesFile);
+  }
+  const replaced =
+    held?.table.config === undefined
+      ? []
+      : [
+          `The \`config\` block in ${held.file} was not read, because ${rulesFile} replaces it.`,
+        ];
+  return {
+    file: rulesFile,
+    kind: "found",
+    notes: [...replaced, ...notes],
+    rules,
+  };
 };

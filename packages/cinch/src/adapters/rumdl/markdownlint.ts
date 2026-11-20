@@ -8,8 +8,14 @@ import type { Wanted } from "../managed.ts";
 import { exec } from "./exec.ts";
 import { findSource } from "./markdownlint-source.ts";
 import type { Rules } from "./markdownlint-source.ts";
+import { option } from "./markdownlint-stated.ts";
 import { translate } from "./markdownlint-translate.ts";
-import type { Sections, Translated } from "./markdownlint-translate.ts";
+import type {
+  Leftover,
+  Renames,
+  Sections,
+  Translated,
+} from "./markdownlint-translate.ts";
 
 const COMMAND = "rumdl";
 
@@ -23,9 +29,12 @@ const KnownSchema = z.array(
 );
 
 /** Runs the engine and reads the JSON it prints. Null when it did not. */
-const ask = async (args: readonly string[]): Promise<unknown> => {
+const ask = async (
+  command: string,
+  args: readonly string[]
+): Promise<unknown> => {
   try {
-    const ran = await exec([Bun.which(COMMAND) ?? COMMAND, ...args]);
+    const ran = await exec([Bun.which(command) ?? command, ...args]);
     return ran.exitCode === 0 ? JSON.parse(ran.stdout) : null;
   } catch {
     return null;
@@ -36,15 +45,45 @@ const ask = async (args: readonly string[]): Promise<unknown> => {
  * The engine's own translation of the old rules. It reads a file, so the
  * rules are written to a temporary one, whichever form they came in.
  */
-const imported = async (rules: Rules): Promise<unknown> => {
+const imported = async (command: string, rules: Rules): Promise<unknown> => {
   const dir = await mkdtemp(path.join(tmpdir(), "cinch-import-"));
   try {
     const file = path.join(dir, ".markdownlint.json");
     await Bun.write(file, JSON.stringify(rules));
-    return await ask(["import", file, "--dry-run", "--format", "json"]);
+    return await ask(command, [
+      "import",
+      file,
+      "--dry-run",
+      "--format",
+      "json",
+    ]);
   } finally {
     await rm(dir, { force: true, recursive: true });
   }
+};
+
+/**
+ * The engine renames some options as it reads them. Each option it seemed to
+ * drop is read again by itself, and whatever comes back is its new name.
+ */
+const renamed = async (
+  command: string,
+  leftover: readonly Leftover[]
+): Promise<Renames> => {
+  const found = await Promise.all(
+    leftover.map(async (old) => {
+      const alone = { [old.rule]: { [old.key]: old.value } };
+      const sections = SectionsSchema.safeParse(await imported(command, alone));
+      const keys = Object.values(sections.success ? sections.data : {}).flatMap(
+        (section) => Object.keys(section)
+      );
+      return [`${old.id}.${option(old.key)}`, keys] satisfies [
+        string,
+        string[],
+      ];
+    })
+  );
+  return new Map(found.filter(([, keys]) => keys.length > 0));
 };
 
 const comment = (lines: readonly string[]): string =>
@@ -64,7 +103,10 @@ const body = (sections: Sections): string => {
 };
 
 /** The text below the `extends` line. Empty when there is nothing to say. */
-export const render = (file: string, result: Translated): string => {
+export const render = (
+  file: string,
+  result: Pick<Translated, "notes" | "sections">
+): string => {
   const differs = Object.keys(result.sections).length > 0;
   const parts = [
     differs
@@ -96,7 +138,8 @@ const blocked = (message: string): Wanted => ({ message, ok: false });
  */
 export const carriedOver = async (
   root: string,
-  preset: string
+  preset: string,
+  command = COMMAND
 ): Promise<Wanted | null> => {
   const source = await findSource(root);
   if (source.kind === "none") {
@@ -106,23 +149,30 @@ export const carriedOver = async (
     return blocked(source.message);
   }
   const [translation, catalog] = await Promise.all([
-    imported(source.rules),
-    ask(["rule", "--output-format", "json"]),
+    imported(command, source.rules),
+    ask(command, ["rule", "--output-format", "json"]),
   ]);
   const sections = SectionsSchema.safeParse(translation);
   const known = KnownSchema.safeParse(catalog);
   const standard = SectionsSchema.safeParse(Bun.TOML.parse(preset));
   if (!sections.success || !known.success || !standard.success) {
-    return blocked(
-      `Cinch needs ${COMMAND} on PATH to carry over the Markdown rules in ${source.file}, and it did not run. Install it and run this again.`
-    );
+    return {
+      message: `Cinch needs ${command} on PATH to carry over the Markdown rules in ${source.file}, and it did not run. Install it and run this again.`,
+      ok: false,
+      unknown: true,
+    };
   }
-  const result = translate({
+  const input = {
     imported: sections.data,
     known: known.data,
     preset: standard.data,
     rules: source.rules,
-  });
+  };
+  const first = translate(input);
+  const result =
+    first.leftover.length > 0
+      ? translate({ ...input, renames: await renamed(command, first.leftover) })
+      : first;
   return {
     ok: true,
     text: render(source.file, {

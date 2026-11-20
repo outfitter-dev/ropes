@@ -74,7 +74,7 @@ const configuredElsewhere = async (root: string): Promise<string | null> => {
  * A new config. It carries over what a config for the old Markdown linter
  * says, because the engine stops reading that one once this file exists.
  */
-const fresh = async (root: string): Promise<Wanted> => {
+const fresh = async (root: string, command?: string): Promise<Wanted> => {
   const other = await configuredElsewhere(root);
   if (other !== null) {
     return {
@@ -82,7 +82,7 @@ const fresh = async (root: string): Promise<Wanted> => {
       ok: false,
     };
   }
-  const carried = await carriedOver(root, await standard());
+  const carried = await carriedOver(root, await standard(), command);
   if (carried === null) {
     return { ok: true, text: EXTENDS };
   }
@@ -96,10 +96,11 @@ const fresh = async (root: string): Promise<Wanted> => {
  */
 const config = async (
   current: string | null,
-  root: string
+  root: string,
+  command?: string
 ): Promise<Wanted> => {
   if (current === null) {
-    return await fresh(root);
+    return await fresh(root, command);
   }
   let found: unknown;
   try {
@@ -126,12 +127,20 @@ const config = async (
  * Keeps the shared Markdown standard in a repository: a copy of the preset,
  * and the line in the repository's own rumdl config that extends it.
  */
-export const rumdlPresetAdapter = (): Adapter =>
+export const rumdlPresetAdapter = (
+  options: {
+    /** The engine's executable. */
+    readonly command?: string;
+  } = {}
+): Adapter =>
   managedAdapter({
     enabledBy: "markdown.preset",
     files: [
       { path: PRESET_PATH, want: preset },
-      { path: CONFIG_PATH, want: config },
+      {
+        path: CONFIG_PATH,
+        want: (current, root) => config(current, root, options.command),
+      },
     ],
     id: "rumdl-preset",
     preset: "markdown",

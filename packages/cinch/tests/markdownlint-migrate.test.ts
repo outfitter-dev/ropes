@@ -181,3 +181,80 @@ test("a script config blocks the new file and names the script", async () => {
     expect(await Bun.file(path.join(root, CONFIG_PATH)).exists()).toBe(false);
   });
 });
+
+const lint = async (root: string, file: string) => {
+  const linter = adaptersFor({}).find(
+    (adapter) => adapter.descriptor.id === "rumdl"
+  );
+  const outcome = await linter?.check({ path: file, root });
+  return outcome?.status;
+};
+
+withEngine("an option the engine renames is carried over", async () => {
+  const rules = { MD013: { line_length: 100, stern: true } };
+  const files = { ".markdownlint.json": JSON.stringify(rules) };
+  await inRoot(files, async (root) => {
+    await preset.fix({ path: CONFIG_PATH, root });
+    const text = await written(root);
+    expect(text).toContain("[MD013]\nline-length = 100\nstrict = true");
+    expect(text).not.toContain("Not carried over");
+  });
+});
+
+withEngine("the last entry for a rule decides whether it runs", async () => {
+  const text = '{ "MD013": true, "line-length": false }';
+  await inRoot({ ".markdownlint.json": text }, async (root) => {
+    await preset.fix({ path: CONFIG_PATH, root });
+    expect(await written(root)).toBe(EXTENDS);
+  });
+});
+
+/** A heading with nothing under it, which only a rule the preset adds reports. */
+const EMPTY_SECTION = "# T\n\n## Empty\n\n## Next\n\nBody.\n";
+
+withEngine(
+  "a list of the only rules to run keeps the preset's out",
+  async () => {
+    const files = {
+      ".markdownlint.json": '{ "default": false, "MD001": true }',
+      "a.md": EMPTY_SECTION,
+      "b.md": "# T\n\n### Skipped a level\n\nBody.\n",
+    };
+    await inRoot(files, async (root) => {
+      await preset.fix({ path: PRESET_PATH, root });
+      await preset.fix({ path: CONFIG_PATH, root });
+      expect(await written(root)).toContain('enable = ["MD001"]');
+      expect(await lint(root, "a.md")).toBe("passed");
+      expect(await lint(root, "b.md")).toBe("findings");
+    });
+  }
+);
+
+withEngine(
+  "a config that switches every rule off reports nothing",
+  async () => {
+    const files = {
+      ".markdownlint.json": '{ "default": false }',
+      "a.md": `${EMPTY_SECTION}\n### Skipped a level\n`,
+    };
+    await inRoot(files, async (root) => {
+      await preset.fix({ path: PRESET_PATH, root });
+      await preset.fix({ path: CONFIG_PATH, root });
+      expect(await written(root)).toContain("enable = []");
+      expect(await lint(root, "a.md")).toBe("passed");
+    });
+  }
+);
+
+test("without the engine the step is incomplete, and nothing is written", async () => {
+  const absent = rumdlPresetAdapter({ command: "cinch-test-no-such-rumdl" });
+  await inRoot({ ".markdownlint.json": JSON_RULES }, async (root) => {
+    const outcome = await absent.fix({ path: CONFIG_PATH, root });
+    expect(outcome.status).toBe("incomplete");
+    expect(outcome.findings).toEqual([]);
+    expect(outcome.status === "incomplete" ? outcome.reason : "").toContain(
+      "cinch-test-no-such-rumdl"
+    );
+    expect(await Bun.file(path.join(root, CONFIG_PATH)).exists()).toBe(false);
+  });
+});

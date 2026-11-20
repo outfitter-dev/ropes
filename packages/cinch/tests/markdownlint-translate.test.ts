@@ -28,7 +28,7 @@ test("a rule switched off under an alias matches the preset's entry", () => {
     { "no-inline-html": false },
     { global: { disable: ["no-inline-html"] } }
   );
-  expect(result).toEqual({ notes: [], sections: {} });
+  expect(result).toMatchObject({ notes: [], sections: {} });
 });
 
 test("a rule the preset leaves on stays off without replacing the list", () => {
@@ -58,7 +58,7 @@ test("a value the preset already sets is dropped, whatever the key's spelling", 
     { MD007: { indent: 2 }, MD024: { siblings_only: true } },
     { MD007: { indent: 2 }, MD024: { "siblings-only": true } }
   );
-  expect(result).toEqual({ notes: [], sections: {} });
+  expect(result).toMatchObject({ notes: [], sections: {} });
 });
 
 test("a value that differs is kept, and one the engine added is not", () => {
@@ -95,7 +95,7 @@ test("what has no equivalent is named", () => {
 });
 
 test("an empty `extends` is not worth a note", () => {
-  expect(run({ extends: null }, {})).toEqual({ notes: [], sections: {} });
+  expect(run({ extends: null }, {})).toMatchObject({ notes: [], sections: {} });
 });
 
 test("a config that only allows some rules keeps that list", () => {
@@ -131,4 +131,61 @@ test("the rendered text names its source and lists what was left out", () => {
       "",
     ].join("\n")
   );
+});
+
+test("the last entry for a rule counts, whatever name it is under", () => {
+  const result = run(
+    { MD013: true, "line-length": false },
+    { global: { disable: ["line-length"] } }
+  );
+  expect(result.sections).toEqual({});
+});
+
+test("an option the engine renames is carried under its new name", () => {
+  const rules = { MD013: { stern: true } };
+  const imported = { MD013: { strict: true } };
+  const first = run(rules, imported);
+  expect(first.leftover).toEqual([
+    { id: "MD013", key: "stern", rule: "MD013", value: true },
+  ]);
+  const second = translate({
+    imported,
+    known,
+    preset,
+    renames: new Map([["MD013.stern", ["strict"]]]),
+    rules,
+  });
+  expect(second.notes).toEqual([]);
+  expect(second.sections).toEqual({
+    MD013: { strict: true },
+    global: { disable: ["MD033"] },
+  });
+});
+
+const adding: Sections = {
+  global: { disable: ["MD013"], "extend-enable": ["MD024", "MD033"] },
+};
+
+test("a list of the only rules to run also stops the rules the preset adds", () => {
+  const result = translate({
+    imported: { global: { enable: ["MD001", "no-inline-html"] } },
+    known,
+    preset: adding,
+    rules: { MD001: true, default: false, "no-inline-html": true },
+  });
+  expect(result.sections).toEqual({
+    global: { enable: ["MD001", "MD033"], "extend-disable": ["MD024"] },
+  });
+});
+
+test("a config that switches every rule off stays that way", () => {
+  const result = translate({
+    imported: {},
+    known,
+    preset: adding,
+    rules: { default: false },
+  });
+  expect(result.sections).toEqual({
+    global: { enable: [], "extend-disable": ["MD024", "MD033"] },
+  });
 });

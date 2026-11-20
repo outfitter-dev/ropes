@@ -87,21 +87,50 @@ test("the runner's own settings are named, with the Cinch lines for paths", asyn
   const found = await find({ ".markdownlint-cli2.jsonc": text });
   expect(found).toMatchObject({
     notes: [
-      "`customRules` is a markdownlint-cli2 setting with no equivalent here.",
-      '`globs` chooses files, which is the Cinch config\'s job. Add `include = ["docs/**/*.md"]` there.',
-      '`ignores` chooses files, which is the Cinch config\'s job. Add `exclude = ["CHANGELOG.md"]` there.',
+      "`customRules` in .markdownlint-cli2.jsonc is a markdownlint-cli2 setting with no equivalent here.",
+      '`globs` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config\'s job. Add `include = ["docs/**/*.md"]` there.',
+      '`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config\'s job. Add `exclude = ["CHANGELOG.md"]` there.',
     ],
     rules: RULES,
   });
 });
 
-test("only the first config is read, and any other is named", async () => {
+test("a rules file replaces the runner's `config` block", async () => {
   const found = await find({
-    ".markdownlint-cli2.jsonc": `{ "config": ${JSON_RULES} }`,
+    ".markdownlint-cli2.jsonc": `{ "config": { "MD007": { "indent": 8 } }, "fix": true }`,
+    ".markdownlint.yaml": YAML_RULES,
+  });
+  expect(found).toMatchObject({
+    file: ".markdownlint.yaml",
+    notes: [
+      "The `config` block in .markdownlint-cli2.jsonc was not read, because .markdownlint.yaml replaces it.",
+      "`fix` in .markdownlint-cli2.jsonc is a markdownlint-cli2 setting with no equivalent here.",
+    ],
+    rules: RULES,
+  });
+});
+
+test("a runner with no rules of its own leaves them to the rules file", async () => {
+  const found = await find({
+    ".markdownlint-cli2.jsonc": `{ "ignores": ["CHANGELOG.md"] }`,
+    ".markdownlint.json": JSON_RULES,
+  });
+  expect(found).toMatchObject({
+    file: ".markdownlint.json",
+    notes: [
+      '`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config\'s job. Add `exclude = ["CHANGELOG.md"]` there.',
+    ],
+    rules: RULES,
+  });
+});
+
+test("only the first file of a kind is read, and any other is named", async () => {
+  const found = await find({
+    ".markdownlint.json": JSON_RULES,
     ".markdownlint.yaml": "MD007:\n  indent: 8\n",
   });
   expect(found).toMatchObject({
-    file: ".markdownlint-cli2.jsonc",
+    file: ".markdownlint.json",
     notes: [".markdownlint.yaml also holds Markdown rules and was not read."],
     rules: RULES,
   });
