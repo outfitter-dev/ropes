@@ -126,6 +126,7 @@ test("schema prints the JSON Schema of a command's --json output", async () => {
       "preset list",
       "preset update",
     ],
+    schemaVersion: 0,
   });
   const text = await run("schema");
   expect(text.stdout).toContain("  preset update\n");

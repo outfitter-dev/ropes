@@ -12,7 +12,7 @@ Prints one JSON document on stdout and nothing else. Each command has its own do
 
 ```sh
 cinch check --json | jq -r '.outcome'
-cinch check --json | jq -r '.steps[].findings[] | "\(.path):\(.line) \(.message)"'
+cinch check --json | jq -r '.steps[].findings[] | "\(.path):\(.range.start.line) \(.message)"'
 cinch fix --dry-run --json | jq -r '.changed[]'
 cinch explain README.md --json | jq '.paths[].steps'
 cinch preset --json | jq -r '.presets[].files[] | select(.state != "current") | .path'

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { FailureSchema } from "../contracts/failure.ts";
 import { FixReportSchema } from "../contracts/fix.ts";
-import { PlanSchema } from "../contracts/plan.ts";
+import { PlanSchema, SCHEMA_VERSION } from "../contracts/plan.ts";
 import { PresetReportSchema } from "../contracts/preset.ts";
 import { EXIT_CODE, ResultSchema } from "../contracts/result.ts";
 import type { Command } from "./command.ts";
@@ -29,7 +29,7 @@ const print = (value: unknown): string => JSON.stringify(value, null, 2);
 
 const listing = (json: boolean): string =>
   json
-    ? print({ commands: NAMES })
+    ? print({ commands: NAMES, schemaVersion: SCHEMA_VERSION })
     : [
         "Run `cinch schema <command>` for the JSON Schema of its --json output.",
         "",
