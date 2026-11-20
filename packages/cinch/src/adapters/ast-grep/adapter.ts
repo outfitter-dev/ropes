@@ -6,6 +6,7 @@ import { heldTo } from "../pins.ts";
 import { readProject, tidy } from "./project.ts";
 import { shippedPacks } from "./rules.ts";
 import { scanBatch } from "./run.ts";
+import { describeScan } from "./trace.ts";
 
 const ID = "ast-grep";
 
@@ -95,6 +96,7 @@ export const rulesAdapter = (options: RulesOptions = {}): Adapter => {
   };
   return {
     check: run,
+    describeCheck: (input) => describeScan(command, input, folders),
     descriptor,
     fix: run,
     probe: () => probeOnPath(command),
