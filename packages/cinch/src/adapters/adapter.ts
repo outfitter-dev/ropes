@@ -58,6 +58,17 @@ export interface StepInput {
   readonly path: string;
 }
 
+/** The files a config that an adapter replaces chose to check. */
+export interface Inherited {
+  /** The root-relative file the choices came from. */
+  readonly from: string;
+  /** Root-relative globs, in the form the Cinch config reads. */
+  readonly include: readonly string[];
+  readonly exclude: readonly string[];
+  /** One line for each choice that could not be carried over. */
+  readonly notes: readonly string[];
+}
+
 /**
  * The one seam engines plug into. The runner knows only this interface, and
  * nothing outside an adapter's own folder and the registry names an engine.
@@ -68,4 +79,9 @@ export interface Adapter {
   readonly probe: () => Promise<ProbeResult>;
   readonly check: (input: StepInput) => Promise<StepOutcome>;
   readonly fix: (input: StepInput) => Promise<StepOutcome>;
+  /**
+   * The file choices in a config this adapter takes over from, for a Cinch
+   * config that is about to be written. Null when there are none.
+   */
+  readonly inherits?: (root: string) => Promise<Inherited | null>;
 }

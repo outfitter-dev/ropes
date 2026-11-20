@@ -5,8 +5,8 @@ import path from "node:path";
 
 import { managedAdapter } from "../src/adapters/managed.ts";
 import type { CommandRequest } from "../src/commands/command.ts";
-import { STARTER_CONFIG } from "../src/commands/init.ts";
 import { createCommands } from "../src/commands/registry.ts";
+import { STARTER_CONFIG } from "../src/commands/starter.ts";
 import { FixReportSchema } from "../src/contracts/fix.ts";
 import { PresetReportSchema } from "../src/contracts/preset.ts";
 
@@ -24,6 +24,15 @@ const commands = createCommands({
         },
       ],
       id: "notes-preset",
+      inherits: async (dir) =>
+        (await Bun.file(path.join(dir, "old-linter.json")).exists())
+          ? {
+              exclude: ["vendor", "vendor/**"],
+              from: "old-linter.json",
+              include: [],
+              notes: [],
+            }
+          : null,
       preset: "notes",
     }),
   ],
@@ -90,6 +99,19 @@ test("init --yes writes the config and the preset, once", async () => {
   const again = await run("init", { yes: true });
   const report = FixReportSchema.parse(JSON.parse(again.output ?? "null"));
   expect(report.changed).toEqual([]);
+});
+
+test("init carries the file choices of a config an adapter replaces", async () => {
+  await Bun.write(path.join(root, "old-linter.json"), "{}");
+  const shown = await run("init");
+  const report = FixReportSchema.parse(JSON.parse(shown.output ?? "null"));
+  expect(report.diff).toContain('+  "vendor/**",');
+  expect(await textOf("cinch.toml")).toBeNull();
+  expect(await run("init", { yes: true })).toMatchObject({ exitCode: 0 });
+  expect(await textOf("cinch.toml")).toContain(
+    'exclude = [\n  "vendor",\n  "vendor/**",\n]'
+  );
+  expect(await run("check")).toMatchObject({ exitCode: 0 });
 });
 
 test("init keeps a config that is already there", async () => {

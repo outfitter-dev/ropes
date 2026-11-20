@@ -3,6 +3,7 @@ import path from "node:path";
 import type { Adapter } from "../adapter.ts";
 import { managedAdapter } from "../managed.ts";
 import type { Wanted } from "../managed.ts";
+import { chosenFiles } from "./markdownlint-files.ts";
 import { carriedOver } from "./markdownlint.ts";
 
 /** The copy of the standard that Cinch keeps in a repository. */
@@ -143,5 +144,6 @@ export const rumdlPresetAdapter = (
       },
     ],
     id: "rumdl-preset",
+    inherits: chosenFiles,
     preset: "markdown",
   });
