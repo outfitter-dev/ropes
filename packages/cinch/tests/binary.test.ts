@@ -11,6 +11,11 @@ const SHIPPED = new URL("../presets/rumdl.toml", import.meta.url);
 const KEPT = ".outfitter/configs/presets/rumdl.toml";
 const README = "# Guide\n\n# Second title\n\nText.\n";
 
+const FENCES =
+  "# Guide\n\n```ts\nconst  a = 1\n```\n\n```js\nconst  b = 2\n```\n";
+const FORMATTED =
+  "# Guide\n\n```ts\nconst a = 1;\n```\n\n```js\nconst b = 2;\n```\n";
+
 let dir = "";
 let binary = "";
 
@@ -95,6 +100,34 @@ test("the binary finds what the package finds", async () => {
   expect(alone.stdout).toContain("MD025");
   expect(alone.exitCode).toBe(1);
   expect(alone).toEqual(packaged);
+});
+
+test("the binary formats fenced code with no Bun in reach", async () => {
+  const searchPath = withoutBun();
+  if (searchPath === null) {
+    console.warn(
+      "skipped: needs rumdl, taplo and git on PATH, in folders that hold no bun"
+    );
+    return;
+  }
+  const root = await repo("fences");
+  await Bun.write(path.join(root, "README.md"), FENCES);
+  await run([binary, "init", "--yes"], root, searchPath);
+  const alone = await run([binary, "check"], root, searchPath);
+  const packaged = await run(
+    [process.execPath, CLI, "check"],
+    root,
+    process.env.PATH ?? ""
+  );
+  expect(alone.exitCode).toBe(1);
+  expect(alone).toEqual(packaged);
+  const fixed = await run([binary, "fix"], root, searchPath);
+  expect(fixed.exitCode).toBe(0);
+  expect(await Bun.file(path.join(root, "README.md")).text()).toBe(FORMATTED);
+  const files = await Array.fromAsync(
+    new Bun.Glob("**/bun").scan({ cwd: root, dot: true })
+  );
+  expect(files).toEqual([]);
 });
 
 test("the binary carries the rules Cinch ships", async () => {
