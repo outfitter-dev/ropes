@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import type { Retired } from "../adapter.ts";
+import { leftovers } from "./markdownlint-leftovers.ts";
 import { merge } from "./markdownlint-merge.ts";
 import { CONFIG_FILES, present } from "./markdownlint-source.ts";
 import { gathered } from "./markdownlint.ts";
@@ -68,17 +69,20 @@ const reasons = async (
 
 /**
  * The old Markdown linter's config files, and whether they can go. They can
- * when everything they say is in the config Cinch is about to write. Null
- * when the repository has none.
+ * when everything they say is in the config Cinch is about to write. What
+ * else still names the old linter is reported beside them. Null when the
+ * repository has neither.
  */
 export const retired = async (setup: Setup): Promise<Retired | null> => {
-  const files = await present(setup.root, CONFIG_FILES);
-  return files.length === 0
-    ? null
-    : {
-        files,
-        keep: await reasons(setup, files),
-        leftovers: [],
-        needs: [setup.config],
-      };
+  const [files, left] = await Promise.all([
+    present(setup.root, CONFIG_FILES),
+    leftovers(setup.root),
+  ]);
+  const needs = [setup.config];
+  if (files.length === 0) {
+    return left.length === 0
+      ? null
+      : { files, keep: [], leftovers: left, needs };
+  }
+  return { files, keep: await reasons(setup, files), leftovers: left, needs };
 };
