@@ -249,3 +249,14 @@ test("the same note is given from a directory under the root", async () => {
     'config will not run yet: cinch.toml leaves out the files it reads, such as tsconfig.json. Add "**/tsconfig.json" to `include` to run it.',
   ]);
 });
+
+test("a file Cinch keeps does not stand in for the repository's own", async () => {
+  await put(
+    "cinch.toml",
+    "pilot = 0\n\n[typescript]\npreset = true\n\n[rules]\nenabled = true\n"
+  );
+  await put(".outfitter/configs/presets/tsconfig.json", "{}\n");
+  expect(await report().then((one) => one.notes)).toEqual([
+    'config will not run yet: cinch.toml leaves out the files it reads, such as tsconfig.json. Add "**/tsconfig.json" to `include` to run it.',
+  ]);
+});
