@@ -2,9 +2,11 @@ import path from "node:path";
 
 import type { ConfigText, Relocation } from "../adapters/relocation.ts";
 import { STANDALONE_FILE, loadConfig } from "../config/load.ts";
+import { toRootRelative } from "../config/root.ts";
 import { SCHEMA_VERSION } from "../contracts/plan.ts";
 import type { RelocateAction, RelocateReport } from "../contracts/relocate.ts";
-import { EXIT_CODE } from "../contracts/result.ts";
+import { EXIT_CODE, outcomeOf } from "../contracts/result.ts";
+import type { Outcome } from "../contracts/result.ts";
 import { unifiedDiff } from "../render/diff.ts";
 import { renderRelocate, renderRelocateJson } from "../render/relocate.ts";
 import { runPlan } from "../runner/run.ts";
@@ -73,24 +75,35 @@ const planned = async (
   return "error" in config ? config : await relocates[action](root, config);
 };
 
-/** Whether the files Cinch keeps for the preset are as they should be. */
+/**
+ * Whether the files Cinch keeps for the preset are as they should be. A
+ * check that did not run for every file is incomplete, not a finding.
+ */
 const settled = async (
   deps: CommandDeps,
   root: string,
   preset: Preset
-): Promise<boolean> => {
+): Promise<Outcome> => {
   const prepared = await prepare({ cwd: root, paths: preset.files }, deps);
   if (!prepared.ok) {
-    return false;
+    return "incomplete";
   }
   const { adapters, plan } = prepared.value;
   const result = await runPlan(plan, adapters, { mode: "check" });
   // Another tool may check these files too. Only the keeper's word counts.
   const kept = result.steps.filter((step) => step.adapter === preset.adapter);
-  return (
-    kept.length === preset.files.length &&
-    kept.every((step) => step.status === "passed")
+  return kept.length === preset.files.length ? outcomeOf(kept) : "incomplete";
+};
+
+/** The first file of the move that leads out of the repository, if any. */
+const outside = async (
+  root: string,
+  files: readonly { readonly path: string }[]
+): Promise<string | undefined> => {
+  const placed = await Promise.all(
+    files.map((file) => toRootRelative(root, root, file.path))
   );
+  return files.find((_, index) => placed[index]?.ok !== true)?.path;
 };
 
 const UNSETTLED =
@@ -118,8 +131,11 @@ export const relocate = async (
     preset: preset.name,
     schemaVersion: SCHEMA_VERSION,
   } as const;
-  const respond = (report: RelocateReport, clean = true): CommandResponse => ({
-    exitCode: clean ? EXIT_CODE.clean : EXIT_CODE.findings,
+  const respond = (
+    report: RelocateReport,
+    outcome: Outcome = "clean"
+  ): CommandResponse => ({
+    exitCode: EXIT_CODE[outcome],
     output: request.json ? renderRelocateJson(report) : renderRelocate(report),
   });
   if (!moved.ok) {
@@ -132,7 +148,13 @@ export const relocate = async (
         stopped: moved.reasons,
         written: false,
       },
-      false
+      "findings"
+    );
+  }
+  const beyond = await outside(root, moved.files);
+  if (beyond !== undefined) {
+    return unusable(
+      `${beyond} leads outside the repository, so Cinch will not write it.`
     );
   }
   const before = await Promise.all(
@@ -153,7 +175,8 @@ export const relocate = async (
       changes.map((file) => Bun.write(path.join(root, file.path), file.text))
     );
   }
-  const clean = !written || (await settled(deps, root, preset));
+  const outcome = written ? await settled(deps, root, preset) : "clean";
+  const clean = outcome === "clean";
   return respond(
     {
       ...base,
@@ -162,6 +185,6 @@ export const relocate = async (
       notes: clean ? moved.notes : [...moved.notes, UNSETTLED],
       written,
     },
-    clean
+    outcome
   );
 };

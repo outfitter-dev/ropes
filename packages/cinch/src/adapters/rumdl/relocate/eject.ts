@@ -4,9 +4,9 @@ import type { ToolTable } from "../../../contracts/config.ts";
 import type { ConfigText, Relocation } from "../../relocation.ts";
 import { generated } from "../generated.ts";
 import { CONFIG_PATH, EXTENDS, GENERATED_PATH } from "../paths.ts";
-import { isPointer } from "../root-config.ts";
+import { configuredElsewhere, isPointer } from "../root-config.ts";
 import { familyOf } from "./absorb.ts";
-import { commentsIn, renamed, sectionsOf, textOf } from "./scan.ts";
+import { commentsIn, linesOf, renamed, sectionsOf, textOf } from "./scan.ts";
 import type { Line, Section } from "./scan.ts";
 import { parsed, same, withTable } from "./tables.ts";
 
@@ -14,12 +14,6 @@ const stop = (...reasons: readonly string[]): Relocation => ({
   ok: false,
   reasons,
 });
-
-const linesOf = (section: Section): Line[] => [
-  ...section.lead,
-  ...(section.header === null ? [] : [section.header]),
-  ...section.body,
-];
 
 /**
  * The Cinch config split by line: what is left once the engine's tables are
@@ -80,6 +74,18 @@ export const eject = async (
       `${CONFIG_PATH} is the repository's own, so Cinch will not overwrite it. Move the settings into it by hand, or delete it and run this again.`
     );
   }
+  const other = current === null ? await configuredElsewhere(root) : null;
+  if (other !== null) {
+    return stop(
+      `This repository configures Markdown in ${other}, and a new ${CONFIG_PATH} would hide it. Move those settings into ${CONFIG_PATH} first.`
+    );
+  }
+  // The table as a root config must be valid as the generated one first:
+  // that is where a key Cinch writes itself, such as `extends`, is refused.
+  const allowed = await generated(table);
+  if (!allowed.ok) {
+    return stop(allowed.message);
+  }
   const family = familyOf(config);
   const before = parsed(config.text);
   const { left, taken } = split(config.text, family.join("."));
@@ -103,11 +109,18 @@ export const eject = async (
   if (!below.ok) {
     return stop(below.message);
   }
+  const own = `${EXTENDS}\n${body}\n`;
+  const whole = parsed(own);
+  if (whole === null || !same(whole, { ...table, extends: GENERATED_PATH })) {
+    return stop(
+      `Cinch could not write \`[${family.join(".")}]\` as a ${CONFIG_PATH} that says the same. Move it by hand.`
+    );
+  }
   return {
     files: [
       { path: config.file, text: `${left}\n` },
       { path: GENERATED_PATH, text: below.text },
-      { path: CONFIG_PATH, text: `${EXTENDS}\n${body}\n` },
+      { path: CONFIG_PATH, text: own },
     ],
     notes:
       lost.length === 0

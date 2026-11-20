@@ -1,5 +1,6 @@
 import {
   commentsIn,
+  linesOf,
   renamed,
   sectionsOf,
   takeComments,
@@ -46,20 +47,19 @@ export const blockOf = (
   for (const section of sectionsOf(text)) {
     const names = section.header?.name.split(".") ?? [];
     const [first, second] = names;
-    const whole = [...section.lead, ...section.body];
     if (
       first !== undefined &&
       second !== undefined &&
       units.has(unitOf(first, second))
     ) {
-      lost.push(...commentsIn(whole));
+      lost.push(...commentsIn(linesOf(section)));
     } else {
       const body: Line[] = [];
       for (const line of section.body) {
         const unit =
           line.kind === "key" ? unitOfLine(names, line.text) : undefined;
         if (unit !== undefined && units.has(unit)) {
-          lost.push(...takeComments(body));
+          lost.push(...takeComments(body), ...commentsIn([line]));
         } else if (unit !== EXTENDS || names.length > 0) {
           body.push(line);
         }
@@ -76,7 +76,7 @@ export const blockOf = (
         const name = `${family}.${section.header.raw}`;
         out.push(...section.lead, renamed(section.header, name), ...body);
       } else {
-        lost.push(...commentsIn([...section.lead, ...body]));
+        lost.push(...commentsIn([...section.lead, section.header, ...body]));
       }
     }
   }

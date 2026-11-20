@@ -81,8 +81,40 @@ export const sectionsOf = (text: string): Section[] => {
   return sections;
 };
 
+/** Whether a line that is not a comment ends in one, outside any string. */
+const endsInComment = (text: string): boolean => {
+  let quote = "";
+  for (const char of text) {
+    if (quote === "" && char === "#") {
+      return true;
+    }
+    if (quote === "" && (char === '"' || char === "'")) {
+      quote = char;
+    } else if (char === quote) {
+      quote = "";
+    }
+  }
+  return false;
+};
+
+/**
+ * The comments in `lines`. A line that ends in one is given whole, so the
+ * comment is read beside what it was about.
+ */
 export const commentsIn = (lines: readonly Line[]): string[] =>
-  lines.flatMap((line) => (line.kind === "comment" ? [line.text.trim()] : []));
+  lines.flatMap((line) =>
+    line.kind === "comment" ||
+    (line.kind !== "blank" && endsInComment(line.text))
+      ? [line.text.trim()]
+      : []
+  );
+
+/** Every line of a section, its header among them. */
+export const linesOf = (section: Section): Line[] => [
+  ...section.lead,
+  ...(section.header === null ? [] : [section.header]),
+  ...section.body,
+];
 
 /** The comment lines that end `lines`, taken off it. */
 export const takeComments = (lines: Line[]): string[] => {

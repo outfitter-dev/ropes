@@ -2,16 +2,17 @@ import path from "node:path";
 
 import type { ToolTable } from "../../../contracts/config.ts";
 import type { ConfigText, Relocation } from "../../relocation.ts";
-import { generated } from "../generated.ts";
+import { generated, preset } from "../generated.ts";
 import {
   CONFIG_PATH,
   GENERATED_PATH,
+  PRESET_PATH,
   RUMDL_TABLE,
   standard,
 } from "../paths.ts";
 import { POINTER, isMarked, isPointer } from "../root-config.ts";
 import { blockOf } from "./block.ts";
-import { commentsIn, sectionsOf } from "./scan.ts";
+import { commentsIn, linesOf, sectionsOf } from "./scan.ts";
 import { sort } from "./sort.ts";
 import type { Sorted } from "./sort.ts";
 import { parsed, same, withTable } from "./tables.ts";
@@ -40,7 +41,7 @@ const written = (
   family: readonly string[]
 ): { readonly text: string; readonly lost: readonly string[] } => {
   const all = sectionsOf(text).flatMap((section) =>
-    commentsIn([...section.lead, ...section.body])
+    commentsIn(linesOf(section))
   );
   if (Object.keys(sorted.carried).length === 0) {
     return { lost: all, text: "" };
@@ -83,6 +84,19 @@ const blocked = (current: string, own: Table | null): string | null => {
 };
 
 /**
+ * A setting is left out when the standard already says the same, so the
+ * preset the engine reads has to be that standard. Returns why it is not.
+ */
+const stale = async (root: string): Promise<string | null> => {
+  const file = Bun.file(path.join(root, PRESET_PATH));
+  const installed = (await file.exists()) ? await file.text() : null;
+  const shipped = await preset();
+  return shipped.ok && installed === shipped.text
+    ? null
+    : `${PRESET_PATH} is not the preset this Cinch ships, so what the settings sit above is not what Cinch would compare them with. Run \`cinch doctor --fix\` first.`;
+};
+
+/**
  * Moves what the root config states into the engine's table in the Cinch
  * config, and leaves the root config a pointer. The settings go down one
  * layer and the layers keep their order, so the engine resolves the same.
@@ -98,7 +112,7 @@ export const absorb = async (
     return { files: [], notes: [], ok: true };
   }
   const own = parsed(current);
-  const reason = blocked(current, own);
+  const reason = blocked(current, own) ?? (await stale(root));
   const before = parsed(config.text);
   const shipped = parsed(await standard());
   if (reason !== null || own === null || before === null || shipped === null) {

@@ -86,8 +86,10 @@ The settings move one layer up or down under the same layers as before, so the t
 - Comments move with their settings. Where they cannot, the settings are written afresh and the comments that were lost are listed.
 - A setting in `.rumdl.toml` that only repeats the layer below is left out, and the output names it.
 - `absorb` stops, writes nothing and exits 1 when a setting is stated in both places with different values, or when the Cinch config already has a table for the same rule. It names the keys to settle by hand.
-- `absorb` needs `.rumdl.toml` to extend the generated config already. When it does not, run `cinch doctor --fix` first.
-- `eject` will not overwrite a `.rumdl.toml` the repository wrote.
+- `absorb` needs `.rumdl.toml` to extend the generated config already, and the preset under `.outfitter/configs/presets/` to be the one this Cinch ships. When either is not so, run `cinch doctor --fix` first.
+- `eject` will not overwrite a `.rumdl.toml` the repository wrote. It will not create one beside a `rumdl.toml`, a `.config/rumdl.toml` or a `[tool.rumdl]` table in `pyproject.toml` either, because rumdl would stop reading that file. It stops on a table that sets `extends`.
+- Neither command writes a file that is a link to somewhere outside the repository. That exits 2.
+- When the files were written and Cinch could not check them afterwards, the command exits 2. When it checked them and they are not clean, it exits 1.
 
 Markdown is the only preset with a tool config to move today.
 

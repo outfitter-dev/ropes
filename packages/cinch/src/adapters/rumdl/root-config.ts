@@ -48,7 +48,9 @@ const namesTool = (text: string): boolean => {
  * finds, so writing `CONFIG_PATH` beside another one would silently replace
  * the repository's settings. Returns the file that already holds them.
  */
-const configuredElsewhere = async (root: string): Promise<string | null> => {
+export const configuredElsewhere = async (
+  root: string
+): Promise<string | null> => {
   const found = await Promise.all(
     SIBLINGS.map((name) => Bun.file(path.join(root, name)).exists())
   );
