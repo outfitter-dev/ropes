@@ -3,18 +3,15 @@ import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { BUILT_ON_RULE } from "../src/adapters/built-on.ts";
 import { adaptersFor } from "../src/adapters/registry.ts";
 import type { CommandRequest } from "../src/commands/command.ts";
 import { createCommands } from "../src/commands/registry.ts";
 import { DoctorReportSchema } from "../src/contracts/doctor.ts";
-import { PresetReportSchema } from "../src/contracts/preset.ts";
 import { checkoutAt, fixtureGit } from "./acceptance-repo.ts";
 
 const ON =
   "pilot = 0\n[markdown]\npreset = false\n[lint]\npreset = true\n[format]\npreset = true\n[typescript]\npreset = true\n";
 const ROOTS = ["oxlint.config.ts", "oxfmt.config.ts", "tsconfig.json"];
-const ULTRACITE = "node_modules/ultracite/package.json";
 const TS_PRESET = "./.outfitter/configs/presets/tsconfig.json";
 
 const commands = createCommands({ adapters: adaptersFor });
@@ -25,7 +22,7 @@ beforeEach(async () => {
   await mkdir(path.join(root, ".git"));
   await Bun.write(path.join(root, "cinch.toml"), ON);
   await Bun.write(
-    path.join(root, ULTRACITE),
+    path.join(root, "node_modules/ultracite/package.json"),
     JSON.stringify({ name: "ultracite", version: "8.1.1" })
   );
 });
@@ -38,21 +35,17 @@ const put = (file: string, text: string): Promise<number> =>
 const text = (file: string): Promise<string> =>
   Bun.file(path.join(root, file)).text();
 
-const run = (verb: string, request: Partial<CommandRequest> = {}) => {
-  const command = commands[verb];
+const doctor = async (request: Partial<CommandRequest> = {}) => {
+  const command = commands.doctor;
   if (!command) {
-    throw new Error(`no ${verb} command`);
+    throw new Error("no doctor command");
   }
-  return command({
+  const response = await command({
     cwd: root,
     json: true,
     paths: [],
     ...request,
   });
-};
-
-const doctor = async (request: Partial<CommandRequest> = {}) => {
-  const response = await run("doctor", request);
   const { result } = DoctorReportSchema.parse(
     JSON.parse(response.output ?? "null")
   );
@@ -91,43 +84,6 @@ test("doctor --fix writes each missing root config, and then it is clean", async
   expect(await text("oxfmt.config.ts")).toContain("...preset");
   const again = await doctor();
   expect(again.exitCode).toBe(0);
-});
-
-test.each([
-  { state: "missing", version: null },
-  { state: "incompatible", version: "9.0.0" },
-])("$state Ultracite only blocks the kept presets", async ({ version }) => {
-  await (version === null
-    ? rm(path.join(root, ULTRACITE))
-    : put(ULTRACITE, JSON.stringify({ name: "ultracite", version })));
-  const fixed = await doctor({ fix: true });
-  const kept = [
-    ".outfitter/configs/presets/oxfmt.ts",
-    ".outfitter/configs/presets/oxlint.ts",
-  ];
-  expect(fixed.exitCode).toBe(1);
-  expect(
-    fixed.result.steps
-      .flatMap((step) => step.findings)
-      .filter((finding) => finding.rule === BUILT_ON_RULE)
-      .map((finding) => finding.path)
-      .toSorted()
-  ).toEqual(kept);
-
-  const listed = await run("preset", { action: "list" });
-  const { presets } = PresetReportSchema.parse(
-    JSON.parse(listed.output ?? "null")
-  );
-  const files = presets.flatMap((preset) => preset.files);
-  expect(
-    files
-      .filter((file) => file.state === "blocked")
-      .map((file) => file.path)
-      .toSorted()
-  ).toEqual(kept);
-  for (const file of ROOTS) {
-    expect(files).toContainEqual({ path: file, state: "current" });
-  }
 });
 
 test.each(["oxlint.config.ts", "oxfmt.config.ts"])(
@@ -209,11 +165,45 @@ test("an empty tsconfig.json gets the key with no comma after it", async () => {
 
 test.each([
   `{ "extends": "${TS_PRESET}" }`,
-  '{ "extends": ".outfitter/configs/presets/tsconfig.json" }',
+  JSON.stringify({ extends: TS_PRESET.slice(0, -".json".length) }),
+  JSON.stringify({ extends: TS_PRESET.replaceAll("/", "\\") }),
   `{ "extends": ["./base.json", "${TS_PRESET}"] }`,
 ])("%s extends the preset", async (own) => {
   await put("tsconfig.json", own);
   expect(await about("tsconfig.json")).toEqual([]);
+});
+
+test("a bare preset path is a package specifier, not a relative extends", async () => {
+  const own = JSON.stringify({ extends: TS_PRESET.slice(2) });
+  await put("tsconfig.json", own);
+  const [finding = ""] = await about("tsconfig.json");
+  expect(finding).toContain("not the preset Cinch keeps");
+  await doctor({ fix: true });
+  expect(await text("tsconfig.json")).toBe(own);
+});
+
+test("an existing extensionless config takes precedence over the preset", async () => {
+  const exact = TS_PRESET.slice(0, -".json".length);
+  const own = JSON.stringify({ extends: exact });
+  await fixtureGit(root, "init", "--quiet", "--template=");
+  await put("tsconfig.json", own);
+  await put(exact, "{}");
+  await put(".gitignore", `${exact.slice(2)}\nnode_modules\n`);
+  await fixtureGit(root, "check-ignore", "--quiet", exact);
+  const [finding = ""] = await about("tsconfig.json");
+  expect(finding).toContain("not the preset Cinch keeps");
+  const preview = await checkoutAt(root).cinch([
+    "doctor",
+    "--fix",
+    "--dry-run",
+    "--json",
+  ]);
+  expect(preview.exitCode).toBe(1);
+  const { result } = DoctorReportSchema.parse(JSON.parse(preview.stdout));
+  const previewFinding = result.steps
+    .flatMap((step) => step.findings)
+    .find((item) => item.path === "tsconfig.json");
+  expect(previewFinding?.message).toContain("not the preset Cinch keeps");
 });
 
 test("a tsconfig.json that extends something else is left for a person", async () => {

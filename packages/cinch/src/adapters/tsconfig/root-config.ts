@@ -5,6 +5,7 @@ import { PRESET_PATH, ROOT_PATH } from "./paths.ts";
 
 const KEY = "extends";
 const TARGET = `./${PRESET_PATH}`;
+const WITHOUT_EXTENSION = PRESET_PATH.slice(0, -".json".length);
 const LINE = `"${KEY}": "${TARGET}"`;
 const FRESH = `{\n  ${LINE}\n}\n`;
 
@@ -25,9 +26,15 @@ const parse = (text: string): Record<string, unknown> | null => {
   }
 };
 
-const isPreset = (named: unknown): boolean =>
-  typeof named === "string" &&
-  path.posix.normalize(named) === path.posix.normalize(PRESET_PATH);
+const relativeConfigPath = (named: unknown): string | undefined => {
+  if (typeof named !== "string") {
+    return undefined;
+  }
+  const slashed = named.replaceAll("\\", "/");
+  return slashed.startsWith("./") || slashed.startsWith("../")
+    ? path.posix.normalize(slashed).replace(/\/$/u, "")
+    : undefined;
+};
 
 /** Where the file's opening brace is, past any comment before it. */
 const opening = (text: string): number => {
@@ -69,7 +76,7 @@ const withExtends = (
 
 const ADD = `${OWN} It does not extend the preset Cinch keeps. Add \`${LINE}\`, or run \`cinch doctor --fix\`, which adds it and changes nothing else.`;
 
-const want = (current: string | null): Wanted => {
+const want = async (current: string | null, root: string): Promise<Wanted> => {
   if (current === null) {
     return { ok: true, text: FRESH };
   }
@@ -81,7 +88,14 @@ const want = (current: string | null): Wanted => {
     };
   }
   const named = parsed[KEY];
-  if ((Array.isArray(named) ? named : [named]).some(isPreset)) {
+  const relative = new Set(
+    (Array.isArray(named) ? named : [named]).map(relativeConfigPath)
+  );
+  if (
+    relative.has(PRESET_PATH) ||
+    (relative.has(WITHOUT_EXTENSION) &&
+      !(await Bun.file(path.join(root, WITHOUT_EXTENSION)).exists()))
+  ) {
     return { ok: true, text: current };
   }
   if (named !== undefined) {
@@ -103,7 +117,8 @@ const want = (current: string | null): Wanted => {
  * order of the two decides which wins.
  */
 export const rootConfig: ManagedFile = {
+  beside: [WITHOUT_EXTENSION],
   layer: "root",
   path: ROOT_PATH,
-  want: (current) => Promise.resolve(want(current)),
+  want,
 };
