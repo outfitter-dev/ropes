@@ -18,13 +18,15 @@ To rehearse a candidate version locally, set both package manifest versions and 
 
 ## npm release
 
-The published pilot is `0.1.0-pilot.0`. Prepare `0.1.0-canary.0` as the first opt-in `canary` release. The proposed stable pair is `0.1.0` under `latest`, after the canary has a clean install and consumer checks. Use `0.1.0-canary.1` for a new candidate if the first canary needs changes. Keep each published version immutable and both packages on the same version and channel.
+The published pilot is `0.1.0-pilot.0`. The first opt-in `canary` release is `0.1.0-canary.0`. The proposed stable pair is `0.1.0` under `latest`, after the canary has a clean install and consumer checks. Use `0.1.0-canary.1` for a new candidate if the first canary needs changes. Keep each published version immutable and both packages on the same version and channel.
 
-Dispatch the **npm release** workflow on `main` with `prepare` to produce the verified pair and its SHA-256 manifest. Review the source commit, version, channel, and both hashes before staging. The workflow checks the artifact’s origin and digest before it will stage a tarball. The archive’s manifest binds its version to the `canary` or `latest` channel. The internal source repository uses trusted publishing without npm provenance.
+Dispatch the **npm release** workflow on `main` with `prepare` to run the gates and retain the two verified tarballs. Confirm the source commit, version, and channel. The run summary records the SHA-256 of each archive.
 
-Each npm package trusts `outfitter-dev/ropes` and `npm-release.yml` with stage-only permissions. After artifact approval, dispatch `core` and then `cli` with the same artifact ID and each package's approved hash. If one submission succeeds and the other fails, retry only the missing package with the same artifact. Approve core before CLI in npm with 2FA.
+Each npm package trusts `outfitter-dev/ropes` and `npm-release.yml`. To enable this workflow, turn on **Allow npm publish** once for each trusted publisher. The internal source repository publishes via OIDC with npm provenance disabled.
 
-After both approvals, verify that both target tags point to the approved version and the published archive hashes match. Install the exact version in a clean Git checkout with an initial commit and check the launcher.
+When the pair is ready to release, dispatch `publish` on `main` with the candidate artifact ID, `core_sha256`, and `cli_sha256`. The workflow verifies the artifact’s origin, both hashes, and the matching package version and channel. It publishes core and verifies its public tarball and tag before publishing and verifying CLI. If a release stops partway through, dispatch `publish` again with the same inputs. A version already in the registry must have the expected tag and identical archive bytes before the workflow proceeds.
+
+After the workflow succeeds, install the exact CLI version in a clean Git checkout with an initial commit and check the launcher.
 
 ```sh
 bun add --dev --exact @ropes/cli@0.1.0-canary.0
