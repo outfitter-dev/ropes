@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -34,7 +34,13 @@ const inRepo = async <T>(
   files: Readonly<Record<string, string>>,
   body: (root: string) => Promise<T>
 ): Promise<T> => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-rumdl-"));
+  const root = await realpath(
+    await mkdtemp(path.join(tmpdir(), "cinch-rumdl-"))
+  );
+  const userConfig = Bun.env.XDG_CONFIG_HOME;
+  const userHome = Bun.env.HOME;
+  Bun.env.XDG_CONFIG_HOME = path.join(root, "user-config");
+  Bun.env.HOME = path.join(root, "user-home");
   try {
     await Promise.all(
       Object.entries(files).map(([name, text]) =>
@@ -43,6 +49,16 @@ const inRepo = async <T>(
     );
     return await body(root);
   } finally {
+    if (userHome === undefined) {
+      delete Bun.env.HOME;
+    } else {
+      Bun.env.HOME = userHome;
+    }
+    if (userConfig === undefined) {
+      delete Bun.env.XDG_CONFIG_HOME;
+    } else {
+      Bun.env.XDG_CONFIG_HOME = userConfig;
+    }
     await rm(root, { force: true, recursive: true });
   }
 };

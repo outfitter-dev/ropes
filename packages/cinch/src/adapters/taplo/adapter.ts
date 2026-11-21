@@ -39,6 +39,20 @@ const incomplete = (reason: string): StepOutcome => ({
 
 const lastLine = (text: string): string => text.trim().split("\n").at(-1) ?? "";
 
+const failureExcerpt = (stderr: string): string => {
+  const lines = stderr
+    .trim()
+    .split("\n")
+    .filter((line) => line.trim() !== "");
+  const failure = lines.filter((line) => !/^\s*(?:note|help):/u.test(line));
+  return (
+    (failure.length > 0 ? failure : lines)
+      .slice(0, 4)
+      .join("\n")
+      .slice(0, 1000) || "no diagnostic output"
+  );
+};
+
 /**
  * Taplo exits 0 when the file is valid and 1 when it is not. It also exits 0
  * when it read no file at all, for one its own config excludes, so a pass
@@ -72,7 +86,8 @@ const lint = (command: string, input: FileInput) =>
       "--",
       literal(path.join(input.root, input.path)),
     ],
-    input.root
+    input.root,
+    { RUST_LOG: "taplo=info" }
   );
 
 /**
@@ -104,7 +119,7 @@ const check = async (
   }
   const { exitCode, stderr } = await asked(command, input);
   if (exitCode !== 0 && exitCode !== 1) {
-    return incomplete(`${ID} exited ${exitCode}: ${lastLine(stderr)}`);
+    return incomplete(`${ID} exited ${exitCode}: ${failureExcerpt(stderr)}`);
   }
   const problem = configProblem(stderr);
   if (problem !== undefined) {
