@@ -1,8 +1,13 @@
 {
   "name": "@ropes/core",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0-pilot.0",
   "description": "The Ropes policy engine and typed quality operations.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/outfitter-dev/ropes.git",
+    "directory": "packages/cinch"
+  },
   "files": [
     "src",
     "!src/cli.ts",
@@ -14,6 +19,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./render": "./src/render/index.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "pilot"
   },
   "dependencies": {
     "@types/semver": "7.8.0",

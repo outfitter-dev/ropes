@@ -1,0 +1,91 @@
+name: npm pilot
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Prepare the candidate or stage one approved package
+        type: choice
+        required: true
+        options: [prepare, core, cli]
+      artifact_id:
+        description: Approved candidate artifact ID for staging
+        type: string
+      sha256:
+        description: Approved SHA-256 for the package being staged
+        type: string
+permissions: {}
+concurrency:
+  group: npm-pilot
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main' && inputs.operation == 'prepare'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        with:
+          version: 2026.11.10
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - name: Verify and retain the tarballs
+        run: |
+          ROPES_PACKED_OUTPUT="$RUNNER_TEMP/ropes-pilot" bun run check:packed
+          cd "$RUNNER_TEMP/ropes-pilot"
+          sha256sum core.tgz cli.tgz > SHA256SUMS
+          cat SHA256SUMS >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ropes-npm-pilot
+          path: ${{ runner.temp }}/ropes-pilot/
+          if-no-files-found: error
+  stage:
+    if: github.ref == 'refs/heads/main' && (inputs.operation == 'core' || inputs.operation == 'cli')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      id-token: write
+    steps:
+      - name: Verify the approved tarball
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ inputs.artifact_id }}
+          APPROVED_SHA256: ${{ inputs.sha256 }}
+          PACKAGE: ${{ inputs.operation }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ || ! "$APPROVED_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "Staging requires an artifact ID and the approved lowercase SHA-256."
+            exit 1
+          fi
+          artifact="repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID"
+          run_id=$(gh api "$artifact" | jq -er '
+            select(.name == "ropes-npm-pilot" and .expired == false) | .workflow_run.id
+          ')
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" | jq -e '
+            .path == ".github/workflows/npm-pilot.yml" and .event == "workflow_dispatch" and
+            .head_branch == "main" and .conclusion == "success"
+          ' > /dev/null
+          gh api "$artifact/zip" > "$RUNNER_TEMP/ropes-pilot.zip"
+          tarball="$RUNNER_TEMP/$PACKAGE.tgz"
+          unzip -p "$RUNNER_TEMP/ropes-pilot.zip" "$PACKAGE.tgz" > "$tarball"
+          printf '%s  %s\n' "$APPROVED_SHA256" "$tarball" | sha256sum -c -
+          tar -xOf "$tarball" package/package.json | jq -e --arg package "@ropes/$PACKAGE" '
+            .name == $package and .version == "0.1.0-pilot.0" and .license == "MIT" and
+            .publishConfig.access == "public" and .publishConfig.tag == "pilot"
+          ' > /dev/null
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24.22.3"
+          package-manager-cache: false
+      - name: Submit for npm review
+        env:
+          PACKAGE: ${{ inputs.operation }}
+          NPM_CONFIG_PROVENANCE: "false"
+        run: npm stage publish "$RUNNER_TEMP/$PACKAGE.tgz" --access public --tag pilot --ignore-scripts --registry https://registry.npmjs.org
