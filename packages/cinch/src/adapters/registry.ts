@@ -7,8 +7,8 @@ import { rulesAdapter } from "./ast-grep/adapter.ts";
 import { bunCheckAdapter } from "./bun-check/adapter.ts";
 import { compilerApiAdapter } from "./bun-check/compatibility.ts";
 import { bunFmtAdapter } from "./bun-fmt/adapter.ts";
+import { editorTextAdapter } from "./editor-text/adapter.ts";
 import { editorFileAdapter } from "./editorconfig/adapter.ts";
-import { editorCheckerAdapter } from "./editorconfig/check-adapter.ts";
 import { lycheeAdapter } from "./lychee/adapter.ts";
 import { oxfmtPreset } from "./oxfmt/preset.ts";
 import { oxlintAdapter } from "./oxlint/adapter.ts";
@@ -41,7 +41,7 @@ export const adaptersFor = (
   managedDir: ManagedDir = CINCH_MANAGED_DIR
 ): readonly Adapter[] => [
   editorFileAdapter(editor),
-  editorCheckerAdapter(editor, pins["editorconfig-checker"]),
+  editorTextAdapter(editor),
   rumdlPresetAdapter({ managedDir, table: tables[RUMDL_TABLE] }),
   oxlintPreset(managedDir),
   oxfmtPreset(managedDir),

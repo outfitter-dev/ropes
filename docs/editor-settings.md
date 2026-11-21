@@ -26,15 +26,17 @@ Every key is optional. Cinch writes only what the table states, and ships no def
 
 ## Checking files
 
-Set `check = true` in `[editor]` to check selected files that have no active formatter. Pin `editorconfig-checker = "4.0.2"` in `mise.toml` and install that tool through mise. Existing editor configurations opt in explicitly because enforcement requires an additional executable. The first integration supports macOS and Linux. An enabled editor check on another platform is incomplete.
+Set `check = true` in `[editor]` to check selected files that have no active formatter. The built-in text adapter checks the declared facts directly. Editor enforcement is an explicit adoption choice.
 
 Bun's formatter owns its supported JavaScript, TypeScript, JSON, YAML, TOML, Markdown, CSS, HTML and related extensions while `format.enabled` is true. rumdl owns Markdown while `markdown.enabled` is true. Taplo checks TOML syntax and schemas, so an unformatted TOML file can still receive the editor check. Python, shell, plain text and extensionless files can receive it too, when selected by the repository's include policy. A formatter disabled by a path override leaves that path eligible. Setup files are checked by their setup adapters.
 
-`explain` shows each selected editor check. The pinned engine reads a temporary copy of the file and the same rendered editor settings used for generation, including the ordered editor overrides. Authored root and nested `.editorconfig` files do not override those facts in this isolated check. Setup validation separately reports when the root `.editorconfig` differs from the declared table.
+`explain` shows each selected editor check. The adapter reads the same typed facts used for generation and applies matching editor overrides in order, replacing only stated keys. A section glob without a slash matches basenames at any depth. A slash makes it root-relative. The matcher supports brace alternatives, numeric ranges and double stars across directories. Authored root and nested `.editorconfig` files do not replace the declared table in this check. Setup validation separately reports root configuration drift.
 
-Findings name the editor setting, such as `indent_style` or `final_newline`, and retain the engine's line or line range. Whole-file findings point at line one. Native `editorconfig-checker-disable` comments keep their engine meaning. A required file the engine leaves out, unsupported diagnostics, and a missing or incompatible executable produce an incomplete result. An explicitly selected nested `.editorconfig` cannot validate itself as its own policy and is incomplete.
+Findings name the editor setting, such as `indent_style` or `final_newline`, and identify its line. Whole-file findings point at line one. CR, LF and CRLF delimit logical lines without a line-length limit. Empty text has no final-newline requirement. Leading indentation uses the declared spaces or tabs. Indentation size is a multiple of the declared columns even when style is unstated, and tabs advance by that size. These are whitespace conventions without language-sensitive continuation alignment. Line width uses Bun's Unicode display width, with tab stops equal to `indent_size` or eight columns when size is absent. Blank lines are exempt from indentation checks and still receive trailing-whitespace checks.
 
-`check` and `fix` both report these findings without repairing them. A repair remains the owner's edit or its formatter's work. The check creates and removes its temporary input outside the repository.
+The declared charset selects strict decoding for UTF-8, UTF-8 with a BOM, UTF-16LE, UTF-16BE or Latin-1. Conflicting or missing required BOMs and invalid declared encodings are charset findings. Without a declared charset, a BOM selects UTF-16 or UTF-8, otherwise text must decode as UTF-8. Undecodable input and binary control characters make the check incomplete. The checker validates compatibility with the declared encoding and performs no heuristic charset detection. Use the ordinary include and exclude policy to scope selected text.
+
+`check` and `fix` report these findings without repairing files. A formatter that ignores a selected file remains incomplete through its existing coverage check. Disable that formatter for the path through a policy override to select the editor fallback.
 
 ## Who writes the file
 
@@ -84,5 +86,4 @@ The first shows the `[editor]` table it would add to the Cinch config and the ge
 ## Not yet
 
 - Cinch does not yet write these facts into other tools' configs. It does report a tool's config that states one differently: see [shared facts](shared-facts.md).
-- Cinch does not yet hold files to these facts. The checks that will do so read the same table, so there stays one source.
 - A key the table does not know, such as `tab_width`, cannot be stated.

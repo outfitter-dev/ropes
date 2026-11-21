@@ -61,7 +61,7 @@ enabled = false
     }
     const editors = parsed.value.paths
       .filter((file) =>
-        file.steps.some((step) => step.adapter === "editorconfig-checker")
+        file.steps.some((step) => step.adapter === "editor-text")
       )
       .map((file) => file.path);
     expect(editors).toContain("a.txt");
@@ -81,20 +81,11 @@ enabled = false
       ["explain", "a.txt", "--json"],
       main.root
     );
-    expect(disabled.stdout).not.toContain('"adapter": "editorconfig-checker"');
+    expect(disabled.stdout).not.toContain('"adapter": "editor-text"');
   });
 });
 
-test("native editor findings name settings and preserve the worktree and index", async () => {
-  if (
-    !["darwin", "linux"].includes(process.platform) ||
-    Bun.which("editorconfig-checker") === null
-  ) {
-    console.warn(
-      "skipped: native editor enforcement needs a qualified platform and editorconfig-checker on PATH"
-    );
-    return;
-  }
+test("editor findings name settings and preserve the worktree and index", async () => {
   await withFixture(async ({ main }) => {
     await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
     const dirty = path.join(main.root, "nested/[literal]/file.txt");
@@ -113,7 +104,7 @@ test("native editor findings name settings and preserve the worktree and index",
       throw new Error("expected a result");
     }
     const editor = parsed.value.steps.filter(
-      (step) => step.adapter === "editorconfig-checker"
+      (step) => step.adapter === "editor-text"
     );
     expect(editor.find((step) => step.path === "Makefile")?.status).toBe(
       "passed"
@@ -134,25 +125,25 @@ test("native editor findings name settings and preserve the worktree and index",
   });
 });
 
-test("explicit editor checking is incomplete without its engine", async () => {
+test("the built-in editor checker runs without an external executable", async () => {
   await withFixture(async ({ main, emptyPath }) => {
     await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
     await Bun.write(path.join(main.root, "a.txt"), "clean\n");
+    await main.cinch(["doctor", "--fix", "--json"]);
     const ran = await runEntry(
       ROPE,
       ["check", "a.txt", "--json"],
       main.root,
       emptyPath
     );
-    expect(ran.exitCode).toBe(2);
+    expect(ran.exitCode).toBe(0);
     const parsed = parseResult(json(ran));
     expect(parsed.ok).toBe(true);
     if (parsed.ok) {
       expect(
-        parsed.value.steps.find(
-          (step) => step.adapter === "editorconfig-checker"
-        )?.status
-      ).toBe("incomplete");
+        parsed.value.steps.find((step) => step.adapter === "editor-text")
+          ?.status
+      ).toBe("passed");
     }
   });
 });
