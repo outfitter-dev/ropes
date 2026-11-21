@@ -17,7 +17,7 @@ If mise refuses to read `mise.toml` because the file is not trusted, which its p
 
 ## Without mise
 
-`scripts/bootstrap.sh` uses mise when it is installed and installs every pinned tool at its exact version. Without mise it accepts a Bun at or above the pin and prints a warning, because a newer runtime on the host is not a reason to stop. It does not install the other tools in that case, so the `cinch check` step of `bun run check` reports rumdl and Taplo as missing and the check fails until both are on `PATH`. CI always uses mise, so CI always runs the exact pins.
+`scripts/bootstrap.sh` uses mise when it is installed and installs every pinned tool at its exact version. Without mise it accepts a Bun at or above the pin and prints a warning, because a newer runtime on the host is not a reason to stop. It does not install the other tools in that case, so the `cinch check` step of `bun run check` reports required engines such as rumdl, Lychee and Taplo as missing and the check fails until they are on `PATH`. CI always uses mise, so CI always runs the exact pins.
 
 ## How a Cinch adapter learns its engine's version
 

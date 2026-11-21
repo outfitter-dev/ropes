@@ -186,6 +186,11 @@ export const withCopy = async <T>(
         throw new CopyError(input.path);
       }
       try {
+        if (input.directory === true) {
+          // eslint-disable-next-line no-await-in-loop -- each destination is checked before creation
+          await mkdir(target, { recursive: true });
+          continue;
+        }
         // eslint-disable-next-line no-await-in-loop -- each input is checked before any writes to its destination
         await mkdir(path.dirname(target), { recursive: true });
         // A fresh destination prevents copies through descendant links left

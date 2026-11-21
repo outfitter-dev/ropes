@@ -8,6 +8,7 @@ import { bunCheckAdapter } from "./bun-check/adapter.ts";
 import { compilerApiAdapter } from "./bun-check/compatibility.ts";
 import { bunFmtAdapter } from "./bun-fmt/adapter.ts";
 import { editorFileAdapter } from "./editorconfig/adapter.ts";
+import { lycheeAdapter } from "./lychee/adapter.ts";
 import { oxfmtPreset } from "./oxfmt/preset.ts";
 import { oxlintAdapter } from "./oxlint/adapter.ts";
 import { oxlintPreset } from "./oxlint/preset.ts";
@@ -44,6 +45,7 @@ export const adaptersFor = (
   oxfmtPreset(managedDir),
   tsconfigPreset(managedDir),
   rumdlAdapter({ version: pins.rumdl }),
+  lycheeAdapter(pins.lychee),
   taploAdapter({ version: pins.taplo }),
   oxlintAdapter({ version: pins.oxlint }),
   compilerApiAdapter(pins.bun, "tsconfig.json"),

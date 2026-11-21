@@ -9,13 +9,15 @@ export interface Exit {
 /** Runs a command to completion and collects what it printed. */
 export const exec = async (
   command: readonly string[],
-  cwd?: string
+  cwd?: string,
+  env?: Readonly<Record<string, string>>
 ): Promise<Exit> => {
   const searchPath = await enginePath();
   const child = Bun.spawn([...command], {
     ...(cwd === undefined ? {} : { cwd }),
     env: {
       ...Bun.env,
+      ...env,
       ...(searchPath === undefined ? {} : { PATH: searchPath }),
     },
     stderr: "pipe",

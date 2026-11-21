@@ -147,6 +147,10 @@
     "markdown": {
       "type": "object",
       "properties": {
+        "links": {
+          "description": "Whether local Markdown links and heading fragments are checked. Off unless set to true; independent of style checking.",
+          "type": "boolean"
+        },
         "enabled": {
           "description": "Whether Markdown is checked. On unless set to false.",
           "type": "boolean"
@@ -187,6 +191,10 @@
           "markdown": {
             "type": "object",
             "properties": {
+              "links": {
+                "description": "Whether local Markdown links and heading fragments are checked. Off unless set to true; independent of style checking.",
+                "type": "boolean"
+              },
               "enabled": {
                 "description": "Whether Markdown is checked. On unless set to false.",
                 "type": "boolean"

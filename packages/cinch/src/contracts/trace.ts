@@ -3,6 +3,8 @@ import type { Plan, PlanBatch } from "./plan.ts";
 /** An initial check invocation. Each argument retains its own boundary. */
 export interface PlannedInvocation {
   readonly cwd: string;
+  /** Environment values that override the invoking process. */
+  readonly env?: Readonly<Record<string, string>>;
   readonly argv: readonly string[];
 }
 

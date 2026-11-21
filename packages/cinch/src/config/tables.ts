@@ -14,6 +14,12 @@ export const ProfileSchema = z.strictObject({
     .boolean()
     .optional()
     .describe("Whether Markdown is checked. On unless set to false."),
+  links: z
+    .boolean()
+    .optional()
+    .describe(
+      "Whether local Markdown links and heading fragments are checked. Off unless set to true; independent of style checking."
+    ),
   preset: z
     .boolean()
     .optional()

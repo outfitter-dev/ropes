@@ -15,6 +15,7 @@ import type {
 } from "./command.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps, Prepared } from "./prepare.ts";
+import { collectPreviewInputs } from "./preview-inputs.ts";
 import { CopyError, withCopy } from "./scratch.ts";
 import { prepareSetup } from "./setup.ts";
 
@@ -115,23 +116,7 @@ export const writePlan = async (
       ...also,
       ...beside,
     ];
-    const snapshots = await Promise.all(
-      plan.batches
-        .filter((batch) => batch.incomplete === undefined)
-        .map(async (batch) => {
-          const adapter = prepared.adapters.find(
-            ({ descriptor }) => descriptor.id === batch.adapter
-          );
-          return await (adapter?.previewInputs?.({
-            package: batch.package,
-            paths: batch.paths,
-            root: root.root,
-            ...(batch.rules === undefined ? {} : { rules: batch.rules }),
-            ...(batch.target === undefined ? {} : { target: batch.target }),
-          }) ?? []);
-        })
-    );
-    const inputs = snapshots.flat();
+    const inputs = await collectPreviewInputs(prepared);
     const uniqueInputs = [
       ...new Map(inputs.map((input) => [input.path, input])).values(),
     ];

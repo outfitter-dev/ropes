@@ -11,8 +11,9 @@ const batchBlock = ({ batch, description }: TracedBatch): string => {
     heading,
     ...rules.map((rule) => `  rule: ${rule}`),
     ...sources.map((source) => `  authored rule: ${source}`),
-    ...invocations.flatMap(({ argv, cwd }) => [
+    ...invocations.flatMap(({ argv, cwd, env }) => [
       `  cwd: ${cwd}`,
+      ...(env === undefined ? [] : [`  env: ${JSON.stringify(env)}`]),
       `  argv: ${JSON.stringify(argv)}`,
     ]),
     ...limitations.map((limitation) => `  ${limitation}`),
