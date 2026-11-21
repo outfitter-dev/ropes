@@ -24,6 +24,12 @@ preset = false
 `;
 
 test("compatibility cleanup passes on the old API before the final dependency upgrade", async () => {
+  if (Bun.which("bun") === null) {
+    console.warn(
+      "skipped: bun is not on PATH, so the compatibility stack proof did not run"
+    );
+    return;
+  }
   await withFixture(async ({ main }) => {
     await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
     await Bun.write(

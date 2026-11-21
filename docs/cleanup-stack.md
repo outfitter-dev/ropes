@@ -29,7 +29,7 @@ The fixture tests missing exact inputs and unreviewed policy-context changes as 
 
 A plain consumer replay validates the versioned report with public `parseCleanup`. It obtains the expected policy commit, parent, candidate and candidate tree independently from Git and compares them to the report before evaluating the verdict.
 
-The replay presents removals attributable to the layer, total campaign debt and full-scope zero as separate values. It rejects a previous layer’s report for a different parent or candidate and rejects simulated reports for current qualification. A deliberate local replay may accept a simulated report. At midnight UTC on the policy deadline, the merged first layer blocks on its seven remaining occurrences while the completed tip passes independently.
+The replay presents removals attributable to the layer, total campaign debt and full-scope zero as separate values. It rejects a previous layer’s report for a different parent or candidate and rejects simulated reports for current qualification. A deliberate local replay may accept a simulated report. At midnight UTC on the policy deadline, the actual squash-landed first layer blocks on its seven remaining occurrences, the restacked middle layer blocks on three, and the rebased completed tip passes independently.
 
 ## Keep dependency upgrades independently runnable
 
@@ -41,6 +41,7 @@ A dependency upgrade changes the immutable context frozen by the cleanup policy.
 
 ```sh
 bun test packages/cli/tests/cleanup-stack.test.ts \
+  packages/cli/tests/cleanup-restack.test.ts \
   packages/cli/tests/cleanup-stack-consumer.test.ts \
   packages/cli/tests/cleanup-stack-compatibility.test.ts
 ```
