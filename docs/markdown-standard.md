@@ -136,3 +136,15 @@ indent = 4
 A repository that already states its rules in `.rumdl.toml` can move them into this table with `cinch preset adopt markdown`, and back with `cinch preset eject markdown`. See [Presets](presets.md).
 
 The settings several tools must agree on, such as indent and line width, are not part of this table yet.
+
+## Testing a rule migration
+
+The Markdown migration parity fixture runs markdownlint and the production rumdl adapter on the same files. It compares findings by relative path, line, and the migration's canonical rule ID, and preserves multiple findings on the same line. A missing engine or unusable output gives an incomplete report.
+
+The frozen workspace install supplies the pinned `markdownlint` engine, and CI runs the fixture with the pinned rumdl on `PATH`. Run it on its own with:
+
+```sh
+bun test packages/cinch/tests/markdownlint-parity.test.ts
+```
+
+Test authors can reuse `markdownlintParity` with a trusted legacy rules file, the rule catalog from the migration, and an explicit file list. It uses the migration's config reader and the markdownlint engine API, so personal settings and discovery rules cannot change the selection or findings. The fixture compares built-in rules, with custom rules and inherited legacy configs outside its scope.
