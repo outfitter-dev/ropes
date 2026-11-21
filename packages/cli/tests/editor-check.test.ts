@@ -86,9 +86,12 @@ enabled = false
 });
 
 test("native editor findings name settings and preserve the worktree and index", async () => {
-  if (Bun.which("editorconfig-checker") === null) {
+  if (
+    !["darwin", "linux"].includes(process.platform) ||
+    Bun.which("editorconfig-checker") === null
+  ) {
     console.warn(
-      "skipped: editorconfig-checker is not on PATH, so editor enforcement did not run"
+      "skipped: native editor enforcement needs a qualified platform and editorconfig-checker on PATH"
     );
     return;
   }
