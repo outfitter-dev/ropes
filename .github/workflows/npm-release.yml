@@ -1,4 +1,4 @@
-name: npm pilot
+name: npm release
 on:
   workflow_dispatch:
     inputs:
@@ -68,7 +68,7 @@ jobs:
           run_id=$(gh api "$artifact" | jq -er '
             select(.name == "ropes-npm-pilot" and .expired == false) | .workflow_run.id
           ')
-          workflow_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/npm-pilot.yml" | jq -er '.id')
+          workflow_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/npm-release.yml" | jq -er '.id')
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" | jq -e --argjson workflow_id "$workflow_id" '
             .workflow_id == $workflow_id and .event == "workflow_dispatch" and
             .head_branch == "main" and .conclusion == "success"
