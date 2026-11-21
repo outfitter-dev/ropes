@@ -12,7 +12,6 @@ import {
 } from "@ropes/core";
 import type { MigrationPreview, ReadRequest } from "@ropes/core";
 import {
-  renderFailureJson,
   renderFix,
   renderFixJson,
   renderHuman,
@@ -24,6 +23,8 @@ import {
 
 import manifest from "../package.json" with { type: "json" };
 import { delegate } from "./delegate.ts";
+import { fail, print } from "./output.ts";
+import { policy } from "./policy.ts";
 
 const HELP = `rope ${manifest.version}
 
@@ -32,27 +33,17 @@ Usage: rope <explain|check|fix> [path...] [--json] [--strict]
        rope fix [path...] --dry-run
        rope explain [path...] --trace [--json]
        rope migrate [--dry-run] [--json]
+       rope policy snapshot [path...] [--at <UTC instant>]
+       rope policy compare <before.json> <after.json> [--json]
 
   explain   Show which checks apply and where the policy comes from
   check     Check the selected files without writing to the repository
   fix       Fix the selected files or preview changes with --dry-run
   migrate   Preview a legacy Cinch config migration
+  policy    Capture and compare resolved rule policy
 
 Exit codes: 0 clean, 1 findings remain, 2 incomplete or unusable.
 `;
-
-const print = (output: string): void => {
-  process.stdout.write(`${output}\n`);
-};
-
-const fail = (message: string, json: boolean): number => {
-  // Setup errors join later lines with `cinch: `. Rebrand those as rope.
-  const text = json
-    ? renderFailureJson(message)
-    : `rope: ${message.replaceAll("\ncinch: ", "\nrope: ")}`;
-  process.stderr.write(`${text}\n`);
-  return EXIT_CODE.incomplete;
-};
 
 const renderMigration = (preview: MigrationPreview): string => {
   const { source, target, managedFiles, rootReferences, recovery } = preview;
@@ -140,8 +131,11 @@ const incompatibleOption = (
   if (values.trace === true && verb !== "explain") {
     return "--trace is only for explain.";
   }
-  if (values.at !== undefined && verb !== "explain" && verb !== "check") {
-    return "--at is only for explain and check.";
+  if (
+    values.at !== undefined &&
+    !["explain", "check", "policy"].includes(verb)
+  ) {
+    return "--at is only for explain, check, and policy snapshot.";
   }
   return undefined;
 };
@@ -187,6 +181,9 @@ const main = async (argv: readonly string[]): Promise<number> => {
       }
       print(json ? renderFixJson(ran.value) : renderFix(ran.value));
       return exitCodeOf(ran.value.result);
+    }
+    case "policy": {
+      return await policy(request, json);
     }
     case "migrate": {
       return await migrate(request.cwd, paths, json);

@@ -8,7 +8,7 @@ import type {
   PlannedPath,
   PolicyValue,
 } from "../contracts/plan.ts";
-import { compileGlobs } from "./glob.ts";
+import { ruleScope } from "./rule-scope.ts";
 
 const deadlineOf = ({ key, value }: PolicyValue): string | undefined =>
   key.startsWith(ENFORCEMENT_PREFIX) &&
@@ -25,16 +25,11 @@ const activeRules = (
 ): Map<string, Set<string>> => {
   const byPath = new Map<string, Set<string>>();
   for (const batch of batches) {
-    const scopes = descriptors.find(
-      ({ id }) => id === batch.adapter
-    )?.ruleScopes;
+    const descriptor = descriptors.find(({ id }) => id === batch.adapter);
     for (const rule of batch.rules ?? []) {
-      const scope = scopes?.[rule];
-      const includes =
-        scope?.files === undefined ? () => true : compileGlobs(scope.files);
-      const ignores = compileGlobs(scope?.ignores ?? []);
+      const applies = ruleScope(descriptor, rule);
       for (const path of batch.paths) {
-        if (includes(path) && !ignores(path)) {
+        if (applies(path)) {
           const ids = byPath.get(path) ?? new Set<string>();
           ids.add(rule);
           byPath.set(path, ids);
