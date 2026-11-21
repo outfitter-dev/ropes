@@ -29,17 +29,21 @@ bin = "cinch"
 checksum = "sha256:REPLACE_WITH_THE_ARTIFACT_SHA256"
 ```
 
-The version must match the artifact's `cinch --version`. `0.0.0` is the current local development version. The URL and checksum select the actual bytes, so changing the version alone cannot select a different build.
+An approved release uses an immutable version that matches the artifact's `cinch --version`, with its own artifact URL and checksum. `0.0.0` is the current local development version.
+
+mise reuses a tool already installed under the same backend and version, even if its configured URL or checksum changed. A release upgrade needs a new version identity together with the new artifact URL and checksum. For a rebuilt local `0.0.0` candidate, use `mise install --force http:cinch` to make mise retrieve and verify the configured bytes again. Changing the version label alone still downloads the same file when its URL is fixed.
 
 ```sh
-mise install http:cinch
+mise install --force http:cinch
 mise exec -- cinch --version
+mise exec -- cinch init
+mise exec -- cinch init --yes
 mise exec -- cinch check --strict --json
 ```
 
 Review the config through the repository's normal mise trust process before installation. Commit the exact artifact location and expected checksum with the policy change. A `file://` URL depends on that absolute path existing on each consumer host. For a multi-platform repository, put the URL and checksum under `[tools."http:cinch".platforms]` with `macos-arm64`, `linux-x64`, and `linux-arm64` entries for the corresponding builds. An authenticated artifact download can populate those local paths after release approval. [mise HTTP backend](https://mise.jdx.dev/dev-tools/backends/http.html)
 
-The native acceptance suite tests this route with isolated mise data, config and cache folders. It rejects an incorrect digest before installation, installs the checked artifact, repeats installation without changing the pin, and runs setup and a Markdown check through `mise exec` with Bun absent from `PATH`. The installed executable returns the same JSON and exit code as direct execution of the built artifact.
+The native acceptance suite tests this route with isolated mise data, config, system config and cache folders. It rejects an incorrect digest before installation and on forced reinstall, checks the cached behavior of a same-version pin change, and verifies a new mise version identity rejects a wrong digest and selects the checked bytes after correction. It runs setup and a Markdown check through `mise exec` with Bun absent from `PATH`. The installed executable returns the same JSON and exit code as direct execution of the built artifact.
 
 ## What is inside
 
