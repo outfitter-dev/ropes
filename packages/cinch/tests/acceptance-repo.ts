@@ -67,23 +67,31 @@ const spawn = async (
   cwd: string,
   searchPath?: string
 ): Promise<Ran> => {
-  const child = Bun.spawn([...command], {
-    cwd,
-    env: {
-      ...cleanEnv(),
-      HOME: path.join(cwd, ".fixture-home"),
-      PATH: searchPath ?? process.env.PATH ?? "",
-      XDG_CONFIG_HOME: path.join(cwd, ".fixture-user-config"),
-    },
-    stderr: "pipe",
-    stdout: "pipe",
-  });
-  const [stdout, stderr, exitCode] = await Promise.all([
-    new Response(child.stdout).text(),
-    new Response(child.stderr).text(),
-    child.exited,
-  ]);
-  return { exitCode, stderr, stdout };
+  const userDirectory = await mkdtemp(
+    path.join(tmpdir(), "cinch-fixture-user-")
+  );
+  try {
+    const child = Bun.spawn([...command], {
+      cwd,
+      env: {
+        ...cleanEnv(),
+        HOME: userDirectory,
+        PATH: searchPath ?? process.env.PATH ?? "",
+        XDG_CACHE_HOME: path.join(userDirectory, "cache"),
+        XDG_CONFIG_HOME: path.join(userDirectory, "config"),
+      },
+      stderr: "pipe",
+      stdout: "pipe",
+    });
+    const [stdout, stderr, exitCode] = await Promise.all([
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+      child.exited,
+    ]);
+    return { exitCode, stderr, stdout };
+  } finally {
+    await rm(userDirectory, { force: true, recursive: true });
+  }
 };
 
 export const fixtureGit = async (
