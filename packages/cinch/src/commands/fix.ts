@@ -115,8 +115,31 @@ export const writePlan = async (
       ...also,
       ...beside,
     ];
-    const report = await withCopy(root, paths, (copy) =>
-      apply(prepared, copy, { dryRun, mode })
+    const snapshots = await Promise.all(
+      plan.batches
+        .filter((batch) => batch.incomplete === undefined)
+        .map(async (batch) => {
+          const adapter = prepared.adapters.find(
+            ({ descriptor }) => descriptor.id === batch.adapter
+          );
+          return await (adapter?.previewInputs?.({
+            package: batch.package,
+            paths: batch.paths,
+            root: root.root,
+            ...(batch.rules === undefined ? {} : { rules: batch.rules }),
+            ...(batch.target === undefined ? {} : { target: batch.target }),
+          }) ?? []);
+        })
+    );
+    const inputs = snapshots.flat();
+    const uniqueInputs = [
+      ...new Map(inputs.map((input) => [input.path, input])).values(),
+    ];
+    const report = await withCopy(
+      root,
+      paths,
+      (copy) => apply(prepared, copy, { dryRun, mode }),
+      uniqueInputs
     );
     return { ok: true, value: report };
   } catch (error) {

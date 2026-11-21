@@ -4,7 +4,7 @@ import { probeOnPath } from "../on-path.ts";
 import { heldTo } from "../pins.ts";
 import { SUPPORTED_RANGE } from "./adapter.ts";
 import { apiConfigProblem } from "./api-config.ts";
-import { apiProblem } from "./api-package.ts";
+import { apiPreviewInputs, apiProblem } from "./api-package.ts";
 import { checkBatch } from "./run.ts";
 
 const RULE = "typescript-api/removed-map";
@@ -15,10 +15,15 @@ const mapped = (outcome: FileOutcome): FileOutcome => {
   let unknown = false;
   const findings = outcome.findings.map((finding) => {
     if (finding.rule === "TS2305" && REMOVED.test(finding.message)) {
-      return { ...finding, nativeRule: finding.rule, rule: RULE };
+      return {
+        ...finding,
+        nativeRule: finding.rule,
+        rule: RULE,
+        source: "typescript-api",
+      };
     }
     unknown = true;
-    return finding;
+    return { ...finding, source: "typescript-api" };
   });
   return unknown
     ? {
@@ -60,6 +65,7 @@ export const compilerApiAdapter = (
     packs: [
       {
         about: "Direct imports of TypeScript compiler APIs removed in 5.0.",
+        explicitOnly: true,
         name: "typescript-api",
         relevant: ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
         rules: [RULE],
@@ -72,5 +78,6 @@ export const compilerApiAdapter = (
     writes: false,
   },
   fix: run(configName),
+  previewInputs: apiPreviewInputs,
   probe: () => probeOnPath("bun"),
 });

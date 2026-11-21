@@ -54,6 +54,12 @@ export interface FileOutcome extends StepOutcome {
   readonly path: string;
 }
 
+/** An installed input copied into a preview without a writable source link. */
+export interface PreviewInput {
+  readonly path: string;
+  readonly source: string;
+}
+
 /** The files a config that an adapter replaces chose to check. */
 export interface Inherited {
   /** The root-relative file the choices came from. */
@@ -129,6 +135,10 @@ export interface Adapter {
    */
   readonly check: (input: StepInput) => Promise<readonly FileOutcome[]>;
   readonly fix: (input: StepInput) => Promise<readonly FileOutcome[]>;
+  /** Additional installed inputs needed by this exact batch in a dry run. */
+  readonly previewInputs?: (
+    input: StepInput
+  ) => Promise<readonly PreviewInput[]>;
   /** Describe initial check invocations without running or probing an engine. */
   readonly describeCheck?: (
     input: StepInput

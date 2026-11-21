@@ -1,16 +1,65 @@
+import { realpath } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 
 import { satisfies } from "semver";
 import { z } from "zod";
 
-import type { StepInput } from "../adapter.ts";
+import type { PreviewInput, StepInput } from "../adapter.ts";
 
 const Manifest = z.object({
   name: z.literal("typescript"),
   version: z.string(),
 });
 const require = createRequire(import.meta.url);
+
+/** Root and ancestor installs are already preserved by the existing preview. */
+const nestedInput = async (
+  root: string,
+  file: string
+): Promise<PreviewInput | undefined> => {
+  let directory = path.dirname(path.join(root, file));
+  try {
+    const manifest = await realpath(
+      require.resolve("typescript/package.json", { paths: [directory] })
+    );
+    while (directory !== root && directory !== path.dirname(directory)) {
+      const candidate = path.join(directory, "node_modules/typescript");
+      try {
+        // eslint-disable-next-line no-await-in-loop -- inspect each nearer installation in resolution order
+        const reached = await realpath(path.join(candidate, "package.json"));
+        if (reached === manifest) {
+          return {
+            path: path.relative(root, candidate),
+            source: path.dirname(manifest),
+          };
+        }
+      } catch {
+        // This directory has no matching installation.
+      }
+      directory = path.dirname(directory);
+    }
+  } catch {
+    // Missing declarations remain an incomplete check in either checkout.
+  }
+  return undefined;
+};
+
+export const apiPreviewInputs = async (
+  input: StepInput
+): Promise<PreviewInput[]> => {
+  const root = await realpath(input.root);
+  const entries = await Promise.all(
+    input.paths.map((file) => nestedInput(root, file))
+  );
+  return [
+    ...new Map(
+      entries
+        .filter((entry) => entry !== undefined)
+        .map((entry) => [entry.path, entry])
+    ).values(),
+  ];
+};
 
 const packageProblem = async (
   directory: string,

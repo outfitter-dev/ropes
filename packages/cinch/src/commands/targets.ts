@@ -25,11 +25,12 @@ const readTarget = async (
   const key = `peerDependencies.${dependency}`;
   const base = { dependency, package: directory };
   try {
-    const text = await Bun.file(path.join(root, file)).text();
+    const bytes = await Bun.file(path.join(root, file)).bytes();
+    const text = new TextDecoder().decode(bytes);
     const source = {
       file,
       key,
-      sha256: createHash("sha256").update(text).digest("hex"),
+      sha256: createHash("sha256").update(bytes).digest("hex"),
     };
     const parsed = Manifest.safeParse(JSON.parse(text));
     if (!parsed.success) {

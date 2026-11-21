@@ -139,6 +139,8 @@ export const PackStateSchema = z
   .object({
     about: z.string().min(1),
     adapter: z.string().min(1),
+    /** This pack can be adopted only by naming it explicitly. */
+    explicitOnly: z.boolean().optional(),
     /** The first file found that makes the pack apply. Absent when none. */
     found: z.string().min(1).optional(),
     name: z.string().min(1),

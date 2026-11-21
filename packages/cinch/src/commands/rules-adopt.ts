@@ -30,6 +30,7 @@ const chosen = (
     ? states.filter(
         (pack) =>
           pack.found !== undefined &&
+          pack.explicitOnly !== true &&
           pack.named === undefined &&
           pack.off === undefined
       )

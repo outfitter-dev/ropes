@@ -56,6 +56,9 @@ export const shippedStates = (
       return {
         about: pack.about,
         adapter: descriptor.id,
+        ...(pack.explicitOnly === undefined
+          ? {}
+          : { explicitOnly: pack.explicitOnly }),
         ...(found === undefined ? {} : { found }),
         name: pack.name,
         ...named(pack.name),

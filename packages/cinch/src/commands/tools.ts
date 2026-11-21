@@ -18,7 +18,9 @@ export const toolStatuses = (
   const steps = new Map<string, PlanStep>();
   for (const entry of plan.paths) {
     for (const step of entry.steps) {
-      steps.set(step.adapter, step);
+      if (step.incomplete === undefined) {
+        steps.set(step.adapter, step);
+      }
     }
   }
   return Promise.all(
