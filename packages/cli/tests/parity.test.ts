@@ -51,12 +51,7 @@ proof(
     const clean = parseResult(await compare("check", "clean.md", 0));
     expect(clean).toMatchObject({
       ok: true,
-      value: {
-        steps: [
-          { adapter: "rumdl", path: "clean.md", status: "passed" },
-          { adapter: "lychee", path: "clean.md", status: "passed" },
-        ],
-      },
+      value: { steps: [{ path: "clean.md", status: "passed" }] },
     });
     const findings = parseResult(await compare("check", "README.md", 1));
     if (!findings.ok) {

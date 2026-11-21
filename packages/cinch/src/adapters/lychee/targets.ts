@@ -29,8 +29,8 @@ export const localTargets = async (
   input: StepInput
 ): Promise<readonly string[]> => {
   const invocation = localInvocation(command, input, true);
-  const dumped = await exec(invocation.argv, invocation.cwd);
-  if (dumped.exitCode !== 0) {
+  const dumped = await exec(invocation.argv, invocation.cwd, invocation.env);
+  if (dumped.exitCode !== 0 || dumped.stderr.trim() !== "") {
     throw new Error(
       `local link targets could not be extracted: ${dumped.stderr.trim()}`
     );

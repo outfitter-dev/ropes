@@ -2,6 +2,15 @@ import { devNull } from "node:os";
 
 import type { StepInput } from "../adapter.ts";
 
+/** Escape glob syntax without changing the source name returned by Lychee. */
+export const literalSource = (file: string): string =>
+  file.replaceAll(/[[\]*?{}]/gu, (character) => {
+    if (character === "[") {
+      return "[[]";
+    }
+    return character === "]" ? "[]]" : `[${character}]`;
+  });
+
 /** One isolated, read-only local check, shared by execution and tracing. */
 export const localInvocation = (
   command: string,
@@ -23,7 +32,8 @@ export const localInvocation = (
     "--hidden",
     ...(dump ? ["--dump"] : []),
     "--",
-    ...input.paths,
+    ...input.paths.map(literalSource),
   ],
   cwd: input.root,
+  env: { RUST_LOG: "warn" },
 });

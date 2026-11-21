@@ -28,10 +28,25 @@ jobs:
         run: |
           mkdir -p reports
           mapfile -d '' -t documents < <(git ls-files -z -- '*.md')
+          # Lychee interprets positional inputs as globs, even after --.
+          inputs=()
+          for document in "${documents[@]}"; do
+            literal=""
+            for ((index = 0; index < ${#document}; index++)); do
+              character="${document:index:1}"
+              case "$character" in
+                '[') literal+='[[]' ;;
+                ']') literal+='[]]' ;;
+                '*'|'?'|'{'|'}') literal+="[$character]" ;;
+                *) literal+="$character" ;;
+              esac
+            done
+            inputs+=("$literal")
+          done
           lychee --config /dev/null --scheme=https --scheme=http \
             --exclude-all-private --no-progress --cache=false --no-ignore --hidden \
             --timeout 20 --max-retries 1 --format markdown \
-            --output reports/external-links.md -- "${documents[@]}"
+            --output reports/external-links.md -- "${inputs[@]}"
       - name: Save the external URL report
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

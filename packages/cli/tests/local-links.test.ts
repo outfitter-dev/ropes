@@ -74,6 +74,7 @@ test("selected Markdown validates cross-package local files and headings offline
       main.root
     );
     expect(traced.stdout).toContain("--offline=true");
+    expect(traced.stdout).toContain('"RUST_LOG":"warn"');
     expect(traced.stdout).toContain("--include-fragments=anchor-only");
     expect(await main.files()).toEqual(before);
     expect(await Bun.file(path.join(main.root, "preprocessed")).exists()).toBe(
@@ -88,7 +89,7 @@ test("selected Markdown validates cross-package local files and headings offline
     expect(noEngine.exitCode).toBe(2);
     await Bun.write(
       path.join(main.root, "cinch.toml"),
-      `${CONFIG}\n[[overrides]]\npaths = ["index.md"]\n[overrides.markdown]\nenabled = false\n`
+      `${CONFIG}\n[[overrides]]\npaths = ["index.md"]\n[overrides.markdown]\nenabled = false\nlinks = false\n`
     );
     const disabled = await runEntry(
       ROPE,

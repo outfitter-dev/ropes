@@ -28,11 +28,10 @@ const pins = async (): Promise<Record<string, string>> => {
     throw new Error("mise.toml has no [tools] table");
   }
   const result: Record<string, string> = {};
-  for (const [name, version] of Object.entries(tools)) {
+  for (const [name, entry] of Object.entries(tools)) {
+    const version = typeof entry === "string" ? entry : field(entry, "version");
     if (typeof version !== "string") {
-      throw new TypeError(
-        `mise.toml pins ${name} with something other than a string`
-      );
+      throw new TypeError(`mise.toml pins ${name} without a string version`);
     }
     result[name] = version;
   }
@@ -63,5 +62,21 @@ test("mise.lock holds the versions mise.toml pins", async () => {
       ? entries.map((entry) => field(entry, "version"))
       : [];
     expect(locked).toEqual([version]);
+  }
+});
+
+test("the local link engine keeps static Linux assets under its public pin name", async () => {
+  const lock = await readToml("mise.lock");
+  const entries = field(lock, "tools", "lychee");
+  expect(Array.isArray(entries)).toBe(true);
+  const entry: unknown = Array.isArray(entries) ? entries[0] : undefined;
+  expect(field(entry, "backend")).toBe("github:lycheeverse/lychee");
+  expect(field(entry, "options", "libc")).toBe("musl");
+  const linux = Object.entries(isRecord(entry) ? entry : {}).filter(([key]) =>
+    key.startsWith("platforms.linux-")
+  );
+  expect(linux.length).toBeGreaterThan(0);
+  for (const [, platform] of linux) {
+    expect(field(platform, "url")).toMatch(/-unknown-linux-musl\.tar\.gz$/u);
   }
 });

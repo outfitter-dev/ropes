@@ -22,11 +22,17 @@ const run = (input: StepInput) =>
     } catch (error) {
       return allIncomplete(part, String(error));
     }
-    const ran = await exec(invocation.argv, invocation.cwd);
+    const ran = await exec(invocation.argv, invocation.cwd, invocation.env);
     if (ran.exitCode !== 0 && ran.exitCode !== 2) {
       return allIncomplete(
         part,
         `local link checking failed: ${ran.stderr.trim()}`
+      );
+    }
+    if (ran.stderr.trim() !== "") {
+      return allIncomplete(
+        part,
+        `local link checking was incomplete: ${ran.stderr.trim()}`
       );
     }
     const parsed = readOutput(ran.stdout, part);
@@ -64,24 +70,17 @@ export const lycheeAdapter = (version?: string): Adapter => ({
     }),
   descriptor: {
     ...heldTo(version, SUPPORTED_VERSION),
-    enabledBy: "markdown.enabled",
+    enabledBy: "markdown.links",
     extensions: [".md"],
     id: "lychee",
+    optIn: true,
     platforms: ["darwin", "linux"],
     tool: "lychee",
     unit: "file",
     writes: false,
   },
   fix: run,
-  previewInputs: async (input) => {
-    const binary = Bun.which("lychee");
-    if (binary === null || !["darwin", "linux"].includes(process.platform)) {
-      return [];
-    }
-    const ready = await probeOnPath("lychee");
-    return ready.available && ready.version === (version ?? SUPPORTED_VERSION)
-      ? await previewInputs(binary, input)
-      : [];
-  },
+  previewInputs: (input) =>
+    previewInputs(Bun.which("lychee") ?? "lychee", input),
   probe: () => probeOnPath("lychee"),
 });
