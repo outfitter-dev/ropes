@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { EnforcementLevelSchema } from "../contracts/enforcement.ts";
+import { EnforcementSettingSchema } from "../contracts/enforcement.ts";
 
 /** Whether a root-relative path stays under the root it is read from. */
 const isInside = (folder: string): boolean =>
@@ -47,10 +47,10 @@ const optInSwitch = (what: string) => ({
 export const RuleSwitchSchema = z.strictObject({
   ...optInSwitch("the structural rules are run"),
   enforcement: z
-    .record(z.string().min(1), EnforcementLevelSchema)
+    .record(z.string().min(1), EnforcementSettingSchema)
     .optional()
     .describe(
-      "Explicit enforcement for a shipped rule ID. Unstated rules retain their blocking behavior."
+      "Enforcement for a shipped rule ID: advisory, blocking, or a UTC deadline (YYYY-MM-DD). Unstated rules retain their blocking behavior."
     ),
 });
 export const OPT_IN = {

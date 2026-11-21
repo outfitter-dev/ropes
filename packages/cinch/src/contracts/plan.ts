@@ -7,7 +7,7 @@ import { SharedFactsSchema } from "./facts.ts";
  * and the finding together until the shapes are ratified. A consumer that
  * meets a version it does not know must stop, never guess.
  */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 /** Where a policy value came from. */
 export const ProvenanceSchema = z.discriminatedUnion("kind", [
@@ -26,6 +26,8 @@ export type Provenance = z.infer<typeof ProvenanceSchema>;
 
 export const PolicyValueSchema = z
   .object({
+    /** Only present when this planned value was resolved from a UTC deadline. */
+    blockingAt: z.iso.datetime({ precision: 3 }).optional(),
     key: z.string().min(1),
     source: ProvenanceSchema,
     value: z.union([z.string(), z.number(), z.boolean()]),
@@ -159,11 +161,24 @@ export const LocalRulesSchema = z
   )
   .readonly();
 
+/** The clock a command supplied to the resolver. */
+export const EvaluationSchema = z
+  .object({
+    at: z.iso.datetime({ precision: 3 }),
+    simulated: z.boolean(),
+  })
+  .readonly();
+export type Evaluation = z.infer<typeof EvaluationSchema>;
+
 /** What `explain` prints and what `check` and `fix` execute. */
 export const PlanSchema = z
   .object({
     /** In execution order. Each step of each path is in exactly one. */
     batches: z.array(PlanBatchSchema).readonly(),
+    evaluation: EvaluationSchema.unwrap()
+      .extend({ nextTransitionAt: z.iso.datetime({ precision: 3 }).optional() })
+      .readonly()
+      .optional(),
     /**
      * Present when a tool in the plan has settings of its own for facts the
      * Cinch config can state. A run then compares them.

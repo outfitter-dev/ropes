@@ -69,7 +69,7 @@ The copy holds what git would let you commit: tracked files and untracked files 
 
 ## JSON
 
-`cinch fix --json` prints one report. It is provisional and carries `schemaVersion: 2`.
+`cinch fix --json` prints one report. It is provisional and carries `schemaVersion: 3`.
 
 | Field | Meaning |
 | --- | --- |
@@ -78,10 +78,10 @@ The copy holds what git would let you commit: tracked files and untracked files 
 | `dryRun` | `true` when the steps ran on a copy |
 | `result` | The same result `check --json` prints, with remaining findings in its steps |
 | `result.conflicts` | Only when steps undid each other. One record for each, apart from its finding in `result.steps` |
-| `schemaVersion` | `2` |
+| `schemaVersion` | `3` |
 | `stopped` | Only when nothing was fixed because the setup needs repair: the reason |
 
-A real run and a dry run of the same tree print the same `changed`, `diff` and `result`.
+A real run and a dry run of the same tree produce the same edits under the same effective policy. With scheduled enforcement, each invocation records its own evaluation time. A deadline that arrives between the two runs can change the verdict.
 
 Each record in `result.conflicts` is one conflict, so a consumer can count them without reading messages.
 

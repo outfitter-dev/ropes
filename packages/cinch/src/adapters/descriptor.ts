@@ -91,6 +91,16 @@ export interface AdapterDescriptor {
    * rules are on, and an adapter with none on gets no step.
    */
   readonly packs?: readonly RulePack[];
+  /** File scopes from the shipped rules, keyed by rule id. */
+  readonly ruleScopes?: Readonly<
+    Record<
+      string,
+      {
+        readonly files?: readonly string[] | undefined;
+        readonly ignores?: readonly string[] | undefined;
+      }
+    >
+  >;
   /**
    * Root-relative folders of rules the repository wrote, which this adapter
    * runs beside its own. With one, it has a step even when no pack is on.

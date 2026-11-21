@@ -9,10 +9,15 @@ export const setupOf = (plan: Plan): Plan => {
   const paths = plan.paths
     .map((entry) => ({
       ...entry,
+      policy: entry.policy.map(({ blockingAt, ...setting }) =>
+        blockingAt === undefined
+          ? setting
+          : { ...setting, value: blockingAt.slice(0, 10) }
+      ),
       steps: entry.steps.filter((step) => step.setup === true),
     }))
     .filter((entry) => entry.steps.length > 0);
-  const { facts: _compared, ...rest } = plan;
+  const { evaluation: _contentClock, facts: _compared, ...rest } = plan;
   return {
     ...rest,
     batches: plan.batches.filter((batch) => batch.setup === true),

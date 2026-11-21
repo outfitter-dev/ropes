@@ -12,6 +12,7 @@ const HELP = `cinch ${manifest.version}
 
 Usage: cinch <command> [path...] [--json] [--dry-run] [--yes] [--fix]
        [--strict]
+       cinch <explain|check> [path...] --at <UTC instant>
 
 Commands:
   explain   Show the plan for a path without running anything
@@ -60,6 +61,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
     allowPositionals: true,
     args: [...argv],
     options: {
+      at: { type: "string" },
       "dry-run": { type: "boolean" },
       fix: { type: "boolean" },
       help: { short: "h", type: "boolean" },
@@ -91,7 +93,18 @@ const main = async (argv: readonly string[]): Promise<number> => {
   // command takes paths.
   const acts = name === "preset" || name === "rules";
   const [action, ...names] = acts ? paths : [];
+  if (values.at !== undefined && typeof values.at !== "string") {
+    const error = "cinch: --at requires a UTC instant.";
+    print({ error, exitCode: EXIT_CODE.incomplete }, values.json === true);
+    return EXIT_CODE.incomplete;
+  }
+  if (values.at !== undefined && name !== "explain" && name !== "check") {
+    const error = "cinch: --at is only for explain and check.";
+    print({ error, exitCode: EXIT_CODE.incomplete }, values.json === true);
+    return EXIT_CODE.incomplete;
+  }
   const request = {
+    ...(values.at === undefined ? {} : { at: values.at }),
     ...(action === undefined ? {} : { action }),
     cwd: process.cwd(),
     dryRun: values["dry-run"] === true,

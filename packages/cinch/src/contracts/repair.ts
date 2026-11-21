@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import { ToolStatusSchema } from "./doctor.ts";
-import { ResultSchema } from "./result.ts";
+import { PlanSchema } from "./plan.ts";
+import { outcomeOf, ResultSchema } from "./result.ts";
 
 /** An observed attempt, kept separately from its author's recommendation. */
 export const RepairInputSchema = z.object({
@@ -36,10 +37,30 @@ export const RepairInputSchema = z.object({
 });
 export type RepairInput = z.infer<typeof RepairInputSchema>;
 
+// The offline reader preserves observations made before results carried a
+// clock. Qualification still uses parseResult and requires the current version.
+const ArchivedResultSchema = z
+  .object({
+    ...ResultSchema.unwrap().shape,
+    plan: PlanSchema.unwrap()
+      .omit({ evaluation: true })
+      .extend({
+        schemaVersion: z.literal(2),
+      })
+      .readonly(),
+    schemaVersion: z.literal(2),
+  })
+  .refine((result) => result.outcome === outcomeOf(result.steps))
+  .readonly();
+
+const ObservedResultSchema = z.union([ResultSchema, ArchivedResultSchema]);
+
 export const RepairRecordSchema = RepairInputSchema.extend({
   capturedAt: z.iso.datetime(),
   evidence: z.literal("observed"),
   id: z.string().regex(/^[a-f0-9]{64}$/u),
+  original: ObservedResultSchema,
+  result: ObservedResultSchema,
   schemaVersion: z.literal(1),
 }).readonly();
 export type RepairRecord = z.infer<typeof RepairRecordSchema>;

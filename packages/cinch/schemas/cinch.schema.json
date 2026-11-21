@@ -215,15 +215,24 @@
                 "type": "boolean"
               },
               "enforcement": {
-                "description": "Explicit enforcement for a shipped rule ID. Unstated rules retain their blocking behavior.",
+                "description": "Enforcement for a shipped rule ID: advisory, blocking, or a UTC deadline (YYYY-MM-DD). Unstated rules retain their blocking behavior.",
                 "type": "object",
                 "propertyNames": {
                   "type": "string",
                   "minLength": 1
                 },
                 "additionalProperties": {
-                  "type": "string",
-                  "enum": ["advisory", "blocking"]
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": ["advisory", "blocking"]
+                    },
+                    {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    }
+                  ]
                 }
               }
             },
@@ -267,15 +276,24 @@
           "type": "boolean"
         },
         "enforcement": {
-          "description": "Explicit enforcement for a shipped rule ID. Unstated rules retain their blocking behavior.",
+          "description": "Enforcement for a shipped rule ID: advisory, blocking, or a UTC deadline (YYYY-MM-DD). Unstated rules retain their blocking behavior.",
           "type": "object",
           "propertyNames": {
             "type": "string",
             "minLength": 1
           },
           "additionalProperties": {
-            "type": "string",
-            "enum": ["advisory", "blocking"]
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": ["advisory", "blocking"]
+              },
+              {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              }
+            ]
           }
         },
         "local": {
