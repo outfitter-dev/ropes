@@ -40,7 +40,14 @@ export const proveLauncherHelp = async (
     );
     assert.match(help, /^rope 99\.0\.0\n/u);
     assert.match(help, /Usage: rope <explain\|check\|fix>/u);
+    assert.match(
+      help,
+      /Git checkout with an initial commit, or Git-colocated jj/u
+    );
+    assert.match(help, /Git HEAD and the index must be readable/u);
     assert.match(help, /bun add --dev --exact @ropes\/cli@99\.0\.0/u);
+    assert.match(help, /git add package\.json bun\.lock/u);
+    assert.match(help, /git commit -m "chore: pin Ropes"/u);
     assert.match(help, /\.\/node_modules\/\.bin\/rope explain README\.md/u);
   }
   const selected = await run(
