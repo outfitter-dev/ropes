@@ -68,7 +68,8 @@ const exactly = ({
  */
 export const prepare = async (
   request: ReadRequest,
-  deps: CommandDeps
+  deps: CommandDeps,
+  includeSkipped = false
 ): Promise<PrepareResult> => {
   const evaluation = evaluationAt(request.at);
   if (!evaluation.ok) {
@@ -183,7 +184,8 @@ export const prepare = async (
   const keep = new Set(named);
   const candidates = resolve(all)
     .paths.filter(
-      (entry) => entry.skipped === undefined || keep.has(entry.path)
+      (entry) =>
+        includeSkipped || entry.skipped === undefined || keep.has(entry.path)
     )
     .map((entry) => entry.path);
   // Naming a path outside the root is an error. Expanding a directory must

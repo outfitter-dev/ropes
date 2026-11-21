@@ -6,3 +6,4 @@ export { renderPlan } from "./plan.ts";
 export { renderTrace } from "./trace.ts";
 
 export { renderCleanup } from "./cleanup.ts";
+export { renderPolicyPreview } from "./policy-preview.ts";

@@ -1,0 +1,49 @@
+name: Standalone
+on:
+  pull_request:
+    paths:
+      - .github/workflows/standalone.yml
+      - packages/cinch/**
+      - package.json
+      - bun.lock
+      - bunfig.toml
+      - tsconfig.json
+      - .outfitter/configs/presets/tsconfig.json
+      - mise.toml
+      - mise.lock
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/standalone.yml
+      - packages/cinch/**
+      - package.json
+      - bun.lock
+      - bunfig.toml
+      - tsconfig.json
+      - .outfitter/configs/presets/tsconfig.json
+      - mise.toml
+      - mise.lock
+permissions:
+  contents: read
+concurrency:
+  group: standalone-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  standalone:
+    name: Standalone (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm, macos-15]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        with:
+          version: 2026.11.10
+      - run: bun install --frozen-lockfile
+      - name: Build and exercise the native binary without Bun on PATH
+        run: bun test packages/cinch/tests/binary.test.ts

@@ -15,6 +15,8 @@ The first argument is the file to write. The second is `bun-darwin-arm64`, `bun-
 
 The build writes one file and publishes nothing.
 
+The targeted `Standalone` workflow runs the binary acceptance tests on native Linux x64, Linux arm64 and macOS arm64 runners when core, build or toolchain inputs change. Each job uses the pinned Bun and engines, builds its host binary, and runs the existing no-Bun checks, fenced-code repair and embedded-rule proof. The fixtures give child commands a dedicated directory containing only the selected engines and Git, so a preinstalled Bun elsewhere on a runner cannot hide missing standalone support.
+
 ## What is inside
 
 - The `cinch` command, with every verb.
@@ -44,4 +46,3 @@ On Linux x64 with Bun 1.4.4, on 2026-11-20:
 ## Still open
 
 - How a release is cut and how a repository installs and pins the binary. mise is where tool versions live, so a release asset mise can install is the first choice.
-- Builds for macOS arm64 and Linux arm64 in CI.

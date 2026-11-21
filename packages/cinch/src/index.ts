@@ -1,3 +1,4 @@
+import manifest from "../package.json" with { type: "json" };
 import { adaptersFor } from "./adapters/registry.ts";
 import { runCheck } from "./commands/check.ts";
 import { runCleanup } from "./commands/cleanup.ts";
@@ -5,6 +6,7 @@ import type { FixRequest, ReadRequest } from "./commands/command.ts";
 import { runExplain } from "./commands/explain.ts";
 import { runFix } from "./commands/fix.ts";
 import { runMigrationPreview } from "./commands/migrate.ts";
+import { capturePolicy } from "./commands/policy-preview.ts";
 import { runTrace } from "./commands/trace.ts";
 import type { CleanupRequest } from "./contracts/cleanup.ts";
 
@@ -19,6 +21,11 @@ export {
   parseResult,
 } from "./contracts/parse.ts";
 export type { Plan } from "./contracts/plan.ts";
+export type {
+  PolicyPreview,
+  PolicySnapshot,
+} from "./contracts/policy-preview.ts";
+export { previewPolicy } from "./commands/policy-preview.ts";
 export { EXIT_CODE, exitCodeOf } from "./contracts/result.ts";
 export type { ExitCode, Result } from "./contracts/result.ts";
 export type { CheckTrace } from "./contracts/trace.ts";
@@ -39,3 +46,5 @@ export const trace = (request: ReadRequest) => runTrace(request, deps);
 export type { CleanupRequest, CleanupReport } from "./contracts/cleanup.ts";
 export const compareMigration = (request: CleanupRequest, execute = true) =>
   runCleanup(request, deps, execute);
+export const snapshotPolicy = (request: ReadRequest) =>
+  capturePolicy(request, deps, `${manifest.name}@${manifest.version}`);
