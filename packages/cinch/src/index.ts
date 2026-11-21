@@ -16,6 +16,8 @@ export { EXIT_CODE, exitCodeOf } from "./contracts/result.ts";
 export type { ExitCode, Result } from "./contracts/result.ts";
 export type { CheckTrace } from "./contracts/trace.ts";
 export { readRepairs, saveRepair } from "./commands/repairs.ts";
+export { resolveLocalCli } from "./commands/local-cli.ts";
+export type { LocalCliRequest } from "./commands/local-cli.ts";
 export type { RepairInput, RepairRecord } from "./contracts/repair.ts";
 
 const deps = { adapters: adaptersFor };

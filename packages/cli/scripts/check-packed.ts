@@ -7,6 +7,7 @@ import core from "../../cinch/package.json" with { type: "json" };
 import cli from "../package.json" with { type: "json" };
 import fixture from "../tests/fixtures/outfitter/package.json" with { type: "json" };
 import { packConsumer, proveConsumer } from "./packed-consumer.ts";
+import { proveDelegation } from "./packed-delegation.ts";
 import { run } from "./packed-run.ts";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
@@ -105,8 +106,37 @@ const smoke = async (
     );
   }
   const executable = path.join(consumer, "node_modules/.bin/rope");
+  await Bun.write(
+    path.join(consumer, "package.json"),
+    JSON.stringify({
+      dependencies: {
+        [core.name]: core.version,
+        [cli.name]: cli.version,
+        [fixture.name]: fixture.version,
+      },
+      private: true,
+      type: "module",
+    })
+  );
+  await run(["git", "add", "package.json"], consumer);
+  await run(
+    [
+      "git",
+      "-c",
+      "user.name=Ropes",
+      "-c",
+      "user.email=ropes@example.invalid",
+      "-c",
+      "commit.gpgsign=false",
+      "commit",
+      "--quiet",
+      "--message",
+      "packed consumer",
+    ],
+    consumer
+  );
   const version = await run([executable, "--version"], consumer);
-  if (version.trim() !== cli.version) {
+  if (version.trim() !== `rope ${cli.version}\n${await realpath(executable)}`) {
     throw new Error(`Unexpected rope version ${version}`);
   }
   await Bun.write(
@@ -135,6 +165,7 @@ console.log(JSON.stringify(parsed.value));
     );
   }
   await proveConsumer(consumer);
+  await proveDelegation(folder, consumer);
 };
 
 if (core.version !== cli.version) {

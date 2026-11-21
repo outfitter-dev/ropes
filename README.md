@@ -8,6 +8,8 @@ The broader [`outfitter` CLI](https://github.com/outfitter-dev/outfitter) lives 
 
 The unpublished `@ropes/core` package holds the existing Cinch implementation under `packages/cinch/`. `@ropes/cli` supplies `rope explain`, `rope check`, and `rope fix`, including `fix --dry-run`. The Markdown fixture verifies matching plans, versioned results, and exits through Cinch, core, and `rope`.
 
+An installed `rope` delegates to the checkout's explicitly pinned `@ropes/cli` dependency. `rope --version` reports the selected version and entry path. See [repository-pinned invocation](docs/launcher.md) for installation selection and failure handling.
+
 Cinch remains the repository's setup and development entry point. Its `init`, `doctor`, `preset`, `rules`, and `schema` commands are available through `bun run cinch`. Ropes reads `rope.toml` and keeps its managed files under `.ropes/configs/`. During the pilot it also reads legacy `cinch.toml` or `[cinch]` in `outfitter.toml`, with managed files under `.outfitter/configs/`. The [cutover inventory](docs/cutover.md) records the compatibility choices.
 
 ## Current Cinch commands
