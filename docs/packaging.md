@@ -33,7 +33,7 @@ Dispatch the **npm release** workflow on `main` with `prepare` to run the gates 
 
 Each npm package trusts `outfitter-dev/ropes` and `npm-release.yml`. To enable this workflow, turn on **Allow npm publish** once for each trusted publisher. The internal source repository publishes via OIDC with npm provenance disabled.
 
-When the pair is ready to release, dispatch `publish` on `main` with the candidate artifact ID, `core_sha256`, and `cli_sha256`. The workflow verifies the artifact’s origin, both hashes, and the matching package version and channel. It publishes core and verifies its public tarball and tag before publishing and verifying CLI. If a release stops partway through, dispatch `publish` again with the same inputs. A version already in the registry must have the expected tag and identical archive bytes before the workflow proceeds.
+When the pair is ready to release, dispatch `publish` on `main` with the candidate artifact ID, `core_sha256`, and `cli_sha256`. The workflow verifies the artifact’s origin, both hashes, and the matching package version and channel. It publishes core and verifies its public tarball and tag before publishing and verifying CLI. Allow about five minutes per package for npm to process the publication. If a release stops partway through, dispatch `publish` again with the same inputs. A version already in the registry must have the expected tag and identical archive bytes before the workflow proceeds.
 
 After the workflow succeeds, install the exact CLI version in a clean Git checkout with an initial commit and check the launcher.
 
