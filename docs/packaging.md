@@ -16,6 +16,15 @@ A separate unrelated repository exercises [portable enforcement](portable-enforc
 
 To rehearse a candidate version locally, set both package manifest versions and the exact core pin in `packages/cli/tests/fixtures/outfitter/package.json` to that version in a disposable checkout. Set `publishConfig.tag` in both package manifests to the intended channel, then run `bun run check:packed`. The portable fixture uses Bun's isolated linker and installs the CLI directly, so it can verify a transitive core install without a root-level core link.
 
+## Bun runtime cache
+
+The installed `rope explain` and `rope check` commands leave repository files and the Git index alone. Bun can cache transpiled package modules before the CLI starts. To keep those runtime cache writes out of the checkout regardless of the Bun or XDG cache settings, disable the runtime cache when invoking the installed CLI. [Bun runtime transpiler caching](https://bun.com/docs/runtime/environment-variables#runtime-transpiler-caching)
+
+```sh
+BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 ./node_modules/.bin/rope explain README.md --json
+BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 ./node_modules/.bin/rope check README.md --json
+```
+
 ## npm release
 
 The published pilot is `0.1.0-pilot.0`. The first opt-in `canary` release is `0.1.0-canary.0`. The proposed stable pair is `0.1.0` under `latest`, after the canary has a clean install and consumer checks. Use `0.1.0-canary.1` for a new candidate if the first canary needs changes. Keep each published version immutable and both packages on the same version and channel.
