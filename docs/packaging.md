@@ -14,7 +14,7 @@ The same external install includes a private fixture with one `outfitter` execut
 
 A separate unrelated repository exercises [portable enforcement](portable-enforcement.md) through the packed CLI. Its checks use a small environment and only the engines required by the selected policy. The proof covers neutral compatibility policy, UTC transitions, a repository-owned rule, explicit shipped-preset adoption, exclusions, and preservation of repository files and the Git index.
 
-To rehearse a candidate version locally, set both package manifest versions and the exact core pin in `packages/cli/tests/fixtures/outfitter/package.json` to that version in a disposable checkout, then run `bun run check:packed`. The portable fixture uses Bun's isolated linker and installs the CLI directly, so it can verify a transitive core install without a root-level core link.
+To rehearse a candidate version locally, set both package manifest versions and the exact core pin in `packages/cli/tests/fixtures/outfitter/package.json` to that version in a disposable checkout. Set `publishConfig.tag` in both package manifests to the intended channel, then run `bun run check:packed`. The portable fixture uses Bun's isolated linker and installs the CLI directly, so it can verify a transitive core install without a root-level core link.
 
 ## npm release
 
