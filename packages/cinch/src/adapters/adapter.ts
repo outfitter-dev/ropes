@@ -56,6 +56,8 @@ export interface FileOutcome extends StepOutcome {
 
 /** An installed input copied into a preview without a writable source link. */
 export interface PreviewInput {
+  /** Preserve directory existence without replacing copied repository files. */
+  readonly directory?: true;
   readonly path: string;
   readonly source: string;
 }

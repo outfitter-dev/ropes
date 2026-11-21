@@ -2,6 +2,8 @@
 
 Outfitter repositories share one set of Markdown rules. It lives in `packages/cinch/presets/rumdl.toml`, in the format [rumdl](https://rumdl.dev) reads, and ships inside Cinch. A Cinch version is therefore also a version of the standard.
 
+The Markdown profile also checks local destinations and heading anchors with pinned Lychee. [Markdown links](markdown-links.md) describes its scope, offline contract, preview limits and scheduled external URL report.
+
 ## How a repository gets it
 
 Cinch keeps three files in the repository. All three are committed. rumdl reads them through `extends`, one after the other, and Cinch never merges them into one.

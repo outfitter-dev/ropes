@@ -126,7 +126,10 @@ proof(
     ).toEqual(json(legacyPlan));
     expect(json(newPlan)).toMatchObject({
       paths: [
-        { path: "README.md", steps: [{ adapter: "rumdl" }] },
+        {
+          path: "README.md",
+          steps: [{ adapter: "rumdl" }, { adapter: "lychee" }],
+        },
         { path: "ignored/notes.md", skipped: { reason: "excluded" } },
         { path: "legacy/old.md", steps: [] },
       ],

@@ -26,7 +26,7 @@ beforeAll(async () => {
   toolPath = path.join(dir, "engines");
   await mkdir(toolPath);
   await Promise.all(
-    ["rumdl", "taplo", "git", "ast-grep"].map(async (name) => {
+    ["rumdl", "taplo", "lychee", "git", "ast-grep"].map(async (name) => {
       const found = Bun.which(name);
       if (found === null) {
         if (process.env.CI === "true") {
@@ -54,7 +54,7 @@ afterAll(() => rm(dir, { force: true, recursive: true }));
 
 /** A search path with the engines and Git on it, and no Bun. */
 const withoutBun = (): string | null => {
-  const found = ["rumdl", "taplo", "git"].every(
+  const found = ["rumdl", "taplo", "lychee", "git"].every(
     (name) => Bun.which(name, { PATH: toolPath }) !== null
   );
   return found && Bun.which("bun", { PATH: toolPath }) === null
@@ -123,7 +123,7 @@ test("the binary carries the presets, and writes them with no Bun in reach", asy
 test("the binary finds what the package finds", async () => {
   const searchPath = withoutBun();
   if (searchPath === null) {
-    console.warn("skipped: needs rumdl, taplo and git on PATH");
+    console.warn("skipped: needs rumdl, taplo, lychee and git on PATH");
     return;
   }
   const root = await repo("same");
@@ -143,7 +143,7 @@ test("the binary finds what the package finds", async () => {
 test("the binary formats fenced code with no Bun in reach", async () => {
   const searchPath = withoutBun();
   if (searchPath === null) {
-    console.warn("skipped: needs rumdl, taplo and git on PATH");
+    console.warn("skipped: needs rumdl, taplo, lychee and git on PATH");
     return;
   }
   const root = await repo("fences");
@@ -170,7 +170,7 @@ test("the binary formats fenced code with no Bun in reach", async () => {
 test("an empty cache override does not put the stand-in in the repository", async () => {
   const searchPath = withoutBun();
   if (searchPath === null) {
-    console.warn("skipped: needs rumdl, taplo and git on PATH");
+    console.warn("skipped: needs rumdl, taplo, lychee and git on PATH");
     return;
   }
   const root = await repo("override");
@@ -196,7 +196,7 @@ test("an empty cache override does not put the stand-in in the repository", asyn
 test("a home folder that is not absolute gets no stand-in", async () => {
   const searchPath = withoutBun();
   if (searchPath === null) {
-    console.warn("skipped: needs rumdl, taplo and git on PATH");
+    console.warn("skipped: needs rumdl, taplo, lychee and git on PATH");
     return;
   }
   const root = await repo("homeless");

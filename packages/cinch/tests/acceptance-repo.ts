@@ -170,7 +170,7 @@ export const withFixture = async <T>(
   }
 };
 
-const TOOLS = ["rumdl", "taplo", "git"].filter(
+const TOOLS = ["rumdl", "taplo", "lychee", "git"].filter(
   (tool) => Bun.which(tool) === null
 );
 

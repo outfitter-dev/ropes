@@ -66,7 +66,7 @@ proof(
     const inLinked = planOf(
       await linked.cinch(["explain", "--json"], { cwd: "packages/app" })
     );
-    expect(stepsOf(inLinked, LEGACY)).toEqual(["rumdl"]);
+    expect(stepsOf(inLinked, LEGACY)).toEqual(["rumdl", "lychee"]);
     expect(stepsOf(fromRoot, LEGACY)).toEqual([]);
     expect(await Bun.file(path.join(main.root, "cinch.toml")).text()).toBe(
       CONFIG
@@ -92,7 +92,7 @@ proof(
       },
       { key: "toml.enabled", source: { kind: "default" }, value: true },
     ]);
-    expect(stepsOf(plan, "README.md")).toEqual(["rumdl"]);
+    expect(stepsOf(plan, "README.md")).toEqual(["rumdl", "lychee"]);
 
     const text = await main.cinch(["explain", LEGACY]);
     expect(text.stdout).toContain("overrides.0.markdown.enabled");

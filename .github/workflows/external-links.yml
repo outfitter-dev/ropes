@@ -1,0 +1,55 @@
+name: External links
+on:
+  schedule:
+    - cron: "23 9 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: external-links-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  report:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        with:
+          version: 2026.11.10
+          install_args: lychee
+      - name: Check external URLs
+        id: links
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p reports
+          mapfile -d '' -t documents < <(git ls-files -z -- '*.md')
+          lychee --config /dev/null --scheme=https --scheme=http \
+            --exclude-all-private --no-progress --cache=false --no-ignore --hidden \
+            --timeout 20 --max-retries 1 --format markdown \
+            --output reports/external-links.md -- "${documents[@]}"
+      - name: Save the external URL report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: external-links
+          path: reports/external-links.md
+          retention-days: 7
+      - name: Summarize the check
+        if: always()
+        env:
+          CHECK_OUTCOME: ${{ steps.links.outcome }}
+        run: |
+          {
+            printf '## External links\n\n'
+            printf 'Checker outcome: %s\n\n' "$CHECK_OUTCOME"
+            if [[ -f reports/external-links.md ]]; then
+              cat reports/external-links.md
+            else
+              printf 'The checker did not produce a report. Inspect the job logs.\n'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

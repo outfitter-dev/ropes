@@ -122,13 +122,19 @@ export const writePlan = async (
           const adapter = prepared.adapters.find(
             ({ descriptor }) => descriptor.id === batch.adapter
           );
-          return await (adapter?.previewInputs?.({
-            package: batch.package,
-            paths: batch.paths,
-            root: root.root,
-            ...(batch.rules === undefined ? {} : { rules: batch.rules }),
-            ...(batch.target === undefined ? {} : { target: batch.target }),
-          }) ?? []);
+          try {
+            return await (adapter?.previewInputs?.({
+              package: batch.package,
+              paths: batch.paths,
+              root: root.root,
+              ...(batch.rules === undefined ? {} : { rules: batch.rules }),
+              ...(batch.target === undefined ? {} : { target: batch.target }),
+            }) ?? []);
+          } catch (error) {
+            throw new CopyError(
+              `inputs for ${batch.adapter} (${String(error)})`
+            );
+          }
         })
     );
     const inputs = snapshots.flat();
