@@ -68,8 +68,9 @@ jobs:
           run_id=$(gh api "$artifact" | jq -er '
             select(.name == "ropes-npm-pilot" and .expired == false) | .workflow_run.id
           ')
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" | jq -e '
-            .path == ".github/workflows/npm-pilot.yml" and .event == "workflow_dispatch" and
+          workflow_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/npm-pilot.yml" | jq -er '.id')
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" | jq -e --argjson workflow_id "$workflow_id" '
+            .workflow_id == $workflow_id and .event == "workflow_dispatch" and
             .head_branch == "main" and .conclusion == "success"
           ' > /dev/null
           gh api "$artifact/zip" > "$RUNNER_TEMP/ropes-pilot.zip"

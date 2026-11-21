@@ -24,4 +24,11 @@ Dispatch the **npm pilot** workflow on `main` with `prepare` to produce the veri
 
 Configure each npm package's GitHub trusted publisher for organization `outfitter-dev`, repository `ropes`, and workflow `npm-pilot.yml`. Use stage-only permissions. After artifact approval, dispatch `core` and then `cli` using the same artifact ID and each package's approved hash. Each dispatch submits one reviewed tarball. If one submission succeeds and the other fails, retry only the missing package using the same artifact.
 
-Approve the staged core before the staged CLI in npm with 2FA. Verify the installed version in a clean project using `bunx --package @ropes/cli@0.1.0-pilot.0 rope --version` and verify that both `pilot` tags resolve to the approved version before passing the pin to Forge. [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) · [npm staged publishing](https://docs.npmjs.com/staged-publishing/)
+Approve the staged core before the staged CLI in npm with 2FA. In a clean Git checkout with an initial commit, install the approved version and check the launcher.
+
+```sh
+bun add --dev --exact @ropes/cli@0.1.0-pilot.0
+./node_modules/.bin/rope --version
+```
+
+Verify that both `pilot` tags resolve to the approved version before passing the pin to Forge. [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) · [npm staged publishing](https://docs.npmjs.com/staged-publishing/)
