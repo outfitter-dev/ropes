@@ -48,6 +48,10 @@ export const portableRepo = async (
   await mkdir(root);
   await run(["git", "init", "--quiet", "--template="], root);
   await Bun.write(
+    path.join(root, "bunfig.toml"),
+    '[install]\nlinker = "isolated"\n'
+  );
+  await Bun.write(
     path.join(root, "package.json"),
     JSON.stringify({
       dependencies: { [cli.name]: cliArchive },
@@ -68,19 +72,25 @@ export const portableRepo = async (
   await Bun.write(path.join(root, ".gitignore"), "node_modules/\n");
   const launcher = path.join(root, "node_modules/.bin/rope");
   const executable = await realpath(launcher);
+  const coreEntry = await realpath(
+    Bun.resolveSync(core.name, path.dirname(executable))
+  );
+  const coreManifest = path.join(path.dirname(coreEntry), "..", "package.json");
+  assert.ok(executable.startsWith(`${root}${path.sep}`));
+  assert.ok(coreEntry.startsWith(`${root}${path.sep}`));
+  assert.equal(
+    await Bun.file(
+      path.join(root, "node_modules/@ropes/core/package.json")
+    ).exists(),
+    false
+  );
   const installedFiles = [
     "node_modules/.bin/rope",
     path.relative(root, executable),
     "node_modules/@ropes/cli/package.json",
-    "node_modules/@ropes/core/package.json",
-    "node_modules/@ropes/core/src/index.ts",
+    path.relative(root, coreManifest),
+    path.relative(root, coreEntry),
   ];
-  assert.ok(executable.startsWith(`${root}${path.sep}`));
-  for (const name of [core.name, cli.name]) {
-    // eslint-disable-next-line no-await-in-loop -- inspect the two installed package identities in order
-    const installed = await realpath(path.join(root, "node_modules", name));
-    assert.ok(installed.startsWith(`${root}${path.sep}`));
-  }
   await run(["git", "add", "package.json", "bun.lock", ".gitignore"], root);
   await run(
     [
