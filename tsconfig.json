@@ -4,6 +4,7 @@
     "packages/*/src/**/*.ts",
     "packages/*/tests/**/*.ts",
     "packages/*/scripts/*.ts",
+    "scripts/*.ts",
     "tests/*.ts",
     "tests/fixtures/typed-lint/*.ts",
     "*.config.ts",
