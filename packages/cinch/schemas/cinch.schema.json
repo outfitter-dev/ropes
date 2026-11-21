@@ -41,6 +41,10 @@
           "description": "Whether whitespace at the end of a line is removed.",
           "type": "boolean"
         },
+        "check": {
+          "description": "Check the stated editor settings on selected files without another formatter. Off unless true.",
+          "type": "boolean"
+        },
         "overrides": {
           "description": "Facts for some files. A later entry wins over an earlier.",
           "type": "array",
@@ -147,12 +151,12 @@
     "markdown": {
       "type": "object",
       "properties": {
-        "links": {
-          "description": "Whether local Markdown links and heading fragments are checked. Off unless set to true; independent of style checking.",
-          "type": "boolean"
-        },
         "enabled": {
           "description": "Whether Markdown is checked. On unless set to false.",
+          "type": "boolean"
+        },
+        "links": {
+          "description": "Whether local Markdown links and heading fragments are checked. Off unless set to true; independent of style checking.",
           "type": "boolean"
         },
         "preset": {
@@ -191,12 +195,12 @@
           "markdown": {
             "type": "object",
             "properties": {
-              "links": {
-                "description": "Whether local Markdown links and heading fragments are checked. Off unless set to true; independent of style checking.",
-                "type": "boolean"
-              },
               "enabled": {
                 "description": "Whether Markdown is checked. On unless set to false.",
+                "type": "boolean"
+              },
+              "links": {
+                "description": "Whether local Markdown links and heading fragments are checked. Off unless set to true; independent of style checking.",
                 "type": "boolean"
               },
               "preset": {

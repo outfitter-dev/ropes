@@ -27,10 +27,14 @@ export interface AdapterDescriptor {
    */
   readonly tested?: string;
   readonly writes: boolean;
+  /** Content formatting ownership, including its read-only check operation. */
+  readonly formats?: true;
+  /** Check text conventions only when this path has no selected formatter. */
+  readonly fallbackFormat?: true;
   readonly unit: Unit;
   /** Where the tool can run. Elsewhere its steps are incomplete. */
   readonly platforms: readonly Platform[];
-  /** File extensions, with the dot, that this adapter handles. */
+  /** File extensions, with the dot. A star accepts every selected path. */
   readonly extensions: readonly string[];
   /**
    * The policy key that switches this adapter. A path whose resolved policy

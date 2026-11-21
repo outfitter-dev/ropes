@@ -10,6 +10,7 @@ bun = "1.4.4"
 lychee = { version = "0.24.2", version_prefix = "lychee-v", libc = "musl" }
 rumdl = "0.3.5"
 taplo = "0.10.0"
+editorconfig-checker = "4.0.2"
 
 # Static Linux builds preserve the existing glibc floor. Keep the public pin name.
 [tool_alias]

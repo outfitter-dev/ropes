@@ -73,18 +73,23 @@ const stepsFor = (
     );
   const off = keysSet(false);
   const on = keysSet(true);
-  return inRunOrder(descriptors)
-    .filter(
-      (descriptor) =>
-        // A step is one file. A package or workspace adapter gets none until
-        // the plan can describe a step of that size.
-        descriptor.unit === "file" &&
-        (descriptor.extensions.includes(extension) ||
-          descriptor.owns?.includes(path) === true) &&
-        (descriptor.optIn === true
-          ? on.has(descriptor.enabledBy)
-          : !off.has(descriptor.enabledBy))
-    )
+  const selected = inRunOrder(descriptors).filter(
+    (descriptor) =>
+      // A step is one file. A package or workspace adapter gets none until
+      // the plan can describe a step of that size.
+      descriptor.unit === "file" &&
+      (descriptor.extensions.includes("*") ||
+        descriptor.extensions.includes(extension) ||
+        descriptor.owns?.includes(path) === true) &&
+      (descriptor.optIn === true
+        ? on.has(descriptor.enabledBy)
+        : !off.has(descriptor.enabledBy))
+  );
+  const formatted = selected.some(
+    (descriptor) => descriptor.formats === true || descriptor.setup === true
+  );
+  return selected
+    .filter((descriptor) => !formatted || descriptor.fallbackFormat !== true)
     .map(toStep);
 };
 

@@ -39,6 +39,7 @@ export const rumdlAdapter = (options: RumdlOptions = {}): Adapter => {
     ...heldTo(options.version, SUPPORTED_RANGE),
     enabledBy: "markdown.enabled",
     extensions: [".md"],
+    formats: true,
     id: ID,
     platforms: ["darwin", "linux", "win32"],
     reports: REPORTS,

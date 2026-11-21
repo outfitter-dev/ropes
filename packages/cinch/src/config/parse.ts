@@ -149,6 +149,15 @@ const build = (
   const { enforcement, local, off, packs, ...rules } = table.rules ?? {};
   const base = [
     ...settingsOf({ ...table, rules }, origin, ""),
+    ...(table.editor?.check === undefined
+      ? []
+      : [
+          {
+            key: "editor.check",
+            source: from(origin, "editor.check"),
+            value: table.editor.check,
+          },
+        ]),
     ...enforcementSettings(enforcement, origin, ""),
   ];
   const overrides: ConfigOverride[] = (table.overrides ?? []).map(

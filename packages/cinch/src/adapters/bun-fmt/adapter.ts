@@ -47,6 +47,7 @@ export const bunFmtAdapter = (options: BunFmtOptions = {}): Adapter => {
     ...heldTo(options.version, SUPPORTED_RANGE),
     enabledBy: "format.enabled",
     extensions: EXTENSIONS,
+    formats: true,
     id: ID,
     optIn: true,
     platforms: ["darwin", "linux", "win32"],

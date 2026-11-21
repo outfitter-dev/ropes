@@ -24,6 +24,18 @@ indent_style = "tab"
 
 Every key is optional. Cinch writes only what the table states, and ships no defaults of its own here. Two keys have other names in the file: `final_newline` becomes `insert_final_newline`, and `line_width` becomes `max_line_length`. An override with several globs gets one section for each. An unknown key is an error, as everywhere in the Cinch config.
 
+## Checking files
+
+Set `check = true` in `[editor]` to check selected files that have no active formatter. Pin `editorconfig-checker = "4.0.2"` in `mise.toml` and install that tool through mise. Existing editor configurations opt in explicitly because enforcement requires an additional executable. The first integration supports macOS and Linux. An enabled editor check on another platform is incomplete.
+
+Bun's formatter owns its supported JavaScript, TypeScript, JSON, YAML, TOML, Markdown, CSS, HTML and related extensions while `format.enabled` is true. rumdl owns Markdown while `markdown.enabled` is true. Taplo checks TOML syntax and schemas, so an unformatted TOML file can still receive the editor check. Python, shell, plain text and extensionless files can receive it too, when selected by the repository's include policy. A formatter disabled by a path override leaves that path eligible. Setup files are checked by their setup adapters.
+
+`explain` shows each selected editor check. The pinned engine reads a temporary copy of the file and the same rendered editor settings used for generation, including the ordered editor overrides. Authored root and nested `.editorconfig` files do not override those facts in this isolated check. Setup validation separately reports when the root `.editorconfig` differs from the declared table.
+
+Findings name the editor setting, such as `indent_style` or `final_newline`, and retain the engine's line or line range. Whole-file findings point at line one. Native `editorconfig-checker-disable` comments keep their engine meaning. A required file the engine leaves out, unsupported diagnostics, and a missing or incompatible executable produce an incomplete result. An explicitly selected nested `.editorconfig` cannot validate itself as its own policy and is incomplete.
+
+`check` and `fix` both report these findings without repairing them. A repair remains the owner's edit or its formatter's work. The check creates and removes its temporary input outside the repository.
+
 ## Who writes the file
 
 - `cinch doctor --fix` writes `.editorconfig`. `cinch check` and `cinch doctor` report it when it is missing or differs from the table, and the finding says to make the change in `[editor]`.
