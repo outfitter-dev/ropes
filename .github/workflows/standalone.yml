@@ -7,6 +7,8 @@ on:
       - package.json
       - bun.lock
       - bunfig.toml
+      - tsconfig.json
+      - .outfitter/configs/presets/tsconfig.json
       - mise.toml
       - mise.lock
   push:
@@ -17,6 +19,8 @@ on:
       - package.json
       - bun.lock
       - bunfig.toml
+      - tsconfig.json
+      - .outfitter/configs/presets/tsconfig.json
       - mise.toml
       - mise.lock
 permissions:
