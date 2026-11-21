@@ -2,6 +2,7 @@
 import { parseArgs } from "node:util";
 
 import manifest from "../package.json" with { type: "json" };
+import { startBundledEngine } from "./adapters/registry.ts";
 import { STANDALONE } from "./adapters/shipped-text.ts";
 import { configureStandIn } from "./adapters/stand-in.ts";
 import type { CommandResponse } from "./commands/command.ts";
@@ -132,4 +133,9 @@ const main = async (argv: readonly string[]): Promise<number> => {
   return response.exitCode;
 };
 
-process.exitCode = await main(process.argv.slice(2));
+const worker = startBundledEngine(process.argv);
+if (worker === undefined) {
+  process.exitCode = await main(process.argv.slice(2));
+} else {
+  await worker;
+}

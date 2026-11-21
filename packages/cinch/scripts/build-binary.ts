@@ -50,10 +50,19 @@ const shipped = Object.fromEntries(
   sources.map(([name], index) => [name, texts[index] ?? ""])
 );
 
+const embedTaplo =
+  target === undefined
+    ? process.platform === "darwin"
+    : target === "bun-darwin-arm64";
 const built = await Bun.build({
   compile: target === undefined ? { outfile } : { outfile, target },
-  define: { CINCH_SHIPPED: JSON.stringify(shipped) },
+  define: {
+    CINCH_SHIPPED: JSON.stringify(shipped),
+    CINCH_TAPLO_WORKER: JSON.stringify(embedTaplo),
+  },
   entrypoints: [path.join(PACKAGE, "src/cli.ts")],
+  // Bun can retain a dynamic import even when its worker is disabled.
+  external: embedTaplo ? [] : ["@taplo/cli/dist/cli.js"],
 });
 for (const log of built.logs) {
   process.stderr.write(`${log.message}\n`);

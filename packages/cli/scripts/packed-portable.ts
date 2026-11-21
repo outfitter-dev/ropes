@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { provePortablePolicy } from "./portable-policy.ts";
 import { BASE, portableRepo } from "./portable-repo.ts";
+import { provePortableTaplo } from "./portable-taplo.ts";
 
 /** Exercise installed artifacts in an unrelated repository with a small environment. */
 export const provePortable = async (
@@ -11,6 +12,7 @@ export const provePortable = async (
   cliArchive: string
 ) => {
   const repo = await portableRepo(folder, coreArchive, cliArchive);
+  await provePortableTaplo(repo);
   const pins = await Bun.file(
     new URL("../../../mise.toml", import.meta.url)
   ).text();

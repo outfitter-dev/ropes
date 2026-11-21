@@ -6,6 +6,7 @@ import path from "node:path";
 import manifest from "../package.json" with { type: "json" };
 import { qualifyStandaloneCache } from "./binary-cache.ts";
 import { qualifyMiseInstall } from "./binary-install.ts";
+import { qualifyStandaloneTaplo } from "./binary-taplo.ts";
 
 const BUILD = new URL("../scripts/build-binary.ts", import.meta.url).pathname;
 const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
@@ -101,6 +102,13 @@ test("the binary says it is one", async () => {
   const { stdout } = await run([binary, "--version"], dir, "");
   expect(stdout).toBe(`${manifest.version} (binary)\n`);
 });
+
+test.skipIf(process.platform !== "darwin")(
+  "the binary recovers a Taplo sandbox panic with no Bun on PATH",
+  async () => {
+    await qualifyStandaloneTaplo(binary, await repo("taplo-recovery"));
+  }
+);
 
 test("mise installs the checked artifact and runs it with no Bun on PATH", async () => {
   await qualifyMiseInstall({
