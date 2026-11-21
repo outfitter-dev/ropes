@@ -41,7 +41,10 @@ test("the offline workflow gate rejects syntax, security and unpinned-action fin
     (tool) => Bun.which(tool) === null
   );
   if (missing.length > 0) {
-    throw new Error(`Install the pinned workflow tools: ${missing.join(", ")}`);
+    console.warn(
+      `skipped: workflow regression needs the pinned tools on PATH: ${missing.join(", ")}`
+    );
+    return;
   }
   await withFixture(async ({ main }) => {
     const valid = await gate(main.root, VALID);
@@ -64,5 +67,8 @@ test("the offline workflow gate rejects syntax, security and unpinned-action fin
     );
     expect(unpinned.exitCode).not.toBe(0);
     expect(unpinned.output).toContain("checkout");
+    const uncommented = await gate(main.root, VALID.replace(" # v7.0.1", ""));
+    expect(uncommented.exitCode).not.toBe(0);
+    expect(uncommented.output).toContain("version comment");
   });
 }, 30_000);

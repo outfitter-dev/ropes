@@ -20,6 +20,6 @@ The update command resolves current upstream releases and writes the SHA with it
 
 The offline gate verifies SHA syntax and the required version comment. Upstream tag verification happens during the deliberate update and review step. Keep one writer for action pins if Renovate is added later.
 
-The initial pinact run updated checkout to v7.0.1 and retained mise-action v5.2.10. The [real-tool regression](../tests/workflows.test.ts) proves malformed workflows, a dangerous workflow trigger and an unpinned action each fail while leaving the fixture bytes untouched.
+The initial pinact run updated checkout to v7.0.1 and retained mise-action v5.2.10. The [real-tool regression](../tests/workflows.test.ts) proves malformed workflows, a dangerous workflow trigger, an unpinned action and a pinned action with no version comment each fail while leaving the fixture bytes untouched.
 
 [Actionlint usage](https://github.com/rhysd/actionlint/blob/main/docs/usage.md) · [Zizmor usage](https://github.com/zizmorcore/zizmor/blob/main/docs/usage.md) · [Pinact checks](https://github.com/suzuki-shunsuke/pinact/blob/main/docs/check.md) · [Pinact updates](https://github.com/suzuki-shunsuke/pinact/blob/main/docs/update.md)
