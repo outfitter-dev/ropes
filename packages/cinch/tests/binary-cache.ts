@@ -24,6 +24,9 @@ export const qualifyStandaloneCache = async (input: {
   const { binary, contents, root, run } = input;
   const state = path.join(path.dirname(root), "cache-fixture-state");
   const docs = path.join(root, "docs");
+  const nested = path.join(root, "nested");
+  const nestedGit = path.join(state, "nested-git");
+  const nestedDocs = path.join(nested, "docs");
   const inside = path.join(root, ".cache-probe");
   const outside = path.join(state, "external");
   const existingHelper = path.join(
@@ -52,8 +55,15 @@ export const qualifyStandaloneCache = async (input: {
   await run(["git", "init", "-q"], root);
   await run([binary, "init", "--yes"], root);
   await run(["git", "add", "-A"], root);
+  await mkdir(nestedDocs, { recursive: true });
+  await run(["git", "init", "-q", "--separate-git-dir", nestedGit], nested);
+  await Bun.write(path.join(nestedDocs, "overview.md"), contents);
+  await run([binary, "init", "--yes"], nested);
+  await run(["git", "add", "-A"], nested);
   const index = Bun.file(path.join(root, ".git", "index"));
   const baselineIndex = new Uint8Array(await index.arrayBuffer());
+  const nestedIndex = Bun.file(path.join(nestedGit, "index"));
+  const baselineNestedIndex = new Uint8Array(await nestedIndex.arrayBuffer());
   const baselineTree = await readdir(root, { recursive: true });
   const listing = await run(["git", "ls-files", "-z"], root);
   const tracked = listing.stdout.split("\0").filter(Boolean);
@@ -71,6 +81,7 @@ export const qualifyStandaloneCache = async (input: {
     { cache: "", name: "empty" },
     { cache: ".cache-probe", name: "relative" },
     { cache: inside, name: "checkout" },
+    { cache: inside, cwd: nestedDocs, name: "enclosing-checkout" },
     { cache: path.join(alias, ".cache-probe"), name: "alias" },
     { cache: nestedAlias, name: "nested-alias" },
     { cache: outside, kept: outside, name: "external" },
@@ -86,7 +97,7 @@ export const qualifyStandaloneCache = async (input: {
     // eslint-disable-next-line no-await-in-loop -- compare each command against the same initial checkout
     const result = await run(
       [binary, "check", "overview.md", "--json"],
-      docs,
+      trial.cwd ?? docs,
       expected,
       env
     );
@@ -102,6 +113,10 @@ export const qualifyStandaloneCache = async (input: {
     expect(tree.toSorted()).toEqual(baselineTree.toSorted());
     // eslint-disable-next-line no-await-in-loop -- check the exact bytes instead of assuming Git updated nothing
     expect(new Uint8Array(await index.arrayBuffer())).toEqual(baselineIndex);
+    // eslint-disable-next-line no-await-in-loop -- check the separately stored nested index too
+    expect(new Uint8Array(await nestedIndex.arrayBuffer())).toEqual(
+      baselineNestedIndex
+    );
     // eslint-disable-next-line no-await-in-loop -- prove tracked contents and modes too
     const files = await snapshot();
     expect(files).toEqual(baselineFiles);

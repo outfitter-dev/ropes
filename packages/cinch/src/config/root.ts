@@ -28,6 +28,23 @@ const vcsAt = async (dir: string): Promise<VcsKind | null> => {
   return git === "file" ? "git-linked" : null;
 };
 
+/** The outermost enclosing checkout, including a parent of a submodule. */
+export const enclosingCheckout = async (from: string): Promise<string> => {
+  let dir = await realpath(from).catch(() => path.resolve(from));
+  let root = dir;
+  for (;;) {
+    // eslint-disable-next-line no-await-in-loop -- check each enclosing directory
+    if ((await vcsAt(dir)) !== null) {
+      root = dir;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      return root;
+    }
+    dir = parent;
+  }
+};
+
 const toPosix = (relative: string): string =>
   relative.split(path.sep).join("/");
 

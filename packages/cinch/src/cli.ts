@@ -6,7 +6,7 @@ import { STANDALONE } from "./adapters/shipped-text.ts";
 import { configureStandIn } from "./adapters/stand-in.ts";
 import type { CommandResponse } from "./commands/command.ts";
 import { commands } from "./commands/registry.ts";
-import { discoverRoot, toRootRelative } from "./config/root.ts";
+import { enclosingCheckout, toRootRelative } from "./config/root.ts";
 import { EXIT_CODE } from "./contracts/result.ts";
 import { renderFailureJson } from "./render/failure.ts";
 
@@ -118,9 +118,10 @@ const main = async (argv: readonly string[]): Promise<number> => {
     yes: values.yes === true,
   };
   if (STANDALONE) {
-    const checkout = await discoverRoot(request.cwd);
-    const root = checkout.ok ? checkout.value.vcsRoot : request.cwd;
+    let checkout: Promise<string> | undefined;
     configureStandIn(async (target) => {
+      checkout ??= enclosingCheckout(request.cwd);
+      const root = await checkout;
       const location = await toRootRelative(root, root, target);
       return !location.ok;
     });
