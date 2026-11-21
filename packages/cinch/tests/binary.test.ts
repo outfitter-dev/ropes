@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import manifest from "../package.json" with { type: "json" };
+import { qualifyMiseInstall } from "./binary-install.ts";
 
 const BUILD = new URL("../scripts/build-binary.ts", import.meta.url).pathname;
 const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
@@ -98,6 +99,14 @@ const repo = async (name: string): Promise<string> => {
 test("the binary says it is one", async () => {
   const { stdout } = await run([binary, "--version"], dir, "");
   expect(stdout).toBe(`${manifest.version} (binary)\n`);
+});
+
+test("mise installs the checked artifact and runs it with no Bun on PATH", async () => {
+  await qualifyMiseInstall({
+    binary,
+    engines: toolPath,
+    root: await repo("mise-install"),
+  });
 });
 
 test("an unexpected subprocess failure reports its command, exit and stderr", async () => {
