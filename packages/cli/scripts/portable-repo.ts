@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdir, realpath, symlink } from "node:fs/promises";
 import { devNull } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { parsePlan, parseResult } from "@ropes/core";
 
@@ -9,6 +10,24 @@ import core from "../../cinch/package.json" with { type: "json" };
 import cli from "../package.json" with { type: "json" };
 import { run } from "./packed-run.ts";
 import { portableSnapshot } from "./portable-snapshot.ts";
+
+const workspace = fileURLToPath(new URL("../../../", import.meta.url));
+
+const installedTool = async (name: string): Promise<string> => {
+  const binary = Bun.which(name);
+  assert.ok(
+    binary !== null,
+    `The portable proof requires pinned ${name} on PATH`
+  );
+  const resolved = await realpath(binary);
+  const mise = Bun.which("mise");
+  // Mise shims are links to mise itself. Resolve them before isolating HOME.
+  if (mise === null || resolved !== (await realpath(mise))) {
+    return resolved;
+  }
+  const target = await run([mise, "which", name], workspace);
+  return await realpath(target.trim());
+};
 
 export const BASE = `pilot = 0
 include = ["**/*.ts", "**/tsconfig.json"]
@@ -85,15 +104,8 @@ export const portableRepo = async (
     await mkdir(directory);
     await Promise.all(
       names.map(async (name) => {
-        const binary = Bun.which(name);
-        assert.notEqual(
-          binary,
-          null,
-          `The portable proof requires pinned ${name} on PATH`
-        );
-        if (binary !== null) {
-          await symlink(binary, path.join(directory, name));
-        }
+        const binary = await installedTool(name);
+        await symlink(binary, path.join(directory, name));
       })
     );
     return directory;
