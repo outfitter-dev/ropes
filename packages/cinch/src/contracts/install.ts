@@ -15,8 +15,13 @@ const validExemption = (value: string): boolean => {
   );
 };
 
+const AGE = /^\d+ (?<unit>seconds?|minutes?|hours?|days?)$/u;
+
 /** Whole seconds, using fixed units so the policy has no calendar ambiguity. */
 export const ageSeconds = (age: string): number => {
+  if (!AGE.test(age)) {
+    return Number.NaN;
+  }
   const [amount = "", unit = ""] = age.split(" ");
   const units: Readonly<Record<string, number>> = {
     day: 86_400,
@@ -33,7 +38,7 @@ export const ageSeconds = (age: string): number => {
 
 const Age = z
   .string()
-  .regex(/^\d+ (?<unit>seconds?|minutes?|hours?|days?)$/u)
+  .regex(AGE)
   .refine(
     (value) => Number.isSafeInteger(ageSeconds(value)),
     "must fit whole seconds"

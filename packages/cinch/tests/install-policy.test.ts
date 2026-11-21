@@ -169,6 +169,12 @@ test("doctor reports authored Renovate release-age drift without writing it", as
       expect(aligned?.exitCode).toBe(0);
       await Bun.write(
         path.join(root, "renovate.json"),
+        '{"minimumReleaseAge":"7 days extra"}\n'
+      );
+      const unsupported = await commands.doctor?.(request);
+      expect(unsupported?.exitCode).not.toBe(0);
+      await Bun.write(
+        path.join(root, "renovate.json"),
         '{"extends":["config:recommended"]}\n'
       );
       const inherited = await commands.doctor?.(request);
