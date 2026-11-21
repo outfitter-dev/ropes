@@ -1,9 +1,11 @@
+import manifest from "../package.json" with { type: "json" };
 import { adaptersFor } from "./adapters/registry.ts";
 import { runCheck } from "./commands/check.ts";
 import type { FixRequest, ReadRequest } from "./commands/command.ts";
 import { runExplain } from "./commands/explain.ts";
 import { runFix } from "./commands/fix.ts";
 import { runMigrationPreview } from "./commands/migrate.ts";
+import { capturePolicy } from "./commands/policy-preview.ts";
 import { runTrace } from "./commands/trace.ts";
 
 export type { FixRequest, Operation, ReadRequest } from "./commands/command.ts";
@@ -12,6 +14,11 @@ export type { MigrationPreview } from "./commands/migrate.ts";
 export type { FixReport } from "./contracts/fix.ts";
 export { parseFinding, parsePlan, parseResult } from "./contracts/parse.ts";
 export type { Plan } from "./contracts/plan.ts";
+export type {
+  PolicyPreview,
+  PolicySnapshot,
+} from "./contracts/policy-preview.ts";
+export { previewPolicy } from "./commands/policy-preview.ts";
 export { EXIT_CODE, exitCodeOf } from "./contracts/result.ts";
 export type { ExitCode, Result } from "./contracts/result.ts";
 export type { CheckTrace } from "./contracts/trace.ts";
@@ -28,3 +35,6 @@ export const explain = (request: ReadRequest, probeTools = false) =>
 export const fix = (request: FixRequest) => runFix(request, deps);
 export const previewMigration = (cwd: string) => runMigrationPreview(cwd, deps);
 export const trace = (request: ReadRequest) => runTrace(request, deps);
+
+export const snapshotPolicy = (request: ReadRequest) =>
+  capturePolicy(request, deps, `${manifest.name}@${manifest.version}`);
