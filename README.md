@@ -51,6 +51,8 @@ The plan, result and finding that `--json` prints are provisional. They carry `s
 
 ## Configuration is a pilot
 
+The `[install]` table can generate Bun's install config and report release-age drift in authored Renovate config. See [install policy](docs/install-policy.md).
+
 Use [the Ropes migration preview](docs/config-migration.md) to see the proposed `rope.toml` and managed paths for an existing Cinch configuration.
 
 Cinch reads the `[cinch]` table in `outfitter.toml`, or a standalone `cinch.toml`. It looks in the directory it was run from and then in each parent up to the top of the checkout, and the nearest one found sets the root. A linked Git worktree or a jj workspace is its own checkout. Having both is an error, because one repository gets one source. With neither, the defaults apply. The file must state `pilot = 0`, and a missing or unknown marker stops the run. The format is unstable and will change without notice.

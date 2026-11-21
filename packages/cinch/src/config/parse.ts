@@ -10,6 +10,7 @@ import type {
 import { EditorSchema } from "../contracts/editor.ts";
 import { ENFORCEMENT_PREFIX } from "../contracts/enforcement.ts";
 import type { EnforcementSetting } from "../contracts/enforcement.ts";
+import { InstallSchema } from "../contracts/install.ts";
 import type { PolicyValue, Provenance } from "../contracts/plan.ts";
 import {
   Globs,
@@ -46,6 +47,7 @@ export const ConfigFileSchema = z.strictObject({
   include: Globs.optional().describe(
     "Root-relative globs for the files Cinch checks."
   ),
+  install: InstallSchema.optional(),
   lint: OPT_IN.lint.optional(),
   markdown: ProfileSchema.optional(),
   overrides: z
@@ -175,6 +177,7 @@ const build = (
   );
   return {
     ...(table.editor === undefined ? {} : { editor: table.editor }),
+    ...(table.install === undefined ? {} : { install: table.install }),
     exclude: sourced(
       table.exclude,
       DEFAULT_CONFIG.exclude,

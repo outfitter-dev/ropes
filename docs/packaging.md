@@ -8,8 +8,10 @@ Run `bun run check:packed` after installing the locked dependencies. CI runs the
 
 The gate then installs both local tarballs in a clean project outside the workspace. It rejects links outside that install, verifies the CLI's exact core dependency, executes `rope --version`, and compares `rope explain --json` with a plan returned through the public core API. Installation can fetch third-party dependencies from the registry. The explanation and API comparison use the installed local packages.
 
-The packages remain private. The gate creates local tarballs and removes its temporary directory after verification.
+The packages remain private. The gate creates local tarballs and removes its temporary directory after verification. The fixture installs resolve the CLI's transitive core dependency from the matching local tarball, so the gate can test a version before it exists on the registry. The installed CLI still has to declare the exact core version in its own manifest.
 
 The same external install includes a private fixture with one `outfitter` executable and an exact core dependency. The fixture delegates `explain`, `check`, and `fix` through `@ropes/core`. It compares plans and provenance for inherited, overridden, and excluded paths, versioned check results for exits 0/1/2, and a dry-run fix against `rope`. The proof checks the tree before applying the repair through `outfitter`, then checks the repaired file through both commands. `outfitter --version` reports both the fixture version and its exact core version.
 
 A separate unrelated repository exercises [portable enforcement](portable-enforcement.md) through the packed CLI. Its checks use a small environment and only the engines required by the selected policy. The proof covers neutral compatibility policy, UTC transitions, a repository-owned rule, explicit shipped-preset adoption, exclusions, and preservation of repository files and the Git index.
+
+To rehearse a candidate version locally, set both package manifest versions and the exact core pin in `packages/cli/tests/fixtures/outfitter/package.json` to that version in a disposable checkout, then run `bun run check:packed`. The portable fixture uses Bun's isolated linker and installs the CLI directly, so it can verify a transitive core install without a root-level core link.
