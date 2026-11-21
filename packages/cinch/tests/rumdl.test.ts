@@ -38,7 +38,9 @@ const inRepo = async <T>(
     await mkdtemp(path.join(tmpdir(), "cinch-rumdl-"))
   );
   const userConfig = Bun.env.XDG_CONFIG_HOME;
+  const userHome = Bun.env.HOME;
   Bun.env.XDG_CONFIG_HOME = path.join(root, "user-config");
+  Bun.env.HOME = path.join(root, "user-home");
   try {
     await Promise.all(
       Object.entries(files).map(([name, text]) =>
@@ -47,6 +49,11 @@ const inRepo = async <T>(
     );
     return await body(root);
   } finally {
+    if (userHome === undefined) {
+      delete Bun.env.HOME;
+    } else {
+      Bun.env.HOME = userHome;
+    }
     if (userConfig === undefined) {
       delete Bun.env.XDG_CONFIG_HOME;
     } else {

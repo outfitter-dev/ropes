@@ -71,6 +71,7 @@ const spawn = async (
     cwd,
     env: {
       ...cleanEnv(),
+      HOME: path.join(cwd, ".fixture-home"),
       PATH: searchPath ?? process.env.PATH ?? "",
       XDG_CONFIG_HOME: path.join(cwd, ".fixture-user-config"),
     },

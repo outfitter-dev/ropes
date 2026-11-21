@@ -3,6 +3,7 @@ import { chmod, mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { exec } from "../src/adapters/exec.ts";
 import { taploAdapter } from "../src/adapters/taplo/adapter.ts";
 import { fixtureGit } from "./acceptance-repo.ts";
 import { checkOne } from "./one-file.ts";
@@ -37,6 +38,7 @@ const fakeTaplo = async (bin: string, stderr: string, code: number) => {
     [
       "#!/bin/sh",
       'if [ "$1" = "--version" ]; then echo "taplo 0.10.0"; exit 0; fi',
+      'printf "%s" "$RUST_LOG" > "$0.filter"',
       '/bin/cat "$0.stderr" >&2',
       `exit ${code}`,
       "",
@@ -135,14 +137,33 @@ test("native Taplo check keeps file evidence under a conflicting log filter", as
     return;
   }
   await inRepo(async (root) => {
-    const before = Bun.env.RUST_LOG;
     const valid = await check(root, Bun.env.PATH ?? "");
     expect(valid.exitCode).toBe(0);
     expect(JSON.parse(valid.stdout)).toMatchObject({ outcome: "clean" });
-    expect(Bun.env.RUST_LOG).toBe(before);
     await Bun.write(path.join(root, ".taplo.toml"), 'exclude = ["a.toml"]\n');
     const excluded = await check(root, Bun.env.PATH ?? "");
     expect(excluded.exitCode).toBe(2);
     expect(excluded.stdout).toContain("did not read the file");
+  });
+});
+
+test("the Taplo log filter stays local to its invocation", async () => {
+  await inRepo(async (root, bin) => {
+    const command = await fakeTaplo(bin, "", 101);
+    const previous = Bun.env.RUST_LOG;
+    Bun.env.RUST_LOG = "error";
+    try {
+      await checkOne(taploAdapter({ command }), { path: "a.toml", root });
+      expect(await Bun.file(`${command}.filter`).text()).toBe("taplo=info");
+      expect(Bun.env.RUST_LOG).toBe("error");
+      await exec([command], root);
+      expect(await Bun.file(`${command}.filter`).text()).toBe("error");
+    } finally {
+      if (previous === undefined) {
+        delete Bun.env.RUST_LOG;
+      } else {
+        Bun.env.RUST_LOG = previous;
+      }
+    }
   });
 });
