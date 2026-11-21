@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -18,16 +18,35 @@ const FORMATTED =
 
 let dir = "";
 let binary = "";
+let toolPath = "";
 
 beforeAll(async () => {
   dir = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-bin-")));
   binary = path.join(dir, "cinch");
+  toolPath = path.join(dir, "engines");
+  await mkdir(toolPath);
+  await Promise.all(
+    ["rumdl", "taplo", "git", "ast-grep"].map(async (name) => {
+      const found = Bun.which(name);
+      if (found === null) {
+        if (process.env.CI === "true") {
+          throw new Error(`The standalone CI proof requires ${name} on PATH.`);
+        }
+        return;
+      }
+      await symlink(await realpath(found), path.join(toolPath, name));
+    })
+  );
   const built = Bun.spawn(["bun", BUILD, binary], {
     stderr: "pipe",
     stdout: "ignore",
   });
-  if ((await built.exited) !== 0) {
-    throw new Error(await new Response(built.stderr).text());
+  const [stderr, exitCode] = await Promise.all([
+    new Response(built.stderr).text(),
+    built.exited,
+  ]);
+  if (exitCode !== 0) {
+    throw new Error(`bun ${BUILD} ${binary} exited ${exitCode}\n${stderr}`);
   }
 });
 
@@ -35,14 +54,11 @@ afterAll(() => rm(dir, { force: true, recursive: true }));
 
 /** A search path with the engines and Git on it, and no Bun. */
 const withoutBun = (): string | null => {
-  const tools = ["rumdl", "taplo", "git"].map((name) => Bun.which(name));
-  const found = tools.flatMap((tool) =>
-    tool === null ? [] : [path.dirname(tool)]
+  const found = ["rumdl", "taplo", "git"].every(
+    (name) => Bun.which(name, { PATH: toolPath }) !== null
   );
-  const searchPath = found.join(path.delimiter);
-  return found.length === tools.length &&
-    Bun.which("bun", { PATH: searchPath }) === null
-    ? searchPath
+  return found && Bun.which("bun", { PATH: toolPath }) === null
+    ? toolPath
     : null;
 };
 
@@ -50,6 +66,7 @@ const run = async (
   command: readonly string[],
   cwd: string,
   searchPath: string,
+  expectedExitCode = 0,
   extra: Readonly<Record<string, string>> = {}
 ): Promise<{ readonly exitCode: number; readonly stdout: string }> => {
   const child = Bun.spawn([...command], {
@@ -58,8 +75,17 @@ const run = async (
     stderr: "pipe",
     stdout: "pipe",
   });
-  const stdout = await new Response(child.stdout).text();
-  return { exitCode: await child.exited, stdout };
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
+  if (exitCode !== expectedExitCode) {
+    throw new Error(
+      `${command.join(" ")} exited ${exitCode}, expected ${expectedExitCode}\nstdout:\n${stdout}\nstderr:\n${stderr}`
+    );
+  }
+  return { exitCode, stdout };
 };
 
 const repo = async (name: string): Promise<string> => {
@@ -74,10 +100,22 @@ test("the binary says it is one", async () => {
   expect(stdout).toBe(`${manifest.version} (binary)\n`);
 });
 
+test("an unexpected subprocess failure reports its command, exit and stderr", async () => {
+  const failure = await run([binary, "nope"], dir, "").catch(
+    (error: unknown) => error
+  );
+  expect(failure).toBeInstanceOf(Error);
+  if (failure instanceof Error) {
+    expect(failure.message).toMatch(
+      /cinch nope exited 2, expected 0[\s\S]*stderr:[\s\S]*unknown command/u
+    );
+  }
+});
+
 test("the binary carries the presets, and writes them with no Bun in reach", async () => {
   const root = await repo("kept");
   // With no engine in reach the run is incomplete. The files are still kept.
-  await run([binary, "init", "--yes"], root, "");
+  await run([binary, "init", "--yes"], root, "", 2);
   const kept = await Bun.file(path.join(root, KEPT)).text();
   expect(kept.endsWith(await Bun.file(SHIPPED).text())).toBe(true);
 });
@@ -85,18 +123,17 @@ test("the binary carries the presets, and writes them with no Bun in reach", asy
 test("the binary finds what the package finds", async () => {
   const searchPath = withoutBun();
   if (searchPath === null) {
-    console.warn(
-      "skipped: needs rumdl, taplo and git on PATH, in folders that hold no bun"
-    );
+    console.warn("skipped: needs rumdl, taplo and git on PATH");
     return;
   }
   const root = await repo("same");
   await run([binary, "init", "--yes"], root, searchPath);
-  const alone = await run([binary, "check"], root, searchPath);
+  const alone = await run([binary, "check"], root, searchPath, 1);
   const packaged = await run(
     [process.execPath, CLI, "check"],
     root,
-    process.env.PATH ?? ""
+    process.env.PATH ?? "",
+    1
   );
   expect(alone.stdout).toContain("MD025");
   expect(alone.exitCode).toBe(1);
@@ -106,19 +143,18 @@ test("the binary finds what the package finds", async () => {
 test("the binary formats fenced code with no Bun in reach", async () => {
   const searchPath = withoutBun();
   if (searchPath === null) {
-    console.warn(
-      "skipped: needs rumdl, taplo and git on PATH, in folders that hold no bun"
-    );
+    console.warn("skipped: needs rumdl, taplo and git on PATH");
     return;
   }
   const root = await repo("fences");
   await Bun.write(path.join(root, "README.md"), FENCES);
   await run([binary, "init", "--yes"], root, searchPath);
-  const alone = await run([binary, "check"], root, searchPath);
+  const alone = await run([binary, "check"], root, searchPath, 1);
   const packaged = await run(
     [process.execPath, CLI, "check"],
     root,
-    process.env.PATH ?? ""
+    process.env.PATH ?? "",
+    1
   );
   expect(alone.exitCode).toBe(1);
   expect(alone).toEqual(packaged);
@@ -134,9 +170,7 @@ test("the binary formats fenced code with no Bun in reach", async () => {
 test("an empty cache override does not put the stand-in in the repository", async () => {
   const searchPath = withoutBun();
   if (searchPath === null) {
-    console.warn(
-      "skipped: needs rumdl, taplo and git on PATH, in folders that hold no bun"
-    );
+    console.warn("skipped: needs rumdl, taplo and git on PATH");
     return;
   }
   const root = await repo("override");
@@ -147,6 +181,7 @@ test("an empty cache override does not put the stand-in in the repository", asyn
     [binary, "check"],
     path.join(root, "docs"),
     searchPath,
+    0,
     {
       XDG_CACHE_HOME: "",
     }
@@ -161,15 +196,13 @@ test("an empty cache override does not put the stand-in in the repository", asyn
 test("a home folder that is not absolute gets no stand-in", async () => {
   const searchPath = withoutBun();
   if (searchPath === null) {
-    console.warn(
-      "skipped: needs rumdl, taplo and git on PATH, in folders that hold no bun"
-    );
+    console.warn("skipped: needs rumdl, taplo and git on PATH");
     return;
   }
   const root = await repo("homeless");
   await Bun.write(path.join(root, "README.md"), FORMATTED);
   await run([binary, "init", "--yes"], root, searchPath);
-  const alone = await run([binary, "check"], root, searchPath, {
+  const alone = await run([binary, "check"], root, searchPath, 2, {
     HOME: "elsewhere",
   });
   // With no `bun` to call, the fenced blocks could not be checked.
@@ -181,12 +214,8 @@ test("a home folder that is not absolute gets no stand-in", async () => {
 });
 
 test("the binary carries the rules Cinch ships", async () => {
-  const engine = Bun.which("ast-grep");
-  const searchPath = engine === null ? null : path.dirname(engine);
-  if (searchPath === null || Bun.which("bun", { PATH: searchPath }) !== null) {
-    console.warn(
-      "skipped: needs ast-grep on PATH, in a folder that holds no bun"
-    );
+  if (Bun.which("ast-grep", { PATH: toolPath }) === null) {
+    console.warn("skipped: needs ast-grep on PATH");
     return;
   }
   const root = await repo("rules");
@@ -195,7 +224,12 @@ test("the binary carries the rules Cinch ships", async () => {
     'pilot = 0\ninclude = ["**/*.json"]\n\n[rules]\nenabled = true\npacks = ["config"]\n'
   );
   await Bun.write(path.join(root, "tsconfig.json"), "{}\n");
-  const alone = await run([binary, "check", "tsconfig.json"], root, searchPath);
+  const alone = await run(
+    [binary, "check", "tsconfig.json"],
+    root,
+    toolPath,
+    1
+  );
   expect(alone.stdout).toContain("config/tsconfig-extends");
   expect(alone.exitCode).toBe(1);
 });
