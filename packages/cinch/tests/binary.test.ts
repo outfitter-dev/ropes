@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -18,10 +18,25 @@ const FORMATTED =
 
 let dir = "";
 let binary = "";
+let toolPath = "";
 
 beforeAll(async () => {
   dir = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-bin-")));
   binary = path.join(dir, "cinch");
+  toolPath = path.join(dir, "engines");
+  await mkdir(toolPath);
+  await Promise.all(
+    ["rumdl", "taplo", "git", "ast-grep"].map(async (name) => {
+      const found = Bun.which(name);
+      if (found === null) {
+        if (process.env.CI === "true") {
+          throw new Error(`The standalone CI proof requires ${name} on PATH.`);
+        }
+        return;
+      }
+      await symlink(await realpath(found), path.join(toolPath, name));
+    })
+  );
   const built = Bun.spawn(["bun", BUILD, binary], {
     stderr: "pipe",
     stdout: "ignore",
@@ -35,14 +50,11 @@ afterAll(() => rm(dir, { force: true, recursive: true }));
 
 /** A search path with the engines and Git on it, and no Bun. */
 const withoutBun = (): string | null => {
-  const tools = ["rumdl", "taplo", "git"].map((name) => Bun.which(name));
-  const found = tools.flatMap((tool) =>
-    tool === null ? [] : [path.dirname(tool)]
+  const found = ["rumdl", "taplo", "git"].every(
+    (name) => Bun.which(name, { PATH: toolPath }) !== null
   );
-  const searchPath = found.join(path.delimiter);
-  return found.length === tools.length &&
-    Bun.which("bun", { PATH: searchPath }) === null
-    ? searchPath
+  return found && Bun.which("bun", { PATH: toolPath }) === null
+    ? toolPath
     : null;
 };
 
@@ -85,9 +97,7 @@ test("the binary carries the presets, and writes them with no Bun in reach", asy
 test("the binary finds what the package finds", async () => {
   const searchPath = withoutBun();
   if (searchPath === null) {
-    console.warn(
-      "skipped: needs rumdl, taplo and git on PATH, in folders that hold no bun"
-    );
+    console.warn("skipped: needs rumdl, taplo and git on PATH");
     return;
   }
   const root = await repo("same");
@@ -106,9 +116,7 @@ test("the binary finds what the package finds", async () => {
 test("the binary formats fenced code with no Bun in reach", async () => {
   const searchPath = withoutBun();
   if (searchPath === null) {
-    console.warn(
-      "skipped: needs rumdl, taplo and git on PATH, in folders that hold no bun"
-    );
+    console.warn("skipped: needs rumdl, taplo and git on PATH");
     return;
   }
   const root = await repo("fences");
@@ -134,9 +142,7 @@ test("the binary formats fenced code with no Bun in reach", async () => {
 test("an empty cache override does not put the stand-in in the repository", async () => {
   const searchPath = withoutBun();
   if (searchPath === null) {
-    console.warn(
-      "skipped: needs rumdl, taplo and git on PATH, in folders that hold no bun"
-    );
+    console.warn("skipped: needs rumdl, taplo and git on PATH");
     return;
   }
   const root = await repo("override");
@@ -161,9 +167,7 @@ test("an empty cache override does not put the stand-in in the repository", asyn
 test("a home folder that is not absolute gets no stand-in", async () => {
   const searchPath = withoutBun();
   if (searchPath === null) {
-    console.warn(
-      "skipped: needs rumdl, taplo and git on PATH, in folders that hold no bun"
-    );
+    console.warn("skipped: needs rumdl, taplo and git on PATH");
     return;
   }
   const root = await repo("homeless");
@@ -181,12 +185,8 @@ test("a home folder that is not absolute gets no stand-in", async () => {
 });
 
 test("the binary carries the rules Cinch ships", async () => {
-  const engine = Bun.which("ast-grep");
-  const searchPath = engine === null ? null : path.dirname(engine);
-  if (searchPath === null || Bun.which("bun", { PATH: searchPath }) !== null) {
-    console.warn(
-      "skipped: needs ast-grep on PATH, in a folder that holds no bun"
-    );
+  if (Bun.which("ast-grep", { PATH: toolPath }) === null) {
+    console.warn("skipped: needs ast-grep on PATH");
     return;
   }
   const root = await repo("rules");
@@ -195,7 +195,7 @@ test("the binary carries the rules Cinch ships", async () => {
     'pilot = 0\ninclude = ["**/*.json"]\n\n[rules]\nenabled = true\npacks = ["config"]\n'
   );
   await Bun.write(path.join(root, "tsconfig.json"), "{}\n");
-  const alone = await run([binary, "check", "tsconfig.json"], root, searchPath);
+  const alone = await run([binary, "check", "tsconfig.json"], root, toolPath);
   expect(alone.stdout).toContain("config/tsconfig-extends");
   expect(alone.exitCode).toBe(1);
 });
