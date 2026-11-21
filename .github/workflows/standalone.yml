@@ -6,6 +6,7 @@ on:
       - packages/cinch/**
       - package.json
       - bun.lock
+      - bunfig.toml
       - mise.toml
       - mise.lock
   push:
@@ -15,6 +16,7 @@ on:
       - packages/cinch/**
       - package.json
       - bun.lock
+      - bunfig.toml
       - mise.toml
       - mise.lock
 permissions:
