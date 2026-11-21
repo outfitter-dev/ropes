@@ -141,10 +141,10 @@ The settings several tools must agree on, such as indent and line width, are not
 
 The Markdown migration parity fixture runs markdownlint and the production rumdl adapter on the same files. It compares findings by relative path, line, and the migration's canonical rule ID, and preserves multiple findings on the same line. A missing engine or unusable output gives an incomplete report.
 
-With the pinned rumdl on `PATH` and Node 22 or newer, run the fixture using markdownlint-cli 0.49.1:
+The frozen workspace install supplies the pinned `markdownlint` engine, and CI runs the fixture with the pinned rumdl on `PATH`. Run it on its own with:
 
 ```sh
-npm exec --package=markdownlint-cli@0.49.1 -- bun test packages/cinch/tests/markdownlint-parity.test.ts
+bun test packages/cinch/tests/markdownlint-parity.test.ts
 ```
 
-Test authors can reuse `markdownlintParity` with a trusted legacy config, the rule catalog from the migration, and an explicit file list. The fixture controls file selection to test translated rule behavior. Repository globs, ignore migration, custom rules, and markdownlint-cli2 config discovery are outside that comparison.
+Test authors can reuse `markdownlintParity` with a trusted legacy rules file, the rule catalog from the migration, and an explicit file list. It uses the migration's config reader and the markdownlint engine API, so personal settings and discovery rules cannot change the selection or findings. The fixture compares built-in rules, with custom rules and inherited legacy configs outside its scope.

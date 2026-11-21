@@ -13,47 +13,47 @@ import {
 import { markdownlintParity } from "./markdownlint-parity.ts";
 import { fixOne } from "./one-file.ts";
 
-test("a missing legacy engine cannot produce a clean comparison", async () => {
+test("an empty Markdown selection cannot produce a clean comparison", async () => {
   const report = await markdownlintParity({
     knownRules: [],
-    legacyCommand: path.join(
-      tmpdir(),
-      "missing-ropes-markdownlint",
-      "markdownlint"
-    ),
-    legacyConfig: ".markdownlint.json",
-    paths: ["notes.md"],
+    paths: [],
     root: tmpdir(),
   });
   expect(report).toEqual({
-    reason: "markdownlint is not on PATH",
+    reason: "no Markdown files were selected",
     status: "incomplete",
   });
 });
 
 test("compares the legacy and migrated Markdown engines on the same files", async () => {
-  if (Bun.which("rumdl") === null || Bun.which("markdownlint") === null) {
+  if (Bun.which("rumdl") === null) {
+    if (Bun.env.CI === "true") {
+      throw new Error("CI must install the pinned rumdl for Markdown parity");
+    }
     console.warn(
-      "skipped: the Markdown migration parity fixture needs rumdl and markdownlint on PATH"
+      "skipped: the Markdown migration parity fixture needs rumdl on PATH"
     );
     return;
   }
   const root = await realpath(
     await mkdtemp(path.join(tmpdir(), "ropes-parity-"))
   );
-  const legacyConfig = ".markdownlint.json";
+  const legacyConfig = ".markdownlint.jsonc";
   const paths = ["notes.md", "clean.md"];
   try {
     await mkdir(path.join(root, ".git"));
     await Promise.all([
       Bun.write(
         path.join(root, legacyConfig),
-        JSON.stringify({
-          default: false,
-          "line-length": { line_length: 16 },
-        })
+        `{
+  // Keep the old setting to exercise the migration's JSONC reader.
+  "default": false,
+  "line-length": { "line_length": 16 },
+}
+`
       ),
       Bun.write(path.join(root, ".markdownlintignore"), "notes.md\n"),
+      Bun.write(path.join(root, ".markdownlintrc"), '{"MD009":true}'),
       Bun.write(
         path.join(root, "notes.md"),
         "# Notes\n\nThis line is too long.\n\nText. \n"
@@ -74,7 +74,7 @@ test("compares the legacy and migrated Markdown engines on the same files", asyn
     if (migration === null || !migration.ok) {
       throw new Error("expected a usable Markdown rule translation");
     }
-    const input = { knownRules: migration.known, legacyConfig, paths, root };
+    const input = { knownRules: migration.known, paths, root };
     expect(await markdownlintParity(input)).toEqual({
       markdownlintOnly: [],
       rumdlOnly: [],
@@ -95,18 +95,16 @@ enable = ["MD009"]
       status: "complete",
     });
 
-    const brokenConfig = "broken.json";
-    await Bun.write(path.join(root, brokenConfig), "{");
-    const broken = await markdownlintParity({
-      ...input,
-      legacyConfig: brokenConfig,
-    });
+    await Bun.write(path.join(root, legacyConfig), "{");
+    const broken = await markdownlintParity(input);
     if (broken.status !== "incomplete") {
       throw new Error(
         "expected malformed configuration to stop the comparison"
       );
     }
-    expect(broken.reason).toContain("markdownlint failed (exit 4)");
+    expect(broken.reason).toContain(
+      `could not read the old Markdown rules in ${legacyConfig}`
+    );
   } finally {
     await rm(root, { force: true, recursive: true });
   }

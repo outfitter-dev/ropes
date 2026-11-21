@@ -1,19 +1,10 @@
-import { devNull } from "node:os";
+import path from "node:path";
 
-import { z } from "zod";
-
-import { exec } from "../src/adapters/exec.ts";
 import { rumdlAdapter } from "../src/adapters/rumdl/adapter.ts";
+import { findSource } from "../src/adapters/rumdl/migrate/markdownlint/source.ts";
+import type { Rules } from "../src/adapters/rumdl/migrate/markdownlint/source.ts";
 import type { KnownRule } from "../src/adapters/rumdl/migrate/markdownlint/stated.ts";
 import { lookup } from "../src/adapters/rumdl/migrate/markdownlint/stated.ts";
-
-const LegacyOutput = z.array(
-  z.object({
-    fileName: z.string().min(1),
-    lineNumber: z.number().int().positive(),
-    ruleNames: z.array(z.string().min(1)).min(1),
-  })
-);
 
 interface Occurrence {
   readonly path: string;
@@ -29,50 +20,29 @@ type Report =
     }
   | { readonly status: "incomplete"; readonly reason: string };
 
-const parseLegacy = (output: string) =>
-  LegacyOutput.parse(output.trim() === "" ? [] : JSON.parse(output));
-
 const readLegacy = async (
-  command: string,
   root: string,
-  config: string,
+  rules: Rules,
   paths: readonly string[],
   identify: (rule: string) => string
 ): Promise<Occurrence[]> => {
-  // Both engines get the same explicit files. The legacy ignore file would
-  // otherwise let markdownlint silently drop a file from that selection.
-  const { exitCode, stdout, stderr } = await exec(
-    [
-      command,
-      "--config",
-      config,
-      "--ignore-path",
-      devNull,
-      "--json",
-      "--",
-      ...paths,
-    ],
-    root
-  );
-  if ((exitCode !== 0 && exitCode !== 1) || stdout.trim() !== "") {
-    throw new Error(`markdownlint failed (exit ${exitCode}): ${stderr.trim()}`);
-  }
-  const findings = parseLegacy(stderr);
-  if (exitCode === 1 && findings.length === 0) {
-    throw new Error("markdownlint exited 1 without findings");
-  }
-  const selected = new Set(paths);
-  return findings.map(({ fileName, lineNumber, ruleNames }) => {
-    if (!selected.has(fileName)) {
-      throw new Error(`markdownlint reported on unselected file ${fileName}`);
+  // Use the engine API to avoid merging the CLI's personal config and ignore
+  // files into the rules and paths the fixture selected.
+  const { lint } = await import("markdownlint/promise");
+  const files = paths.map((file) => path.join(root, file));
+  const results = await lint({ config: rules, files });
+  return paths.flatMap((file, index) => {
+    const matches = results[files[index] ?? ""];
+    if (matches === undefined) {
+      throw new Error(`markdownlint did not check ${file}`);
     }
-    return {
+    return matches.map(({ lineNumber, ruleNames }) => ({
       line: lineNumber,
-      path: fileName,
+      path: file,
       rule:
         ruleNames.map(identify).find((rule) => /^MD\d+$/u.test(rule)) ??
         ruleNames.join("/"),
-    };
+    }));
   });
 };
 
@@ -103,16 +73,10 @@ const difference = (
 /** Compare both engines on a trusted test fixture after running the migration. */
 export const markdownlintParity = async (input: {
   readonly root: string;
-  readonly legacyConfig: string;
   readonly knownRules: readonly KnownRule[];
   readonly paths: readonly string[];
-  readonly legacyCommand?: string;
 }): Promise<Report> => {
   const { root, knownRules, paths } = input;
-  const command = Bun.which(input.legacyCommand ?? "markdownlint");
-  if (command === null) {
-    return { reason: "markdownlint is not on PATH", status: "incomplete" };
-  }
   if (paths.length === 0) {
     return { reason: "no Markdown files were selected", status: "incomplete" };
   }
@@ -127,13 +91,23 @@ export const markdownlintParity = async (input: {
         status: "incomplete",
       };
     }
-    const legacy = await readLegacy(
-      command,
-      root,
-      input.legacyConfig,
-      paths,
-      identify
-    );
+    const source = await findSource(root);
+    if (source.kind === "blocked") {
+      return { reason: source.message, status: "incomplete" };
+    }
+    if (source.kind === "none") {
+      return {
+        reason: "no legacy Markdown rule config was found",
+        status: "incomplete",
+      };
+    }
+    if (source.rules.extends !== undefined) {
+      return {
+        reason: "the fixture needs a standalone legacy rule config",
+        status: "incomplete",
+      };
+    }
+    const legacy = await readLegacy(root, source.rules, paths, identify);
     const modern = await adapter.check({ package: ".", paths, root });
     if (
       modern.length !== paths.length ||
