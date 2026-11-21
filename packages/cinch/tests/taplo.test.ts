@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -29,7 +29,9 @@ const inRepo = async <T>(
   files: Readonly<Record<string, string>>,
   body: (root: string) => Promise<T>
 ): Promise<T> => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-taplo-"));
+  const root = await realpath(
+    await mkdtemp(path.join(tmpdir(), "cinch-taplo-"))
+  );
   try {
     await Promise.all(
       Object.entries(files).map(([name, text]) =>
