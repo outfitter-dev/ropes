@@ -5,6 +5,7 @@ import path from "node:path";
 
 import { exec } from "../src/adapters/exec.ts";
 import { taploAdapter } from "../src/adapters/taplo/adapter.ts";
+import { recoverTaplo } from "../src/adapters/taplo/wasm.ts";
 import { fixtureGit } from "./acceptance-repo.ts";
 import { checkOne } from "./one-file.ts";
 
@@ -195,6 +196,38 @@ test("unexpected-exit diagnostics are bounded and handle empty stderr", async ()
     });
   });
 });
+
+test("Taplo WebAssembly stops waiting for an unresponsive schema", async () => {
+  await inRepo(async (root) => {
+    const response = Promise.withResolvers<Response>();
+    let requests = 0;
+    const server = Bun.serve({
+      fetch: () => {
+        requests += 1;
+        return response.promise;
+      },
+      hostname: "127.0.0.1",
+      idleTimeout: 0,
+      port: 0,
+    });
+    try {
+      await Bun.write(
+        path.join(root, ".taplo.toml"),
+        `[schema]\nurl = "${server.url.href}schema.json"\n`
+      );
+      expect(await recoverTaplo(root, "a.toml", "native Taplo panic")).toEqual({
+        findings: [],
+        reason:
+          "native Taplo panic\nTaplo WebAssembly: did not finish within 10 seconds",
+        status: "incomplete",
+      });
+      expect(requests).toBe(1);
+    } finally {
+      response.resolve(new Response(null, { status: 503 }));
+      await server.stop(true);
+    }
+  });
+}, 15_000);
 
 test("a silent successful engine still leaves its check incomplete", async () => {
   await inRepo(async (root, bin) => {

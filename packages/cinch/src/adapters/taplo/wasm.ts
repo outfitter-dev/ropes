@@ -10,6 +10,7 @@ import { configProblem, parseOutput } from "./output.ts";
 
 const WASM_WORKER = "--internal-taplo-wasm";
 const WASM_CLI = "@taplo/cli/dist/cli.js";
+const TIMEOUT_SECONDS = 10;
 const RECOVERED =
   "Checked with Taplo WebAssembly 0.9.0 after native Taplo panicked";
 
@@ -103,6 +104,9 @@ export const recoverTaplo = async (
     .join(root, relative)
     .replaceAll(/[\\*?[\]{}()!+@|]/gu, "\\$&");
 
+  // The WebAssembly HTTP client can wait indefinitely for a schema response.
+  const deadline = AbortSignal.timeout(TIMEOUT_SECONDS * 1000);
+  const timedOut = `did not finish within ${TIMEOUT_SECONDS} seconds`;
   try {
     const command = STANDALONE
       ? WASM_WORKER
@@ -110,8 +114,10 @@ export const recoverTaplo = async (
     const { exitCode, stderr } = await exec(
       [process.execPath, command, "lint", "--colors", "never", "--", file],
       root,
-      { RUST_LOG: "taplo=info" }
+      { RUST_LOG: "taplo=info" },
+      deadline
     );
+    deadline.throwIfAborted();
     const config = configProblem(stderr);
     if (config !== undefined) {
       return incomplete(`could not use its own config: ${config}`);
@@ -149,6 +155,9 @@ export const recoverTaplo = async (
       status: hasFindings ? "findings" : "passed",
     };
   } catch (error) {
+    if (deadline.aborted) {
+      return incomplete(timedOut);
+    }
     return incomplete(error instanceof Error ? error.message : String(error));
   }
 };
