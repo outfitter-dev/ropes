@@ -3,8 +3,10 @@ import { parseArgs } from "node:util";
 
 import manifest from "../package.json" with { type: "json" };
 import { STANDALONE } from "./adapters/shipped-text.ts";
+import { configureStandIn } from "./adapters/stand-in.ts";
 import type { CommandResponse } from "./commands/command.ts";
 import { commands } from "./commands/registry.ts";
+import { discoverRoot, toRootRelative } from "./config/root.ts";
 import { EXIT_CODE } from "./contracts/result.ts";
 import { renderFailureJson } from "./render/failure.ts";
 
@@ -115,6 +117,15 @@ const main = async (argv: readonly string[]): Promise<number> => {
     strict: values.strict === true || process.env.CI === "true",
     yes: values.yes === true,
   };
+  if (STANDALONE) {
+    const checkout = await discoverRoot(request.cwd);
+    const root = checkout.ok ? checkout.value.vcsRoot : request.cwd;
+    configureStandIn(async (target) => {
+      const location = await toRootRelative(root, root, target);
+      return !location.ok;
+    });
+  }
+
   const response = await command(request);
   print(response, request.json);
   return response.exitCode;

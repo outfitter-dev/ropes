@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import manifest from "../package.json" with { type: "json" };
+import { qualifyStandaloneCache } from "./binary-cache.ts";
 import { qualifyMiseInstall } from "./binary-install.ts";
 
 const BUILD = new URL("../scripts/build-binary.ts", import.meta.url).pathname;
@@ -176,50 +177,19 @@ test("the binary formats fenced code with no Bun in reach", async () => {
   expect(files).toEqual([]);
 });
 
-test("an empty cache override does not put the stand-in in the repository", async () => {
+test("read-only standalone checks keep the Bun helper outside the checkout", async () => {
   const searchPath = withoutBun();
   if (searchPath === null) {
     console.warn("skipped: needs rumdl, taplo and git on PATH");
     return;
   }
-  const root = await repo("override");
-  await Bun.write(path.join(root, "README.md"), FORMATTED);
-  await mkdir(path.join(root, "docs"));
-  await run([binary, "init", "--yes"], root, searchPath);
-  const below = await run(
-    [binary, "check"],
-    path.join(root, "docs"),
-    searchPath,
-    0,
-    {
-      XDG_CACHE_HOME: "",
-    }
-  );
-  expect(below.exitCode).toBe(0);
-  const files = await Array.fromAsync(
-    new Bun.Glob("**/bun").scan({ cwd: root, dot: true })
-  );
-  expect(files).toEqual([]);
-});
-
-test("a home folder that is not absolute gets no stand-in", async () => {
-  const searchPath = withoutBun();
-  if (searchPath === null) {
-    console.warn("skipped: needs rumdl, taplo and git on PATH");
-    return;
-  }
-  const root = await repo("homeless");
-  await Bun.write(path.join(root, "README.md"), FORMATTED);
-  await run([binary, "init", "--yes"], root, searchPath);
-  const alone = await run([binary, "check"], root, searchPath, 2, {
-    HOME: "elsewhere",
+  await qualifyStandaloneCache({
+    binary,
+    contents: FORMATTED,
+    root: await repo("cache-fixture"),
+    run: (command, cwd, expected, env) =>
+      run(command, cwd, searchPath, expected, env),
   });
-  // With no `bun` to call, the fenced blocks could not be checked.
-  expect(alone.exitCode).toBe(2);
-  const files = await Array.fromAsync(
-    new Bun.Glob("**/bun").scan({ cwd: root, dot: true })
-  );
-  expect(files).toEqual([]);
 });
 
 test("the binary carries the rules Cinch ships", async () => {

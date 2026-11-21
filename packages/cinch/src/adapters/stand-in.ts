@@ -1,4 +1,4 @@
-import { chmod, mkdir } from "node:fs/promises";
+import { chmod, lstat, mkdir, mkdtemp, rename, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 
@@ -14,40 +14,72 @@ import { STANDALONE } from "./shipped-text.ts";
 const script = (executable: string): string =>
   `#!/bin/sh\nBUN_BE_BUN=1 exec '${executable.replaceAll("'", `'\\''`)}' "$@"\n`;
 
-/**
- * The user's cache folder. A folder that is not absolute would land in the
- * repository, so an override like that is passed over, and a home folder
- * like that leaves no cache folder at all.
- */
-const cacheFolder = (): string | undefined => {
+type OutsideCheckout = (target: string) => Promise<boolean>;
+
+/** Resolve the entire helper directory in case a cache subdirectory is an alias. */
+const cacheFolder = async (
+  executable: string,
+  outsideCheckout: OutsideCheckout
+): Promise<string | undefined> => {
   const configured = Bun.env.XDG_CACHE_HOME;
-  if (configured !== undefined && path.isAbsolute(configured)) {
-    return configured;
-  }
   const home = homedir();
-  return path.isAbsolute(home) ? path.join(home, ".cache") : undefined;
+  const fallback = path.isAbsolute(home)
+    ? path.join(home, ".cache")
+    : undefined;
+  for (const cache of [configured, fallback]) {
+    if (cache === undefined || !path.isAbsolute(cache)) {
+      continue;
+    }
+    const target = path.join(
+      cache,
+      "cinch",
+      "stand-in",
+      Bun.hash(executable).toString(16)
+    );
+    // eslint-disable-next-line no-await-in-loop -- try the configured cache before the fallback
+    const [safeCache, safeHelper] = await Promise.all([
+      outsideCheckout(cache),
+      outsideCheckout(target),
+    ]);
+    if (safeCache && safeHelper) {
+      return target;
+    }
+  }
+  return undefined;
 };
 
-const write = async (executable: string): Promise<string | undefined> => {
-  const cache = cacheFolder();
-  if (cache === undefined) {
+const write = async (
+  executable: string,
+  outsideCheckout: OutsideCheckout
+): Promise<string | undefined> => {
+  const folder = await cacheFolder(executable, outsideCheckout);
+  if (folder === undefined) {
     return undefined;
   }
-  const folder = path.join(
-    cache,
-    "cinch",
-    "stand-in",
-    Bun.hash(executable).toString(16)
-  );
   const file = path.join(folder, "bun");
   const wanted = script(executable);
   try {
-    const found = Bun.file(file);
-    if (!(await found.exists()) || (await found.text()) !== wanted) {
-      await mkdir(folder, { recursive: true });
-      await Bun.write(file, wanted);
+    const found = await lstat(file).catch(() => null);
+    // eslint-disable-next-line no-bitwise -- file permissions occupy the low mode bits
+    const executableMode = found !== null && (found.mode & 0o777) === 0o755;
+    if (
+      found?.isFile() === true &&
+      executableMode &&
+      (await Bun.file(file).text()) === wanted
+    ) {
+      return folder;
     }
-    await chmod(file, 0o755);
+    await mkdir(folder, { recursive: true });
+    const staging = await mkdtemp(path.join(folder, ".install-"));
+    try {
+      // Replacing the entry avoids writing through links that point into the checkout.
+      const staged = path.join(staging, "bun");
+      await Bun.write(staged, wanted);
+      await chmod(staged, 0o755);
+      await rename(staged, file);
+    } finally {
+      await rm(staging, { force: true, recursive: true });
+    }
     return folder;
   } catch {
     // A cache that cannot be written leaves the engine without a `bun`,
@@ -56,7 +88,16 @@ const write = async (executable: string): Promise<string | undefined> => {
   }
 };
 
-let folder: Promise<string | undefined> | undefined;
+let standInFolder: (() => Promise<string | undefined>) | undefined;
+
+/** The standalone entry point supplies the physical checkout boundary. */
+export const configureStandIn = (outsideCheckout: OutsideCheckout): void => {
+  let folder: Promise<string | undefined> | undefined;
+  standInFolder = () => {
+    folder ??= write(process.execPath, outsideCheckout);
+    return folder;
+  };
+};
 
 /**
  * The search path an engine is started with. From the package it is the one
@@ -67,8 +108,7 @@ export const enginePath = async (): Promise<string | undefined> => {
   if (!STANDALONE) {
     return Bun.env.PATH;
   }
-  folder ??= write(process.execPath);
-  const standIn = await folder;
+  const standIn = await standInFolder?.();
   return [Bun.env.PATH, standIn]
     .filter((part) => part !== undefined && part !== "")
     .join(path.delimiter);
