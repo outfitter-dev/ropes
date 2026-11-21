@@ -44,7 +44,9 @@ const failureExcerpt = (stderr: string): string => {
     .trim()
     .split("\n")
     .filter((line) => line.trim() !== "");
-  const failure = lines.filter((line) => !/^\s*(?:note|help):/u.test(line));
+  const failure = lines.filter(
+    (line) => !/^\s*(?:(?:note|help):|(?:TRACE|DEBUG|INFO)\b)/u.test(line)
+  );
   return (
     (failure.length > 0 ? failure : lines)
       .slice(0, 4)
