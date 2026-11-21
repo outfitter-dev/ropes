@@ -8,7 +8,7 @@ This repository owns the Ropes quality engine and CLI, including contracts, poli
 
 The previous framework lives in [`outfitter-legacy`](https://github.com/outfitter-dev/outfitter-legacy).
 
-Read README.md, the [product direction](https://linear.app/outfitter/document/ropes-product-direction-cli-design-and-repository-architecture-def8de43517b), and the [execution plan](https://linear.app/outfitter/document/ropes-execution-plan-cutover-pilot-and-rollout-37f1f91fa166) before implementing. The [specification and decision register](https://linear.app/outfitter/document/fit-product-specification-and-decision-register-232485133059) governs existing Cinch behavior until the cutover is accepted. When implementation needs to diverge, update the governing document and explain the change in the pull request. Work is tracked on the Linear `ROPE` team in Cinch Build and Cinch Rule Enforcement.
+Read README.md, the [design tenets](docs/tenets.md), the [product direction](https://linear.app/outfitter/document/ropes-product-direction-cli-design-and-repository-architecture-def8de43517b), the [execution plan](https://linear.app/outfitter/document/ropes-execution-plan-cutover-pilot-and-rollout-37f1f91fa166), and the [specification and decision register](https://linear.app/outfitter/document/fit-product-specification-and-decision-register-232485133059) before implementing. The tenets guide long-term design. The specification governs existing Cinch behavior until the cutover is accepted. Keep implementation and technical documentation aligned with both. When work challenges either, record the decision in the governing document and explain it in the pull request. Work is tracked on the Linear `ROPE` team in Cinch Build and Cinch Rule Enforcement.
 
 ## Rules that come from the specification
 
@@ -17,7 +17,7 @@ Read README.md, the [product direction](https://linear.app/outfitter/document/ro
 - The resolver in `policy/` is pure. It reads no files, spawns nothing, and gives the same plan for the same input.
 - Engines sit behind the `Adapter` interface. The runner knows only that interface and never branches on an adapter's id. Adding an engine is one new folder under `adapters/` and one line in `adapters/registry.ts`.
 - Argument parsing and printing belong to the CLI entry points. Core operations take typed requests and return data. `rope` and external consumers use the public `@ropes/core` exports; keep their quality logic in core. The existing Cinch commands use those same operations. A future command-layer change must preserve the resolver and runner boundaries.
-- A step that could not run is incomplete, never passed. Exit codes are 0 clean, 1 findings remain, 2 incomplete or unusable, and incomplete wins.
+- A required step that could not run is incomplete, never passed. Exit codes are 0 for a completed run without blocking findings, 1 for blocking findings, and 2 for an incomplete or unusable run. Advisory findings remain visible, and incomplete wins.
 - The plan, result and config shapes are provisional. An unknown schema or config version is an error, never a silent default.
 
 `packages/cinch/tests/boundaries.test.ts` enforces the import rules above. If it fails, fix the import. Do not loosen the test to make room for it.
