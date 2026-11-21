@@ -10,12 +10,14 @@
   "scripts": {
     "bootstrap": "bash scripts/bootstrap.sh",
     "build:binary": "bun packages/cinch/scripts/build-binary.ts",
-    "check": "bun run cinch check && bun run test",
+    "check": "bun run check:workflows && bun run cinch check && bun run test",
     "cinch": "bun packages/cinch/src/cli.ts",
     "fix": "bun run cinch fix",
     "rope": "bun packages/cli/src/cli.ts",
     "test": "bun test",
-    "check:packed": "bun packages/cli/scripts/check-packed.ts"
+    "check:packed": "bun packages/cli/scripts/check-packed.ts",
+    "check:workflows": "bun scripts/check-workflows.ts",
+    "update:actions": "pinact run --update"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.5",

@@ -38,3 +38,7 @@ When a repository does not pin a tool, the adapter falls back to the range of ve
 ## Dependency versions across packages
 
 mise pins tools. It does not keep npm dependency versions consistent across workspace packages, which is what syncpack does. Its experimental `mise deps` command (checked in mise 2026.11.10) runs package-manager installs; it does not compare versions between packages. Today only the workspace root declares dev dependencies, so there is nothing to keep in step. When a second package needs a shared dependency, the plan is a Bun catalog in the root `package.json`, so the version is written once. A checker such as Sherif or syncpack is part of the install policy decision in FIT-32.
+
+## GitHub Actions pins
+
+Pinact writes the commit SHA and release comment for each external action. Its own version is pinned in mise alongside actionlint and zizmor. The [workflow guide](workflows.md) describes offline checking and the deliberate action update command.

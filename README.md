@@ -117,7 +117,7 @@ bun run rope --help
 bun run cinch --help
 ```
 
-`bun run check` is `cinch check` on this repository, then the tests. `cinch check` reads the root `cinch.toml` and runs the linters, the type check and the formatter, so there is no separate lint, format or type check script. `bun run fix` is `cinch fix`. `cinch check` needs the pinned rumdl and Taplo on `PATH`. With mise activated in your shell it is. Otherwise run `mise exec -- bun run check`. Without them the step is incomplete and the check fails, which is the point: a check that could not run is not a pass.
+`bun run check` runs the [workflow gate](docs/workflows.md), `cinch check` on this repository, then the tests. `cinch check` reads the root `cinch.toml` for code linting, type checking and formatting. `bun run fix` is `cinch fix`. `cinch check` needs the pinned rumdl and Taplo on `PATH`. With mise activated in your shell it is. Otherwise run `mise exec -- bun run check`. Without them the step is incomplete and the check fails, which is the point: a check that could not run is not a pass.
 
 The pre-commit hook runs `cinch fix` on the files you staged. It stages what it fixed and stops the commit when a finding is left, a type error included, or an engine could not run. It also stops, without fixing anything, when the Cinch setup needs repair, and says to run `cinch doctor --fix`. It works on the file in your working tree, so a partly staged file is staged whole.
 
