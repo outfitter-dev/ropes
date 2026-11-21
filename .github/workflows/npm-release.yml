@@ -50,7 +50,7 @@ jobs:
   publish:
     if: github.ref == 'refs/heads/main' && inputs.operation == 'publish'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     permissions:
       actions: read
       id-token: write
@@ -123,9 +123,9 @@ jobs:
           }
 
           verify_published() {
-            local package=$1 metadata attempt
+            local package=$1 metadata deadline=$((SECONDS + 300))
             local archive_url="$registry/@ropes/$package/-/$package-$VERSION.tgz"
-            for ((attempt = 1; attempt <= 18; attempt++)); do
+            while (( SECONDS < deadline )); do
               if metadata=$(registry_state "$package") &&
                 jq -e --arg version "$VERSION" --arg tag "$DIST_TAG" --arg url "$archive_url" '
                   .["dist-tags"][$tag] == $version and .versions[$version].dist.tarball == $url
@@ -137,7 +137,7 @@ jobs:
               fi
               sleep 6
             done
-            echo "Could not verify @ropes/$package@$VERSION at $DIST_TAG in the public registry."
+            echo "Timed out verifying @ropes/$package@$VERSION at $DIST_TAG in the public registry."
             return 1
           }
 
