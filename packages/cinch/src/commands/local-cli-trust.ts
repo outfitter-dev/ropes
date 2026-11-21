@@ -82,7 +82,9 @@ export const verifyInstalledFiles = async (
   ]);
   const tracked = listed
     .flatMap((listing) => listing.split("\0"))
-    .find((file) => file.split("/").includes("node_modules"));
+    .find((file) =>
+      file.split("/").some((part) => part.toLowerCase() === "node_modules")
+    );
   if (tracked !== undefined) {
     throw new Error(
       `Refusing checkout-owned installed code at ${tracked}. Remove tracked node_modules files and reinstall the pinned dependencies before running rope.`

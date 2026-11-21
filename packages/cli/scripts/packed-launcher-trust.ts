@@ -53,6 +53,17 @@ export const proveInstallTrust = async (
   await invoke();
   await git("commit", "--quiet", "--message", "remove tracked runtime fixture");
   await Bun.write(selected, original);
+  const trackedCaseAlias = "Node_Modules/ropes-case-proof.txt";
+  const resolved = await git("rev-parse", "HEAD:README.md");
+  const blob = resolved.trim();
+  await git(
+    "update-index",
+    "--add",
+    "--cacheinfo",
+    `100644,${blob},${trackedCaseAlias}`
+  );
+  await invoke();
+  await git("update-index", "--force-remove", "--", trackedCaseAlias);
   const core = await realpath(
     path.join(cwd, "node_modules/@ropes/core/src/index.ts")
   );
