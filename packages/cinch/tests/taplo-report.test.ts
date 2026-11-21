@@ -72,11 +72,15 @@ const check = async (root: string, searchPath: string, json = true) => {
   return { exitCode, stderr, stdout };
 };
 
-test("an unexpected Taplo exit keeps its cause in human and JSON reports", async () => {
+test("a Taplo panic after routine logs reaches human and JSON reports", async () => {
   await inRepo(async (root, bin) => {
     await fakeTaplo(
       bin,
       [
+        " INFO taplo:load_config: found configuration file",
+        " INFO taplo:lint_files:collect_files: found files total=1",
+        " INFO taplo:lint_files:lint_file: checking a.toml",
+        " INFO taplo:lint_files:lint_file: loading schema",
         "thread 'main' panicked at system-configuration/dynamic_store.rs:154:1:",
         "Attempted to create a NULL object.",
         "note: run with RUST_BACKTRACE=1 environment variable to display a backtrace",
@@ -91,6 +95,7 @@ test("an unexpected Taplo exit keeps its cause in human and JSON reports", async
         expect(ran.stdout).toContain("taplo exited 101:");
         expect(ran.stdout).toContain("Attempted to create a NULL object.");
         expect(ran.stdout).not.toContain("RUST_BACKTRACE");
+        expect(ran.stdout).not.toContain("INFO taplo:");
         if (json) {
           expect(JSON.parse(ran.stdout)).toMatchObject({
             outcome: "incomplete",
@@ -165,5 +170,23 @@ test("the Taplo log filter stays local to its invocation", async () => {
         Bun.env.RUST_LOG = previous;
       }
     }
+  });
+});
+
+test("an unexpected exit with routine logs alone keeps a bounded fallback", async () => {
+  await inRepo(async (root, bin) => {
+    const lines = Array.from(
+      { length: 6 },
+      (_, index) => ` INFO taplo: checking file ${index}`
+    );
+    const command = await fakeTaplo(bin, lines.join("\n"), 101);
+    const outcome = await checkOne(taploAdapter({ command }), {
+      path: "a.toml",
+      root,
+    });
+    expect(outcome.status).toBe("incomplete");
+    expect(outcome.reason?.split("\n")).toHaveLength(4);
+    expect(outcome.reason).toContain("checking file 0");
+    expect(outcome.reason).not.toContain("checking file 4");
   });
 });
