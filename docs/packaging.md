@@ -27,7 +27,7 @@ BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 ./node_modules/.bin/rope check README.md --j
 
 ## npm release
 
-The published pilot is `0.1.0-pilot.0`. The first opt-in `canary` release is `0.1.0-canary.0`. The proposed stable pair is `0.1.0` under `latest`, after the canary has a clean install and consumer checks. Use `0.1.0-canary.1` for a new candidate if the first canary needs changes. Keep each published version immutable and both packages on the same version and channel.
+The published pilot is `0.1.0-pilot.0`. The first opt-in `canary` release is `0.1.0-canary.0`. The proposed stable pair is `0.1.0` under `latest`, after the canary has a clean install and consumer checks. Use a new prerelease number for each canary candidate. Keep each published version immutable and both packages on the same version and channel.
 
 Dispatch the **npm release** workflow on `main` with `prepare` to run the gates and retain the two verified tarballs. Confirm the source commit, version, and channel. The run summary records the SHA-256 of each archive.
 
@@ -38,7 +38,7 @@ When the pair is ready to release, dispatch `publish` on `main` with the candida
 After the workflow succeeds, install the exact CLI version in a clean Git checkout with an initial commit and check the launcher.
 
 ```sh
-bun add --dev --exact @ropes/cli@0.1.0-canary.0
+bun add --dev --exact @ropes/cli@0.1.0-canary.1
 ./node_modules/.bin/rope --version
 ```
 
