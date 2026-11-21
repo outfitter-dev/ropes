@@ -107,7 +107,7 @@ test("mise installs the checked artifact and runs it with no Bun on PATH", async
     engines: toolPath,
     root: await repo("mise-install"),
   });
-});
+}, 30_000);
 
 test("an unexpected subprocess failure reports its command, exit and stderr", async () => {
   const failure = await run([binary, "nope"], dir, "").catch(

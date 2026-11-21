@@ -62,6 +62,7 @@ export const qualifyMiseInstall = async (input: {
     const child = Bun.spawn([mise, ...args], {
       cwd: root,
       env: { ...env, ...overrides },
+      timeout: 10_000,
       stderr: "pipe",
       stdout: "pipe",
     });
@@ -70,6 +71,11 @@ export const qualifyMiseInstall = async (input: {
       new Response(child.stdout).text(),
       new Response(child.stderr).text(),
     ]);
+    if (child.signalCode !== null) {
+      throw new Error(
+        `mise ${args.join(" ")} stopped with ${child.signalCode}: ${stderr}`
+      );
+    }
     return { exitCode, stderr, stdout };
   };
   const pin = (checksum: string, version = manifest.version) =>
@@ -92,7 +98,7 @@ export const qualifyMiseInstall = async (input: {
   // Show the unrelated system config is discovered only when directed there.
   await Bun.write(
     path.join(unrelatedSystem, "config.toml"),
-    '[tools."http:unexpected-system-tool"]\nversion = "1.0.0"\nurl = "file:///missing-system-tool"\n'
+    "[invalid-system-config\n"
   );
   await pin(digest);
   const leaked = await run(["install"], {
