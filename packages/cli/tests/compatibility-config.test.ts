@@ -106,3 +106,33 @@ test("compatibility advertises only resolution modes the pinned checker accepts"
     );
   });
 });
+
+test("compatibility requires semantic checks on selected declaration files", async () => {
+  await withFixture(async ({ main }) => {
+    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    const directory = await packageAt(main.root, "current", "^5.0.0");
+    await Bun.write(path.join(directory, "index.d.ts"), BEFORE);
+    const ran = await runEntry(
+      ROPE,
+      ["check", "packages/current/index.d.ts", "--json"],
+      main.root
+    );
+    expect(ran.exitCode).toBe(2);
+    expect(ran.stdout).toContain(
+      "skipLibCheck disables the required declaration check"
+    );
+    await Bun.write(
+      path.join(directory, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: { module: "esnext", moduleResolution: "bundler" },
+      })
+    );
+    const checked = await runEntry(
+      ROPE,
+      ["check", "packages/current/index.d.ts", "--json"],
+      main.root
+    );
+    expect(checked.exitCode).toBe(1);
+    expect(checked.stdout).toContain("typescript-api/removed-map");
+  });
+});

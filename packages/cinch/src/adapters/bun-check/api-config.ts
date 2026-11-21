@@ -54,6 +54,9 @@ const configProblem = async (
         if (options.noCheck === true) {
           return `${path.relative(root, config)}: noCheck disables the semantic check required by compatibility`;
         }
+        if (options.skipLibCheck === true && /\.d\.[cm]?ts$/u.test(file)) {
+          return `${path.relative(root, config)}: skipLibCheck disables the required declaration check for ${file}`;
+        }
         const override = OVERRIDES.find((key) => options[key] !== undefined);
         if (override !== undefined) {
           return `${path.relative(root, config)}: compiler module-resolution overrides are outside the compatibility pilot`;
