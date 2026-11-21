@@ -4,6 +4,7 @@ import path from "node:path";
 import { adaptersFor } from "../src/adapters/registry.ts";
 import { capturePolicy } from "../src/commands/policy-preview.ts";
 import { comparePolicy } from "../src/policy/compare-policy.ts";
+import { renderPolicyPreview } from "../src/render/policy-preview.ts";
 import { withFixture } from "./acceptance-repo.ts";
 
 test("a skipped artifact version still shows a newly introduced blocking rule", async () => {
@@ -51,6 +52,9 @@ test("a skipped artifact version still shows a newly introduced blocking rule", 
     const old = before.value;
     const next = after.value;
     const preview = comparePolicy(old, next, ["before.json", "after.json"]);
+    expect(renderPolicyPreview(preview)).toContain(
+      "Rule catalog added config/tsconfig-extends"
+    );
     expect(preview.changes).toMatchObject([
       {
         after: { state: "blocking" },

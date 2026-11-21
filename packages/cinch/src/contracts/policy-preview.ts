@@ -75,7 +75,7 @@ export interface PolicyChange {
 
 type Input = Pick<
   PolicySnapshot,
-  "artifactVersion" | "evaluation" | "root" | "selection"
+  "artifactVersion" | "catalog" | "evaluation" | "root" | "selection"
 >;
 
 export interface PolicyPreview {

@@ -26,6 +26,20 @@ const input = (label: string, source: PolicyPreview["before"]) => {
   return `${label} ${source.input} · ${source.artifactVersion}${clock}`;
 };
 
+const catalogChanges = (
+  before: readonly string[],
+  after: readonly string[]
+): string[] => {
+  const added = after.filter((rule) => !before.includes(rule));
+  const removed = before.filter((rule) => !after.includes(rule));
+  return [
+    ...(added.length === 0 ? [] : [`Rule catalog added ${added.join(", ")}`]),
+    ...(removed.length === 0
+      ? []
+      : [`Rule catalog removed ${removed.join(", ")}`]),
+  ];
+};
+
 export const renderPolicyPreview = (preview: PolicyPreview): string => {
   const { before, after, changes, incomplete } = preview;
   const selection =
@@ -37,6 +51,7 @@ export const renderPolicyPreview = (preview: PolicyPreview): string => {
     input("Before", before),
     input("After", after),
     `Scope ${selection}`,
+    ...catalogChanges(before.catalog, after.catalog),
     ...(changes.length === 0 ? ["", "No policy changes in this scope."] : []),
     ...changes.flatMap((change) => [
       "",

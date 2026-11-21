@@ -15,4 +15,4 @@ The snapshot always prints JSON. Omit paths to capture the workspace. The compar
 
 For example, a report can show a compiler config rule moving from advisory to blocking when its deadline arrives and a direct TypeScript API import rule applying after a package raises its declared support range. The report names the affected package and path, both decisions, the decision sources, and the changed input. A comparison exits 2 when required policy coverage is unresolved.
 
-This is a planning-only report. It records no match counts or finding locations. Use `rope check` to observe findings and engine readiness. Both artifacts must support policy snapshots. The report covers shipped rule identities and their resolved policy; changes to a rule's matching implementation and local rule bodies need their own check.
+This is a planning-only report. It records no match counts or finding locations. Use `rope check` to observe findings and engine readiness. Both artifacts must support policy snapshots. The report covers shipped rule identities and their resolved policy. Check changes to a rule's matching implementation and local rule bodies separately.

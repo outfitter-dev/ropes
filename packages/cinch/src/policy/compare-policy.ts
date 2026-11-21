@@ -4,6 +4,7 @@ import type {
   PolicySnapshot,
   PreviewDecision,
 } from "../contracts/policy-preview.ts";
+import type { PackageTarget } from "../contracts/targets.ts";
 
 type SnapshotPath = PolicySnapshot["paths"][number];
 
@@ -39,6 +40,55 @@ const otherwise = (
 
 const keyOf = (value: unknown): string | undefined => JSON.stringify(value);
 
+/** Hashes identify observed manifest bytes, while policy uses the declared fact. */
+const targetFact = (fact: PackageTarget | undefined): string | undefined => {
+  if (fact === undefined) {
+    return undefined;
+  }
+  const {
+    source: { sha256: _sourceHash, ...source },
+    inheritedBy,
+    ...value
+  } = fact;
+  const inherited =
+    inheritedBy === undefined
+      ? undefined
+      : { file: inheritedBy.file, key: inheritedBy.key };
+  return keyOf({ ...value, inheritedBy: inherited, source });
+};
+
+const policyKey = (value: PreviewDecision) => {
+  if (!("target" in value) || value.target === undefined) {
+    return keyOf(value);
+  }
+  return keyOf({
+    ...value,
+    target: { ...value.target, fact: targetFact(value.target.fact) },
+  });
+};
+
+const targetChanges = (
+  before: PreviewDecision,
+  after: PreviewDecision
+): string[] => {
+  const inputs: string[] = [];
+  const beforeTarget = "target" in before ? before.target : undefined;
+  const afterTarget = "target" in after ? after.target : undefined;
+  const oldFact = targetFact(beforeTarget?.fact);
+  const newFact = targetFact(afterTarget?.fact);
+  if (oldFact !== undefined && newFact !== undefined && oldFact !== newFact) {
+    inputs.push("declared package target");
+  }
+  if (
+    beforeTarget !== undefined &&
+    afterTarget !== undefined &&
+    keyOf(beforeTarget.condition) !== keyOf(afterTarget.condition)
+  ) {
+    inputs.push("rule applicability condition");
+  }
+  return inputs;
+};
+
 const changedInputs = (
   before: PreviewDecision,
   after: PreviewDecision,
@@ -49,10 +99,15 @@ const changedInputs = (
   if (before.state === "absent" || after.state === "absent") {
     inputs.push("artifact rule catalog");
   }
-  const beforeTarget = "target" in before ? before.target : undefined;
-  const afterTarget = "target" in after ? after.target : undefined;
-  if (keyOf(beforeTarget) !== keyOf(afterTarget)) {
-    inputs.push("declared package target");
+  inputs.push(...targetChanges(before, after));
+  const oldAdoption = "adoption" in before ? before.adoption : undefined;
+  const newAdoption = "adoption" in after ? after.adoption : undefined;
+  if (
+    before.state !== "absent" &&
+    after.state !== "absent" &&
+    keyOf(oldAdoption) !== keyOf(newAdoption)
+  ) {
+    inputs.push("pack adoption");
   }
   const beforeTime = "blockingAt" in before ? before.blockingAt : undefined;
   const afterTime = "blockingAt" in after ? after.blockingAt : undefined;
@@ -74,10 +129,11 @@ const changedInputs = (
 };
 
 const reportInput = (
-  { artifactVersion, evaluation, root, selection }: PolicySnapshot,
+  { artifactVersion, catalog, evaluation, root, selection }: PolicySnapshot,
   input: string
 ) => ({
   artifactVersion,
+  catalog,
   evaluation,
   input,
   root,
@@ -107,7 +163,7 @@ const changed = (
   oldPackage: string | undefined,
   newPackage: string | undefined
 ): PolicyChange | undefined =>
-  keyOf(before) === keyOf(after) && oldPackage === newPackage
+  policyKey(before) === policyKey(after) && oldPackage === newPackage
     ? undefined
     : {
         after,
@@ -136,9 +192,19 @@ export const comparePolicy = (
     const newFile = newPaths.get(path);
     const oldRules = new Map(oldFile?.rules.map((rule) => [rule.rule, rule]));
     const newRules = new Map(newFile?.rules.map((rule) => [rule.rule, rule]));
-    for (const rule of [
+    const rules = [
       ...new Set([...oldRules.keys(), ...newRules.keys()]),
-    ].toSorted()) {
+    ].toSorted();
+    if (
+      rules.length === 0 &&
+      (oldFile === undefined || newFile === undefined)
+    ) {
+      const missing = oldFile === undefined ? "before" : "after";
+      incomplete.push(
+        `${path}: the path is absent from the ${missing} snapshot`
+      );
+    }
+    for (const rule of rules) {
       const from = oldRules.get(rule) ?? otherwise(oldCatalog, oldFile, rule);
       const to = newRules.get(rule) ?? otherwise(newCatalog, newFile, rule);
       const problem = unresolved(path, rule, from, to);

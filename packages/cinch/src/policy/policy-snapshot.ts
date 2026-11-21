@@ -111,6 +111,7 @@ export const policySnapshot = (input: {
 }): PolicySnapshot => {
   const { artifactVersion, config, descriptors, plan, present } = input;
   const packs = shippedStates(config, descriptors, present);
+  const presentFiles = new Set(present);
   const defined = packs.flatMap((pack) => {
     const descriptor = descriptors.find(({ id }) => id === pack.adapter);
     return descriptor === undefined
@@ -131,6 +132,9 @@ export const policySnapshot = (input: {
       package: entry.package,
       path: entry.path,
       rules: defined.flatMap(({ applies, descriptor, pack, rule }) => {
+        if (!presentFiles.has(entry.path)) {
+          return [];
+        }
         const extension = entry.path.slice(entry.path.lastIndexOf("."));
         return applies(entry.path) && descriptor.extensions.includes(extension)
           ? [decision(entry, pack, rule, descriptor)]

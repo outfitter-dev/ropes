@@ -125,3 +125,70 @@ test("policy preview compares the clock and package target without running engin
     expect(stale.stderr).toContain("unknown shipped rule");
   });
 });
+
+test("policy preview distinguishes pack adoption, unrelated edits and missing coverage", async () => {
+  await withFixture(async ({ main, emptyPath }) => {
+    const config = path.join(main.root, "cinch.toml");
+    const manifest = path.join(main.root, "packages/app/package.json");
+    const markdown = path.join(main.root, "new-notes.md");
+    await Promise.all([
+      Bun.write(
+        config,
+        POLICY.replace(
+          'packs = ["config", "typescript-api"]',
+          'packs = ["config"]'
+        )
+      ),
+      Bun.write(
+        manifest,
+        '{"version":"1.0.0","peerDependencies":{"typescript":"^5.0.0"}}\n'
+      ),
+      Bun.write(path.join(main.root, SOURCE), "export {};\n"),
+      Bun.write(markdown, "# Notes\n"),
+    ]);
+    const invoke = (args: readonly string[]) =>
+      runEntry(ROPE, args, main.root, emptyPath);
+    const capture = async (name: string) => {
+      const snapshot = await invoke(["policy", "snapshot", "--at", BEFORE]);
+      expect(snapshot.exitCode).toBe(0);
+      await Bun.write(path.join(main.root, name), snapshot.stdout);
+      return snapshot.stdout;
+    };
+    const compare = (before: string, after: string) =>
+      invoke(["policy", "compare", before, after, "--json"]);
+    await capture("../bare.json");
+    await Bun.write(config, POLICY);
+    const old = await capture("../adopted.json");
+    const adopted = await compare("../bare.json", "../adopted.json");
+    expect(adopted.exitCode).toBe(0);
+    expect(json(adopted)).toMatchObject({
+      after: { catalog: [RULE, API] },
+      changes: [
+        {
+          after: { state: "blocking" },
+          before: { state: "inapplicable" },
+          inputs: ["pack adoption"],
+          rule: API,
+        },
+      ],
+    });
+
+    await Bun.write(
+      manifest,
+      '{"version":"1.0.1","peerDependencies":{"typescript":"^5.0.0"}}\n'
+    );
+    const revised = await capture("../version-bump.json");
+    expect(revised).not.toBe(old);
+    expect(
+      json(await compare("../adopted.json", "../version-bump.json"))
+    ).toMatchObject({ changes: [], incomplete: [] });
+
+    await Bun.file(markdown).delete();
+    await capture("../missing.json");
+    const missing = await compare("../version-bump.json", "../missing.json");
+    expect(missing.exitCode).toBe(2);
+    expect(missing.stdout).toContain(
+      "new-notes.md: the path is absent from the after snapshot"
+    );
+  });
+});
