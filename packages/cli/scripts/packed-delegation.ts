@@ -4,6 +4,7 @@ import path from "node:path";
 
 import cli from "../package.json" with { type: "json" };
 import { proveCancellation } from "./packed-launcher-cancel.ts";
+import { proveLauncherHelp } from "./packed-launcher-help.ts";
 import { proveInstallTrust } from "./packed-launcher-trust.ts";
 import { run } from "./packed-run.ts";
 
@@ -43,6 +44,7 @@ export const proveDelegation = async (
     args: readonly string[],
     options: { exitCode?: number } = {}
   ) => run([process.execPath, executable, ...args], cwd, options);
+  await proveLauncherHelp(folder, consumer, executable);
   const localEntry = await realpath(
     path.join(consumer, "node_modules/.bin/rope")
   );

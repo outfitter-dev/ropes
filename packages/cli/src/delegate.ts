@@ -18,6 +18,9 @@ export const delegate = async (
     protocol: manifest.ropesLauncher,
   });
   if (!resolved.ok) {
+    if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) {
+      return null;
+    }
     throw new Error(resolved.error);
   }
   const { current: entry, selected } = resolved.value;

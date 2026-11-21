@@ -44,6 +44,14 @@ Usage: rope <explain|check|fix> [path...] [--json] [--strict]
   migrate   Preview a legacy Cinch config migration
   policy    Capture and compare resolved rule policy
 
+Setup requires a Git checkout with an initial commit, or Git-colocated jj.
+Git HEAD and the index must be readable. Track the pin and lockfile:
+  bun add --dev --exact @ropes/cli@${manifest.version}
+  git add package.json bun.lock
+  git commit -m "chore: pin Ropes"
+  ./node_modules/.bin/rope --help
+  ./node_modules/.bin/rope explain README.md
+
 Exit codes: 0 clean, 1 findings remain, 2 incomplete or unusable.
 `;
 
