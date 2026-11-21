@@ -79,12 +79,12 @@ jobs:
           unzip -p "$RUNNER_TEMP/ropes-candidate.zip" "$PACKAGE.tgz" > "$tarball"
           printf '%s  %s\n' "$APPROVED_SHA256" "$tarball" | sha256sum -c -
           tag=$(tar -xOf "$tarball" package/package.json | jq -er --arg package "@ropes/$PACKAGE" '
-            "^(0|[1-9][0-9]*)([.](0|[1-9][0-9]*)){2}" as $version |
+            "\\A(0|[1-9][0-9]*)([.](0|[1-9][0-9]*)){2}" as $version |
             select(.name == $package and .license == "MIT" and .publishConfig.access == "public") |
             select($package != "@ropes/cli" or .dependencies["@ropes/core"] == .version) |
             select(
-              (.publishConfig.tag == "canary" and (.version | test($version + "-canary[.](0|[1-9][0-9]*)$"))) or
-              (.publishConfig.tag == "latest" and (.version | test($version + "$")))
+              (.publishConfig.tag == "canary" and (.version | test($version + "-canary[.](0|[1-9][0-9]*)\\z"))) or
+              (.publishConfig.tag == "latest" and (.version | test($version + "\\z")))
             ) |
             .publishConfig.tag
           ')

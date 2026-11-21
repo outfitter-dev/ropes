@@ -20,7 +20,7 @@ To rehearse a candidate version locally, set both package manifest versions and 
 
 The published pilot is `0.1.0-pilot.0`. Prepare `0.1.0-canary.0` as the first opt-in `canary` release. The proposed stable pair is `0.1.0` under `latest`, after the canary has a clean install and consumer checks. Use `0.1.0-canary.1` for a new candidate if the first canary needs changes. Keep each published version immutable and both packages on the same version and channel.
 
-Dispatch the **npm release** workflow on `main` with `prepare` to produce the verified pair and its SHA-256 manifest. Review the source commit, version, channel, and both hashes before staging. The workflow checks the report artifact’s origin and digest before it will stage a tarball. The archive’s manifest binds its version to the `canary` or `latest` channel. The internal source repository uses trusted publishing without npm provenance.
+Dispatch the **npm release** workflow on `main` with `prepare` to produce the verified pair and its SHA-256 manifest. Review the source commit, version, channel, and both hashes before staging. The workflow checks the artifact’s origin and digest before it will stage a tarball. The archive’s manifest binds its version to the `canary` or `latest` channel. The internal source repository uses trusted publishing without npm provenance.
 
 Each npm package trusts `outfitter-dev/ropes` and `npm-release.yml` with stage-only permissions. After artifact approval, dispatch `core` and then `cli` with the same artifact ID and each package's approved hash. If one submission succeeds and the other fails, retry only the missing package with the same artifact. Approve core before CLI in npm with 2FA.
 
