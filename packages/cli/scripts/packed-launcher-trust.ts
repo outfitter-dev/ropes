@@ -27,17 +27,16 @@ export const proveInstallTrust = async (
       ],
       cwd
     );
-  const invoke = async () => {
+  const invoke = async (
+    message = /Refusing checkout-owned installed code/u
+  ) => {
     const child = Bun.spawn([process.execPath, executable, "--version"], {
       cwd,
       stderr: "pipe",
       stdout: "pipe",
     });
     assert.equal(await child.exited, 2);
-    assert.match(
-      await new Response(child.stderr).text(),
-      /Refusing checkout-owned installed code/u
-    );
+    assert.match(await new Response(child.stderr).text(), message);
     assert.equal(await Bun.file(marker).exists(), false);
   };
   const original = await Bun.file(selected).text();
@@ -65,6 +64,24 @@ export const proveInstallTrust = async (
   await git("add", "--force", path.relative(cwd, core));
   await invoke();
   await git("rm", "--cached", "--quiet", path.relative(cwd, core));
+  await Bun.write(core, coreOriginal);
+  const cliRoot = path.dirname(path.dirname(selected));
+  await run(["git", "init", "--quiet", "--template="], cliRoot);
+  await Bun.write(
+    selected,
+    `await Bun.write(${JSON.stringify(marker)}, "executed"); process.exit(0);\n`
+  );
+  await invoke(/must belong to the current checkout/u);
+  await rm(path.join(cliRoot, ".git"), { recursive: true });
+  await Bun.write(selected, original);
+  const coreRoot = path.dirname(path.dirname(core));
+  await run(["git", "init", "--quiet", "--template="], coreRoot);
+  await Bun.write(
+    core,
+    `await Bun.write(${JSON.stringify(marker)}, "executed"); throw new Error("Nested core");\n`
+  );
+  await invoke(/must belong to the current checkout/u);
+  await rm(path.join(coreRoot, ".git"), { recursive: true });
   await Bun.write(core, coreOriginal);
   await mkdir(path.join(cwd, ".jj"));
   await run([process.execPath, executable, "--version"], cwd);

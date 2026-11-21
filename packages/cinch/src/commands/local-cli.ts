@@ -128,7 +128,11 @@ const localEntry = async (
   const runtime = await realpath(
     Bun.resolveSync("@ropes/core", path.dirname(entry))
   );
-  await verifyInstalledFiles(selected.root, [packageRoot, runtime]);
+  await verifyInstalledFiles(selected.root, [
+    packageRoot,
+    path.dirname(entry),
+    path.dirname(runtime),
+  ]);
   return entry;
 };
 

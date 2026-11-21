@@ -2,6 +2,8 @@ import { realpath } from "node:fs/promises";
 import { devNull } from "node:os";
 import path from "node:path";
 
+import { discoverRoot } from "../config/root.ts";
+
 const git = async (root: string, args: readonly string[]) => {
   const child = Bun.spawn(
     [
@@ -58,6 +60,14 @@ export const verifyInstalledFiles = async (
   ) {
     throw new Error(
       "Install the pinned @ropes/cli package under this checkout's node_modules before running rope."
+    );
+  }
+  const owners = await Promise.all(
+    installed.map((directory) => discoverRoot(directory))
+  );
+  if (owners.some((owner) => !owner.ok || owner.value.vcsRoot !== root)) {
+    throw new Error(
+      "The installed CLI and core runtime must belong to the current checkout. Reinstall the pinned dependencies outside nested repositories."
     );
   }
   const top = await git(root, ["rev-parse", "--show-toplevel"]);
