@@ -13,6 +13,12 @@ import { exec } from "../exec.ts";
 import type { Exit } from "../exec.ts";
 import { heldTo } from "../pins.ts";
 import { configProblem, readOnly, parseOutput, ruleOf } from "./output.ts";
+import {
+  isMacProxyPanic,
+  nativeCommand,
+  recoverTaplo,
+  WASM_VERSION,
+} from "./wasm.ts";
 
 const ID = "taplo";
 
@@ -81,7 +87,7 @@ const ASKS = 6;
 const lint = (command: string, input: FileInput) =>
   exec(
     [
-      Bun.which(command) ?? command,
+      command,
       "lint",
       "--colors",
       "never",
@@ -119,9 +125,13 @@ const check = async (
   if (!(await Bun.file(path.join(input.root, input.path)).exists())) {
     return { findings: [], status: "passed" };
   }
-  const { exitCode, stderr } = await asked(command, input);
+  const ran = await asked(command, input);
+  const { exitCode, stderr } = ran;
   if (exitCode !== 0 && exitCode !== 1) {
-    return incomplete(`${ID} exited ${exitCode}: ${failureExcerpt(stderr)}`);
+    const cause = `${ID} exited ${exitCode}: ${failureExcerpt(stderr)}`;
+    return isMacProxyPanic(ran)
+      ? await recoverTaplo(input.root, input.path, cause)
+      : incomplete(cause);
   }
   const problem = configProblem(stderr);
   if (problem !== undefined) {
@@ -166,12 +176,19 @@ export const taploAdapter = (options: TaploOptions = {}): Adapter => {
     extensions: [".toml"],
     id: ID,
     platforms: ["darwin", "linux", "win32"],
+    recovery: {
+      package: "@taplo/cli@0.7.0",
+      platform: "darwin",
+      tool: "Taplo WebAssembly",
+      version: WASM_VERSION,
+      when: "native Taplo panics in macOS SystemConfiguration proxy discovery",
+    },
     tool: ID,
     unit: "file",
     writes: false,
   };
   const probe = async (): Promise<ProbeResult> => {
-    const binary = Bun.which(command);
+    const binary = await nativeCommand(command);
     if (binary === null) {
       return { available: false, reason: `${command} is not on PATH` };
     }
@@ -183,7 +200,13 @@ export const taploAdapter = (options: TaploOptions = {}): Adapter => {
   };
   // One start for each file: a pass counts only when Taplo says it read
   // that one file, and it does not say which of several it left out.
-  const run = (input: StepInput) =>
-    eachFile(input, (file) => check(command, file));
+  const run = async (input: StepInput) => {
+    const binary = await nativeCommand(command);
+    return await eachFile(input, (file) =>
+      binary === null
+        ? Promise.resolve(incomplete(`${command} is not on PATH`))
+        : check(binary, file)
+    );
+  };
   return { check: run, descriptor, fix: run, probe };
 };

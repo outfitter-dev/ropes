@@ -21,6 +21,8 @@ import { RUMDL_TABLE, rumdlPresetAdapter } from "./rumdl/preset.ts";
 import { taploAdapter } from "./taplo/adapter.ts";
 import { tsconfigPreset } from "./tsconfig/preset.ts";
 
+export { startTaploWorker as startBundledEngine } from "./taplo/wasm.ts";
+
 /**
  * The only place adapters are listed. Adding an engine is one new folder under
  * `adapters/` and one line here. Order is the order steps run on a file. Each

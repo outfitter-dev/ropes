@@ -10,7 +10,8 @@ export interface Exit {
 export const exec = async (
   command: readonly string[],
   cwd?: string,
-  env?: Readonly<Record<string, string>>
+  env?: Readonly<Record<string, string>>,
+  signal?: AbortSignal
 ): Promise<Exit> => {
   const searchPath = await enginePath();
   const child = Bun.spawn([...command], {
@@ -20,6 +21,7 @@ export const exec = async (
       ...env,
       ...(searchPath === undefined ? {} : { PATH: searchPath }),
     },
+    ...(signal === undefined ? {} : { signal }),
     stderr: "pipe",
     stdin: "ignore",
     stdout: "pipe",

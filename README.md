@@ -43,7 +43,7 @@ Every command prints plain text that can be piped, or one JSON document with `--
 
 `init` and `preset add` or `update` write the same files as `doctor --fix`, through the same steps. Only `init` also carries an older tool's settings over. [Outcomes and exit codes](docs/exit-codes.md) has the full contract, and [Selecting files](docs/selection.md) says which files a command looks at. Markdown is held to [the Markdown standard](docs/markdown-standard.md), which also formats fenced TypeScript and JavaScript. A TypeScript repository can ask for the shared lint, formatter and compiler presets, and have Cinch run the linter, the type check and the formatter: see [the TypeScript standard](docs/typescript-standard.md).
 
-The first profile is Markdown. TOML is the second: every TOML file must parse, and one with a schema must fit it. Formatting TOML stays with the formatter.
+The first profile is Markdown. TOML is the second: every TOML file must parse, and one with a schema must fit it. Formatting TOML stays with the formatter. On macOS, if native Taplo panics during system proxy discovery, Ropes retries with its pinned Taplo WebAssembly CLI and identifies the fallback in the report. The fallback needs evidence that it checked the selected file. Excluded files and checks it cannot complete still report as incomplete. Repositories still install their pinned native Taplo.
 
 ## The JSON shapes are unstable
 

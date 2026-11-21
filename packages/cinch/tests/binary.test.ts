@@ -4,8 +4,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import manifest from "../package.json" with { type: "json" };
+import { nativeCommand } from "../src/adapters/taplo/wasm.ts";
 import { qualifyStandaloneCache } from "./binary-cache.ts";
 import { qualifyMiseInstall } from "./binary-install.ts";
+import { qualifyStandaloneTaplo } from "./binary-taplo.ts";
 
 const BUILD = new URL("../scripts/build-binary.ts", import.meta.url).pathname;
 const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
@@ -29,7 +31,8 @@ beforeAll(async () => {
   await mkdir(toolPath);
   await Promise.all(
     ["rumdl", "taplo", "git", "ast-grep"].map(async (name) => {
-      const found = Bun.which(name);
+      const found =
+        name === "taplo" ? await nativeCommand(name) : Bun.which(name);
       if (found === null) {
         if (process.env.CI === "true") {
           throw new Error(`The standalone CI proof requires ${name} on PATH.`);
@@ -101,6 +104,13 @@ test("the binary says it is one", async () => {
   const { stdout } = await run([binary, "--version"], dir, "");
   expect(stdout).toBe(`${manifest.version} (binary)\n`);
 });
+
+test.skipIf(process.platform !== "darwin")(
+  "the binary recovers a Taplo sandbox panic with no Bun on PATH",
+  async () => {
+    await qualifyStandaloneTaplo(binary, await repo("taplo-recovery"));
+  }
+);
 
 test("mise installs the checked artifact and runs it with no Bun on PATH", async () => {
   await qualifyMiseInstall({

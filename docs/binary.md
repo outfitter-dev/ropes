@@ -51,7 +51,7 @@ The native acceptance suite tests this route with isolated mise data, config, sy
 - The presets, as text. A Cinch version is a preset version, so the binary writes the same `.outfitter/configs/presets/` files as the package of the same version.
 - The rules Cinch ships, as text, for the same reason. The binary still needs `ast-grep` on `PATH` to run them.
 
-The engines are not inside. A repository still pins and installs rumdl, Taplo and the rest itself, and `cinch doctor` still reports one that is missing.
+A repository still pins and installs rumdl, native Taplo and the other primary engines itself. `cinch doctor` reports a missing primary engine. The macOS binary carries the same Taplo WebAssembly recovery tool as the npm package.
 
 `cinch --version` prints the version followed by `(binary)` when the binary is running, and the bare version from the package.
 

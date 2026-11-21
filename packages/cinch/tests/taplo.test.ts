@@ -69,7 +69,7 @@ test("a missing binary is reported by the probe, not thrown", async () => {
 });
 
 withEngine("valid TOML passes", async () => {
-  expect(await checked({ "a.toml": 'name = "a"\n' }, "a.toml")).toEqual({
+  expect(await checked({ "a.toml": 'name = "a"\n' }, "a.toml")).toMatchObject({
     findings: [],
     status: "passed",
   });
@@ -93,7 +93,9 @@ withEngine("a config the schema refuses is a schema finding", async () => {
   };
   const outcome = await checked(files, "cinch.toml");
   expect(outcome.status).toBe("findings");
-  expect(outcome.findings.map((finding) => finding.rule)).toEqual(["schema"]);
+  expect(new Set(outcome.findings.map((finding) => finding.rule))).toEqual(
+    new Set(["schema"])
+  );
   expect(outcome.findings[0]?.message).toContain("'nope' was unexpected");
 });
 

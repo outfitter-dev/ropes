@@ -1,4 +1,4 @@
-import type { Layer } from "../contracts/plan.ts";
+import type { Layer, Recovery } from "../contracts/plan.ts";
 import type { RulePack } from "../contracts/rules.ts";
 import type { TargetCondition } from "../contracts/targets.ts";
 import type { FoundRules } from "./found.ts";
@@ -26,6 +26,8 @@ export interface AdapterDescriptor {
    * range still runs, with a notice.
    */
   readonly tested?: string;
+  /** A bundled method available after the engine's declared failure. */
+  readonly recovery?: Recovery;
   readonly writes: boolean;
   /** Content formatting ownership, including its read-only check operation. */
   readonly formats?: true;

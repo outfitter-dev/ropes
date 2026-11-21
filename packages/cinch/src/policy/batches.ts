@@ -11,6 +11,9 @@ export const packageOf = (path: string, packages: readonly string[]): string =>
 
 export const toStep = (descriptor: AdapterDescriptor): PlanStep => ({
   adapter: descriptor.id,
+  ...(descriptor.recovery === undefined
+    ? {}
+    : { recovery: descriptor.recovery }),
   ...(descriptor.setup === true ? { setup: true } : {}),
   ...(descriptor.tested === undefined ? {} : { tolerates: descriptor.tested }),
   tool: descriptor.tool,

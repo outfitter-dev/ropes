@@ -21,6 +21,9 @@ const noticeLines = (step: StepResult): string[] => {
       `  incomplete  ${step.adapter}: ${step.reason ?? "no reason given"}`,
     ];
   }
+  if (step.reason !== undefined) {
+    return [`  ${step.adapter}: ${step.reason}`];
+  }
   return step.status === "fixed" ? [`  fixed  ${step.adapter}`] : [];
 };
 

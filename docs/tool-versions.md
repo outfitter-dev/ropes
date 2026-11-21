@@ -29,6 +29,8 @@ A host often has a newer tool than the pin, and that alone should not stop local
 
 With `--strict`, or when the `CI` environment variable is `true`, only the exact pin will do, and a newer tool makes its steps incomplete as before. A tool older than its pin, or outside the tested range, is always incomplete.
 
+The Taplo step also lists a separately pinned WebAssembly engine for recovery from the macOS system proxy panic. Strict version checks still apply to the native engine. If recovery completes, the result names the WebAssembly version that checked the file.
+
 When a repository does not pin a tool, the adapter falls back to the range of versions it was checked against, which it states in its own folder.
 
 ## How installs behave
