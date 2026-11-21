@@ -45,6 +45,7 @@ export const qualifyMiseInstall = async (input: {
     MISE_CEILING_PATHS: path.dirname(root),
     MISE_CONFIG_DIR: path.join(state, "config"),
     MISE_DATA_DIR: path.join(state, "data"),
+    MISE_OFFLINE: "true",
     MISE_STATE_DIR: path.join(state, "state"),
     MISE_SYSTEM_CONFIG_DIR: path.join(state, "system"),
     MISE_TRUSTED_CONFIG_PATHS: path.dirname(root),
@@ -62,9 +63,9 @@ export const qualifyMiseInstall = async (input: {
     const child = Bun.spawn([mise, ...args], {
       cwd: root,
       env: { ...env, ...overrides },
-      timeout: 10_000,
       stderr: "pipe",
       stdout: "pipe",
+      timeout: 10_000,
     });
     const [exitCode, stdout, stderr] = await Promise.all([
       child.exited,
@@ -170,6 +171,7 @@ export const qualifyMiseInstall = async (input: {
     env,
     stderr: "pipe",
     stdout: "pipe",
+    timeout: 10_000,
   });
   const [directExit, directOutput] = await Promise.all([
     direct.exited,
