@@ -65,6 +65,8 @@ const smoke = async (
         [cli.name]: cliArchive,
         [fixture.name]: fixtureArchive,
       },
+      // The consumer and CLI can both reference an unpublished core version.
+      overrides: { [core.name]: coreArchive },
       private: true,
       type: "module",
     })
