@@ -52,6 +52,13 @@ test("cleanup preserves accepted debt and blocks replacements and reintroduction
     ]);
     expect(report.scans.candidate.commit).toBe(first);
     expect(report.scans.candidate.result?.outcome).toBe("findings");
+    await fixtureGit(main.root, "replace", first, policy.anchor);
+    const replaced = await invoke(policy.approved, first);
+    await fixtureGit(main.root, "replace", "--delete", first);
+    expect(replaced.exitCode).toBe(0);
+    expect(json(replaced)).toMatchObject({
+      scans: { candidate: { commit: first } },
+    });
     const plan = await runEntry(
       ROPE,
       ["explain", ...args(policy.approved, policy.approved, first)],
@@ -130,5 +137,30 @@ test("cleanup preserves accepted debt and blocks replacements and reintroduction
     );
     expect(compared.outcome).toBe("incomplete");
     expect(compared.uncertainty.join(", ")).toContain("repeated occurrences");
+    const native = compareCleanup(
+      {
+        ...report.scans,
+        candidate: {
+          ...duplicate,
+          result: {
+            ...duplicate.result,
+            steps: [
+              ...duplicate.result.steps,
+              {
+                adapter: "native-contract",
+                findings: [],
+                path: "opaque.json",
+                status: "findings",
+              },
+            ],
+          },
+        },
+      },
+      report.policy,
+      report.at,
+      false,
+      []
+    );
+    expect(native.outcome).toBe("findings");
   });
 }, 30_000);

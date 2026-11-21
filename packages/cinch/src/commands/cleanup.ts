@@ -2,7 +2,11 @@ import { mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import type { CleanupReport, CleanupRequest } from "../contracts/cleanup.ts";
+import type {
+  CleanupReport,
+  CleanupRequest,
+  CleanupScan,
+} from "../contracts/cleanup.ts";
 import { compareCleanup } from "../policy/cleanup.ts";
 import { compileGlobs } from "../policy/glob.ts";
 import { cleanupInputs } from "./cleanup/inputs.ts";
@@ -37,29 +41,23 @@ export const runCleanup = async (
       await mkdtemp(path.join(tmpdir(), "ropes-cleanup-"))
     );
     const directory = temporary;
-    const attempted = await Promise.allSettled(
-      trees.map(async (tree) => ({
-        name: tree.name,
-        scan: await scanCleanup(
-          tree,
-          {
-            at: evaluation.value.at,
-            cwd: request.cwd,
-            destination: path.join(directory, tree.name),
-            execute,
-            simulated: evaluation.value.simulated,
-          },
-          policy,
-          deps
-        ),
-      }))
-    );
-    const scans = attempted.map((attempt) => {
-      if (attempt.status === "rejected") {
-        throw attempt.reason;
-      }
-      return attempt.value;
-    });
+    const scans: { name: string; scan: CleanupScan }[] = [];
+    for (const tree of trees) {
+      // eslint-disable-next-line no-await-in-loop -- snapshots run sequentially with bounded file reads
+      const scan = await scanCleanup(
+        tree,
+        {
+          at: evaluation.value.at,
+          cwd: request.cwd,
+          destination: path.join(directory, tree.name),
+          execute,
+          simulated: evaluation.value.simulated,
+        },
+        policy,
+        deps
+      );
+      scans.push({ name: tree.name, scan });
+    }
     const anchor = scans.find(({ name }) => name === "anchor")?.scan;
     const parent = scans.find(({ name }) => name === "parent")?.scan;
     const candidate = scans.find(({ name }) => name === "candidate")?.scan;

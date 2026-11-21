@@ -9,7 +9,16 @@ export const gitBytes = async (
   ...args: string[]
 ): Promise<Uint8Array> => {
   const child = Bun.spawn(
-    ["git", "--no-pager", "-c", "core.fsmonitor=false", "-C", cwd, ...args],
+    [
+      "git",
+      "--no-replace-objects",
+      "--no-pager",
+      "-c",
+      "core.fsmonitor=false",
+      "-C",
+      cwd,
+      ...args,
+    ],
     {
       env: {
         ...Object.fromEntries(
@@ -38,7 +47,10 @@ export const gitBytes = async (
 export const gitText = async (
   cwd: string,
   ...args: string[]
-): Promise<string> => new TextDecoder().decode(await gitBytes(cwd, ...args));
+): Promise<string> =>
+  new TextDecoder("utf-8", { fatal: true }).decode(
+    await gitBytes(cwd, ...args)
+  );
 
 export const exactCommit = async (
   cwd: string,
@@ -82,6 +94,7 @@ export const treeEntries = async (
   commit: string
 ): Promise<Entry[]> => {
   const text = await gitText(cwd, "ls-tree", "-r", "-z", commit);
+  const seen = new Set<string>();
   return text
     .split("\0")
     .filter(Boolean)
@@ -91,6 +104,8 @@ export const treeEntries = async (
       const file = entry.slice(tab + 1);
       if (
         tab === -1 ||
+        file.includes("\\") ||
+        seen.has(file.toLowerCase()) ||
         kind !== "blob" ||
         !["100644", "100755"].includes(mode ?? "") ||
         object === undefined ||
@@ -105,6 +120,7 @@ export const treeEntries = async (
           `Unsupported snapshot entry ${file}. Cleanup comparisons require ordinary tracked files.`
         );
       }
+      seen.add(file.toLowerCase());
       return { file, object };
     });
 };
@@ -116,12 +132,26 @@ export const materialize = async (
   destination: string
 ): Promise<void> => {
   await mkdir(path.join(destination, ".git"), { recursive: true });
-  const copied = await Promise.allSettled(
-    entries.map(async ({ file, object }) => {
-      const target = path.join(destination, file);
+  let next = 0;
+  const copyNext = async () => {
+    /* eslint-disable no-await-in-loop -- each bounded worker reads one file at a time */
+    for (;;) {
+      const entry = entries[next];
+      next += 1;
+      if (entry === undefined) {
+        return;
+      }
+      const target = path.join(destination, entry.file);
       await mkdir(path.dirname(target), { recursive: true });
-      await Bun.write(target, await gitBytes(cwd, "cat-file", "blob", object));
-    })
+      await Bun.write(
+        target,
+        await gitBytes(cwd, "cat-file", "blob", entry.object)
+      );
+    }
+    /* eslint-enable no-await-in-loop */
+  };
+  const copied = await Promise.allSettled(
+    Array.from({ length: Math.min(8, entries.length) }, copyNext)
   );
   const failure = copied.find((entry) => entry.status === "rejected");
   if (failure?.status === "rejected") {

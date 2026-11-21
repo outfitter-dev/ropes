@@ -71,18 +71,22 @@ export const compareCleanup = (
   const strict =
     policy.deadline !== undefined && at >= `${policy.deadline}T00:00:00.000Z`;
   const residual =
-    scans.candidate.result?.steps
-      .map((step) => ({
+    scans.candidate.result?.steps.map((step) => {
+      const findings = step.findings.filter(
+        (finding) => !inherited.includes(finding) || strict
+      );
+      const removedAllowance = findings.length < step.findings.length;
+      return {
         ...step,
-        findings: step.findings.filter(
-          (finding) => !inherited.includes(finding) || strict
-        ),
-      }))
-      .map((step) =>
-        step.status === "findings" && step.findings.length === 0
-          ? { ...step, status: "passed" as const }
-          : step
-      ) ?? [];
+        findings,
+        status:
+          step.status === "findings" &&
+          removedAllowance &&
+          findings.length === 0
+            ? ("passed" as const)
+            : step.status,
+      };
+    }) ?? [];
   const native = outcomeOf(residual);
   const incomplete = problems.length > 0 || native === "incomplete";
   let evidence: CleanupReport["evidence"] = "planned";

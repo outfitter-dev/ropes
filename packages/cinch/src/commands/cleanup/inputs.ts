@@ -98,16 +98,19 @@ export const cleanupInputs = async (request: CleanupRequest) => {
       return [`history-${index}`, revision];
     });
   const identities = { anchor: policy.anchor, candidate, parent };
-  const trees = await Promise.all(
-    [...Object.entries(identities), ...history].map(
-      async ([name, revision]) => ({
-        entries: await treeEntries(request.cwd, revision),
-        name,
-        revision,
-        tree: await gitText(request.cwd, "rev-parse", `${revision}^{tree}`),
-      })
-    )
-  );
+  const trees: {
+    entries: Entry[];
+    name: string;
+    revision: string;
+    tree: string;
+  }[] = [];
+  for (const [name, revision] of [...Object.entries(identities), ...history]) {
+    // eslint-disable-next-line no-await-in-loop -- keep immutable Git reads bounded across history
+    const entries = await treeEntries(request.cwd, revision);
+    // eslint-disable-next-line no-await-in-loop -- each revision is read before materializing the next
+    const tree = await gitText(request.cwd, "rev-parse", `${revision}^{tree}`);
+    trees.push({ entries, name, revision, tree });
+  }
   const approvedEntries = await treeEntries(request.cwd, commit);
   const context = JSON.stringify(contextOf(approvedEntries));
   for (const tree of trees) {
