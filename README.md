@@ -10,6 +10,8 @@ The unpublished `@ropes/core` package holds the existing Cinch implementation un
 
 An installed `rope` delegates to the checkout's explicitly pinned `@ropes/cli` dependency. `rope --version` reports the selected version and entry path. See [repository-pinned invocation](docs/launcher.md) for installation selection and failure handling.
 
+`rope explain` and `rope check` can compare an immutable cleanup candidate with its parent under an approved migration policy. See [staged cleanup](docs/cleanup.md) for the supported rule, scope and Git inputs.
+
 Cinch remains the repository's setup and development entry point. Its `init`, `doctor`, `preset`, `rules`, and `schema` commands are available through `bun run cinch`. Ropes reads `rope.toml` and keeps its managed files under `.ropes/configs/`. During the pilot it also reads legacy `cinch.toml` or `[cinch]` in `outfitter.toml`, with managed files under `.outfitter/configs/`. The [cutover inventory](docs/cutover.md) records the compatibility choices.
 
 Capture two resolved rule policies with `rope policy snapshot` and compare them with `rope policy compare`. See [policy previews](docs/policy-preview.md).

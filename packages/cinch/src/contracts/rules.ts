@@ -8,6 +8,8 @@ export const PackManifestSchema = z.strictObject({
   name: z.string().min(1),
   /** Root-relative globs. The pack applies where a file matches one. */
   relevant: z.array(z.string().min(1)).min(1),
+  /** Rules tested to produce one occurrence per JSON document. */
+  singleJsonDocument: z.array(z.string().min(1)).optional(),
 });
 
 /**

@@ -22,6 +22,7 @@ import {
 } from "@ropes/core/render";
 
 import manifest from "../package.json" with { type: "json" };
+import { migrationCommand } from "./cleanup.ts";
 import { delegate } from "./delegate.ts";
 import { fail, print } from "./output.ts";
 import { policy } from "./policy.ts";
@@ -33,6 +34,7 @@ Usage: rope <explain|check|fix> [path...] [--json] [--strict]
        rope fix [path...] --dry-run
        rope explain [path...] --trace [--json]
        rope migrate [--dry-run] [--json]
+       rope <explain|check> --migration <commit>:<file> --parent <commit> --candidate <commit>
        rope policy snapshot [path...] [--at <UTC instant>]
        rope policy compare <before.json> <after.json> [--json]
 
@@ -112,9 +114,12 @@ const invocation = (argv: readonly string[]) =>
     args: [...argv],
     options: {
       at: { type: "string" },
+      candidate: { type: "string" },
       "dry-run": { type: "boolean" },
       help: { short: "h", type: "boolean" },
       json: { type: "boolean" },
+      migration: { type: "string" },
+      parent: { type: "string" },
       strict: { type: "boolean" },
       trace: { type: "boolean" },
       version: { short: "v", type: "boolean" },
@@ -155,6 +160,10 @@ const main = async (argv: readonly string[]): Promise<number> => {
   const optionProblem = incompatibleOption(verb, values);
   if (optionProblem !== undefined) {
     return fail(optionProblem, json);
+  }
+  const migrationResult = await migrationCommand(verb, paths, values, json);
+  if (migrationResult !== null) {
+    return migrationResult;
   }
   const request = {
     ...(values.at === undefined ? {} : { at: values.at }),

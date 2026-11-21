@@ -64,7 +64,16 @@ export const shippedStates = (
         ...named(pack.name),
         ...off(pack.name),
         relevant: pack.relevant,
-        rules: pack.rules.map((id) => ({ id, ...off(id) })),
+        rules: pack.rules.map((id) => ({
+          ...(descriptor.ruleDigests?.[id] === undefined
+            ? {}
+            : { digest: descriptor.ruleDigests[id] }),
+          id,
+          ...(descriptor.ruleIdentities?.[id] === undefined
+            ? {}
+            : { identity: descriptor.ruleIdentities[id] }),
+          ...off(id),
+        })),
       };
     })
   );

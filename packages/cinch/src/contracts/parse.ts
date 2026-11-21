@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { CleanupReportSchema } from "./cleanup.ts";
+import type { CleanupReport } from "./cleanup.ts";
 import { FindingSchema } from "./finding.ts";
 import type { Finding } from "./finding.ts";
 import { PlanSchema, SCHEMA_VERSION } from "./plan.ts";
@@ -49,3 +51,14 @@ export const parseResult = (input: unknown): Parsed<Result> =>
 /** A finding carries no version of its own. It is versioned by its result. */
 export const parseFinding = (input: unknown): Parsed<Finding> =>
   parseWith(FindingSchema, input);
+
+export const parseCleanup = (input: unknown): Parsed<CleanupReport> => {
+  const versioned = VersionedSchema.safeParse(input);
+  if (versioned.success && versioned.data.schemaVersion !== 1) {
+    return {
+      error: { found: versioned.data.schemaVersion, kind: "unknown-version" },
+      ok: false,
+    };
+  }
+  return parseWith(CleanupReportSchema, input);
+};
