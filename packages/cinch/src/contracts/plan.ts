@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { SharedFactsSchema } from "./facts.ts";
+import { PackageTargetSchema, TargetDecisionSchema } from "./targets.ts";
 
 /**
  * Provisional and unstable. The schema version covers the plan, the result
@@ -52,11 +53,15 @@ export const PlanStepSchema = z
   .object({
     /** Adapter id from the registry. */
     adapter: z.string().min(1),
+    /** A required policy fact could not be decided. The step cannot run. */
+    incomplete: z.string().optional(),
     /**
      * True when what the step keeps is the Cinch setup. Then `doctor --fix`
      * writes it, and `fix` only checks it.
      */
     setup: z.boolean().optional(),
+    /** Declared API support evidence consumed by this engine start. */
+    target: PackageTargetSchema.optional(),
     /**
      * A wider range the step also accepts, with a notice, when the installed
      * tool is newer than the pin in `versionRange`. Absent in a strict run.
@@ -119,6 +124,8 @@ export const PlannedPathSchema = z
     skipped: SkippedSchema.optional(),
     /** In execution order. Empty means nothing applies to the path. */
     steps: z.array(PlanStepSchema).readonly(),
+    /** Package support conditions for the selected checks. */
+    targets: z.array(TargetDecisionSchema).readonly().optional(),
   })
   .readonly();
 export type PlannedPath = z.infer<typeof PlannedPathSchema>;

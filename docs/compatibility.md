@@ -1,0 +1,35 @@
+# Package API compatibility pilot
+
+Adopt the neutral `typescript-api` pack to check direct imports of TypeScript's removed `Map` compiler API. TypeScript 5.0 removed that export. The pilot uses the compiler's `TS2305` diagnostic for `import type { Map as LegacyMap } from "typescript"`, including its module and member identity. An unrelated imported `Map` or a local namespace called `ts` keeps its ordinary meaning. [TypeScript API breaking changes](https://github.com/microsoft/TypeScript/wiki/API-Breaking-Changes#typescript-50)
+
+```toml
+pilot = 0
+include = ["packages/**/*.ts"]
+exclude = ["**/node_modules/**"]
+
+[rules]
+enabled = true
+packs = ["typescript-api"]
+```
+
+Each package declares its supported TypeScript API range in its worktree `package.json` under `peerDependencies.typescript`. A range wholly below stable `5.0.0` makes the rule inapplicable. A range wholly at or above that version makes it applicable. A range spanning the boundary cannot establish one effective API target and yields an incomplete check. Explicit prerelease targets are unsupported by this stable-release proof and are incomplete.
+
+```json
+{
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
+```
+
+A package can explicitly inherit the workspace's peer target by adding `"ropes": { "inheritTargets": ["typescript"] }` to its manifest. Declaring and inheriting the same target is ambiguous. A valid manifest without a peer target establishes known absence of this declared support policy. An absent or unreadable required manifest is unresolved. Unsupported values such as `catalog:` and `workspace:*` are incomplete. This pilot reads this manifest source only. It does not derive a resolved dependency from a lockfile or infer a support target from an executable.
+
+`rope explain --json` records the support range, package scope, source file and key, source content digest, explicit inheritance source, condition, and applicability decision beside each selected path. `rope check` executes that same plan. Named excluded paths retain the exclusion reason. A disabled, unadopted, or known-inapplicable check requires neither the API dependency nor its engine. A required unresolved decision yields exit 2, including alongside blocking findings.
+
+The installed Bun checker is independently held to its tool pin. Before checking, the adapter also resolves the package's installed `typescript` API package and requires its version to satisfy the declared support range. Missing or mismatched API declarations are incomplete. A newer `tsc` executable on PATH changes neither the target nor the decision.
+
+The compiler keeps its native diagnostic message, source range and severity. A recognized diagnostic has rule ID `typescript-api/removed-map` and `nativeRule = "TS2305"`. Existing enforcement settings can make this rule advisory. Diagnostics outside this narrow direct-import pilot remain visible and make its proof incomplete. In particular, namespace-import diagnostics are not assigned an identity from the alias name alone. `fix` checks this rule and performs no rewrite.
+
+Run `bun test packages/cli/tests/compatibility.test.ts packages/cli/tests/target-evidence.test.ts packages/cinch/tests/target-policy.test.ts` for the offline proof. The fixture commits its support manifests and uses the exact official TypeScript 4.9.5 and 5.0.4 declarations installed from the workspace lockfile. The same checker validates the unchanged direct import against both declarations before the package policy is applied. The tests also cover inheritance, missing and ambiguous evidence, exclusions, a newer PATH executable, incompatible API declarations and package/workspace selections.
+
+The recorded manifest digest identifies the worktree bytes read by this operation. A protected CI consumer must bind that evidence and the result to its trusted revision and policy before qualification.

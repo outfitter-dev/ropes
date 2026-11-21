@@ -1,5 +1,6 @@
 import type { Layer } from "../contracts/plan.ts";
 import type { RulePack } from "../contracts/rules.ts";
+import type { TargetCondition } from "../contracts/targets.ts";
 import type { FoundRules } from "./found.ts";
 
 export type Platform = "darwin" | "linux" | "win32";
@@ -101,6 +102,8 @@ export interface AdapterDescriptor {
       }
     >
   >;
+  /** A declared package support target that makes these checks applicable. */
+  readonly target?: TargetCondition;
   /**
    * Root-relative folders of rules the repository wrote, which this adapter
    * runs beside its own. With one, it has a step even when no pack is on.

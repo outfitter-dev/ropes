@@ -56,7 +56,7 @@ test("a scheduled rule changes verdict at midnight UTC on unchanged source", asy
       source: { file: "cinch.toml", key: KEY, kind: "file" },
       value: "advisory",
     });
-    expect(plan.rules?.[0]).toMatchObject({
+    expect(plan.rules?.find(({ name }) => name === "config")).toMatchObject({
       name: "config",
       named: { key: "rules.packs" },
     });
@@ -182,8 +182,14 @@ paths = ["packages/advisory/**"]
       )
     );
     await noActiveDeadline([ADVISORY]);
-    expect(json(await explain([ADVISORY]))).toMatchObject({
-      rules: [{ rules: [{ id: RULE, off: { key: "rules.off" } }] }],
+    const disabled = parsePlan(json(await explain([ADVISORY])));
+    if (!disabled.ok) {
+      throw new Error(JSON.stringify(disabled.error));
+    }
+    expect(
+      disabled.value.rules?.find(({ name }) => name === "config")
+    ).toMatchObject({
+      rules: [{ id: RULE, off: { key: "rules.off" } }],
     });
     await Bun.write(
       config,

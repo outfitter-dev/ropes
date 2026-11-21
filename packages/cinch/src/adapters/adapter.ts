@@ -1,6 +1,7 @@
 import type { FactReport } from "../contracts/facts.ts";
 import type { Finding } from "../contracts/finding.ts";
 import type { StepStatus } from "../contracts/result.ts";
+import type { PackageTarget } from "../contracts/targets.ts";
 import type { CheckDescriptionResult } from "../contracts/trace.ts";
 import type { AdapterDescriptor } from "./descriptor.ts";
 import type { Settled } from "./found.ts";
@@ -44,6 +45,8 @@ export interface StepInput {
    * It runs these and no others.
    */
   readonly rules?: readonly string[];
+  /** The plan's declared support target, independent of tool readiness. */
+  readonly target?: PackageTarget;
 }
 
 /** What a step found out about one of the files it was handed. */

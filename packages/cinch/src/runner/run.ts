@@ -85,6 +85,9 @@ const runBatch = async (
 ): Promise<FileOutcome[]> => {
   const all = (reason: string) =>
     batch.paths.map((path) => ({ ...incomplete(reason), path }));
+  if (batch.incomplete !== undefined) {
+    return all(batch.incomplete);
+  }
   const { adapter, probe } = ready(batch.adapter);
   if (!adapter) {
     return all(`no adapter registered for "${batch.adapter}"`);
@@ -107,6 +110,7 @@ const runBatch = async (
     paths: batch.paths,
     root,
     ...(batch.rules === undefined ? {} : { rules: batch.rules }),
+    ...(batch.target === undefined ? {} : { target: batch.target }),
   };
   try {
     return answered(

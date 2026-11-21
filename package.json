@@ -26,6 +26,8 @@
     "publint": "0.3.25",
     "tsrs": "7.1.0-beta.tsrs3",
     "typescript": "7.0.2",
+    "typescript-4-9": "npm:typescript@4.9.5",
+    "typescript-5-0": "npm:typescript@5.0.4",
     "ultracite": "8.1.1"
   },
   "engines": {

@@ -1,8 +1,10 @@
 import type { AdapterDescriptor } from "../adapters/adapter.ts";
 import type { CinchConfig } from "../contracts/config.ts";
 import type { PlannedPath, PlanStep, PolicyValue } from "../contracts/plan.ts";
+import type { PackageTarget } from "../contracts/targets.ts";
 import { inRunOrder, packageOf, toStep } from "./batches.ts";
 import type { Matcher } from "./glob.ts";
+import { targetSteps } from "./targets.ts";
 
 export interface PathPlanInput {
   readonly config: CinchConfig;
@@ -13,6 +15,8 @@ export interface PathPlanInput {
    * nearest one above it, or to the workspace when there is none.
    */
   readonly packages: readonly string[];
+  /** Declared support evidence collected at the command boundary. */
+  readonly targets?: readonly PackageTarget[];
 }
 
 export interface Scope {
@@ -148,10 +152,16 @@ export const planPath = (
       steps: [],
     };
   }
-  const steps = guarded(
+  const candidates = guarded(
     path,
     stepsFor(path, policy, input.descriptors),
     input.descriptors
+  );
+  const { steps, targets } = targetSteps(
+    candidates,
+    input.descriptors,
+    inPackage,
+    input.targets ?? []
   );
   const layer = input.descriptors.find(
     (descriptor) =>
@@ -164,5 +174,6 @@ export const planPath = (
     path,
     policy,
     steps,
+    ...(targets.length === 0 ? {} : { targets }),
   };
 };
