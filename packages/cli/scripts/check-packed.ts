@@ -145,8 +145,24 @@ console.log(JSON.stringify(parsed.value));
   await proveDelegation(folder, consumer);
 };
 
-if (core.version !== cli.version) {
-  throw new Error("The CLI and core artifacts must have matching versions");
+if (
+  core.version !== cli.version ||
+  core.publishConfig.tag !== cli.publishConfig.tag
+) {
+  throw new Error(
+    "The CLI and core artifacts must match in version and npm tag"
+  );
+}
+const releaseVersion = String.raw`(?:0|[1-9][0-9]*)(?:\.(?:0|[1-9][0-9]*)){2}`;
+const { tag } = core.publishConfig;
+const suffix = tag === "canary" ? String.raw`-canary\.(?:0|[1-9][0-9]*)` : "";
+if (
+  (tag !== "canary" && tag !== "latest") ||
+  !new RegExp(`^${releaseVersion}${suffix}$`, "u").test(core.version)
+) {
+  throw new Error(
+    `The npm tag ${tag} does not match release version ${core.version}`
+  );
 }
 const scratch = await realpath(
   await mkdtemp(path.join(tmpdir(), "ropes-packed-"))

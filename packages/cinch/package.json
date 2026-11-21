@@ -1,6 +1,6 @@
 {
   "name": "@ropes/core",
-  "version": "0.1.0-pilot.0",
+  "version": "0.1.0-canary.0",
   "description": "The Ropes policy engine and typed quality operations.",
   "license": "MIT",
   "repository": {
@@ -22,7 +22,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "pilot"
+    "tag": "canary"
   },
   "dependencies": {
     "@types/semver": "7.8.0",
