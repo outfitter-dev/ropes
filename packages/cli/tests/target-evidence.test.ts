@@ -140,3 +140,45 @@ test("unsupported compiler diagnostics cannot claim a successful compatibility p
     expect(result.steps[0]?.findings[0]?.rule).toBe("TS2694");
   });
 });
+
+test("compiler aliases cannot substitute another module for the API proof", async () => {
+  await withFixture(async ({ main }) => {
+    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    const current = await packageAt(main.root, "current", "^5.0.0");
+    await Bun.write(path.join(current, "index.ts"), BEFORE);
+    await Bun.write(
+      path.join(current, "fake.ts"),
+      "export interface Map<T> { value: T }\n"
+    );
+    const verifyConfig = async (text: string, reason: string) => {
+      await Bun.write(path.join(current, "tsconfig.json"), text);
+      const ran = await runEntry(
+        ROPE,
+        ["check", "packages/current/index.ts", "--json"],
+        main.root
+      );
+      expect(ran.exitCode).toBe(2);
+      expect(resultOf(ran).steps[0]?.reason).toContain(reason);
+    };
+    await verifyConfig(
+      JSON.stringify({
+        compilerOptions: {
+          moduleResolution: "bundler",
+          paths: { typescript: ["./fake.ts"] },
+        },
+      }),
+      "module-resolution overrides"
+    );
+    await verifyConfig(
+      JSON.stringify({
+        compilerOptions: { moduleResolution: "bundler" },
+        extends: "./base.json",
+      }),
+      "without extends"
+    );
+    await verifyConfig(
+      '{ // compiler config\n "compilerOptions": { "moduleResolution": "bundler" } }',
+      "plain JSON"
+    );
+  });
+});

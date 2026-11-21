@@ -15,6 +15,8 @@ export interface PathPlanInput {
    * nearest one above it, or to the workspace when there is none.
    */
   readonly packages: readonly string[];
+  /** Actual files, when the command boundary collected them. */
+  readonly present?: readonly string[];
   /** Declared support evidence collected at the command boundary. */
   readonly targets?: readonly PackageTarget[];
 }
@@ -154,7 +156,16 @@ export const planPath = (
   }
   const candidates = guarded(
     path,
-    stepsFor(path, policy, input.descriptors),
+    stepsFor(
+      path,
+      policy,
+      input.descriptors.filter(
+        (descriptor) =>
+          descriptor.target === undefined ||
+          input.present === undefined ||
+          input.present.includes(path)
+      )
+    ),
     input.descriptors
   );
   const { steps, targets } = targetSteps(

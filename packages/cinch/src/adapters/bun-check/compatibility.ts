@@ -3,6 +3,7 @@ import { allIncomplete } from "../batch.ts";
 import { probeOnPath } from "../on-path.ts";
 import { heldTo } from "../pins.ts";
 import { SUPPORTED_RANGE } from "./adapter.ts";
+import { apiConfigProblem } from "./api-config.ts";
 import { apiProblem } from "./api-package.ts";
 import { checkBatch } from "./run.ts";
 
@@ -30,8 +31,9 @@ const mapped = (outcome: FileOutcome): FileOutcome => {
     : { ...outcome, findings };
 };
 
-const run = async (input: StepInput) => {
-  const problem = await apiProblem(input);
+const run = (configName: string) => async (input: StepInput) => {
+  const problem =
+    (await apiConfigProblem(input, configName)) ?? (await apiProblem(input));
   if (problem !== undefined) {
     return allIncomplete(input, problem);
   }
@@ -44,8 +46,11 @@ const run = async (input: StepInput) => {
 };
 
 /** A narrow compiler-native compatibility proof, adopted as its own pack. */
-export const compilerApiAdapter = (version?: string): Adapter => ({
-  check: run,
+export const compilerApiAdapter = (
+  version: string | undefined,
+  configName: string
+): Adapter => ({
+  check: run(configName),
   descriptor: {
     ...heldTo(version, SUPPORTED_RANGE),
     enabledBy: "rules.enabled",
@@ -66,6 +71,6 @@ export const compilerApiAdapter = (version?: string): Adapter => ({
     unit: "file",
     writes: false,
   },
-  fix: run,
+  fix: run(configName),
   probe: () => probeOnPath("bun"),
 });

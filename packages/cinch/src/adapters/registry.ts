@@ -46,7 +46,7 @@ export const adaptersFor = (
   rumdlAdapter({ version: pins.rumdl }),
   taploAdapter({ version: pins.taplo }),
   oxlintAdapter({ version: pins.oxlint }),
-  compilerApiAdapter(pins.bun),
+  compilerApiAdapter(pins.bun, "tsconfig.json"),
   bunCheckAdapter({ version: pins.bun }),
   rulesAdapter({ local: localRules, version: pins["ast-grep"] }),
   bunFmtAdapter({ version: pins.bun }),

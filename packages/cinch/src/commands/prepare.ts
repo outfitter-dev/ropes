@@ -198,8 +198,9 @@ export const prepare = async (
     })
   );
   const selectedPaths = candidates.filter((_, index) => inside[index] === true);
+  const initialPlan = resolve(selectedPaths);
   const targetRequests = new Map(
-    resolve(selectedPaths).paths.flatMap((entry) =>
+    initialPlan.paths.flatMap((entry) =>
       (entry.targets ?? []).map(
         ({ condition }) =>
           [
@@ -209,8 +210,13 @@ export const prepare = async (
       )
     )
   );
-  const targets = await readTargets(root.root, [...targetRequests.values()]);
-  const plan = resolve(selectedPaths, targets);
+  const plan =
+    targetRequests.size === 0
+      ? initialPlan
+      : resolve(
+          selectedPaths,
+          await readTargets(root.root, [...targetRequests.values()])
+        );
   return {
     ok: true,
     value: { adapters, config: config.value, plan, present, root },

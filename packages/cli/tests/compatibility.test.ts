@@ -99,6 +99,11 @@ test("compiler API compatibility follows declared package support and native sym
     );
     const before = await main.files();
     const checked = await runEntry(ROPE, ["check", "--json"], main.root);
+    expect(
+      resultOf(checked)
+        .steps.filter((step) => step.status === "incomplete")
+        .map(({ reason }) => reason)
+    ).toEqual([]);
     expect(checked.exitCode).toBe(1);
     const result = resultOf(checked);
     const findings = result.steps.flatMap((step) => step.findings);
