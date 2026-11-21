@@ -44,6 +44,11 @@ Usage: rope <explain|check|fix> [path...] [--json] [--strict]
   migrate   Preview a legacy Cinch config migration
   policy    Capture and compare resolved rule policy
 
+Setup in a Git or jj checkout:
+  bun add --dev --exact @ropes/cli@${manifest.version}
+  ./node_modules/.bin/rope --help
+  ./node_modules/.bin/rope explain README.md
+
 Exit codes: 0 clean, 1 findings remain, 2 incomplete or unusable.
 `;
 
