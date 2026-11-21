@@ -8,6 +8,7 @@ import cli from "../package.json" with { type: "json" };
 import fixture from "../tests/fixtures/outfitter/package.json" with { type: "json" };
 import { packConsumer, proveConsumer } from "./packed-consumer.ts";
 import { proveDelegation } from "./packed-delegation.ts";
+import { provePortable } from "./packed-portable.ts";
 import { run } from "./packed-run.ts";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
@@ -226,6 +227,7 @@ try {
     ])
   );
   await smoke(scratch, coreArchive, cliArchive);
+  await provePortable(scratch, coreArchive, cliArchive);
   console.log(
     "Packed CLI and core passed lint, types, and external consumer checks."
   );

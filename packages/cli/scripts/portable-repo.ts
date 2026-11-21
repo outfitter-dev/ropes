@@ -1,0 +1,205 @@
+import assert from "node:assert/strict";
+import { mkdir, realpath, symlink } from "node:fs/promises";
+import { devNull } from "node:os";
+import path from "node:path";
+
+import { parsePlan, parseResult } from "@ropes/core";
+import { Glob } from "bun";
+
+import core from "../../cinch/package.json" with { type: "json" };
+import cli from "../package.json" with { type: "json" };
+import { run } from "./packed-run.ts";
+
+export const BASE = `pilot = 0
+include = ["**/*.ts", "**/tsconfig.json"]
+exclude = ["**/node_modules/**", "excluded/**"]
+[markdown]
+enabled = false
+preset = false
+[toml]
+enabled = false
+`;
+
+const snapshot = async (root: string): Promise<Record<string, string>> => {
+  const files = await Array.fromAsync(
+    new Glob("**/*").scan({ cwd: root, dot: true, onlyFiles: true })
+  );
+  return Object.fromEntries(
+    await Promise.all(
+      files
+        .filter(
+          (file) => !file.startsWith(".git/") && !file.includes("node_modules/")
+        )
+        .toSorted()
+        .map(async (file): Promise<[string, string]> => [
+          file,
+          await Bun.file(path.join(root, file)).text(),
+        ])
+    )
+  );
+};
+
+export const portableRepo = async (
+  folder: string,
+  coreArchive: string,
+  cliArchive: string
+) => {
+  const root = path.join(folder, "independent-repository");
+  await mkdir(root);
+  await run(["git", "init", "--quiet", "--template="], root);
+  await Bun.write(
+    path.join(root, "package.json"),
+    JSON.stringify({
+      dependencies: { [core.name]: coreArchive, [cli.name]: cliArchive },
+      private: true,
+      type: "module",
+    })
+  );
+  await run([process.execPath, "install", "--ignore-scripts"], root);
+  await Bun.write(
+    path.join(root, "package.json"),
+    JSON.stringify({
+      devDependencies: { [cli.name]: cli.version },
+      private: true,
+      type: "module",
+    })
+  );
+  await Bun.write(path.join(root, ".gitignore"), "node_modules/\n");
+  const executable = await realpath(path.join(root, "node_modules/.bin/rope"));
+  assert.ok(executable.startsWith(`${root}${path.sep}`));
+  for (const name of [core.name, cli.name]) {
+    // eslint-disable-next-line no-await-in-loop -- inspect the two installed package identities in order
+    const installed = await realpath(path.join(root, "node_modules", name));
+    assert.ok(installed.startsWith(`${root}${path.sep}`));
+  }
+  await run(["git", "add", "package.json", "bun.lock", ".gitignore"], root);
+  await run(
+    [
+      "git",
+      "-c",
+      "user.name=Ropes",
+      "-c",
+      "user.email=ropes@example.invalid",
+      "-c",
+      "commit.gpgsign=false",
+      "commit",
+      "--quiet",
+      "--message",
+      "independent adopter",
+    ],
+    root
+  );
+  const home = path.join(folder, "portable-home");
+  await mkdir(home);
+  const tools = async (names: readonly string[]) => {
+    const directory = path.join(folder, `portable-${names.join("-")}`);
+    await mkdir(directory);
+    await Promise.all(
+      names.map(async (name) => {
+        const binary = Bun.which(name);
+        assert.notEqual(
+          binary,
+          null,
+          `The portable proof requires pinned ${name} on PATH`
+        );
+        if (binary !== null) {
+          await symlink(binary, path.join(directory, name));
+        }
+      })
+    );
+    return directory;
+  };
+  const invoke = async (
+    args: readonly string[],
+    searchPath: string,
+    expected = 0
+  ) => {
+    const before = await snapshot(root);
+    const index = await Bun.file(path.join(root, ".git/index")).bytes();
+    const child = Bun.spawn([process.execPath, executable, ...args], {
+      cwd: root,
+      env: {
+        GIT_CONFIG_GLOBAL: devNull,
+        GIT_CONFIG_NOSYSTEM: "1",
+        HOME: home,
+        PATH: searchPath,
+        TMPDIR: folder,
+        XDG_CACHE_HOME: path.join(home, "cache"),
+        XDG_CONFIG_HOME: path.join(home, "config"),
+      },
+      stderr: "pipe",
+      stdout: "pipe",
+    });
+    const [stdout, stderr, code] = await Promise.all([
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+      child.exited,
+    ]);
+    assert.equal(code, expected, `${args.join(" ")}\n${stdout}\n${stderr}`);
+    assert.equal(stderr, "");
+    assert.deepEqual(await snapshot(root), before);
+    assert.deepEqual(
+      await Bun.file(path.join(root, ".git/index")).bytes(),
+      index
+    );
+    return stdout;
+  };
+  return {
+    check: async (
+      files: readonly string[],
+      searchPath: string,
+      expected = 0,
+      at?: string
+    ) => {
+      const value = parseResult(
+        JSON.parse(
+          await invoke(
+            [
+              "check",
+              ...files,
+              "--strict",
+              "--json",
+              ...(at === undefined ? [] : ["--at", at]),
+            ],
+            searchPath,
+            expected
+          )
+        )
+      );
+      if (!value.ok) {
+        throw new Error(JSON.stringify(value.error));
+      }
+      return value.value;
+    },
+    explain: async (
+      files: readonly string[],
+      searchPath: string,
+      at?: string
+    ) => {
+      const value = parsePlan(
+        JSON.parse(
+          await invoke(
+            [
+              "explain",
+              ...files,
+              "--strict",
+              "--json",
+              ...(at === undefined ? [] : ["--at", at]),
+            ],
+            searchPath
+          )
+        )
+      );
+      if (!value.ok) {
+        throw new Error(JSON.stringify(value.error));
+      }
+      return value.value;
+    },
+    root,
+    text: invoke,
+    tools,
+    write: (file: string, text: string) =>
+      Bun.write(path.join(root, file), text),
+  };
+};
+export type PortableRepo = Awaited<ReturnType<typeof portableRepo>>;
