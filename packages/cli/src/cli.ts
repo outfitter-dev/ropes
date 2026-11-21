@@ -23,6 +23,7 @@ import {
 } from "@ropes/core/render";
 
 import manifest from "../package.json" with { type: "json" };
+import { delegate } from "./delegate.ts";
 
 const HELP = `rope ${manifest.version}
 
@@ -128,7 +129,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
   });
   const [verb, ...paths] = positionals;
   if (values.version === true) {
-    print(manifest.version);
+    print(`rope ${manifest.version}\n${import.meta.filename}`);
     return EXIT_CODE.clean;
   }
   if (values.help === true || verb === undefined) {
@@ -178,7 +179,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
 
 const argv = process.argv.slice(2);
 try {
-  process.exitCode = await main(argv);
+  process.exitCode = (await delegate(argv)) ?? (await main(argv));
 } catch (error) {
   const separator = argv.indexOf("--");
   const options = separator === -1 ? argv : argv.slice(0, separator);
