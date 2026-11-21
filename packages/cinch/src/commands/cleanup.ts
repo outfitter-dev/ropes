@@ -57,6 +57,11 @@ export const runCleanup = async (
         deps
       );
       scans.push({ name: tree.name, scan });
+      // eslint-disable-next-line no-await-in-loop -- release each immutable copy before the next snapshot
+      await rm(path.join(directory, tree.name), {
+        force: true,
+        recursive: true,
+      });
     }
     const anchor = scans.find(({ name }) => name === "anchor")?.scan;
     const parent = scans.find(({ name }) => name === "parent")?.scan;

@@ -26,6 +26,7 @@ export interface CleanupRequest {
 
 export const CleanupScanSchema = z.object({
   commit: CommitSchema,
+  configFile: z.string().nullable(),
   plan: PlanSchema,
   result: ResultSchema.optional(),
   tree: CommitSchema,

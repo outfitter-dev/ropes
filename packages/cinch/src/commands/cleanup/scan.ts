@@ -127,6 +127,7 @@ export const scanCleanup = async (
     : undefined;
   return {
     commit: input.revision,
+    configFile: prepared.value.root.configFile,
     plan,
     ...(result === undefined ? {} : { result }),
     tree: input.tree,

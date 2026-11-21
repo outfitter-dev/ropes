@@ -93,7 +93,7 @@ export const treeEntries = async (
   cwd: string,
   commit: string
 ): Promise<Entry[]> => {
-  const text = await gitText(cwd, "ls-tree", "-r", "-z", commit);
+  const text = await gitText(cwd, "ls-tree", "--full-tree", "-r", "-z", commit);
   const seen = new Set<string>();
   return text
     .split("\0")

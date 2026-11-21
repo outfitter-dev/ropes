@@ -19,6 +19,7 @@ const CONTEXT = new Set([
   "outfitter.toml",
   "mise.toml",
   "sgconfig.yml",
+  "sgconfig.yaml",
   "package.json",
   "bun.lock",
 ]);
@@ -120,15 +121,29 @@ export const cleanupInputs = async (request: CleanupRequest) => {
       );
     }
   }
+  const approvalIndex = chain.findIndex(([revision]) => revision === commit);
+  if (approvalIndex === -1) {
+    throw new Error(
+      "The approved policy is not on the required first-parent lineage."
+    );
+  }
+  const afterApproval = new Set([
+    candidate,
+    ...chain.slice(0, approvalIndex + 1).map(([revision]) => revision),
+  ]);
+  const approvedBlob = approvedEntries.find(
+    (entry) => entry.file === file
+  )?.object;
   if (
     trees.some(
-      ({ entries }) =>
-        entries.find((entry) => entry.file === file)?.object !==
-          approvedEntries.find((entry) => entry.file === file)?.object &&
-        entries.some((entry) => entry.file === file)
+      ({ entries, revision }) =>
+        afterApproval.has(revision) &&
+        entries.find((entry) => entry.file === file)?.object !== approvedBlob
     )
   ) {
-    throw new Error("A snapshot rewrites the approved migration policy.");
+    throw new Error(
+      "A snapshot after approval rewrites or removes the approved migration policy."
+    );
   }
   return {
     policy: { ...policy, commit, file, sha256: hash(bytes) },
