@@ -49,12 +49,28 @@ export const SelectionSchema = z.discriminatedUnion("kind", [
 ]);
 export type Selection = z.infer<typeof SelectionSchema>;
 
+/** A bundled method an adapter may use after a specific engine failure. */
+export const RecoverySchema = z
+  .object({
+    /** The immutable bundled dependency providing this engine. */
+    package: z.string().min(1),
+    platform: z.enum(["darwin", "linux", "win32"]),
+    tool: z.string().min(1),
+    version: z.string().min(1),
+    /** The precise failure that permits this recovery method to run. */
+    when: z.string().min(1),
+  })
+  .readonly();
+export type Recovery = z.infer<typeof RecoverySchema>;
+
 export const PlanStepSchema = z
   .object({
     /** Adapter id from the registry. */
     adapter: z.string().min(1),
     /** A required policy fact could not be decided. The step cannot run. */
     incomplete: z.string().optional(),
+    /** Conditional recovery declared before the primary engine runs. */
+    recovery: RecoverySchema.optional(),
     /**
      * True when what the step keeps is the Cinch setup. Then `doctor --fix`
      * writes it, and `fix` only checks it.

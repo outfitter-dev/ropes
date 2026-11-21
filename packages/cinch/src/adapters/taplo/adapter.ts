@@ -13,7 +13,12 @@ import { exec } from "../exec.ts";
 import type { Exit } from "../exec.ts";
 import { heldTo } from "../pins.ts";
 import { configProblem, readOnly, parseOutput, ruleOf } from "./output.ts";
-import { isMacProxyPanic, nativeCommand, recoverTaplo } from "./wasm.ts";
+import {
+  isMacProxyPanic,
+  nativeCommand,
+  recoverTaplo,
+  WASM_VERSION,
+} from "./wasm.ts";
 
 const ID = "taplo";
 
@@ -171,6 +176,13 @@ export const taploAdapter = (options: TaploOptions = {}): Adapter => {
     extensions: [".toml"],
     id: ID,
     platforms: ["darwin", "linux", "win32"],
+    recovery: {
+      package: "@taplo/cli@0.7.0",
+      platform: "darwin",
+      tool: "Taplo WebAssembly",
+      version: WASM_VERSION,
+      when: "native Taplo panics in macOS SystemConfiguration proxy discovery",
+    },
     tool: ID,
     unit: "file",
     writes: false,

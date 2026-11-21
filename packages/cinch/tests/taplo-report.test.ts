@@ -1,83 +1,10 @@
 import { expect, test } from "bun:test";
-import { chmod, mkdir, mkdtemp, realpath, rm, symlink } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { exec } from "../src/adapters/exec.ts";
 import { taploAdapter } from "../src/adapters/taplo/adapter.ts";
-import { recoverTaplo } from "../src/adapters/taplo/wasm.ts";
-import { fixtureGit } from "./acceptance-repo.ts";
 import { checkOne } from "./one-file.ts";
-
-const CLI = new URL("../src/cli.ts", import.meta.url);
-const ROPE = new URL("../../cli/src/cli.ts", import.meta.url);
-
-const inRepo = async (
-  body: (root: string, bin: string) => Promise<void>
-): Promise<void> => {
-  const root = await realpath(
-    await mkdtemp(path.join(tmpdir(), "taplo-report-"))
-  );
-  const bin = path.join(root, "bin");
-  try {
-    await mkdir(bin);
-    await Bun.write(path.join(root, "a.toml"), "a = 1\n");
-    await Bun.write(path.join(root, "cinch.toml"), "pilot = 0\n");
-    await fixtureGit(root, "init", "--quiet");
-    await fixtureGit(root, "add", "a.toml", "cinch.toml");
-    await fixtureGit(root, "commit", "--quiet", "--message", "fixture");
-    await body(root, bin);
-  } finally {
-    await rm(root, { force: true, recursive: true });
-  }
-};
-
-const fakeTaplo = async (bin: string, stderr: string, code: number) => {
-  const command = path.join(bin, "taplo");
-  await Bun.write(`${command}.stderr`, stderr);
-  await Bun.write(
-    command,
-    [
-      "#!/bin/sh",
-      'if [ "$1" = "--version" ]; then echo "taplo 0.10.0"; exit 0; fi',
-      'printf "%s" "$RUST_LOG" > "$0.filter"',
-      '/bin/cat "$0.stderr" >&2',
-      `exit ${code}`,
-      "",
-    ].join("\n")
-  );
-  await chmod(command, 0o755);
-  return command;
-};
-
-const check = async (
-  root: string,
-  searchPath: string,
-  json = true,
-  cli = CLI
-) => {
-  const child = Bun.spawn(
-    [
-      process.execPath,
-      cli.pathname,
-      "check",
-      "a.toml",
-      ...(json ? ["--json"] : []),
-    ],
-    {
-      cwd: root,
-      env: { ...Bun.env, PATH: searchPath, RUST_LOG: "error" },
-      stderr: "pipe",
-      stdout: "pipe",
-    }
-  );
-  const [stdout, stderr, exitCode] = await Promise.all([
-    new Response(child.stdout).text(),
-    new Response(child.stderr).text(),
-    child.exited,
-  ]);
-  return { exitCode, stderr, stdout };
-};
+import { check, fakeTaplo, inRepo } from "./taplo-fixture.ts";
 
 test("a Taplo panic after routine logs reaches human and JSON reports", async () => {
   await inRepo(async (root, bin) => {
@@ -113,71 +40,6 @@ test("a Taplo panic after routine logs reaches human and JSON reports", async ()
   });
 });
 
-test.skipIf(process.platform !== "darwin")(
-  "rope recovers the specific macOS proxy panic with the packaged WebAssembly engine",
-  async () => {
-    await inRepo(async (root, bin) => {
-      await fakeTaplo(
-        bin,
-        "thread 'main' panicked at /cargo/system-configuration-0.5.1/src/dynamic_store.rs:154:1:\nAttempted to create a NULL object.",
-        101
-      );
-      const wasmBin = path.join(root, "wasm-bin");
-      await mkdir(wasmBin);
-      await symlink(
-        new URL(import.meta.resolve("@taplo/cli/dist/cli.js")).pathname,
-        path.join(wasmBin, "taplo")
-      );
-      // Hoisted package managers can put the fallback tool ahead of native Taplo.
-      const searchPath = [wasmBin, bin, Bun.env.PATH].join(path.delimiter);
-      const invoke = (json = true) => check(root, searchPath, json, ROPE);
-      const valid = await invoke(false);
-      expect(valid.exitCode).toBe(0);
-      expect(valid.stdout).toContain("Checked with Taplo WebAssembly 0.9.0");
-
-      const file = path.join(root, "a.toml");
-      await Bun.write(file, "a = [\n");
-      const invalid = await invoke();
-      expect(invalid.exitCode).toBe(1);
-      expect(JSON.parse(invalid.stdout)).toMatchObject({
-        outcome: "findings",
-        steps: [
-          {
-            findings: [{ path: "a.toml", rule: "syntax" }],
-            reason:
-              "Checked with Taplo WebAssembly 0.9.0 after native Taplo panicked",
-          },
-        ],
-      });
-
-      const config = path.join(root, ".taplo.toml");
-      await Bun.write(config, '[schema]\npath = "schema.json"\n');
-      await Bun.write(file, "a = 1\n");
-      const missing = await invoke();
-      expect(missing.exitCode).toBe(2);
-      expect(missing.stdout).toContain("Attempted to create a NULL object.");
-      expect(missing.stdout).toContain("failed to load schema");
-
-      await Bun.write(
-        path.join(root, "schema.json"),
-        '{"type":"object","properties":{"a":{"type":"string"}}}\n'
-      );
-      const invalidSchema = await invoke();
-      expect(invalidSchema.exitCode).toBe(1);
-      expect(JSON.parse(invalidSchema.stdout)).toMatchObject({
-        outcome: "findings",
-        steps: [{ findings: [{ path: "a.toml", rule: "schema" }] }],
-      });
-
-      await Bun.write(config, 'exclude = ["a.toml"]\n');
-      const excluded = await invoke();
-      expect(excluded.exitCode).toBe(2);
-      expect(excluded.stdout).toContain("Its config excluded it");
-      expect(excluded.stdout).toContain("Attempted to create a NULL object.");
-    });
-  }
-);
-
 test("unexpected-exit diagnostics are bounded and handle empty stderr", async () => {
   await inRepo(async (root, bin) => {
     const command = await fakeTaplo(bin, "failure ".repeat(1000), 101);
@@ -196,38 +58,6 @@ test("unexpected-exit diagnostics are bounded and handle empty stderr", async ()
     });
   });
 });
-
-test("Taplo WebAssembly stops waiting for an unresponsive schema", async () => {
-  await inRepo(async (root) => {
-    const response = Promise.withResolvers<Response>();
-    let requests = 0;
-    const server = Bun.serve({
-      fetch: () => {
-        requests += 1;
-        return response.promise;
-      },
-      hostname: "127.0.0.1",
-      idleTimeout: 0,
-      port: 0,
-    });
-    try {
-      await Bun.write(
-        path.join(root, ".taplo.toml"),
-        `[schema]\nurl = "${server.url.href}schema.json"\n`
-      );
-      expect(await recoverTaplo(root, "a.toml", "native Taplo panic")).toEqual({
-        findings: [],
-        reason:
-          "native Taplo panic\nTaplo WebAssembly: did not finish within 10 seconds",
-        status: "incomplete",
-      });
-      expect(requests).toBe(1);
-    } finally {
-      response.resolve(new Response(null, { status: 503 }));
-      await server.stop(true);
-    }
-  });
-}, 15_000);
 
 test("a silent successful engine still leaves its check incomplete", async () => {
   await inRepo(async (root, bin) => {

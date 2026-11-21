@@ -73,7 +73,14 @@ const doing = (step: PlanStep): string => {
 const stepLine =
   (planned: PlannedPath, batches: readonly PlanBatch[]) =>
   (step: PlanStep): string =>
-    `    ${step.adapter}  ${step.tool} ${step.versionRange}  ${doing(step)}${company(step, planned, batches)}`;
+    [
+      `    ${step.adapter}  ${step.tool} ${step.versionRange}  ${doing(step)}${company(step, planned, batches)}`,
+      ...(step.recovery === undefined
+        ? []
+        : [
+            `      recovery  ${step.recovery.tool} ${step.recovery.version} (${step.recovery.package}) on ${step.recovery.platform} when ${step.recovery.when}`,
+          ]),
+    ].join("\n");
 
 const LAYER = {
   generated: "generated from the Cinch config, and extends the preset",

@@ -6,13 +6,14 @@ import type { StepOutcome } from "../adapter.ts";
 import { exec } from "../exec.ts";
 import type { Exit } from "../exec.ts";
 import { STANDALONE } from "../shipped-text.ts";
+import { nativeConfigArgs } from "./config.ts";
 import { configProblem, parseOutput } from "./output.ts";
 
 const WASM_WORKER = "--internal-taplo-wasm";
 const WASM_CLI = "@taplo/cli/dist/cli.js";
 const TIMEOUT_SECONDS = 10;
-const RECOVERED =
-  "Checked with Taplo WebAssembly 0.9.0 after native Taplo panicked";
+export const WASM_VERSION = "0.9.0";
+const RECOVERED = `Checked with Taplo WebAssembly ${WASM_VERSION} after native Taplo panicked`;
 
 // The macOS standalone build can invoke itself as this engine.
 declare const CINCH_TAPLO_WORKER: boolean | undefined;
@@ -63,7 +64,7 @@ const isWasmShim = async (file: string): Promise<boolean> => {
   const text = new TextDecoder(bunLauncher ? "utf-16le" : "utf-8").decode(
     bytes
   );
-  return text.includes(path.join("..", WASM_CLI));
+  return text.includes(path.normalize(WASM_CLI));
 };
 
 export const nativeCommand = async (
@@ -108,11 +109,21 @@ export const recoverTaplo = async (
   const deadline = AbortSignal.timeout(TIMEOUT_SECONDS * 1000);
   const timedOut = `did not finish within ${TIMEOUT_SECONDS} seconds`;
   try {
+    const configArgs = await nativeConfigArgs(root);
     const command = STANDALONE
       ? WASM_WORKER
       : fileURLToPath(import.meta.resolve(WASM_CLI));
     const { exitCode, stderr } = await exec(
-      [process.execPath, command, "lint", "--colors", "never", "--", file],
+      [
+        process.execPath,
+        command,
+        "lint",
+        ...configArgs,
+        "--colors",
+        "never",
+        "--",
+        file,
+      ],
       root,
       { RUST_LOG: "taplo=info" },
       deadline
