@@ -33,11 +33,17 @@ export const delegate = async (
   if (selected === entry) {
     return null;
   }
-  const child = Bun.spawn([process.execPath, selected, ...argv], {
-    env: { ...process.env, [MARKER]: selected },
-    stderr: "inherit",
-    stdin: "inherit",
-    stdout: "inherit",
+  // Keep the selected CLI on this PID so cancellation reaches its run.
+  if (process.execve === undefined) {
+    throw new Error(
+      `This runtime cannot replace the launcher. Run ${selected} directly with Bun.`
+    );
+  }
+  process.execve(process.execPath, [process.execPath, selected, ...argv], {
+    ...process.env,
+    [MARKER]: selected,
   });
-  return await child.exited;
+  throw new Error(
+    `This runtime could not replace the launcher. Run ${selected} directly with Bun.`
+  );
 };

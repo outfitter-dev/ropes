@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir } from "node:fs/promises";
+import { mkdir, symlink } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -55,6 +55,13 @@ enabled = false
   await Bun.write(path.join(consumer, "excluded/skip.md"), "# Excluded\n");
   const emptyPath = path.join(consumer, "no-tools");
   await mkdir(emptyPath);
+  const git = Bun.which("git");
+  if (git === null) {
+    throw new Error(
+      "The packed launcher proof needs Git for install verification."
+    );
+  }
+  await symlink(git, path.join(emptyPath, "git"));
   await run(["git", "add", "--all"], consumer);
   const before = await run(
     ["git", "status", "--porcelain", "--untracked-files=all"],

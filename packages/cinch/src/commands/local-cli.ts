@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { discoverRoot } from "../config/root.ts";
 import type { Operation } from "./command.ts";
+import { verifyInstalledFiles } from "./local-cli-trust.ts";
 
 const EXACT = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/u;
 
@@ -106,7 +107,14 @@ const localEntry = async (
       `The local installation must be ${name}@${selected.pin} with a rope executable. Reinstall the pinned dependency.`
     );
   }
-  const entry = await realpath(path.resolve(packageRoot, installed.bin.rope));
+  let entry: string;
+  try {
+    entry = await realpath(path.resolve(packageRoot, installed.bin.rope));
+  } catch {
+    throw new Error(
+      `The local rope executable is missing or unreadable. Reinstall ${name}@${selected.pin} in ${selected.directory}.`
+    );
+  }
   const inside = path.relative(packageRoot, entry);
   if (
     inside === ".." ||
@@ -117,6 +125,10 @@ const localEntry = async (
       "The local rope executable must belong to its @ropes/cli package."
     );
   }
+  const runtime = await realpath(
+    Bun.resolveSync("@ropes/core", path.dirname(entry))
+  );
+  await verifyInstalledFiles(selected.root, [packageRoot, runtime]);
   return entry;
 };
 

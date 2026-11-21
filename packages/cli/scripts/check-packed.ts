@@ -118,6 +118,23 @@ const smoke = async (
       type: "module",
     })
   );
+  await run(["git", "add", "package.json"], consumer);
+  await run(
+    [
+      "git",
+      "-c",
+      "user.name=Ropes",
+      "-c",
+      "user.email=ropes@example.invalid",
+      "-c",
+      "commit.gpgsign=false",
+      "commit",
+      "--quiet",
+      "--message",
+      "packed consumer",
+    ],
+    consumer
+  );
   const version = await run([executable, "--version"], consumer);
   if (version.trim() !== `rope ${cli.version}\n${await realpath(executable)}`) {
     throw new Error(`Unexpected rope version ${version}`);
