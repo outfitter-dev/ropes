@@ -20,9 +20,9 @@ To rehearse a candidate version locally, set both package manifest versions and 
 
 The first candidate is `@ropes/core@0.1.0-pilot.0` and `@ropes/cli@0.1.0-pilot.0`. Both tarballs contain the MIT license. The workflow submits packages under `pilot`. npm does not issue provenance for the internal source repository.
 
-Dispatch the **npm pilot** workflow on `main` with `prepare` to produce the verified tarball pair and its SHA-256 manifest. Review the exact source commit and archive hashes before staging.
+Dispatch the **npm release** workflow on `main` with `prepare` to produce the verified tarball pair and its SHA-256 manifest. Review the exact source commit and archive hashes before staging.
 
-Configure each npm package's GitHub trusted publisher for organization `outfitter-dev`, repository `ropes`, and workflow `npm-pilot.yml`. Use stage-only permissions. After artifact approval, dispatch `core` and then `cli` using the same artifact ID and each package's approved hash. Each dispatch submits one reviewed tarball. If one submission succeeds and the other fails, retry only the missing package using the same artifact.
+Configure each npm package's GitHub trusted publisher for organization `outfitter-dev`, repository `ropes`, and workflow `npm-release.yml`. Use stage-only permissions. After artifact approval, dispatch `core` and then `cli` using the same artifact ID and each package's approved hash. Each dispatch submits one reviewed tarball. If one submission succeeds and the other fails, retry only the missing package using the same artifact.
 
 Approve the staged core before the staged CLI in npm with 2FA. In a clean Git checkout with an initial commit, install the approved version and check the launcher.
 
