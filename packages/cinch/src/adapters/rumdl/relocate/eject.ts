@@ -3,7 +3,8 @@ import path from "node:path";
 import type { ToolTable } from "../../../contracts/config.ts";
 import type { ConfigText, Relocation } from "../../relocation.ts";
 import { generated } from "../generated.ts";
-import { CONFIG_PATH, EXTENDS, GENERATED_PATH } from "../paths.ts";
+import { CINCH_PATHS, CONFIG_PATH } from "../paths.ts";
+import type { MarkdownPaths } from "../paths.ts";
 import { configuredElsewhere, isPointer } from "../root-config.ts";
 import { familyOf } from "./adopt.ts";
 import { commentsIn, linesOf, renamed, sectionsOf, textOf } from "./scan.ts";
@@ -62,14 +63,15 @@ const split = (
 export const eject = async (
   root: string,
   config: ConfigText,
-  table: ToolTable = {}
+  table: ToolTable = {},
+  paths: MarkdownPaths = CINCH_PATHS
 ): Promise<Relocation> => {
   if (Object.keys(table).length === 0) {
     return { files: [], notes: [], ok: true };
   }
   const file = Bun.file(path.join(root, CONFIG_PATH));
   const current = (await file.exists()) ? await file.text() : null;
-  if (!isPointer(current)) {
+  if (!isPointer(current, paths)) {
     return stop(
       `${CONFIG_PATH} is the repository's own, so Cinch will not overwrite it. Move the settings into it by hand, or delete it and run this again.`
     );
@@ -109,9 +111,9 @@ export const eject = async (
   if (!below.ok) {
     return stop(below.message);
   }
-  const own = `${EXTENDS}\n${body}\n`;
+  const own = `${paths.extendsLine}\n${body}\n`;
   const whole = parsed(own);
-  if (whole === null || !same(whole, { ...table, extends: GENERATED_PATH })) {
+  if (whole === null || !same(whole, { ...table, extends: paths.generated })) {
     return stop(
       `Cinch could not write \`[${family.join(".")}]\` as a ${CONFIG_PATH} that says the same. Move it by hand.`
     );
@@ -119,7 +121,7 @@ export const eject = async (
   return {
     files: [
       { path: config.file, text: `${left}\n` },
-      { path: GENERATED_PATH, text: below.text },
+      { path: paths.generated, text: below.text },
       { path: CONFIG_PATH, text: own },
     ],
     notes:

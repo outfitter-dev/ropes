@@ -1,8 +1,8 @@
 {
-  "name": "outfitter-workspace",
+  "name": "ropes-workspace",
   "version": "0.0.0",
   "private": true,
-  "description": "Workspace for the outfitter CLI (Fit) and @outfitter/cinch.",
+  "description": "Ropes quality engine, CLI, tool configuration, and shared presets.",
   "workspaces": [
     "packages/*"
   ],
@@ -13,13 +13,17 @@
     "check": "bun run cinch check && bun run test",
     "cinch": "bun packages/cinch/src/cli.ts",
     "fix": "bun run cinch fix",
-    "test": "bun test"
+    "rope": "bun packages/cli/src/cli.ts",
+    "test": "bun test",
+    "check:packed": "bun packages/cli/scripts/check-packed.ts"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
     "@types/bun": "1.4.4",
     "lefthook": "2.2.2",
     "oxfmt": "0.78.0",
     "oxlint": "1.93.0",
+    "publint": "0.3.25",
     "tsrs": "7.1.0-beta.tsrs3",
     "typescript": "7.0.2",
     "ultracite": "8.1.1"

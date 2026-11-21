@@ -1,19 +1,16 @@
-# Outfitter
+# Ropes
 
-The Outfitter CLI and the quality tool it is built around.
+Ropes owns repository quality checks, policy, tool configuration, and shared presets. Its `rope` command and public core API run the same resolved plan.
 
-| Name | Package | Executables | What it is |
-| --- | --- | --- | --- |
-| Fit | `outfitter` | `outfitter`, `fit` | The whole CLI. Starts with quality and leaves room for more. |
-| Cinch | `@outfitter/cinch` | `cinch` | The slim quality CLI, usable on its own with `bunx`. |
-
-`outfitter` depends on an exact Cinch version and hoists its verbs, so `cinch check`, `outfitter check` and `fit check` are the same command.
+The broader [`outfitter` CLI](https://github.com/outfitter-dev/outfitter) lives in a separate repository and will consume Ropes through that API. Application initialization, cross-tool configuration migration, and the unscoped `outfitter` npm cutover belong there. The previous framework lives in [`outfitter-legacy`](https://github.com/outfitter-dev/outfitter-legacy).
 
 ## Status
 
-Early. `cinch explain`, `cinch check` and `cinch fix` work on Markdown, TOML and TypeScript, `cinch init` and `cinch preset` set a repository up, and `cinch doctor` keeps that setup right. The `outfitter` package does not exist yet. Nothing is published.
+The unpublished `@ropes/core` package holds the existing Cinch implementation under `packages/cinch/`. `@ropes/cli` supplies `rope explain`, `rope check`, and `rope fix`, including `fix --dry-run`. The Markdown fixture verifies matching plans, versioned results, and exits through Cinch, core, and `rope`.
 
-## What Cinch does
+Cinch remains the repository's setup and development entry point. Its `init`, `doctor`, `preset`, `rules`, and `schema` commands are available through `bun run cinch`. Ropes reads `rope.toml` and keeps its managed files under `.ropes/configs/`. During the pilot it also reads legacy `cinch.toml` or `[cinch]` in `outfitter.toml`, with managed files under `.outfitter/configs/`. The [cutover inventory](docs/cutover.md) records the compatibility choices.
+
+## Current Cinch commands
 
 Given a path, Cinch resolves one plan: which policy applies, where each value came from, and which tools will run. Four verbs read that same plan, and each may write only its own files.
 
@@ -44,9 +41,11 @@ The first profile is Markdown. TOML is the second: every TOML file must parse, a
 
 ## The JSON shapes are unstable
 
-The plan, result and finding that `--json` prints are provisional. They carry `schemaVersion: 1` and will change without notice until they are ratified. `parsePlan` and `parseResult` reject a document whose schema version they do not know, and a consumer should do the same. Golden examples live in `packages/cinch/tests/fixtures/`.
+The plan, result and finding that `--json` prints are provisional. They carry `schemaVersion: 2` and will change without notice until they are ratified. `parsePlan` and `parseResult` reject a document whose schema version they do not know, and a consumer should do the same. Golden examples live in `packages/cinch/tests/fixtures/`.
 
 ## Configuration is a pilot
+
+Use [the Ropes migration preview](docs/config-migration.md) to see the proposed `rope.toml` and managed paths for an existing Cinch configuration.
 
 Cinch reads the `[cinch]` table in `outfitter.toml`, or a standalone `cinch.toml`. It looks in the directory it was run from and then in each parent up to the top of the checkout, and the nearest one found sets the root. A linked Git worktree or a jj workspace is its own checkout. Having both is an error, because one repository gets one source. With neither, the defaults apply. The file must state `pilot = 0`, and a missing or unknown marker stops the run. The format is unstable and will change without notice.
 
@@ -97,16 +96,20 @@ packages/cinch/src/
   runner/      Runs a plan through adapters. Knows only the adapter interface.
   render/      Turns a result into text or JSON. Pure, and takes only a result.
   commands/    explain, check and fix as functions that take and return data.
-  cli.ts       The only file that parses arguments or prints.
+  index.ts     Public @ropes/core operations and versioned contract parsers.
+  cli.ts       Existing cinch argument handling and output.
+packages/cli/src/
+  cli.ts       rope argument handling, rendering and exit mapping.
 ```
 
-A test enforces which layer may import from which. That keeps engines swappable and leaves the command layer free to change later. [docs/adapters.md](docs/adapters.md) explains how to add an engine.
+The `@ropes/core` package exports typed `explain`, `check`, and `fix` operations. Its `@ropes/core/render` entry point exposes renderers for callers that need command output. `rope` imports those public entry points, and core has no dependency on the CLI. Boundary tests enforce the layer imports and package direction. [docs/adapters.md](docs/adapters.md) explains how to add an engine.
 
 ## Develop
 
 ```bash
 ./scripts/bootstrap.sh
 bun run check
+bun run rope --help
 bun run cinch --help
 ```
 

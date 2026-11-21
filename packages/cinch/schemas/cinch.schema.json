@@ -211,8 +211,20 @@
             "type": "object",
             "properties": {
               "enabled": {
-                "description": "Whether the shipped rules are run on the matching files.",
+                "description": "Whether the structural rules are run. Off unless set to true.",
                 "type": "boolean"
+              },
+              "enforcement": {
+                "description": "Explicit enforcement for a shipped rule ID. Unstated rules retain their blocking behavior.",
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "enum": ["advisory", "blocking"]
+                }
               }
             },
             "additionalProperties": false
@@ -251,8 +263,20 @@
       "type": "object",
       "properties": {
         "enabled": {
-          "description": "Whether the structural rules Cinch ships are run. Off unless set to true.",
+          "description": "Whether the structural rules are run. Off unless set to true.",
           "type": "boolean"
+        },
+        "enforcement": {
+          "description": "Explicit enforcement for a shipped rule ID. Unstated rules retain their blocking behavior.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "minLength": 1
+          },
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["advisory", "blocking"]
+          }
         },
         "local": {
           "description": "Root-relative folders of the repository's own rules. They run beside the shipped ones.",

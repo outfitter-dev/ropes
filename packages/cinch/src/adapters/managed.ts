@@ -36,6 +36,8 @@ export interface ManagedFile {
   readonly path: string;
   /** See `AdapterDescriptor.layers`. */
   readonly layer?: Layer;
+  /** Other files `want` reads. See `AdapterDescriptor.beside`. */
+  readonly beside?: readonly string[];
   /**
    * Given what the file holds now, or null when it is missing, and the root
    * it sits in, for a file whose content depends on what is beside it.
@@ -91,7 +93,9 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
       file.layer === undefined ? [] : [[file.path, file.layer]]
     )
   );
+  const beside = files.flatMap((file) => file.beside ?? []);
   const descriptor: AdapterDescriptor = {
+    ...(beside.length === 0 ? {} : { beside }),
     enabledBy,
     extensions: [],
     id,

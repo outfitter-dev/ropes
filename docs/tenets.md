@@ -82,7 +82,7 @@ An authored example is a recommendation. An observed repair is a prior from a pa
 
 ### A pass means the required work completed
 
-Required work that could not complete is incomplete, never clean. Completed checks with findings are failures, and incomplete work outranks them. A partial run never speaks for the whole repository. Report scope and omissions so the verdict cannot conceal missing work.
+Required work that could not complete is incomplete, never clean. Blocking findings fail a completed run; advisory findings remain visible without failing it. Incomplete work takes precedence over blocking findings. A partial run never speaks for the whole repository. Report scope and omissions so the verdict cannot conceal missing work.
 
 ### Unknown contracts are errors
 

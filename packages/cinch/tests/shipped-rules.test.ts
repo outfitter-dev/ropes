@@ -130,6 +130,14 @@ test("on the real engine a compiler config that builds on nothing is a finding",
     expect(await check("tsconfig.json", '{ "compilerOptions": {} }\n')).toEqual(
       ["findings", "1 config/tsconfig-extends"]
     );
+    // The kept preset extends nothing. The rule skips both managed directories.
+    const base = '{ "compilerOptions": {} }\n';
+    expect(
+      await check(".outfitter/configs/presets/tsconfig.json", base)
+    ).toEqual(["passed"]);
+    expect(await check(".ropes/configs/presets/tsconfig.json", base)).toEqual([
+      "passed",
+    ]);
     expect(
       await check("pkg/tsconfig.json", '{ "extends": "../base.json" }\n')
     ).toEqual(["passed"]);

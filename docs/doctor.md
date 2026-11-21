@@ -6,7 +6,7 @@
 
 - Every preset Cinch keeps is present and matches what this Cinch ships. Today that is the copy of [the Markdown standard](markdown-standard.md) at `.outfitter/configs/presets/rumdl.toml`.
 - Every generated config matches the Cinch config. Today that is `.outfitter/configs/rumdl.toml`, written from `[tools.rumdl]`. Changing that table leaves the file stale until `cinch doctor --fix` runs.
-- The root config extends the generated one. Today that is the `extends` line in `.rumdl.toml`.
+- Each tool's own root config builds on what Cinch keeps for it, while that preset is on: the `extends` line in `.rumdl.toml`, the `extends` key in `tsconfig.json`, and the preset import in `oxlint.config.ts` and `oxfmt.config.ts`.
 - `.editorconfig` matches the `[editor]` table of the Cinch config, when the config has one. See [editor settings](editor-settings.md).
 - The tools the workspace's plan needs are installed, at the versions `mise.toml` pins. See [tool versions](tool-versions.md).
 
@@ -28,10 +28,10 @@ The exit code is 0 when the setup is in good shape, 1 when a file needs repair, 
 ## What `--fix` writes
 
 - The presets and the generated configs. They are rewritten whole.
-- A root config that is missing. Cinch creates it as a pointer with the `extends` line, marked as generated.
-- The `extends` line in a root config a person wrote that has none. Nothing else in that file changes.
+- A root config that is missing. `.rumdl.toml` is created as a pointer with the `extends` line, marked as generated. The others are created as the smallest file that uses the preset, and are the repository's own from then on.
+- The `extends` line in a `.rumdl.toml` or a `tsconfig.json` a person wrote that has none. Nothing else in that file changes.
 
-It never overwrites anything else in a file a person wrote. A config that extends something else is reported and left alone, and so is one that is not valid TOML. Those need a person, and `doctor --fix` exits 1 with the finding.
+It never overwrites anything else in a file a person wrote. A config that extends something else is reported and left alone, and so is one Cinch cannot read. An `oxlint.config.ts` or `oxfmt.config.ts` that does not import its preset is reported with the lines to add, since it is a module a person wrote. Those need a person, and `doctor --fix` exits 1 with the finding.
 
 `cinch doctor --fix --dry-run` does the same work on a temporary copy and prints the diff. `--dry-run` without `--fix` changes nothing about a run that already only reports.
 
@@ -55,7 +55,7 @@ Doctor has no way of its own to write a file. The files Cinch keeps are steps in
 
 `cinch doctor` also lists each rule pack that applies to the repository and that the config neither names nor turns off, under `Rule packs not adopted`. That is a note: it does not change the exit code, and `--fix` does not adopt a pack, because which rules run is the repository's choice. `cinch rules adopt` shows the change and `--yes` writes it. A config that states `enabled = false` under `[rules]` gets no such note. In `--json` the names are in `notAdopted`.
 
-`cinch doctor --json` prints one report. It is provisional and carries `schemaVersion: 1`.
+`cinch doctor --json` prints one report. It is provisional and carries `schemaVersion: 2`.
 
 | Field | Meaning |
 | --- | --- |
@@ -65,7 +65,7 @@ Doctor has no way of its own to write a file. The files Cinch keeps are steps in
 | `fix` | `true` when the run was asked to repair |
 | `notAdopted` | The names of the rule packs that apply here and that the config neither names nor turns off |
 | `result` | The setup steps and their findings, in the shape `check --json` prints |
-| `schemaVersion` | `1` |
+| `schemaVersion` | `2` |
 | `tools` | One entry per tool: `tool`, `versionRange`, the installed `version` when known, and `problem` when it cannot run |
 
 A tool with a `problem` makes the exit code 2 even when `result.outcome` is `clean`.

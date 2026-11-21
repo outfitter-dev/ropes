@@ -81,7 +81,7 @@ export type ConfigError =
       readonly file: string;
       readonly issues: readonly string[];
     }
-  /** Two files both configure Cinch. Neither is read. */
+  /** Multiple files configure the same run. No policy source is selected. */
   | { readonly kind: "conflict"; readonly files: readonly string[] };
 
 export type ConfigResult =

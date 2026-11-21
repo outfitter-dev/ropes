@@ -1,4 +1,5 @@
 import type { Adapter } from "../adapters/adapter.ts";
+import { managedDirFor } from "../config/managed.ts";
 import { discoverRoot } from "../config/root.ts";
 import type { RepoRoot } from "../contracts/root.ts";
 import { describeRootError } from "./errors.ts";
@@ -73,7 +74,13 @@ export const locate = async (
   if (!found.ok) {
     return { error: describeRootError(found.error), ok: false };
   }
-  const adapters = deps.adapters({});
+  const adapters = deps.adapters(
+    {},
+    undefined,
+    undefined,
+    undefined,
+    managedDirFor(found.value.configFile)
+  );
   return {
     movables: movablesOf(adapters),
     ok: true,

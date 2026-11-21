@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 
 import type { Finding } from "../src/contracts/finding.ts";
 import { parseResult } from "../src/contracts/parse.ts";
+import { SCHEMA_VERSION } from "../src/contracts/plan.ts";
 import type { PlannedPath } from "../src/contracts/plan.ts";
 import { outcomeOf } from "../src/contracts/result.ts";
 import type { Result, StepResult } from "../src/contracts/result.ts";
@@ -34,10 +35,10 @@ const resultOf = (
     batches: [],
     paths,
     root: "/repo",
-    schemaVersion: 1,
+    schemaVersion: SCHEMA_VERSION,
     selection: { kind: "workspace" },
   },
-  schemaVersion: 1,
+  schemaVersion: SCHEMA_VERSION,
   steps,
 });
 

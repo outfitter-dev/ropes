@@ -17,6 +17,19 @@ export const isWanted = (
 };
 
 /**
+ * The files Cinch writes whole. A root config is kept too, and is still the
+ * repository's own file, so it is not among them.
+ */
+export const keptWhole = (
+  descriptors: readonly AdapterDescriptor[]
+): Set<string> =>
+  new Set(
+    descriptors.flatMap(({ layers, owns }) =>
+      (owns ?? []).filter((file) => layers?.[file] !== "root")
+    )
+  );
+
+/**
  * Each pack of the adapters given, as it would stand if policy asked for
  * all of them. `cinch rules` shows these where rules are not switched on.
  */
@@ -35,7 +48,7 @@ export const shippedStates = (
     config.rulesPacks !== undefined && asked.has(name)
       ? { named: config.rulesPacks.source }
       : {};
-  const kept = new Set(descriptors.flatMap(({ owns }) => owns ?? []));
+  const kept = keptWhole(descriptors);
   const own = present.filter((file) => !kept.has(file));
   return descriptors.flatMap((descriptor) =>
     (descriptor.packs ?? []).map((pack): PackState => {

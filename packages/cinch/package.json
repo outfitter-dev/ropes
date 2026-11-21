@@ -1,12 +1,20 @@
 {
-  "name": "@outfitter/cinch",
+  "name": "@ropes/core",
   "version": "0.0.0",
   "private": true,
-  "description": "The Outfitter quality CLI: one plan for explain, check and fix.",
-  "bin": {
-    "cinch": "./src/cli.ts"
-  },
+  "description": "The Ropes policy engine and typed quality operations.",
+  "files": [
+    "src",
+    "!src/cli.ts",
+    "presets",
+    "rules",
+    "schemas"
+  ],
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./render": "./src/render/index.ts"
+  },
   "dependencies": {
     "zod": "4.6.7"
   },

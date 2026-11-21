@@ -6,6 +6,7 @@ import path from "node:path";
 import manifest from "../package.json" with { type: "json" };
 import { FailureSchema } from "../src/contracts/failure.ts";
 import { FixReportSchema } from "../src/contracts/fix.ts";
+import { SCHEMA_VERSION } from "../src/contracts/plan.ts";
 
 const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
 /** The repository root, so a relative path means the same from any start. */
@@ -45,7 +46,7 @@ test("fix --dry-run reports a dry run and leaves the file alone", async () => {
   const result = await run("fix", "README.md", "--dry-run", "--json");
   expect(JSON.parse(result.stdout)).toMatchObject({
     dryRun: true,
-    schemaVersion: 1,
+    schemaVersion: SCHEMA_VERSION,
   });
   expect(
     await Bun.file(new URL("../../../README.md", import.meta.url)).text()
@@ -57,7 +58,7 @@ test("explain prints a versioned plan as JSON on stdout", async () => {
   expect(result.exitCode).toBe(0);
   expect(JSON.parse(result.stdout)).toMatchObject({
     paths: [{ path: "README.md" }],
-    schemaVersion: 1,
+    schemaVersion: SCHEMA_VERSION,
     selection: { kind: "paths", paths: ["README.md"] },
   });
 });
@@ -133,7 +134,7 @@ test("schema prints the JSON Schema of a command's --json output", async () => {
       "rules list",
     ],
     files: ["config"],
-    schemaVersion: 1,
+    schemaVersion: SCHEMA_VERSION,
   });
   const text = await run("schema");
   expect(text.stdout).toContain("  preset update\n");

@@ -5,6 +5,7 @@ import { outcomeOf } from "../contracts/result.ts";
 import type { Result, StepResult } from "../contracts/result.ts";
 import { conflictsAfter, textsOf } from "./conflicts.ts";
 import type { Settled } from "./conflicts.ts";
+import { enforce } from "./enforcement.ts";
 import { compareFacts } from "./facts.ts";
 import { noticesFor } from "./notices.ts";
 import { probeAdapter, threw, versionProblem } from "./ready.ts";
@@ -196,7 +197,7 @@ export const runPlan = async (
             );
           return unfit ? undefined : adapter;
         });
-  const steps = [...ran, ...undone, ...compared];
+  const steps = enforce(plan, [...ran, ...undone, ...compared]);
   const notices = await noticesFor(plan, (id) => ready(id).probe);
   return {
     ...(conflicts.length === 0 ? {} : { conflicts }),

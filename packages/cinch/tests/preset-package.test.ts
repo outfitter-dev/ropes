@@ -12,6 +12,8 @@ import { PRESET_BASE } from "../src/adapters/preset-base.ts";
 import { adaptersFor } from "../src/adapters/registry.ts";
 import type { CommandRequest } from "../src/commands/command.ts";
 import { createCommands } from "../src/commands/registry.ts";
+import { DoctorReportSchema } from "../src/contracts/doctor.ts";
+import { PresetReportSchema } from "../src/contracts/preset.ts";
 import { ResultSchema } from "../src/contracts/result.ts";
 
 const commands = createCommands({ adapters: adaptersFor });
@@ -100,6 +102,46 @@ test("a missing preset file is reported before its package is", async () => {
   expect(await found()).toEqual([
     { fixable: true, rule: "cinch/managed-file" },
   ]);
+});
+
+test.each([
+  { state: "missing", version: null },
+  { state: "incompatible", version: "9.0.0" },
+])("$state Ultracite only blocks the kept presets", async ({ version }) => {
+  await Bun.write(
+    path.join(root, "cinch.toml"),
+    "pilot = 0\n[lint]\npreset = true\n[format]\npreset = true\n[markdown]\npreset = false\n"
+  );
+  if (version !== null) {
+    await install(version);
+  }
+  const fixed = await run("doctor", { fix: true });
+  const { result } = DoctorReportSchema.parse(
+    JSON.parse(fixed.output ?? "null")
+  );
+  const kept = [".outfitter/configs/presets/oxfmt.ts", KEPT];
+  expect(fixed.exitCode).toBe(1);
+  expect(
+    result.steps
+      .flatMap((step) => step.findings)
+      .filter((finding) => finding.rule === BUILT_ON_RULE)
+      .map((finding) => finding.path)
+      .toSorted()
+  ).toEqual(kept);
+
+  const listed = await run("preset", { action: "list" });
+  const { presets } = PresetReportSchema.parse(
+    JSON.parse(listed.output ?? "null")
+  );
+  const files = presets.flatMap((preset) => preset.files);
+  expect(
+    files
+      .filter((file) => file.state === "blocked")
+      .map((file) => file.path)
+      .toSorted()
+  ).toEqual(kept);
+  expect(files).toContainEqual({ path: "oxlint.config.ts", state: "current" });
+  expect(files).toContainEqual({ path: "oxfmt.config.ts", state: "current" });
 });
 
 test("the version it was written for, or a later one of that major, passes", async () => {

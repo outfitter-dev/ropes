@@ -1,4 +1,5 @@
 import { loadConfig } from "../config/load.ts";
+import { managedDirFor } from "../config/managed.ts";
 import { discoverRoot } from "../config/root.ts";
 import { DEFAULT_CONFIG } from "../contracts/config.ts";
 import { setupOf } from "../policy/setup.ts";
@@ -21,7 +22,13 @@ export const setupFiles = async (
   const config = await loadConfig(root);
   const stated = config.ok ? config.value : DEFAULT_CONFIG;
   return deps
-    .adapters({}, stated.tools, stated.editor)
+    .adapters(
+      {},
+      stated.tools,
+      stated.editor,
+      undefined,
+      managedDirFor(stated.file)
+    )
     .flatMap(({ descriptor }) =>
       descriptor.setup === true ? (descriptor.owns ?? []) : []
     );
@@ -76,9 +83,10 @@ export const prepareSetup = async (
   if (!prepared.ok) {
     return prepared;
   }
-  const gaps = gapsOf(presetsOf(deps.adapters({})), prepared.value.plan).filter(
-    (gap) => gap.why === "left-out"
-  );
+  const gaps = gapsOf(
+    presetsOf(prepared.value.adapters),
+    prepared.value.plan
+  ).filter((gap) => gap.why === "left-out");
   const problems = [...gaps.map(describeGap), ...excludedKept(prepared.value)];
   if (problems.length > 0) {
     return { error: problems.join("\ncinch: "), ok: false };

@@ -8,7 +8,9 @@ const plural = (count: number, one: string, many = `${one}s`): string =>
 const findingLine = (finding: Finding): string => {
   const { column, line } = finding.range.start;
   const fixable = finding.fixable ? "  (fixable)" : "";
-  return `  ${line}:${column}  ${finding.severity}  ${finding.rule}  ${finding.message}  [${finding.source}]${fixable}`;
+  const enforcement =
+    finding.enforcement === undefined ? "" : `  (${finding.enforcement.level})`;
+  return `  ${line}:${column}  ${finding.severity}  ${finding.rule}  ${finding.message}  [${finding.source}]${fixable}${enforcement}`;
 };
 
 /** Step-level notices. They belong to the file the step ran on. */
@@ -75,6 +77,12 @@ const summary = (result: Result): string => {
   ];
   const count = (status: StepResult["status"]) =>
     result.steps.filter((step) => step.status === status).length;
+  const advisory = result.steps
+    .flatMap((step) => step.findings)
+    .filter((finding) => finding.enforcement?.level === "advisory").length;
+  if (advisory > 0) {
+    counts.push(`${advisory} advisory`);
+  }
   if (count("fixed") > 0) {
     counts.push(`${plural(count("fixed"), "step")} fixed`);
   }
@@ -92,7 +100,14 @@ const summary = (result: Result): string => {
  * verdict from the steps the same way the exit code does.
  */
 export const renderHuman = (result: Result): string => {
-  const verdict = VERDICT[outcomeOf(result.steps)];
+  const outcome = outcomeOf(result.steps);
+  const advisory = result.steps.some((step) =>
+    step.findings.some((finding) => finding.enforcement?.level === "advisory")
+  );
+  const verdict =
+    outcome === "clean" && advisory
+      ? "No blocking findings."
+      : VERDICT[outcome];
   return [
     ...pathBlocks(result),
     ...conflictBlocks(result),

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 
+import { SCHEMA_VERSION } from "../src/contracts/plan.ts";
 import { FINDINGS } from "./fake-adapter.ts";
 import { BASE, CONFIG, planPaths, snapshot, withRepo } from "./repo-bench.ts";
 
@@ -46,7 +47,10 @@ test("the plan inside a check result is the plan explain prints", async () => {
       run("check", ["docs", "a.md"], { json: true }),
     ]);
     const result: unknown = JSON.parse(checked.output ?? "null");
-    expect(result).toMatchObject({ outcome: "clean", schemaVersion: 1 });
+    expect(result).toMatchObject({
+      outcome: "clean",
+      schemaVersion: SCHEMA_VERSION,
+    });
     expect(result).toHaveProperty("plan", JSON.parse(explained.output ?? ""));
   });
 });

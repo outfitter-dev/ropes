@@ -1,14 +1,20 @@
+import path from "node:path";
+
 import type { Adapter, AdapterDescriptor } from "../adapters/adapter.ts";
 import { readPins } from "../adapters/pins.ts";
 import type { Pins, PinsResult } from "../adapters/pins.ts";
 import { loadConfig } from "../config/load.ts";
+import { managedDirFor } from "../config/managed.ts";
 import { discoverRoot, toRootRelative } from "../config/root.ts";
 import type { CinchConfig, ToolTables } from "../contracts/config.ts";
 import type { EditorSettings } from "../contracts/editor.ts";
+import type { ManagedDir } from "../contracts/managed-config.ts";
 import type { Plan } from "../contracts/plan.ts";
 import type { RepoRoot } from "../contracts/root.ts";
+import { unknownEnforcement } from "../policy/enforcement.ts";
 import { unknownOff, unknownPacks } from "../policy/packs.ts";
 import { resolvePlan } from "../policy/resolve.ts";
+import type { Operation, ReadRequest } from "./command.ts";
 import { describeConfigError, describeRootError } from "./errors.ts";
 import { filesUnder } from "./files.ts";
 import { packagesAbove } from "./packages.ts";
@@ -22,7 +28,8 @@ export interface CommandDeps {
     pins: Pins,
     tables?: ToolTables,
     editor?: EditorSettings,
-    localRules?: readonly string[]
+    localRules?: readonly string[],
+    managedDir?: ManagedDir
   ) => readonly Adapter[];
 }
 
@@ -35,9 +42,7 @@ export interface Prepared {
   readonly root: RepoRoot;
 }
 
-export type PrepareResult =
-  | { readonly ok: true; readonly value: Prepared }
-  | { readonly ok: false; readonly error: string };
+export type PrepareResult = Operation<Prepared>;
 
 /** The pins nearest the root: its own `mise.toml`, else the repository's. */
 const pinsFor = async (root: RepoRoot): Promise<PinsResult> => {
@@ -59,11 +64,7 @@ const exactly = ({
  * verbs get their plan here, so none can run what another would not show.
  */
 export const prepare = async (
-  request: {
-    readonly cwd: string;
-    readonly paths: readonly string[];
-    readonly strict?: boolean;
-  },
+  request: ReadRequest,
   deps: CommandDeps
 ): Promise<PrepareResult> => {
   const found = await discoverRoot(request.cwd);
@@ -86,7 +87,8 @@ export const prepare = async (
       pins.pins,
       config.value.tools,
       config.value.editor,
-      config.value.rulesLocal?.value
+      config.value.rulesLocal?.value,
+      managedDirFor(config.value.file)
     ),
     root.root,
     config.value
@@ -106,6 +108,13 @@ export const prepare = async (
   const kept = selection.kind === "workspace" ? owned : [];
   const all = [...named, ...walked, ...kept];
   const descriptors = adapters.map(({ descriptor }) => descriptor);
+  const unknownLevel = unknownEnforcement(config.value, descriptors);
+  if (unknownLevel !== undefined) {
+    return {
+      error: `${config.value.file ?? "the config"}: rules.enforcement names unknown shipped rule "${unknownLevel}".`,
+      ok: false,
+    };
+  }
   const [unknown] = unknownOff(config.value, descriptors);
   if (unknown !== undefined) {
     const file = config.value.file ?? "the Cinch config";
@@ -126,9 +135,17 @@ export const prepare = async (
   // of it was selected.
   const shipsPacks = descriptors.some(({ packs }) => packs !== undefined);
   const everything = selection.kind === "workspace" || !shipsPacks;
-  // A file named outright counts even where git ignores it.
+  // A file named outright counts even where git ignores it. A kept file
+  // can be named before it exists, and is not here until it does.
+  const there = await Promise.all(
+    named.map(
+      async (file) =>
+        !owned.includes(file) ||
+        (await Bun.file(path.join(root.root, file)).exists())
+    )
+  );
   const present = [
-    ...named,
+    ...named.filter((_, index) => there[index] === true),
     ...(everything ? walked : await filesUnder(root, "")),
   ];
   const packages = await packagesAbove(root.root, all);

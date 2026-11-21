@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { EnforcementSchema } from "./enforcement.ts";
+
 /** One-based line and column in the authored source file. */
 export const PositionSchema = z
   .object({
@@ -27,6 +29,8 @@ export type Severity = z.infer<typeof SeveritySchema>;
  */
 export const FindingSchema = z
   .object({
+    /** Effective repository policy. Absent preserves the blocking default. */
+    enforcement: EnforcementSchema.optional(),
     fixable: z.boolean(),
     message: z.string(),
     /** Root-relative path of the authored file. */

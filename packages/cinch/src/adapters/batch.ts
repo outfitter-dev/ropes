@@ -47,7 +47,7 @@ export const eachFile = async (
  */
 const CHUNK = 200;
 
-const chunks = (paths: readonly string[]): string[][] => {
+export const chunkPaths = (paths: readonly string[]): string[][] => {
   const parts: string[][] = [];
   for (let from = 0; from < paths.length; from += CHUNK) {
     parts.push(paths.slice(from, from + CHUNK));
@@ -78,7 +78,7 @@ export const inChunks = async (
   start: (part: StepInput) => Promise<FileOutcome[]>
 ): Promise<FileOutcome[]> => {
   const outcomes: FileOutcome[] = [];
-  for (const paths of chunks(input.paths)) {
+  for (const paths of chunkPaths(input.paths)) {
     const part = { ...input, paths };
     // One start at a time: an engine that fixes writes the files it is given.
     // eslint-disable-next-line no-await-in-loop

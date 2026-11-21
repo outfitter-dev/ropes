@@ -5,7 +5,7 @@ import path from "node:path";
 
 import { snapshot } from "./repo-bench.ts";
 
-const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
+const CLI = new URL("../src/cli.ts", import.meta.url);
 
 /** The file every proof reads its override from. */
 export const CONFIG = [
@@ -81,7 +81,10 @@ const spawn = async (
   return { exitCode, stderr, stdout };
 };
 
-const git = async (cwd: string, ...args: string[]): Promise<void> => {
+export const fixtureGit = async (
+  cwd: string,
+  ...args: string[]
+): Promise<void> => {
   const ran = await spawn(
     [
       "git",
@@ -100,9 +103,17 @@ const git = async (cwd: string, ...args: string[]): Promise<void> => {
   }
 };
 
-const checkoutAt = (root: string): Checkout => ({
+export const runEntry = (
+  entry: URL,
+  args: readonly string[],
+  cwd: string,
+  searchPath?: string
+): Promise<Ran> =>
+  spawn([process.execPath, entry.pathname, ...args], cwd, searchPath);
+
+export const checkoutAt = (root: string): Checkout => ({
   cinch: (args, { cwd = "", path: searchPath } = {}) =>
-    spawn([process.execPath, CLI, ...args], path.join(root, cwd), searchPath),
+    runEntry(CLI, args, path.join(root, cwd), searchPath),
   files: async () => {
     const all = await snapshot(root);
     return Object.fromEntries(
@@ -134,15 +145,23 @@ export const withFixture = async <T>(
         Bun.write(path.join(root, name), text)
       )
     );
-    await git(root, "init", "--quiet");
-    await git(root, "add", "--all");
-    await git(root, "commit", "--quiet", "--message", "fixture");
+    await fixtureGit(root, "init", "--quiet");
+    await fixtureGit(root, "add", "--all");
+    await fixtureGit(root, "commit", "--quiet", "--message", "fixture");
     return await body({
       emptyPath,
       main: checkoutAt(root),
       worktree: async () => {
         const linked = path.join(base, "linked");
-        await git(root, "worktree", "add", "--quiet", "-b", "linked", linked);
+        await fixtureGit(
+          root,
+          "worktree",
+          "add",
+          "--quiet",
+          "-b",
+          "linked",
+          linked
+        );
         return checkoutAt(linked);
       },
     });

@@ -1,0 +1,189 @@
+#!/usr/bin/env bun
+import { parseArgs } from "node:util";
+
+import {
+  check,
+  explain,
+  EXIT_CODE,
+  exitCodeOf,
+  fix,
+  previewMigration,
+  trace,
+} from "@ropes/core";
+import type { MigrationPreview, ReadRequest } from "@ropes/core";
+import {
+  renderFailureJson,
+  renderFix,
+  renderFixJson,
+  renderHuman,
+  renderJson,
+  renderPlan,
+  renderPlanJson,
+  renderTrace,
+} from "@ropes/core/render";
+
+import manifest from "../package.json" with { type: "json" };
+
+const HELP = `rope ${manifest.version}
+
+Usage: rope <explain|check|fix> [path...] [--json] [--strict]
+       rope fix [path...] --dry-run
+       rope explain [path...] --trace [--json]
+       rope migrate [--dry-run] [--json]
+
+  explain   Show which checks apply and where the policy comes from
+  check     Check the selected files without writing to the repository
+  fix       Fix the selected files or preview changes with --dry-run
+  migrate   Preview a legacy Cinch config migration
+
+Exit codes: 0 clean, 1 findings remain, 2 incomplete or unusable.
+`;
+
+const print = (output: string): void => {
+  process.stdout.write(`${output}\n`);
+};
+
+const fail = (message: string, json: boolean): number => {
+  // Setup errors join later lines with `cinch: `. Rebrand those as rope.
+  const text = json
+    ? renderFailureJson(message)
+    : `rope: ${message.replaceAll("\ncinch: ", "\nrope: ")}`;
+  process.stderr.write(`${text}\n`);
+  return EXIT_CODE.incomplete;
+};
+
+const renderMigration = (preview: MigrationPreview): string => {
+  const { source, target, managedFiles, rootReferences, recovery } = preview;
+  const table = source.table === undefined ? "" : ` [${source.table}]`;
+  return [
+    `Migration preview from ${source.path}${table} to ${target.path}. No files written.`,
+    "",
+    target.text.trimEnd(),
+    "",
+    ...managedFiles.map(({ from, to }) => `  ${from} -> ${to}`),
+    ...rootReferences.map(
+      ({ from, path, to }) =>
+        `  ${path}: change the reference from ${from} to ${to}`
+    ),
+    "",
+    recovery,
+  ].join("\n");
+};
+
+const migrate = async (
+  cwd: string,
+  paths: readonly string[],
+  json: boolean
+): Promise<number> => {
+  if (paths.length > 0) {
+    return fail(
+      "migrate previews the whole configuration, so it takes no paths.",
+      json
+    );
+  }
+  const ran = await previewMigration(cwd);
+  if (!ran.ok) {
+    return fail(ran.error, json);
+  }
+  print(json ? JSON.stringify(ran.value, null, 2) : renderMigration(ran.value));
+  return EXIT_CODE.clean;
+};
+
+const showExplanation = async (
+  request: ReadRequest,
+  json: boolean,
+  detailed: boolean
+): Promise<number> => {
+  if (detailed) {
+    const traced = await trace(request);
+    if (!traced.ok) {
+      return fail(traced.error, json);
+    }
+    print(
+      json ? JSON.stringify(traced.value, null, 2) : renderTrace(traced.value)
+    );
+    return EXIT_CODE.clean;
+  }
+  const ran = await explain(request, !json);
+  if (!ran.ok) {
+    return fail(ran.error, json);
+  }
+  const { plan } = ran.value;
+  print(json ? renderPlanJson(plan) : renderPlan(plan, ran.value));
+  return EXIT_CODE.clean;
+};
+
+const main = async (argv: readonly string[]): Promise<number> => {
+  const { values, positionals } = parseArgs({
+    allowPositionals: true,
+    args: [...argv],
+    options: {
+      "dry-run": { type: "boolean" },
+      help: { short: "h", type: "boolean" },
+      json: { type: "boolean" },
+      strict: { type: "boolean" },
+      trace: { type: "boolean" },
+      version: { short: "v", type: "boolean" },
+    },
+  });
+  const [verb, ...paths] = positionals;
+  if (values.version === true) {
+    print(manifest.version);
+    return EXIT_CODE.clean;
+  }
+  if (values.help === true || verb === undefined) {
+    print(HELP.trimEnd());
+    return EXIT_CODE.clean;
+  }
+  const json = values.json === true;
+  if (values["dry-run"] === true && verb !== "fix" && verb !== "migrate") {
+    return fail("--dry-run is only for fix and migrate.", json);
+  }
+  if (values.trace === true && verb !== "explain") {
+    return fail("--trace is only for explain.", json);
+  }
+  const request = {
+    cwd: process.cwd(),
+    paths,
+    strict: values.strict === true || process.env.CI === "true",
+  };
+  switch (verb) {
+    case "explain": {
+      return await showExplanation(request, json, values.trace === true);
+    }
+    case "check": {
+      const ran = await check(request);
+      if (!ran.ok) {
+        return fail(ran.error, json);
+      }
+      print(json ? renderJson(ran.value) : renderHuman(ran.value));
+      return exitCodeOf(ran.value);
+    }
+    case "fix": {
+      const ran = await fix({ ...request, dryRun: values["dry-run"] === true });
+      if (!ran.ok) {
+        return fail(ran.error, json);
+      }
+      print(json ? renderFixJson(ran.value) : renderFix(ran.value));
+      return exitCodeOf(ran.value.result);
+    }
+    case "migrate": {
+      return await migrate(request.cwd, paths, json);
+    }
+    default: {
+      return fail(`unknown command "${verb}". Run rope --help.`, json);
+    }
+  }
+};
+
+const argv = process.argv.slice(2);
+try {
+  process.exitCode = await main(argv);
+} catch (error) {
+  const separator = argv.indexOf("--");
+  const options = separator === -1 ? argv : argv.slice(0, separator);
+  process.exitCode = fail(
+    error instanceof Error ? error.message : String(error),
+    options.includes("--json")
+  );
+}
