@@ -2,7 +2,7 @@
 
 Cinch is a Bun program. A repository with no Bun, such as a Python one, can still run it from one executable that has Bun's runtime inside it.
 
-This page covers building that executable. Nothing is released yet, so there is no install step to follow.
+This page covers building the executable and qualifying an installation from a local artifact. The first published release still needs approval.
 
 ## Build it
 
@@ -16,6 +16,34 @@ The first argument is the file to write. The second is `bun-darwin-arm64`, `bun-
 The build writes one file and publishes nothing.
 
 The targeted `Standalone` workflow runs the binary acceptance tests on native Linux x64, Linux arm64 and macOS arm64 runners when core, build or toolchain inputs change. Each job uses the pinned Bun and engines, builds its host binary, and runs the existing no-Bun checks, fenced-code repair and embedded-rule proof. The fixtures give child commands a dedicated directory containing only the selected engines and Git, so a preinstalled Bun elsewhere on a runner cannot hide missing standalone support.
+
+## Install a checked local artifact with mise
+
+Build the executable for the consumer's platform, record its SHA-256 digest, and put the artifact at a fixed absolute path available to that consumer. The consumer needs mise and its selected engines on `PATH`. Its `mise.toml` pins the exact version, local file URL and expected digest.
+
+```toml
+[tools."http:cinch"]
+version = "0.0.0"
+url = "file:///absolute/path/to/cinch"
+bin = "cinch"
+checksum = "sha256:REPLACE_WITH_THE_ARTIFACT_SHA256"
+```
+
+An approved release uses an immutable version that matches the artifact's `cinch --version`, with its own artifact URL and checksum. `0.0.0` is the current local development version.
+
+mise reuses a tool already installed under the same backend and version, even if its configured URL or checksum changed. A release upgrade needs a new version identity together with the new artifact URL and checksum. For a rebuilt local `0.0.0` candidate, use `mise install --force http:cinch` to make mise retrieve and verify the configured bytes again. Changing the version label alone still downloads the same file when its URL is fixed.
+
+```sh
+mise install --force http:cinch
+mise exec -- cinch --version
+mise exec -- cinch init
+mise exec -- cinch init --yes
+mise exec -- cinch check --strict --json
+```
+
+Review the config through the repository's normal mise trust process before installation. Commit the exact artifact location and expected checksum with the policy change. A `file://` URL depends on that absolute path existing on each consumer host. For a multi-platform repository, put the URL and checksum under `[tools."http:cinch".platforms]` with `macos-arm64`, `linux-x64`, and `linux-arm64` entries for the corresponding builds. An authenticated artifact download can populate those local paths after release approval. [mise HTTP backend](https://mise.jdx.dev/dev-tools/backends/http.html)
+
+The native acceptance suite tests this route with isolated mise data, config, system config and cache folders. It rejects an incorrect digest before installation and on forced reinstall, checks the cached behavior of a same-version pin change, and verifies a new mise version identity rejects a wrong digest and selects the checked bytes after correction. It runs setup and a Markdown check through `mise exec` with Bun absent from `PATH`. The installed executable returns the same JSON and exit code as direct execution of the built artifact.
 
 ## What is inside
 
@@ -45,4 +73,4 @@ On Linux x64 with Bun 1.4.4, on 2026-11-20:
 
 ## Still open
 
-- How a release is cut and how a repository installs and pins the binary. mise is where tool versions live, so a release asset mise can install is the first choice.
+- The first release needs an approved version, executable name, three platform artifacts and their digests, and a distribution location/authentication route. The local mise qualification supplies installation evidence. Hosted download and release publication remain to be qualified against the approved artifacts.
