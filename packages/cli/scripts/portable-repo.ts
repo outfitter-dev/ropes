@@ -50,7 +50,8 @@ export const portableRepo = async (
   await Bun.write(
     path.join(root, "package.json"),
     JSON.stringify({
-      dependencies: { [core.name]: coreArchive, [cli.name]: cliArchive },
+      dependencies: { [cli.name]: cliArchive },
+      overrides: { [core.name]: coreArchive },
       private: true,
       type: "module",
     })
