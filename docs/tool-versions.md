@@ -33,11 +33,11 @@ When a repository does not pin a tool, the adapter falls back to the range of ve
 
 ## How installs behave
 
-`bunfig.toml` holds the two settings that only Bun can apply to an install. `linker = "isolated"` gives each package only the dependencies it declares. `minimumReleaseAge` makes `bun install` skip any release younger than seven days, which is long enough for most malicious releases to be pulled. When a fix is needed sooner, name the package in `minimumReleaseAgeExcludes` in the same change and say why in the pull request. An install from the lockfile is not affected, so CI installs exactly what was reviewed.
+The `[install]` table states the linker and minimum release age. Cinch generates this repository's `bunfig.toml` from that table. New package resolution waits seven days, and an existing reviewed lockfile retains its resolved versions. Deliberate package or exact-version exceptions belong in `release_age_exempt`. The [install policy guide](install-policy.md) covers adoption and authored configs.
 
 ## Dependency versions across packages
 
-mise pins tools. It does not keep npm dependency versions consistent across workspace packages, which is what syncpack does. Its experimental `mise deps` command (checked in mise 2026.11.10) runs package-manager installs; it does not compare versions between packages. Today only the workspace root declares dev dependencies, so there is nothing to keep in step. When a second package needs a shared dependency, the plan is a Bun catalog in the root `package.json`, so the version is written once. A checker such as Sherif or syncpack is part of the install policy decision in FIT-32.
+mise pins tools. The three workspace manifests currently share no direct external dependency names, so each version is stated in one manifest. When a second package needs a shared dependency, put that version in a Bun catalog in the root `package.json`. The CLI's `workspace:*` dependency on core continues to follow the workspace package.
 
 ## GitHub Actions pins
 

@@ -130,6 +130,29 @@
         "minLength": 1
       }
     },
+    "install": {
+      "type": "object",
+      "properties": {
+        "isolated": {
+          "description": "Whether packages see only their declared dependencies.",
+          "type": "boolean"
+        },
+        "minimum_release_age": {
+          "description": "The minimum age of a new release, such as `7 days`.",
+          "type": "string",
+          "pattern": "^\\d+ (?<unit>seconds?|minutes?|hours?|days?)$"
+        },
+        "release_age_exempt": {
+          "description": "Explicit package or package-version exceptions to the release age.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "lint": {
       "type": "object",
       "properties": {
@@ -147,12 +170,12 @@
     "markdown": {
       "type": "object",
       "properties": {
-        "links": {
-          "description": "Whether local Markdown links and heading fragments are checked. Off unless set to true; independent of style checking.",
-          "type": "boolean"
-        },
         "enabled": {
           "description": "Whether Markdown is checked. On unless set to false.",
+          "type": "boolean"
+        },
+        "links": {
+          "description": "Whether local Markdown links and heading fragments are checked. Off unless set to true; independent of style checking.",
           "type": "boolean"
         },
         "preset": {
@@ -191,12 +214,12 @@
           "markdown": {
             "type": "object",
             "properties": {
-              "links": {
-                "description": "Whether local Markdown links and heading fragments are checked. Off unless set to true; independent of style checking.",
-                "type": "boolean"
-              },
               "enabled": {
                 "description": "Whether Markdown is checked. On unless set to false.",
+                "type": "boolean"
+              },
+              "links": {
+                "description": "Whether local Markdown links and heading fragments are checked. Off unless set to true; independent of style checking.",
                 "type": "boolean"
               },
               "preset": {

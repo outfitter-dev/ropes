@@ -8,6 +8,7 @@ import { prepare } from "./prepare.ts";
 import type { CommandDeps, Prepared, PrepareResult } from "./prepare.ts";
 import { describeGap, gapsOf, settingOf } from "./preset-gaps.ts";
 import { presetsOf } from "./presets.ts";
+import { settle } from "./settle.ts";
 
 /**
  * The files of the Cinch setup at `root`. An adapter that keeps files needs
@@ -21,17 +22,18 @@ export const setupFiles = async (
 ): Promise<string[]> => {
   const config = await loadConfig(root);
   const stated = config.ok ? config.value : DEFAULT_CONFIG;
-  return deps
-    .adapters(
-      {},
-      stated.tools,
-      stated.editor,
-      undefined,
-      managedDirFor(stated.file)
-    )
-    .flatMap(({ descriptor }) =>
-      descriptor.setup === true ? (descriptor.owns ?? []) : []
-    );
+  const adapters = deps.adapters(
+    {},
+    stated.tools,
+    stated.editor,
+    undefined,
+    managedDirFor(stated.file),
+    stated.install
+  );
+  const settled = await settle(adapters, root, stated);
+  return (settled.ok ? settled.adapters : adapters).flatMap(({ descriptor }) =>
+    descriptor.setup === true ? (descriptor.owns ?? []) : []
+  );
 };
 
 /**

@@ -8,6 +8,7 @@ import { managedDirFor } from "../config/managed.ts";
 import { discoverRoot, toRootRelative } from "../config/root.ts";
 import type { CinchConfig, ToolTables } from "../contracts/config.ts";
 import type { EditorSettings } from "../contracts/editor.ts";
+import type { InstallSettings } from "../contracts/install.ts";
 import type { ManagedDir } from "../contracts/managed-config.ts";
 import type { Plan } from "../contracts/plan.ts";
 import type { RepoRoot } from "../contracts/root.ts";
@@ -32,7 +33,8 @@ export interface CommandDeps {
     tables?: ToolTables,
     editor?: EditorSettings,
     localRules?: readonly string[],
-    managedDir?: ManagedDir
+    managedDir?: ManagedDir,
+    install?: InstallSettings
   ) => readonly Adapter[];
 }
 
@@ -96,7 +98,8 @@ export const prepare = async (
       config.value.tools,
       config.value.editor,
       config.value.rulesLocal?.value,
-      managedDirFor(config.value.file)
+      managedDirFor(config.value.file),
+      config.value.install
     ),
     root.root,
     config.value
