@@ -11,6 +11,7 @@ import type { EditorSettings } from "../contracts/editor.ts";
 import type { ManagedDir } from "../contracts/managed-config.ts";
 import type { Plan } from "../contracts/plan.ts";
 import type { RepoRoot } from "../contracts/root.ts";
+import type { PackageTarget } from "../contracts/targets.ts";
 import { unknownEnforcement } from "../policy/enforcement.ts";
 import { unknownOff, unknownPacks } from "../policy/packs.ts";
 import { resolvePlan } from "../policy/resolve.ts";
@@ -21,6 +22,7 @@ import { filesUnder } from "./files.ts";
 import { packagesAbove } from "./packages.ts";
 import { select } from "./select.ts";
 import { settle } from "./settle.ts";
+import { readTargets } from "./targets.ts";
 import { unreadTable } from "./tool-tables.ts";
 
 /** What a command needs from outside. Tests pass adapters of their own. */
@@ -154,7 +156,10 @@ export const prepare = async (
     ...(everything ? walked : await filesUnder(root, "")),
   ];
   const packages = await packagesAbove(root.root, all);
-  const resolve = (paths: readonly string[]): Plan =>
+  const resolve = (
+    paths: readonly string[],
+    targets: readonly PackageTarget[] = []
+  ): Plan =>
     resolvePlan({
       config: config.value,
       descriptors: adapters.map(({ descriptor }) =>
@@ -166,6 +171,7 @@ export const prepare = async (
       present,
       root: root.root,
       selection,
+      targets,
     });
   const unread = unreadTable(config.value, adapters, resolve);
   if (unread !== null) {
@@ -191,7 +197,26 @@ export const prepare = async (
       return located.ok;
     })
   );
-  const plan = resolve(candidates.filter((_, index) => inside[index] === true));
+  const selectedPaths = candidates.filter((_, index) => inside[index] === true);
+  const initialPlan = resolve(selectedPaths);
+  const targetRequests = new Map(
+    initialPlan.paths.flatMap((entry) =>
+      (entry.targets ?? []).map(
+        ({ condition }) =>
+          [
+            `${entry.package}\0${condition.dependency}`,
+            { dependency: condition.dependency, package: entry.package },
+          ] as const
+      )
+    )
+  );
+  const plan =
+    targetRequests.size === 0
+      ? initialPlan
+      : resolve(
+          selectedPaths,
+          await readTargets(root.root, [...targetRequests.values()])
+        );
   return {
     ok: true,
     value: { adapters, config: config.value, plan, present, root },

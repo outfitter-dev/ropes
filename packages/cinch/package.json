@@ -16,6 +16,8 @@
     "./render": "./src/render/index.ts"
   },
   "dependencies": {
+    "@types/semver": "7.8.0",
+    "semver": "7.8.6",
     "zod": "4.6.7"
   },
   "engines": {

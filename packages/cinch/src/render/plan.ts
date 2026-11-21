@@ -7,6 +7,7 @@ import type {
   PolicyValue,
   Provenance,
 } from "../contracts/plan.ts";
+import type { TargetDecision } from "../contracts/targets.ts";
 import { evaluationLines } from "./evaluation.ts";
 import { factsBlock } from "./facts.ts";
 import { localRulesBlock, rulesBlock } from "./rules.ts";
@@ -29,6 +30,15 @@ const policyLine = (setting: PolicyValue): string => {
       ? ""
       : `, blocking from ${setting.blockingAt}`;
   return `    ${setting.key} = ${String(setting.value)}  (${origin(setting.source)}${deadline})`;
+};
+
+const targetLine = (target: TargetDecision): string => {
+  const source = target.fact?.source;
+  const evidence =
+    source === undefined
+      ? "no target evidence"
+      : `${source.file} ${source.key}`;
+  return `  ${target.adapter} ${target.decision} — ${target.reason} (${evidence})`;
 };
 
 /** How many other files the step's one start of the engine also covers. */
@@ -91,6 +101,7 @@ const pathBlock =
       `  package: ${planned.package === "." ? "the workspace" : planned.package}`,
       "  policy",
       ...planned.policy.map(policyLine),
+      ...(planned.targets ?? []).map(targetLine),
       ...(planned.steps.length === 0
         ? ["  no step applies to this file"]
         : ["  steps", ...planned.steps.map(stepLine(planned, batches))]),

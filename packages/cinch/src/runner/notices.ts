@@ -8,17 +8,19 @@ export const noticesFor = async (
   probeOf: (adapter: string) => Promise<Readiness> | undefined
 ): Promise<string[]> => {
   const notices = await Promise.all(
-    plan.batches.map(async (batch) => {
-      const found = await probeOf(batch.adapter);
-      return found === undefined || found.problem !== undefined
-        ? undefined
-        : versionNotice(
-            batch.tool,
-            found.version,
-            batch.versionRange,
-            batch.tolerates
-          );
-    })
+    plan.batches
+      .filter((batch) => batch.incomplete === undefined)
+      .map(async (batch) => {
+        const found = await probeOf(batch.adapter);
+        return found === undefined || found.problem !== undefined
+          ? undefined
+          : versionNotice(
+              batch.tool,
+              found.version,
+              batch.versionRange,
+              batch.tolerates
+            );
+      })
   );
   return [...new Set(notices.filter((notice) => notice !== undefined))];
 };

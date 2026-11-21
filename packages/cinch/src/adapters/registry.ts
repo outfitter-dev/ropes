@@ -5,6 +5,7 @@ import type { ManagedDir } from "../contracts/managed-config.ts";
 import type { Adapter } from "./adapter.ts";
 import { rulesAdapter } from "./ast-grep/adapter.ts";
 import { bunCheckAdapter } from "./bun-check/adapter.ts";
+import { compilerApiAdapter } from "./bun-check/compatibility.ts";
 import { bunFmtAdapter } from "./bun-fmt/adapter.ts";
 import { editorFileAdapter } from "./editorconfig/adapter.ts";
 import { oxfmtPreset } from "./oxfmt/preset.ts";
@@ -45,6 +46,7 @@ export const adaptersFor = (
   rumdlAdapter({ version: pins.rumdl }),
   taploAdapter({ version: pins.taplo }),
   oxlintAdapter({ version: pins.oxlint }),
+  compilerApiAdapter(pins.bun, "tsconfig.json"),
   bunCheckAdapter({ version: pins.bun }),
   rulesAdapter({ local: localRules, version: pins["ast-grep"] }),
   bunFmtAdapter({ version: pins.bun }),

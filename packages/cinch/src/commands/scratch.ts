@@ -1,5 +1,6 @@
 import {
   copyFile,
+  cp,
   mkdir,
   mkdtemp,
   readlink,
@@ -11,6 +12,8 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import type { PreviewInput } from "../adapters/adapter.ts";
+import { toRootRelative } from "../config/root.ts";
 import { filesUnder } from "./files.ts";
 
 const MODULES = "node_modules";
@@ -162,7 +165,8 @@ const nest = async (root: string, base: string): Promise<string> => {
 export const withCopy = async <T>(
   root: { readonly root: string; readonly vcsRoot: string },
   also: readonly string[],
-  body: (copy: string) => Promise<T>
+  body: (copy: string) => Promise<T>,
+  inputs: readonly PreviewInput[] = []
 ): Promise<T> => {
   const base = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-dry-")));
   try {
@@ -174,6 +178,27 @@ export const withCopy = async <T>(
     );
     await Promise.all(files.map((file) => place(root.root, copy, file)));
     await linkModules(root.root, copy);
+    for (const input of inputs) {
+      const target = path.join(copy, input.path);
+      // eslint-disable-next-line no-await-in-loop -- validate before each snapshot is materialized
+      const located = await toRootRelative(copy, copy, target);
+      if (!located.ok) {
+        throw new CopyError(input.path);
+      }
+      try {
+        // eslint-disable-next-line no-await-in-loop -- each input is checked before any writes to its destination
+        await mkdir(path.dirname(target), { recursive: true });
+        // A fresh destination prevents copies through descendant links left
+        // by the generic repository snapshot.
+        // eslint-disable-next-line no-await-in-loop -- remove only this already validated scratch path
+        await rm(target, { force: true, recursive: true });
+        // Dereferencing makes the snapshot independent of source symlinks.
+        // eslint-disable-next-line no-await-in-loop -- copy each validated input once
+        await cp(input.source, target, { dereference: true, recursive: true });
+      } catch {
+        throw new CopyError(input.path);
+      }
+    }
     return await body(copy);
   } finally {
     await rm(base, { force: true, recursive: true });

@@ -33,6 +33,8 @@ export const FindingSchema = z
     enforcement: EnforcementSchema.optional(),
     fixable: z.boolean(),
     message: z.string(),
+    /** The engine's diagnostic ID when a shipped compatibility rule names it. */
+    nativeRule: z.string().min(1).optional(),
     /** Root-relative path of the authored file. */
     path: z.string().min(1),
     range: RangeSchema,

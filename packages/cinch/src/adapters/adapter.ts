@@ -1,6 +1,7 @@
 import type { FactReport } from "../contracts/facts.ts";
 import type { Finding } from "../contracts/finding.ts";
 import type { StepStatus } from "../contracts/result.ts";
+import type { PackageTarget } from "../contracts/targets.ts";
 import type { CheckDescriptionResult } from "../contracts/trace.ts";
 import type { AdapterDescriptor } from "./descriptor.ts";
 import type { Settled } from "./found.ts";
@@ -44,11 +45,19 @@ export interface StepInput {
    * It runs these and no others.
    */
   readonly rules?: readonly string[];
+  /** The plan's declared support target, independent of tool readiness. */
+  readonly target?: PackageTarget;
 }
 
 /** What a step found out about one of the files it was handed. */
 export interface FileOutcome extends StepOutcome {
   readonly path: string;
+}
+
+/** An installed input copied into a preview without a writable source link. */
+export interface PreviewInput {
+  readonly path: string;
+  readonly source: string;
 }
 
 /** The files a config that an adapter replaces chose to check. */
@@ -126,6 +135,10 @@ export interface Adapter {
    */
   readonly check: (input: StepInput) => Promise<readonly FileOutcome[]>;
   readonly fix: (input: StepInput) => Promise<readonly FileOutcome[]>;
+  /** Additional installed inputs needed by this exact batch in a dry run. */
+  readonly previewInputs?: (
+    input: StepInput
+  ) => Promise<readonly PreviewInput[]>;
   /** Describe initial check invocations without running or probing an engine. */
   readonly describeCheck?: (
     input: StepInput

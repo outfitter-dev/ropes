@@ -3,6 +3,8 @@ import { z } from "zod";
 /** What a pack's `pack.toml` states. */
 export const PackManifestSchema = z.strictObject({
   about: z.string().min(1),
+  /** Requires adoption by name, including during initialization. */
+  explicitOnly: z.boolean().optional(),
   name: z.string().min(1),
   /** Root-relative globs. The pack applies where a file matches one. */
   relevant: z.array(z.string().min(1)).min(1),

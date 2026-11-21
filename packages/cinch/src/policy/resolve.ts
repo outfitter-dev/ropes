@@ -38,6 +38,9 @@ export const resolvePlan = (given: ResolveInput): Plan => {
   // and the repository names no rules of its own.
   const input = {
     ...given,
+    ...(given.present === undefined
+      ? {}
+      : { presentFiles: new Set(given.present) }),
     descriptors: given.descriptors.filter(
       (descriptor) =>
         descriptor.packs === undefined ||
