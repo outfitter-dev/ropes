@@ -56,6 +56,12 @@ const OverrideSchema = z.strictObject({
  */
 export const EditorSchema = z.strictObject({
   ...facts,
+  check: z
+    .boolean()
+    .optional()
+    .describe(
+      "Check the stated editor settings on selected files without another formatter. Off unless true."
+    ),
   overrides: z
     .array(OverrideSchema)
     .optional()

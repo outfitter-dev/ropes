@@ -41,6 +41,10 @@
           "description": "Whether whitespace at the end of a line is removed.",
           "type": "boolean"
         },
+        "check": {
+          "description": "Check the stated editor settings on selected files without another formatter. Off unless true.",
+          "type": "boolean"
+        },
         "overrides": {
           "description": "Facts for some files. A later entry wins over an earlier.",
           "type": "array",

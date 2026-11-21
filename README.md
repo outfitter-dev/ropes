@@ -89,7 +89,7 @@ Overrides apply in file order. When more than one matches a path, the later one 
 
 A table under `tools` is copied into the config Cinch generates for that tool, at `.outfitter/configs/<tool>.<ext>`. That file extends the preset Cinch ships, and the tool's root config extends that file, so a rule is stated once, in the Cinch config, and plain `rumdl` or an editor sees it too. `cinch doctor --fix` rewrites the generated file after the table changes. [The Markdown standard](docs/markdown-standard.md) has the details. Markdown is the first tool with a table.
 
-The `[editor]` table holds the facts editors and formatters share: indent, line endings, charset, line width. Cinch writes the whole root `.editorconfig` from it, and never overwrites one a person wrote. See [editor settings](docs/editor-settings.md). A tool's own config that states one of these facts differently is a finding: see [shared facts](docs/shared-facts.md).
+The `[editor]` table holds the facts editors and formatters share: indent, line endings, charset, line width. Cinch writes the whole root `.editorconfig` from it, and never overwrites one a person wrote. With `[editor] check = true`, the built-in text checker validates selected files that have no active formatter. See [editor settings](docs/editor-settings.md). A tool's own config that states one of these facts differently is a finding: see [shared facts](docs/shared-facts.md).
 
 This repository's own `cinch.toml` is the first user of the format.
 

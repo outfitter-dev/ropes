@@ -9,6 +9,7 @@ import { bunCheckAdapter } from "./bun-check/adapter.ts";
 import { compilerApiAdapter } from "./bun-check/compatibility.ts";
 import { bunFmtAdapter } from "./bun-fmt/adapter.ts";
 import { bunInstallAdapter } from "./bun-install/adapter.ts";
+import { editorTextAdapter } from "./editor-text/adapter.ts";
 import { editorFileAdapter } from "./editorconfig/adapter.ts";
 import { lycheeAdapter } from "./lychee/adapter.ts";
 import { oxfmtPreset } from "./oxfmt/preset.ts";
@@ -43,6 +44,7 @@ export const adaptersFor = (
   install?: InstallSettings
 ): readonly Adapter[] => [
   editorFileAdapter(editor),
+  editorTextAdapter(editor),
   bunInstallAdapter(install),
   rumdlPresetAdapter({ managedDir, table: tables[RUMDL_TABLE] }),
   oxlintPreset(managedDir),
