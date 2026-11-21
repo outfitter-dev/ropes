@@ -106,13 +106,16 @@ test("a scheduled rule changes verdict at midnight UTC on unchanged source", asy
     expect(json(unavailable)).toMatchObject({ outcome: "incomplete" });
     const noZone = await checkAt("2099-02-01T00:00:00");
     expect(noZone.stderr).toContain("Use a UTC instant");
+    const bare = await main.cinch(["check", ADVISORY, "--json", "--at"]);
+    expect(bare.exitCode).toBe(2);
+    expect(bare.stderr).toContain("--at requires a UTC instant.");
     const write = await run(["fix", ADVISORY, "--at", BEFORE]);
     expect(write.exitCode).toBe(2);
     expect(await main.files()).toEqual(files);
   });
 }, 30_000);
 
-test("only the selected, applicable rule starts an enforcement clock", async () => {
+test("only the selected, applicable rule contributes a deadline", async () => {
   await withFixture(async ({ main }) => {
     const config = path.join(main.root, "cinch.toml");
     const managed = ".ropes/configs/tsconfig.json";
@@ -194,5 +197,30 @@ paths = ["packages/advisory/**"]
     await Bun.write(config, `${SCHEDULE}"${RULE}" = "blocking"\n`);
     const duplicate = await explain([ADVISORY]);
     expect(duplicate.exitCode).toBe(2);
+  });
+}, 30_000);
+
+test("the setup report omits deadlines for content steps", async () => {
+  await withFixture(async ({ main }) => {
+    await Promise.all([
+      Bun.write(
+        path.join(main.root, "cinch.toml"),
+        `${SCHEDULE}\n[typescript]\npreset = true\n`
+      ),
+      Bun.write(path.join(main.root, "tsconfig.json"), "{}\n"),
+    ]);
+    const explain = await main.cinch([
+      "explain",
+      "tsconfig.json",
+      "--json",
+      "--at",
+      BEFORE,
+    ]);
+    expect(explain.stdout).toContain("nextTransitionAt");
+    const doctor = await main.cinch(["doctor", "--json"]);
+    expect(json(doctor)).toHaveProperty("result.plan.paths");
+    expect(doctor.stdout).toContain('"tsconfig.json"');
+    expect(doctor.stdout).not.toContain('"evaluation"');
+    expect(doctor.stdout).not.toContain('"blockingAt"');
   });
 }, 30_000);

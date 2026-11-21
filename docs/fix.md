@@ -81,7 +81,7 @@ The copy holds what git would let you commit: tracked files and untracked files 
 | `schemaVersion` | `3` |
 | `stopped` | Only when nothing was fixed because the setup needs repair: the reason |
 
-A real run and a dry run of the same tree print the same `changed`, `diff` and `result`.
+A real run and a dry run of the same tree produce the same edits under the same effective policy. With scheduled enforcement, each invocation records its own evaluation time. A deadline that arrives between the two runs can change the verdict.
 
 Each record in `result.conflicts` is one conflict, so a consumer can count them without reading messages.
 

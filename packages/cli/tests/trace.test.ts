@@ -2,9 +2,8 @@ import { expect, test } from "bun:test";
 import { chmod } from "node:fs/promises";
 import path from "node:path";
 
-import { parseResult, trace } from "@ropes/core";
+import { parsePlan, parseResult, trace } from "@ropes/core";
 
-import { SCHEMA_VERSION } from "../../cinch/src/contracts/plan.ts";
 import {
   json,
   runEntry,
@@ -64,11 +63,15 @@ process.exit(await child.exited);
     if (!data.ok) {
       throw new Error(data.error);
     }
+    const plan = parsePlan(json(normal));
+    if (!plan.ok) {
+      throw new Error(JSON.stringify(plan.error));
+    }
     // The only difference is the PATH-resolved executable in the CLI subprocess.
     expect(json(traced)).toMatchObject({
       evidence: "planned",
-      plan: json(normal),
-      schemaVersion: SCHEMA_VERSION,
+      plan: plan.value,
+      schemaVersion: plan.value.schemaVersion,
     });
     const excluded = data.value.plan.paths.find(
       (entry) => entry.path === "excluded/old.ts"
