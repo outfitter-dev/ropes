@@ -23,13 +23,13 @@ const adopt = async (root: string, config: ConfigText): Promise<Relocation> => {
     return { ok: false, reasons: [`There is no ${BUNFIG} here to adopt.`] };
   }
   const text = await file.text();
-  if (text.startsWith(MARK)) {
-    return { files: [], notes: [], ok: true };
-  }
   try {
     const settings = readInstall(text);
     const previous = Table.parse(stated(config));
     const generated = { path: BUNFIG, text: render(settings) };
+    if (text.startsWith(MARK) && text === generated.text) {
+      return { files: [], notes: [], ok: true };
+    }
     if (previous !== undefined && render(previous) !== generated.text) {
       return {
         ok: false,

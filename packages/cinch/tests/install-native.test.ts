@@ -95,7 +95,7 @@ test("Bun enforces the generated release age, exact exception and isolated linke
       path.join(project, "bunfig.toml"),
       render({
         ...settings,
-        release_age_exempt: [`${name}@1.0.0`],
+        release_age_exempt: [`${name}@0.0.1||1.0.0`],
       })
     );
     const accepted = await run();

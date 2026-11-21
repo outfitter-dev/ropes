@@ -37,6 +37,19 @@ export const readInstall = (text: string): InstallSettings => {
   });
 };
 
+/** A marker is trusted only while the file contains exclusively owned fields. */
+export const isGenerated = (text: string): boolean => {
+  if (!text.startsWith(MARK)) {
+    return false;
+  }
+  try {
+    readInstall(text);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 /** A canonical native table, shared by generation and equivalence checks. */
 export const nativeInstall = (settings: InstallSettings) => ({
   ...(settings.isolated === undefined

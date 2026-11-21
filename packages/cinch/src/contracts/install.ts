@@ -1,19 +1,14 @@
-import { valid } from "semver";
 import { z } from "zod";
 
-const EXEMPT =
-  /^(?<name>(?:@[a-z0-9][a-z0-9_.-]*\/)?[a-z0-9][a-z0-9_.-]*)(?:@(?<versions>.+))?$/u;
-const validExemption = (value: string): boolean => {
-  const match = EXEMPT.exec(value);
-  if (match?.groups === undefined) {
-    return false;
-  }
-  const { versions } = match.groups;
-  return (
-    versions === undefined ||
-    versions.split(" || ").every((version) => valid(version) === version)
-  );
-};
+const NUMBER = "(?:0|[1-9]\\d*)";
+const IDENTIFIER = `(?:${NUMBER}|\\d*[A-Za-z-][A-Za-z0-9-]*)`;
+const VERSION = `${NUMBER}\\.${NUMBER}\\.${NUMBER}(?:-${IDENTIFIER}(?:\\.${IDENTIFIER})*)?(?:\\+[A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)*)?`;
+const NAME = "(?:@[a-z0-9][a-z0-9_.-]*/)?[a-z0-9][a-z0-9_.-]*";
+// Keep the loader and its published JSON Schema on the same version grammar.
+const EXEMPT = new RegExp(
+  `^${NAME}(?:@${VERSION}(?:\\s*\\|\\|\\s*${VERSION})*)?$`,
+  "u"
+);
 
 const AGE = /^\d+ (?<unit>seconds?|minutes?|hours?|days?)$/u;
 
@@ -58,8 +53,8 @@ export const InstallSchema = z.strictObject({
       z
         .string()
         .min(1)
-        .refine(
-          validExemption,
+        .regex(
+          EXEMPT,
           "must name a package or exact package versions; globs and ranges are unsupported"
         )
     )
