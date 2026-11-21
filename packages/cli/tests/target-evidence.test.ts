@@ -10,7 +10,13 @@ import {
   withFixture,
 } from "../../cinch/tests/acceptance-repo.ts";
 import type { Ran } from "../../cinch/tests/acceptance-repo.ts";
-import { BEFORE, CONFIG, packageAt, RULE } from "./compatibility-fixture.ts";
+import {
+  apiPackage,
+  BEFORE,
+  CONFIG,
+  packageAt,
+  RULE,
+} from "./compatibility-fixture.ts";
 
 const ROPE = new URL("../src/cli.ts", import.meta.url);
 const resultOf = (ran: Ran) => {
@@ -180,5 +186,34 @@ test("compiler aliases cannot substitute another module for the API proof", asyn
       '{ // compiler config\n "compilerOptions": { "moduleResolution": "bundler" } }',
       "plain JSON"
     );
+  });
+});
+
+test("a nearer API install must satisfy the source package support target", async () => {
+  await withFixture(async ({ main }) => {
+    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    const current = await packageAt(main.root, "current", "^5.0.0");
+    const nested = path.join(current, "nested");
+    await Bun.write(path.join(nested, "index.ts"), BEFORE);
+    await apiPackage(nested, "4-9");
+    const ran = await runEntry(
+      ROPE,
+      ["check", "packages/current/nested/index.ts", "--json"],
+      main.root
+    );
+    expect(ran.exitCode).toBe(2);
+    const result = resultOf(ran);
+    expect(result.plan.paths[0]?.package).toBe("packages/current");
+    expect(result.steps[0]?.reason).toContain(
+      "resolved TypeScript API 4.9.5 does not satisfy declared support ^5.0.0"
+    );
+    await apiPackage(nested, "5-0");
+    const matched = await runEntry(
+      ROPE,
+      ["check", "packages/current/nested/index.ts", "--json"],
+      main.root
+    );
+    expect(matched.exitCode).toBe(1);
+    expect(resultOf(matched).steps[0]?.findings[0]?.rule).toBe(RULE);
   });
 });

@@ -16,7 +16,7 @@ export interface PathPlanInput {
    */
   readonly packages: readonly string[];
   /** Actual files, when the command boundary collected them. */
-  readonly present?: readonly string[];
+  readonly presentFiles?: ReadonlySet<string>;
   /** Declared support evidence collected at the command boundary. */
   readonly targets?: readonly PackageTarget[];
 }
@@ -162,8 +162,8 @@ export const planPath = (
       input.descriptors.filter(
         (descriptor) =>
           descriptor.target === undefined ||
-          input.present === undefined ||
-          input.present.includes(path)
+          input.presentFiles === undefined ||
+          input.presentFiles.has(path)
       )
     ),
     input.descriptors

@@ -12,17 +12,13 @@ const Manifest = z.object({
 });
 const require = createRequire(import.meta.url);
 
-/** The API declarations must represent the support target the plan names. */
-export const apiProblem = async (
-  input: StepInput
+const packageProblem = async (
+  directory: string,
+  range: string
 ): Promise<string | undefined> => {
-  const range = input.target?.range;
-  if (range === undefined) {
-    return "the plan supplies no declared TypeScript API support range";
-  }
   try {
     const manifest = require.resolve("typescript/package.json", {
-      paths: [path.join(input.root, input.package)],
+      paths: [directory],
     });
     const parsed = Manifest.safeParse(await Bun.file(manifest).json());
     if (!parsed.success) {
@@ -34,4 +30,23 @@ export const apiProblem = async (
   } catch (error) {
     return `cannot resolve TypeScript API declarations: ${String(error)}`;
   }
+};
+
+/** The API declarations must represent the support target the plan names. */
+export const apiProblem = async (
+  input: StepInput
+): Promise<string | undefined> => {
+  const range = input.target?.range;
+  if (range === undefined) {
+    return "the plan supplies no declared TypeScript API support range";
+  }
+  const directories = [
+    ...new Set(
+      input.paths.map((file) => path.dirname(path.join(input.root, file)))
+    ),
+  ];
+  const reasons = await Promise.all(
+    directories.map((directory) => packageProblem(directory, range))
+  );
+  return reasons.find((reason) => reason !== undefined);
 };
