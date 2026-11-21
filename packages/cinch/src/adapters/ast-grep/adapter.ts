@@ -4,7 +4,12 @@ import type { FoundRules } from "../found.ts";
 import { probeOnPath } from "../on-path.ts";
 import { heldTo } from "../pins.ts";
 import { readProject, tidy } from "./project.ts";
-import { shippedPacks, shippedScopes } from "./rules.ts";
+import {
+  shippedDigests,
+  shippedIdentities,
+  shippedPacks,
+  shippedScopes,
+} from "./rules.ts";
 import { scanBatch } from "./run.ts";
 import { describeScan } from "./trace.ts";
 
@@ -83,6 +88,8 @@ export const rulesAdapter = (options: RulesOptions = {}): Adapter => {
     optIn: true,
     packs: shippedPacks,
     platforms: ["darwin", "linux", "win32"],
+    ruleDigests: shippedDigests,
+    ruleIdentities: shippedIdentities,
     ruleScopes: shippedScopes,
     tool: ID,
     unit: "file",

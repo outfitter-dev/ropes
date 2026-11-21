@@ -12,7 +12,6 @@ import {
 } from "@ropes/core";
 import type { MigrationPreview, ReadRequest } from "@ropes/core";
 import {
-  renderFailureJson,
   renderFix,
   renderFixJson,
   renderHuman,
@@ -23,7 +22,9 @@ import {
 } from "@ropes/core/render";
 
 import manifest from "../package.json" with { type: "json" };
+import { migrationCommand } from "./cleanup.ts";
 import { delegate } from "./delegate.ts";
+import { fail, print } from "./output.ts";
 
 const HELP = `rope ${manifest.version}
 
@@ -32,6 +33,7 @@ Usage: rope <explain|check|fix> [path...] [--json] [--strict]
        rope fix [path...] --dry-run
        rope explain [path...] --trace [--json]
        rope migrate [--dry-run] [--json]
+       rope <explain|check> --migration <commit>:<file> --parent <commit> --candidate <commit>
 
   explain   Show which checks apply and where the policy comes from
   check     Check the selected files without writing to the repository
@@ -40,19 +42,6 @@ Usage: rope <explain|check|fix> [path...] [--json] [--strict]
 
 Exit codes: 0 clean, 1 findings remain, 2 incomplete or unusable.
 `;
-
-const print = (output: string): void => {
-  process.stdout.write(`${output}\n`);
-};
-
-const fail = (message: string, json: boolean): number => {
-  // Setup errors join later lines with `cinch: `. Rebrand those as rope.
-  const text = json
-    ? renderFailureJson(message)
-    : `rope: ${message.replaceAll("\ncinch: ", "\nrope: ")}`;
-  process.stderr.write(`${text}\n`);
-  return EXIT_CODE.incomplete;
-};
 
 const renderMigration = (preview: MigrationPreview): string => {
   const { source, target, managedFiles, rootReferences, recovery } = preview;
@@ -121,9 +110,12 @@ const invocation = (argv: readonly string[]) =>
     args: [...argv],
     options: {
       at: { type: "string" },
+      candidate: { type: "string" },
       "dry-run": { type: "boolean" },
       help: { short: "h", type: "boolean" },
       json: { type: "boolean" },
+      migration: { type: "string" },
+      parent: { type: "string" },
       strict: { type: "boolean" },
       trace: { type: "boolean" },
       version: { short: "v", type: "boolean" },
@@ -161,6 +153,10 @@ const main = async (argv: readonly string[]): Promise<number> => {
   const optionProblem = incompatibleOption(verb, values);
   if (optionProblem !== undefined) {
     return fail(optionProblem, json);
+  }
+  const migrationResult = await migrationCommand(verb, paths, values, json);
+  if (migrationResult !== null) {
+    return migrationResult;
   }
   const request = {
     ...(values.at === undefined ? {} : { at: values.at }),

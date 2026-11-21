@@ -1,8 +1,11 @@
+import { createHash } from "node:crypto";
+
 import { TOML, YAML } from "bun";
 import { z } from "zod";
 
 import { PackManifestSchema } from "../../contracts/rules.ts";
 import type { RulePack } from "../../contracts/rules.ts";
+import type { AdapterDescriptor } from "../descriptor.ts";
 import { shippedFolder } from "../shipped-text.ts";
 
 /** Where this Cinch keeps the rules it ships, one folder for each pack. */
@@ -42,6 +45,15 @@ export const readPacks = async (folder: URL) => {
     const rules = [...texts.keys()].filter((id) =>
       id.startsWith(`${folderName}/`)
     );
+    if (
+      (manifest.singleJsonDocument ?? []).some(
+        (rule) => !rules.includes(`${folderName}/${rule}`)
+      )
+    ) {
+      throw new Error(
+        `${file} declares an occurrence identity for an unknown rule`
+      );
+    }
     return [{ ...manifest, rules }];
   });
   return { packs, texts };
@@ -51,6 +63,22 @@ const shipped = await readPacks(SHIPPED);
 
 /** The packs this Cinch ships. A rule outside a pack is never run. */
 export const shippedPacks: readonly RulePack[] = shipped.packs;
+export const shippedDigests = Object.fromEntries(
+  [...shipped.texts].map(([id, text]) => [
+    id,
+    createHash("sha256").update(text).digest("hex"),
+  ])
+);
+export const shippedIdentities: NonNullable<
+  AdapterDescriptor["ruleIdentities"]
+> = Object.fromEntries(
+  shipped.packs.flatMap((pack) =>
+    (pack.singleJsonDocument ?? []).map((rule) => [
+      `${pack.name}/${rule}`,
+      "single-json-document",
+    ])
+  )
+);
 export const shippedScopes = Object.fromEntries(
   [...shipped.texts].map(([id, text]) => [id, Scope.parse(YAML.parse(text))])
 );

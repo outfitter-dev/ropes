@@ -93,6 +93,10 @@ export interface AdapterDescriptor {
    */
   readonly packs?: readonly RulePack[];
   /** File scopes from the shipped rules, keyed by rule id. */
+  /** Digests of embedded rules for explicit immutable comparison policies. */
+  readonly ruleDigests?: Readonly<Record<string, string>>;
+  /** Explicitly tested occurrence identities for incremental cleanup. */
+  readonly ruleIdentities?: Readonly<Record<string, "single-json-document">>;
   readonly ruleScopes?: Readonly<
     Record<
       string,

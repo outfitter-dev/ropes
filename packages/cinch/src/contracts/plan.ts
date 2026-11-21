@@ -152,7 +152,12 @@ export const PackStateSchema = z
     rules: z
       .array(
         z
-          .object({ id: z.string().min(1), off: ProvenanceSchema.optional() })
+          .object({
+            digest: z.string().optional(),
+            id: z.string().min(1),
+            identity: z.literal("single-json-document").optional(),
+            off: ProvenanceSchema.optional(),
+          })
           .readonly()
       )
       .readonly(),
