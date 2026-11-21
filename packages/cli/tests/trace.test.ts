@@ -4,6 +4,7 @@ import path from "node:path";
 
 import { parseResult, trace } from "@ropes/core";
 
+import { SCHEMA_VERSION } from "../../cinch/src/contracts/plan.ts";
 import {
   json,
   runEntry,
@@ -67,7 +68,7 @@ process.exit(await child.exited);
     expect(json(traced)).toMatchObject({
       evidence: "planned",
       plan: json(normal),
-      schemaVersion: 2,
+      schemaVersion: SCHEMA_VERSION,
     });
     const excluded = data.value.plan.paths.find(
       (entry) => entry.path === "excluded/old.ts"

@@ -185,9 +185,9 @@ proof(
     expect(result.plan).toEqual(planOf(explain));
     expect(result.steps.length).toBeGreaterThan(0);
 
-    const newer: unknown = { ...result, schemaVersion: 3 };
+    const newer: unknown = { ...result, schemaVersion: 99 };
     expect(parseResult(newer)).toEqual({
-      error: { found: 3, kind: "unknown-version" },
+      error: { found: 99, kind: "unknown-version" },
       ok: false,
     });
   }

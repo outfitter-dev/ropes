@@ -55,7 +55,7 @@ Doctor has no way of its own to write a file. The files Cinch keeps are steps in
 
 `cinch doctor` also lists each rule pack that applies to the repository and that the config neither names nor turns off, under `Rule packs not adopted`. That is a note: it does not change the exit code, and `--fix` does not adopt a pack, because which rules run is the repository's choice. `cinch rules adopt` shows the change and `--yes` writes it. A config that states `enabled = false` under `[rules]` gets no such note. In `--json` the names are in `notAdopted`.
 
-`cinch doctor --json` prints one report. It is provisional and carries `schemaVersion: 2`.
+`cinch doctor --json` prints one report. It is provisional and carries `schemaVersion: 3`.
 
 | Field | Meaning |
 | --- | --- |
@@ -65,7 +65,7 @@ Doctor has no way of its own to write a file. The files Cinch keeps are steps in
 | `fix` | `true` when the run was asked to repair |
 | `notAdopted` | The names of the rule packs that apply here and that the config neither names nor turns off |
 | `result` | The setup steps and their findings, in the shape `check --json` prints |
-| `schemaVersion` | `2` |
+| `schemaVersion` | `3` |
 | `tools` | One entry per tool: `tool`, `versionRange`, the installed `version` when known, and `problem` when it cannot run |
 
 A tool with a `problem` makes the exit code 2 even when `result.outcome` is `clean`.

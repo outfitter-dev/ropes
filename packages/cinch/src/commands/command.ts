@@ -1,6 +1,8 @@
 import type { ExitCode } from "../contracts/result.ts";
 
 export interface ReadRequest {
+  /** Explicit UTC time for a simulated read-only check or explanation. */
+  readonly at?: string;
   readonly cwd: string;
   readonly paths: readonly string[];
   /**

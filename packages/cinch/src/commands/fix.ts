@@ -184,8 +184,13 @@ export const runFix = async (
   request: FixRequest,
   deps: CommandDeps
 ): Promise<FixRun> =>
-  (await brokenSetup(request, deps)) ??
-  (await runWrite(request, deps, { mode: "fix" }));
+  request.at === undefined
+    ? ((await brokenSetup(request, deps)) ??
+      (await runWrite(request, deps, { mode: "fix" })))
+    : {
+        error: "An explicit evaluation time is only for explain and check.",
+        ok: false,
+      };
 
 export const fix =
   (deps: CommandDeps): Command =>

@@ -16,6 +16,7 @@ import { unknownOff, unknownPacks } from "../policy/packs.ts";
 import { resolvePlan } from "../policy/resolve.ts";
 import type { Operation, ReadRequest } from "./command.ts";
 import { describeConfigError, describeRootError } from "./errors.ts";
+import { evaluationAt } from "./evaluation.ts";
 import { filesUnder } from "./files.ts";
 import { packagesAbove } from "./packages.ts";
 import { select } from "./select.ts";
@@ -67,6 +68,10 @@ export const prepare = async (
   request: ReadRequest,
   deps: CommandDeps
 ): Promise<PrepareResult> => {
+  const evaluation = evaluationAt(request.at);
+  if (!evaluation.ok) {
+    return evaluation;
+  }
   const found = await discoverRoot(request.cwd);
   if (!found.ok) {
     return { error: describeRootError(found.error), ok: false };
@@ -155,6 +160,7 @@ export const prepare = async (
       descriptors: adapters.map(({ descriptor }) =>
         request.strict === true ? exactly(descriptor) : descriptor
       ),
+      evaluation: evaluation.value,
       packages,
       paths,
       present,

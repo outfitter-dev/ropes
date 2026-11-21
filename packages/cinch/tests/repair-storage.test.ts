@@ -3,9 +3,10 @@ import { mkdtemp, realpath, rm, stat, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { check, saveRepair } from "../src/index.ts";
+import { check, parseResult, readRepairs, saveRepair } from "../src/index.ts";
 import type { RepairInput, Result } from "../src/index.ts";
 import { withFixture } from "./acceptance-repo.ts";
+import resultFixture from "./fixtures/result.json" with { type: "json" };
 
 const missing = async (file: string): Promise<boolean> => {
   try {
@@ -34,6 +35,43 @@ const inputFor = (result: Result): RepairInput => ({
   repository: "fixture",
   result,
   tools: [],
+});
+
+test("the offline reader can still display version 2 observations", async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "ropes-archive-"));
+  try {
+    const parsed = parseResult(resultFixture);
+    if (!parsed.ok) {
+      throw new Error(JSON.stringify(parsed.error));
+    }
+    const current = parsed.value;
+    const archived = {
+      ...current,
+      plan: { ...current.plan, schemaVersion: 2 },
+      schemaVersion: 2,
+    };
+    const id = "0".repeat(64);
+    await Bun.write(
+      path.join(directory, `${id}.json`),
+      JSON.stringify({
+        ...inputFor(current),
+        capturedAt: "2026-11-20T23:00:00.000Z",
+        evidence: "observed",
+        id,
+        original: archived,
+        result: archived,
+        schemaVersion: 1,
+      })
+    );
+    expect(await readRepairs(directory)).toMatchObject({
+      ok: true,
+      value: [
+        { id, original: { schemaVersion: 2 }, result: { schemaVersion: 2 } },
+      ],
+    });
+  } finally {
+    await rm(directory, { force: true, recursive: true });
+  }
 });
 
 test("repair storage rejects aliases and the entire checkout before creating directories", async () => {

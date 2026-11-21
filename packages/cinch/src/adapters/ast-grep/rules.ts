@@ -1,4 +1,5 @@
-import { TOML } from "bun";
+import { TOML, YAML } from "bun";
+import { z } from "zod";
 
 import { PackManifestSchema } from "../../contracts/rules.ts";
 import type { RulePack } from "../../contracts/rules.ts";
@@ -7,6 +8,10 @@ import { shippedFolder } from "../shipped-text.ts";
 /** Where this Cinch keeps the rules it ships, one folder for each pack. */
 const SHIPPED = new URL("../../../rules/", import.meta.url);
 const MANIFEST = "pack.toml";
+const Scope = z.object({
+  files: z.array(z.string()).optional(),
+  ignores: z.array(z.string()).optional(),
+});
 
 /** A rule file's id is its path with no ending: `<pack>/<rule>`. */
 const idOf = (file: string): string => file.replace(/\.yml$/u, "");
@@ -46,6 +51,9 @@ const shipped = await readPacks(SHIPPED);
 
 /** The packs this Cinch ships. A rule outside a pack is never run. */
 export const shippedPacks: readonly RulePack[] = shipped.packs;
+export const shippedScopes = Object.fromEntries(
+  [...shipped.texts].map(([id, text]) => [id, Scope.parse(YAML.parse(text))])
+);
 
 /**
  * The shipped rules with these ids, as one text the engine reads from its

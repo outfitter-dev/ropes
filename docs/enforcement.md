@@ -1,6 +1,6 @@
 # Try a rule before making it blocking
 
-The pilot accepts an explicit advisory or blocking choice for a shipped rule ID. The pack still needs to be adopted and enabled, and file selection and relevance still apply. An enforcement entry alone introduces no check or engine requirement.
+The pilot accepts an advisory level, a blocking level, or a UTC deadline for a shipped rule ID. Enforcement applies to the selected files covered by an enabled, adopted pack and rule.
 
 ```toml
 pilot = 0
@@ -28,7 +28,16 @@ rope check packages/trial/tsconfig.json packages/ready/tsconfig.json --json
 
 The same missing-extends diagnostic remains an error from the engine at both levels. Each explicitly governed finding carries its effective `enforcement.level` and `enforcement.source`. Advisory-only completed checks exit 0 and report the advisory count. A blocking match exits 1. A required tool that cannot run yields exit 2, including when other steps have already reported matches. The step's native `findings` status remains a record of its diagnostics, while the shared result verdict applies enforcement.
 
-This slice supports the shipped rule IDs already supplied by the pack registry. Repository-local rule enforcement, calendar conditions, dependency predicates, and automatic changes to a convention's level can follow separate proofs. The level grants no additional permission to modify files.
+## Set a deadline
+
+Replace a level with a quoted calendar date, for example `"config/tsconfig-extends" = "2027-02-01"`. The rule is advisory before February 1 and blocking from midnight UTC on February 1. The same override order applies to deadlines and fixed levels. Each active path policy shows the resolved level, its source, and `blockingAt`. Unadopted or disabled rules and paths outside the rule's scope contribute no transition.
+
+```sh
+rope check packages/trial/tsconfig.json --at 2027-01-31T23:59:59.999Z --json
+rope explain packages/trial/tsconfig.json --at 2027-02-01T00:00:00Z
+```
+
+`explain` and `check` accept an explicit UTC instant with seconds and optional milliseconds. Both mark that output as simulated and leave the checkout untouched. An ordinary check samples the current clock once. Machine output records the instant at `plan.evaluation.at`, the simulation flag, and `nextTransitionAt` when an active rule in that selection has a future deadline. Consumers qualifying a current check must require an observed result and rerun it once its next transition arrives. These fields describe only the selected files.
 
 ## Existing adoption behavior
 
@@ -38,6 +47,6 @@ The automatic-enable assumption in ROPE-61 was superseded by explicit pack adopt
 
 ## Versioned result contract
 
-The provisional plan/result contract is now version 2. A completed result may have `outcome = "clean"` while retaining native `findings` steps whose diagnostics are all advisory. A consumer must validate the version before interpreting the result. A version-one `parseResult` checks `schemaVersion` against its supported constant first and returns `unknown-version` for 2, including this successful advisory case. The version-two parser likewise rejects version-one documents rather than guessing which verdict semantics apply.
+The provisional plan and result contract uses version 3. A completed result can be clean while retaining native findings when they are all advisory. Consumers must check the version before interpreting a verdict, then use the evaluation data to identify simulations and expired observations. The offline repair reader can also display records that embedded version 2 observations.
 
-`cinch schema check` and the other generated command schemas use the updated contract definitions. The checked-in config schema includes the new opt-in table, and the plan/result golden fixtures carry version 2. The offline [CLI proof](../packages/cli/tests/enforcement.test.ts) exercises the real shipped rule and engine, mixed outcomes, provenance, override order, missing-tool precedence, and an unadopted pack with a sentinel executable that must remain untouched.
+`cinch schema check` and the generated config schema describe these fields. The [level proof](../packages/cli/tests/enforcement.test.ts) and [UTC boundary proof](../packages/cli/tests/deadline.test.ts) exercise the shipped rule using the real engine.

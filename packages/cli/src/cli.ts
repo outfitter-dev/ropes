@@ -27,6 +27,7 @@ import manifest from "../package.json" with { type: "json" };
 const HELP = `rope ${manifest.version}
 
 Usage: rope <explain|check|fix> [path...] [--json] [--strict]
+       rope <explain|check> [path...] --at <UTC instant>
        rope fix [path...] --dry-run
        rope explain [path...] --trace [--json]
        rope migrate [--dry-run] [--json]
@@ -113,11 +114,12 @@ const showExplanation = async (
   return EXIT_CODE.clean;
 };
 
-const main = async (argv: readonly string[]): Promise<number> => {
-  const { values, positionals } = parseArgs({
+const invocation = (argv: readonly string[]) =>
+  parseArgs({
     allowPositionals: true,
     args: [...argv],
     options: {
+      at: { type: "string" },
       "dry-run": { type: "boolean" },
       help: { short: "h", type: "boolean" },
       json: { type: "boolean" },
@@ -126,6 +128,25 @@ const main = async (argv: readonly string[]): Promise<number> => {
       version: { short: "v", type: "boolean" },
     },
   });
+
+const incompatibleOption = (
+  verb: string,
+  values: ReturnType<typeof invocation>["values"]
+): string | undefined => {
+  if (values["dry-run"] === true && verb !== "fix" && verb !== "migrate") {
+    return "--dry-run is only for fix and migrate.";
+  }
+  if (values.trace === true && verb !== "explain") {
+    return "--trace is only for explain.";
+  }
+  if (values.at !== undefined && verb !== "explain" && verb !== "check") {
+    return "--at is only for explain and check.";
+  }
+  return undefined;
+};
+
+const main = async (argv: readonly string[]): Promise<number> => {
+  const { values, positionals } = invocation(argv);
   const [verb, ...paths] = positionals;
   if (values.version === true) {
     print(manifest.version);
@@ -136,13 +157,12 @@ const main = async (argv: readonly string[]): Promise<number> => {
     return EXIT_CODE.clean;
   }
   const json = values.json === true;
-  if (values["dry-run"] === true && verb !== "fix" && verb !== "migrate") {
-    return fail("--dry-run is only for fix and migrate.", json);
-  }
-  if (values.trace === true && verb !== "explain") {
-    return fail("--trace is only for explain.", json);
+  const optionProblem = incompatibleOption(verb, values);
+  if (optionProblem !== undefined) {
+    return fail(optionProblem, json);
   }
   const request = {
+    ...(values.at === undefined ? {} : { at: values.at }),
     cwd: process.cwd(),
     paths,
     strict: values.strict === true || process.env.CI === "true",

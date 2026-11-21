@@ -7,6 +7,7 @@ import type {
   PolicyValue,
   Provenance,
 } from "../contracts/plan.ts";
+import { evaluationLines } from "./evaluation.ts";
 import { factsBlock } from "./facts.ts";
 import { localRulesBlock, rulesBlock } from "./rules.ts";
 
@@ -22,8 +23,13 @@ export interface PlanContext {
 const origin = (source: Provenance): string =>
   source.kind === "default" ? "default" : `${source.file}: ${source.key}`;
 
-const policyLine = (setting: PolicyValue): string =>
-  `    ${setting.key} = ${String(setting.value)}  (${origin(setting.source)})`;
+const policyLine = (setting: PolicyValue): string => {
+  const deadline =
+    setting.blockingAt === undefined
+      ? ""
+      : `, blocking from ${setting.blockingAt}`;
+  return `    ${setting.key} = ${String(setting.value)}  (${origin(setting.source)}${deadline})`;
+};
 
 /** How many other files the step's one start of the engine also covers. */
 const company = (
@@ -116,6 +122,7 @@ export const renderPlan = (plan: Plan, context: PlanContext): string =>
       `Root: ${plan.root}`,
       `Config: ${context.configFile ?? "none, so the defaults apply"}`,
     ].join("\n"),
+    ...evaluationLines(plan.evaluation),
     ...plan.paths.map(pathBlock(plan.batches)),
     ...(plan.facts === undefined ? [] : [factsBlock(plan.facts)]),
     ...(plan.rules === undefined ? [] : [rulesBlock(plan.rules)]),

@@ -1,6 +1,7 @@
 import type { Finding } from "../contracts/finding.ts";
 import { exitCodeOf, outcomeOf } from "../contracts/result.ts";
 import type { Outcome, Result, StepResult } from "../contracts/result.ts";
+import { evaluationLines } from "./evaluation.ts";
 
 const plural = (count: number, one: string, many = `${one}s`): string =>
   `${count} ${count === 1 ? one : many}`;
@@ -109,6 +110,7 @@ export const renderHuman = (result: Result): string => {
       ? "No blocking findings."
       : VERDICT[outcome];
   return [
+    ...evaluationLines(result.plan.evaluation),
     ...pathBlocks(result),
     ...conflictBlocks(result),
     ...(result.notices ?? []).map((notice) => `Note: ${notice}`),

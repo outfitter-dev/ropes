@@ -2,6 +2,7 @@ import type { AdapterDescriptor } from "../adapters/adapter.ts";
 import type { CinchConfig } from "../contracts/config.ts";
 import { SCHEMA_VERSION } from "../contracts/plan.ts";
 import type {
+  Evaluation,
   Plan,
   PlannedPath,
   PlanStep,
@@ -9,6 +10,7 @@ import type {
   Selection,
 } from "../contracts/plan.ts";
 import { batchesFor, inRunOrder, packageOf, toStep } from "./batches.ts";
+import { resolveDeadlines } from "./deadlines.ts";
 import { sharedFacts } from "./facts.ts";
 import { compileGlobs } from "./glob.ts";
 import type { Matcher } from "./glob.ts";
@@ -17,6 +19,7 @@ import { localRules, packStates, rulesOn } from "./packs.ts";
 export interface ResolveInput {
   readonly root: string;
   readonly config: CinchConfig;
+  readonly evaluation?: Evaluation;
   /** What the caller asked for. */
   readonly selection: Selection;
   /** The root-relative paths the selection expanded to. */
@@ -232,11 +235,18 @@ export const resolvePlan = (given: ResolveInput): Plan => {
   );
   const facts = sharedFacts(input.config, input.descriptors, batches);
   const local = localRules(input.config, input.descriptors);
+  const deadlines = resolveDeadlines(
+    given.config,
+    given.evaluation,
+    planned,
+    batches,
+    input.descriptors
+  );
   return {
     batches,
     ...(facts === undefined ? {} : { facts }),
     ...(local === undefined ? {} : { localRules: local }),
-    paths: planned,
+    ...deadlines,
     root: input.root,
     ...(rules.length === 0 ? {} : { rules }),
     schemaVersion: SCHEMA_VERSION,

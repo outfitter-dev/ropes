@@ -9,7 +9,7 @@ import type {
 } from "../contracts/config.ts";
 import { EditorSchema } from "../contracts/editor.ts";
 import { ENFORCEMENT_PREFIX } from "../contracts/enforcement.ts";
-import type { EnforcementLevel } from "../contracts/enforcement.ts";
+import type { EnforcementSetting } from "../contracts/enforcement.ts";
 import type { PolicyValue, Provenance } from "../contracts/plan.ts";
 import {
   Globs,
@@ -132,7 +132,7 @@ const overDefaults = (stated: readonly PolicyValue[]): PolicyValue[] => {
 };
 
 const enforcementSettings = (
-  settings: Readonly<Record<string, EnforcementLevel>> | undefined,
+  settings: Readonly<Record<string, EnforcementSetting>> | undefined,
   origin: TableOrigin,
   prefix: string
 ): PolicyValue[] =>
