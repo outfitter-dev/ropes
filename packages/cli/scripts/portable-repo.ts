@@ -4,11 +4,11 @@ import { devNull } from "node:os";
 import path from "node:path";
 
 import { parsePlan, parseResult } from "@ropes/core";
-import { Glob } from "bun";
 
 import core from "../../cinch/package.json" with { type: "json" };
 import cli from "../package.json" with { type: "json" };
 import { run } from "./packed-run.ts";
+import { portableSnapshot } from "./portable-snapshot.ts";
 
 export const BASE = `pilot = 0
 include = ["**/*.ts", "**/tsconfig.json"]
@@ -19,25 +19,6 @@ preset = false
 [toml]
 enabled = false
 `;
-
-const snapshot = async (root: string): Promise<Record<string, string>> => {
-  const files = await Array.fromAsync(
-    new Glob("**/*").scan({ cwd: root, dot: true, onlyFiles: true })
-  );
-  return Object.fromEntries(
-    await Promise.all(
-      files
-        .filter(
-          (file) => !file.startsWith(".git/") && !file.includes("node_modules/")
-        )
-        .toSorted()
-        .map(async (file): Promise<[string, string]> => [
-          file,
-          await Bun.file(path.join(root, file)).text(),
-        ])
-    )
-  );
-};
 
 export const portableRepo = async (
   folder: string,
@@ -65,7 +46,15 @@ export const portableRepo = async (
     })
   );
   await Bun.write(path.join(root, ".gitignore"), "node_modules/\n");
-  const executable = await realpath(path.join(root, "node_modules/.bin/rope"));
+  const launcher = path.join(root, "node_modules/.bin/rope");
+  const executable = await realpath(launcher);
+  const installedFiles = [
+    "node_modules/.bin/rope",
+    path.relative(root, executable),
+    "node_modules/@ropes/cli/package.json",
+    "node_modules/@ropes/core/package.json",
+    "node_modules/@ropes/core/src/index.ts",
+  ];
   assert.ok(executable.startsWith(`${root}${path.sep}`));
   for (const name of [core.name, cli.name]) {
     // eslint-disable-next-line no-await-in-loop -- inspect the two installed package identities in order
@@ -114,9 +103,14 @@ export const portableRepo = async (
     searchPath: string,
     expected = 0
   ) => {
-    const before = await snapshot(root);
+    const before = await portableSnapshot(root, installedFiles);
     const index = await Bun.file(path.join(root, ".git/index")).bytes();
-    const child = Bun.spawn([process.execPath, executable, ...args], {
+    // A missing Bun on PATH is intentional in restricted-engine scenarios.
+    const command =
+      Bun.which("bun", { PATH: searchPath }) === null
+        ? [process.execPath, executable, ...args]
+        : [launcher, ...args];
+    const child = Bun.spawn(command, {
       cwd: root,
       env: {
         GIT_CONFIG_GLOBAL: devNull,
@@ -137,7 +131,7 @@ export const portableRepo = async (
     ]);
     assert.equal(code, expected, `${args.join(" ")}\n${stdout}\n${stderr}`);
     assert.equal(stderr, "");
-    assert.deepEqual(await snapshot(root), before);
+    assert.deepEqual(await portableSnapshot(root, installedFiles), before);
     assert.deepEqual(
       await Bun.file(path.join(root, ".git/index")).bytes(),
       index

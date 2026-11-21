@@ -50,10 +50,28 @@ rule:
   pattern: debugger
 ```
 
-Name `local = ["rules"]` and `enabled = true` under `[rules]`. The finding carries `local/no-debugger`, and the plan traces its folder to `rope.toml`. This example needs the pinned ast-grep engine. The `config` pack and TypeScript preset supplied by Ropes appear in a separate explicit-adoption case in the proof, so a maintainer can inspect the policy added by that choice.
+Use this separate `rope.toml` for the local-rule example, with `own/index.ts` containing `debugger;`.
+
+```toml
+pilot = 0
+include = ["own/**/*.ts"]
+exclude = ["**/node_modules/**"]
+
+[markdown]
+enabled = false
+preset = false
+[toml]
+enabled = false
+
+[rules]
+enabled = true
+local = ["rules"]
+```
+
+Run `rope check own/index.ts --json`. The finding carries `local/no-debugger`, and the plan traces its folder to `rope.toml`. This example needs the pinned ast-grep engine. The `config` pack and TypeScript preset supplied by Ropes appear in a separate explicit-adoption case in the proof, so a maintainer can inspect the policy added by that choice.
 
 ## Reproduce the proof
 
-Run `bun run check:packed` with the tools pinned in `mise.toml`. The gate builds and validates both package archives, installs them into a disposable repository, and invokes that installed `rope`. The neutral rule receives only Bun and Git on `PATH`; the local-rule and shipped-preset examples receive only ast-grep and Git. Check subprocesses receive no inherited service credentials or source-workspace environment. Ropes needs Git to verify the installed launcher belongs to the checkout.
+Run `bun run check:packed` with the tools pinned in `mise.toml`. The gate builds and validates both package archives and installs them into a disposable repository. The neutral rule receives only Bun and Git on `PATH` and starts the installed `rope` through its executable and shebang. Restricted checks use an explicit Bun interpreter with only Git, or ast-grep and Git, on `PATH`, to exercise missing-engine behavior and local rules independently. Check subprocesses receive no inherited service credentials or source-workspace environment. Ropes needs Git to verify the installed launcher belongs to the checkout.
 
-The gate verifies matching `explain` and `check` plans, human and JSON verdicts, package applicability, UTC transitions, exclusions, missing-engine failure and explicit adoption. It compares repository files and the Git index before and after every invocation. The exact API declarations used by the fixture are TypeScript 5.0.4 from the workspace lockfile. It performs no publication or changes to a live adopter repository.
+The gate verifies matching `explain` and `check` plans, human and JSON verdicts, package applicability, UTC transitions, exclusions, missing-engine failure and explicit adoption. It compares raw bytes and file modes for authored files, and exact Git index bytes, before and after every invocation. Installed dependency coverage checks the launcher link, CLI entry, CLI/core manifests and core entry. The exact API declarations used by the fixture are TypeScript 5.0.4 from the workspace lockfile. It performs no publication or changes to a live adopter repository.
