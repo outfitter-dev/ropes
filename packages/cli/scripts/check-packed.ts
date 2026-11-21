@@ -145,8 +145,13 @@ console.log(JSON.stringify(parsed.value));
   await proveDelegation(folder, consumer);
 };
 
-if (core.version !== cli.version) {
-  throw new Error("The CLI and core artifacts must have matching versions");
+if (
+  core.version !== cli.version ||
+  core.publishConfig.tag !== cli.publishConfig.tag
+) {
+  throw new Error(
+    "The CLI and core artifacts must match in version and npm tag"
+  );
 }
 const scratch = await realpath(
   await mkdtemp(path.join(tmpdir(), "ropes-packed-"))

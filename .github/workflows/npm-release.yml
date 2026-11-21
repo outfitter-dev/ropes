@@ -15,7 +15,7 @@ on:
         type: string
 permissions: {}
 concurrency:
-  group: npm-pilot
+  group: npm-release
   cancel-in-progress: false
 jobs:
   prepare:
@@ -35,14 +35,14 @@ jobs:
       - run: bun run check
       - name: Verify and retain the tarballs
         run: |
-          ROPES_PACKED_OUTPUT="$RUNNER_TEMP/ropes-pilot" bun run check:packed
-          cd "$RUNNER_TEMP/ropes-pilot"
+          ROPES_PACKED_OUTPUT="$RUNNER_TEMP/ropes-candidate" bun run check:packed
+          cd "$RUNNER_TEMP/ropes-candidate"
           sha256sum core.tgz cli.tgz > SHA256SUMS
           cat SHA256SUMS >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ropes-npm-pilot
-          path: ${{ runner.temp }}/ropes-pilot/
+          name: ropes-npm-candidate
+          path: ${{ runner.temp }}/ropes-candidate/
           if-no-files-found: error
   stage:
     if: github.ref == 'refs/heads/main' && (inputs.operation == 'core' || inputs.operation == 'cli')
@@ -53,6 +53,7 @@ jobs:
       id-token: write
     steps:
       - name: Verify the approved tarball
+        id: candidate
         env:
           GH_TOKEN: ${{ github.token }}
           ARTIFACT_ID: ${{ inputs.artifact_id }}
@@ -66,21 +67,28 @@ jobs:
           fi
           artifact="repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID"
           run_id=$(gh api "$artifact" | jq -er '
-            select(.name == "ropes-npm-pilot" and .expired == false) | .workflow_run.id
+            select(.name == "ropes-npm-candidate" and .expired == false) | .workflow_run.id
           ')
           workflow_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/npm-release.yml" | jq -er '.id')
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" | jq -e --argjson workflow_id "$workflow_id" '
             .workflow_id == $workflow_id and .event == "workflow_dispatch" and
             .head_branch == "main" and .conclusion == "success"
           ' > /dev/null
-          gh api "$artifact/zip" > "$RUNNER_TEMP/ropes-pilot.zip"
+          gh api "$artifact/zip" > "$RUNNER_TEMP/ropes-candidate.zip"
           tarball="$RUNNER_TEMP/$PACKAGE.tgz"
-          unzip -p "$RUNNER_TEMP/ropes-pilot.zip" "$PACKAGE.tgz" > "$tarball"
+          unzip -p "$RUNNER_TEMP/ropes-candidate.zip" "$PACKAGE.tgz" > "$tarball"
           printf '%s  %s\n' "$APPROVED_SHA256" "$tarball" | sha256sum -c -
-          tar -xOf "$tarball" package/package.json | jq -e --arg package "@ropes/$PACKAGE" '
-            .name == $package and .version == "0.1.0-pilot.0" and .license == "MIT" and
-            .publishConfig.access == "public" and .publishConfig.tag == "pilot"
-          ' > /dev/null
+          tag=$(tar -xOf "$tarball" package/package.json | jq -er --arg package "@ropes/$PACKAGE" '
+            "^(0|[1-9][0-9]*)([.](0|[1-9][0-9]*)){2}" as $version |
+            select(.name == $package and .license == "MIT" and .publishConfig.access == "public") |
+            select($package != "@ropes/cli" or .dependencies["@ropes/core"] == .version) |
+            select(
+              (.publishConfig.tag == "canary" and (.version | test($version + "-canary[.](0|[1-9][0-9]*)$"))) or
+              (.publishConfig.tag == "latest" and (.version | test($version + "$")))
+            ) |
+            .publishConfig.tag
+          ')
+          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24.22.3"
@@ -88,5 +96,6 @@ jobs:
       - name: Submit for npm review
         env:
           PACKAGE: ${{ inputs.operation }}
+          DIST_TAG: ${{ steps.candidate.outputs.tag }}
           NPM_CONFIG_PROVENANCE: "false"
-        run: npm stage publish "$RUNNER_TEMP/$PACKAGE.tgz" --access public --tag pilot --ignore-scripts --registry https://registry.npmjs.org
+        run: npm stage publish "$RUNNER_TEMP/$PACKAGE.tgz" --access public --tag "$DIST_TAG" --ignore-scripts --registry https://registry.npmjs.org

@@ -5,7 +5,7 @@
 Install an exact version for the pilot.
 
 ```sh
-bun add --exact @ropes/core@0.1.0-pilot.0
+bun add --exact @ropes/core@0.1.0-canary.0
 ```
 
 See the included LICENSE for the MIT terms.

@@ -16,19 +16,19 @@ A separate unrelated repository exercises [portable enforcement](portable-enforc
 
 To rehearse a candidate version locally, set both package manifest versions and the exact core pin in `packages/cli/tests/fixtures/outfitter/package.json` to that version in a disposable checkout, then run `bun run check:packed`. The portable fixture uses Bun's isolated linker and installs the CLI directly, so it can verify a transitive core install without a root-level core link.
 
-## npm pilot
+## npm release
 
-The first candidate is `@ropes/core@0.1.0-pilot.0` and `@ropes/cli@0.1.0-pilot.0`. Both tarballs contain the MIT license. The workflow submits packages under `pilot`. npm does not issue provenance for the internal source repository.
+The published pilot is `0.1.0-pilot.0`. Prepare `0.1.0-canary.0` as the first opt-in `canary` release. The proposed stable pair is `0.1.0` under `latest`, after the canary has a clean install and consumer checks. Use `0.1.0-canary.1` for a new candidate if the first canary needs changes. Keep each published version immutable and both packages on the same version and channel.
 
-Dispatch the **npm release** workflow on `main` with `prepare` to produce the verified tarball pair and its SHA-256 manifest. Review the exact source commit and archive hashes before staging.
+Dispatch the **npm release** workflow on `main` with `prepare` to produce the verified pair and its SHA-256 manifest. Review the source commit, version, channel, and both hashes before staging. The workflow checks the report artifact’s origin and digest before it will stage a tarball. The archive’s manifest binds its version to the `canary` or `latest` channel. The internal source repository uses trusted publishing without npm provenance.
 
-Configure each npm package's GitHub trusted publisher for organization `outfitter-dev`, repository `ropes`, and workflow `npm-release.yml`. Use stage-only permissions. After artifact approval, dispatch `core` and then `cli` using the same artifact ID and each package's approved hash. Each dispatch submits one reviewed tarball. If one submission succeeds and the other fails, retry only the missing package using the same artifact.
+Each npm package trusts `outfitter-dev/ropes` and `npm-release.yml` with stage-only permissions. After artifact approval, dispatch `core` and then `cli` with the same artifact ID and each package's approved hash. If one submission succeeds and the other fails, retry only the missing package with the same artifact. Approve core before CLI in npm with 2FA.
 
-Approve the staged core before the staged CLI in npm with 2FA. In a clean Git checkout with an initial commit, install the approved version and check the launcher.
+After both approvals, verify that both target tags point to the approved version and the published archive hashes match. Install the exact version in a clean Git checkout with an initial commit and check the launcher.
 
 ```sh
-bun add --dev --exact @ropes/cli@0.1.0-pilot.0
+bun add --dev --exact @ropes/cli@0.1.0-canary.0
 ./node_modules/.bin/rope --version
 ```
 
-Verify that both `pilot` tags resolve to the approved version before passing the pin to Forge. [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) · [npm staged publishing](https://docs.npmjs.com/staged-publishing/)
+Test the canary in a disposable consumer checkout before proposing a Forge pin change. Forge keeps its qualified exact pin until the replacement passes its checks. Keep `pilot` available during the move. If a release needs recovery, consumers can restore the previous exact pins. Any registry tag rollback uses the recorded previous targets and needs approval. [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) · [npm staged publishing](https://docs.npmjs.com/staged-publishing/)

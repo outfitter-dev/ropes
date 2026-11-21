@@ -23,13 +23,13 @@ Build the executable for the consumer's platform, record its SHA-256 digest, and
 
 ```toml
 [tools."http:cinch"]
-version = "0.1.0-pilot.0"
+version = "0.1.0-canary.0"
 url = "file:///absolute/path/to/cinch"
 bin = "cinch"
 checksum = "sha256:REPLACE_WITH_THE_ARTIFACT_SHA256"
 ```
 
-An approved release uses an immutable version that matches the artifact's `cinch --version`, with its own artifact URL and checksum. The example uses the version reported by a local build from the npm pilot source.
+An approved release uses an immutable version that matches the artifact's `cinch --version`, with its own artifact URL and checksum. The example uses the version reported by a local build from the npm canary source.
 
 mise reuses a tool already installed under the same backend and version, even if its configured URL or checksum changed. A release upgrade needs a new version identity together with the new artifact URL and checksum. For a local candidate rebuilt at the same version, use `mise install --force http:cinch` to make mise retrieve and verify the configured bytes again. Changing the version label alone still downloads the same file when its URL is fixed.
 

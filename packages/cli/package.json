@@ -1,6 +1,6 @@
 {
   "name": "@ropes/cli",
-  "version": "0.1.0-pilot.0",
+  "version": "0.1.0-canary.0",
   "description": "The rope quality CLI.",
   "license": "MIT",
   "repository": {
@@ -17,7 +17,7 @@
   "type": "module",
   "publishConfig": {
     "access": "public",
-    "tag": "pilot"
+    "tag": "canary"
   },
   "dependencies": {
     "@ropes/core": "workspace:*"
