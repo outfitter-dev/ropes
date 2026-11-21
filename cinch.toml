@@ -18,6 +18,10 @@ links = true
 [toml]
 enabled = true
 
+[install]
+isolated = true
+minimum_release_age = "7 days"
+
 # The facts editors and formatters have to agree on. Cinch writes
 # `.editorconfig` from this table.
 [editor]

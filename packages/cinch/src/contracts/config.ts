@@ -1,4 +1,5 @@
 import type { EditorSettings } from "./editor.ts";
+import type { InstallSettings } from "./install.ts";
 import type { PolicyValue, Provenance } from "./plan.ts";
 
 /**
@@ -33,6 +34,7 @@ export interface CinchConfig {
    * no such table, and then Cinch writes them nowhere.
    */
   readonly editor?: EditorSettings;
+  readonly install?: InstallSettings;
   readonly exclude: Sourced<readonly string[]>;
   /** The root-relative file the config came from. Null when there is none. */
   readonly file: string | null;
