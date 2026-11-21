@@ -23,7 +23,7 @@ Build the executable for the consumer's platform, record its SHA-256 digest, and
 
 ```toml
 [tools."http:cinch"]
-version = "0.1.0-canary.0"
+version = "0.1.0-canary.1"
 url = "file:///absolute/path/to/cinch"
 bin = "cinch"
 checksum = "sha256:REPLACE_WITH_THE_ARTIFACT_SHA256"
