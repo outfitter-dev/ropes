@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,6 +7,7 @@ import core from "../../cinch/package.json" with { type: "json" };
 import cli from "../package.json" with { type: "json" };
 import fixture from "../tests/fixtures/outfitter/package.json" with { type: "json" };
 import { packConsumer, proveConsumer } from "./packed-consumer.ts";
+import { checkFiles } from "./packed-contents.ts";
 import { proveDelegation } from "./packed-delegation.ts";
 import { provePortable } from "./packed-portable.ts";
 import { run } from "./packed-run.ts";
@@ -20,33 +21,6 @@ const tool = (name: string, args: readonly string[]): Promise<string> =>
     [process.execPath, path.join(ROOT, "node_modules/.bin", name), ...args],
     ROOT
   );
-
-const checkFiles = async (
-  archive: string,
-  allowed: readonly string[],
-  required: readonly string[]
-) => {
-  const listing = await run(["tar", "-tzf", archive], ROOT);
-  const files = listing
-    .trim()
-    .split("\n")
-    .filter((file) => !file.endsWith("/"));
-  for (const file of files) {
-    const relative = file.replace(/^package\//u, "");
-    if (
-      !allowed.some(
-        (prefix) => relative === prefix || relative.startsWith(`${prefix}/`)
-      )
-    ) {
-      throw new Error(`Unexpected packed file ${file}`);
-    }
-  }
-  for (const file of required) {
-    if (!files.includes(`package/${file}`)) {
-      throw new Error(`The tarball is missing ${file}`);
-    }
-  }
-};
 
 const smoke = async (
   folder: string,
@@ -204,8 +178,18 @@ try {
   );
   await checkFiles(
     coreArchive,
-    ["package.json", "src", "presets", "rules", "schemas"],
     [
+      "LICENSE",
+      "README.md",
+      "package.json",
+      "src",
+      "presets",
+      "rules",
+      "schemas",
+    ],
+    [
+      "LICENSE",
+      "README.md",
       "src/index.ts",
       "src/render/index.ts",
       "presets/rumdl.toml",
@@ -213,7 +197,11 @@ try {
       "schemas/cinch.schema.json",
     ]
   );
-  await checkFiles(cliArchive, ["package.json", "src"], ["src/cli.ts"]);
+  await checkFiles(
+    cliArchive,
+    ["LICENSE", "README.md", "package.json", "src"],
+    ["LICENSE", "README.md", "src/cli.ts"]
+  );
   const coreFiles = await run(["tar", "-tzf", coreArchive], ROOT);
   if (coreFiles.split("\n").includes("package/src/cli.ts")) {
     throw new Error("The core tarball contains the legacy Cinch entry point");
@@ -230,6 +218,17 @@ try {
   );
   await smoke(scratch, coreArchive, cliArchive);
   await provePortable(scratch, coreArchive, cliArchive);
+  const output = process.env.ROPES_PACKED_OUTPUT;
+  if (output !== undefined) {
+    await mkdir(output);
+    try {
+      await copyFile(coreArchive, path.join(output, "core.tgz"));
+      await copyFile(cliArchive, path.join(output, "cli.tgz"));
+    } catch (error) {
+      await rm(output, { force: true, recursive: true });
+      throw error;
+    }
+  }
   console.log(
     "Packed CLI and core passed lint, types, and external consumer checks."
   );
