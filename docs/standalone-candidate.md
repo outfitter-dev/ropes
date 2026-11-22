@@ -31,7 +31,7 @@ The archives contain `rope` and the MIT license. The version must agree across `
 
 ## Verify a clean install
 
-In a disposable consumer checkout, configure mise to install the downloaded archive by its exact version and digest. Use a fresh mise cache and give the check Git and the consumer's pinned engines on `PATH`.
+In a disposable consumer checkout, configure mise to install the downloaded archive by its exact version and digest. Use fresh `MISE_DATA_DIR` and `MISE_CACHE_DIR` directories so mise must install and verify the archive, even if the same version is already installed elsewhere. Give the check Git and the consumer's pinned engines on `PATH`.
 
 ```toml
 [tools."http:rope"]
