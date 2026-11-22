@@ -35,7 +35,7 @@ const driftFinding = (adapter: string, fact: Fact, against: Fact): Finding => ({
 });
 
 /**
- * One finding for each reported value that differs from the first statement
+ * One finding for each distinct source that differs from the first statement
  * of the same fact. The Cinch config's statement comes first when it makes
  * one, and otherwise the adapters are held to each other. It knows a fact
  * by its name only.
@@ -45,15 +45,23 @@ export const driftOf = (
   reported: readonly Required<Statement>[]
 ): Finding[] => {
   const first = new Map<string, Fact>(stated.map((fact) => [fact.name, fact]));
+  const seen = new Set<string>();
   return reported.flatMap(({ adapter, fact }) => {
     const against = first.get(fact.name);
     if (against === undefined) {
       first.set(fact.name, fact);
       return [];
     }
-    return against.value === fact.value
-      ? []
-      : [driftFinding(adapter, fact, against)];
+    if (against.value === fact.value) {
+      return [];
+    }
+    const finding = driftFinding(adapter, fact, against);
+    const identity = JSON.stringify(finding);
+    if (seen.has(identity)) {
+      return [];
+    }
+    seen.add(identity);
+    return [finding];
   });
 };
 
