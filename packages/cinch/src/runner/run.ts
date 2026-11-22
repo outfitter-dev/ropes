@@ -62,12 +62,43 @@ const readiness = (
   };
 };
 
-/** One outcome for each file of the batch, whatever the adapter returned. */
+/** Only a single answer for a planned file can establish its coverage. */
 const answered = (
   batch: PlanBatch,
   outcomes: readonly FileOutcome[]
 ): FileOutcome[] => {
-  const byPath = new Map(outcomes.map((outcome) => [outcome.path, outcome]));
+  const planned = new Set(batch.paths);
+  const byPath = new Map<string, FileOutcome>();
+  let unplanned: string | undefined;
+  for (const outcome of outcomes) {
+    const { path } = outcome;
+    if (!planned.has(path)) {
+      unplanned ??= path;
+      continue;
+    }
+    byPath.set(
+      path,
+      byPath.has(path)
+        ? {
+            ...incomplete(
+              `${batch.tool} gave more than one answer for this file`
+            ),
+            path,
+          }
+        : outcome
+    );
+  }
+  if (unplanned !== undefined) {
+    // An answer that belongs to no planned file invalidates the batch,
+    // while findings from uniquely answered planned files remain visible.
+    const reason = `${batch.tool} gave an answer for unplanned file ${JSON.stringify(unplanned)}`;
+    return batch.paths.map((path) => ({
+      findings: byPath.get(path)?.findings ?? [],
+      path,
+      reason,
+      status: "incomplete",
+    }));
+  }
   return batch.paths.map(
     (path) =>
       byPath.get(path) ?? {
