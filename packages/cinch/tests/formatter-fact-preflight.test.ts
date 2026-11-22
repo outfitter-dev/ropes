@@ -54,7 +54,7 @@ test("missing candidate directories still inspect existing ancestors", async () 
   }
 });
 
-test.skipIf(process.platform === "win32")(
+test.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
   "an unreadable existing candidate directory remains an observation failure",
   async () => {
     const root = await realpath(
