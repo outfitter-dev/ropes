@@ -61,6 +61,7 @@ if (args[0] === "--version") {
         )
       )
     );
+    await Bun.write(path.join(main.root, ".gitignore"), "generated/\n");
     await fixtureGit(main.root, "add", "--all");
     // Leave a worktree edit alongside a different staged version.
     await Bun.write(
@@ -68,6 +69,7 @@ if (args[0] === "--version") {
       "# Unstaged guide\n"
     );
     const before = await main.files();
+    expect(before[".gitignore"]).toBe("generated/\n");
     const index = new Uint8Array(
       await Bun.file(path.join(main.root, ".git/index")).arrayBuffer()
     );
@@ -119,8 +121,12 @@ if (args[0] === "--version") {
       { status: "passed" },
       { status: "passed" },
     ]);
-    const batch = plan.value.batches.find((entry) => entry.adapter === "rumdl");
-    expect(batch?.paths).toEqual(["docs/first.md", "docs/second.md"]);
+    expect(
+      plan.value.batches.map(({ adapter, paths }) => ({ adapter, paths }))
+    ).toEqual([
+      { adapter: "rumdl", paths: ["docs/first.md", "docs/second.md"] },
+      { adapter: "taplo", paths: ["app.toml"] },
+    ]);
     expect(plan.value.facts?.reporters).toContainEqual({
       adapter: "rumdl",
       reports: ["line_width"],
@@ -141,7 +147,8 @@ if (args[0] === "--version") {
           "--output-format",
           "json",
           "--",
-          ...(batch?.paths ?? []),
+          "docs/first.md",
+          "docs/second.md",
         ],
         cwd: main.root,
       },

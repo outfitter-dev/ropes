@@ -130,7 +130,9 @@ export const checkoutAt = (root: string): Checkout => ({
   files: async () => {
     const all = await snapshot(root);
     return Object.fromEntries(
-      Object.entries(all).filter(([name]) => !name.startsWith(".git"))
+      Object.entries(all).filter(
+        ([name]) => name !== ".git" && !name.startsWith(".git/")
+      )
     );
   },
   root,
