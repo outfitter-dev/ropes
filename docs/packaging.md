@@ -6,7 +6,7 @@ Ropes currently ships Bun-compatible ESM TypeScript source. The core exports and
 
 Run `bun run check:packed` after installing the locked dependencies. CI runs the same command. It packs both packages into a temporary directory, checks the file contents, runs pinned publint against both tarballs, and runs Are The Types Wrong against core's exported ESM types. The ESM-only profile matches the package's declared module format.
 
-The gate then installs both local tarballs in a clean project outside the workspace. It rejects links outside that install, verifies the CLI's exact core dependency, executes `rope --version`, and compares `rope explain --json` with a plan returned through the public core API. Installation can fetch third-party dependencies from the registry. The explanation and API comparison use the installed local packages.
+The gate then installs both local tarballs in a clean project outside the workspace. It rejects links outside that install, verifies the CLI's exact core dependency, executes `rope --version`, and runs `bun check --no-script` in strict mode on a TypeScript consumer of the public core API. It also compares `rope explain --json` with the plan returned through that API. Installation can fetch third-party dependencies from the registry. The type check and plan comparison use the installed local packages.
 
 The gate creates local tarballs and removes its temporary directory after verification. The fixture installs resolve the CLI's transitive core dependency from the matching local tarball, so the gate can test a version before it exists on the registry. The installed CLI still has to declare the exact core version in its own manifest. To retain the two checked archives, set `ROPES_PACKED_OUTPUT` to a new directory.
 
