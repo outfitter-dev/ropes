@@ -1,6 +1,6 @@
 {
   "name": "@ropes/core",
-  "version": "0.1.0-canary.2",
+  "version": "0.1.0-canary.3",
   "description": "The Ropes policy engine and typed quality operations.",
   "license": "MIT",
   "repository": {
