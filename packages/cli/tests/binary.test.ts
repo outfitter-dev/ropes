@@ -9,8 +9,10 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { DoctorReportSchema } from "../../cinch/src/contracts/doctor.ts";
+import { FixReportSchema } from "../../cinch/src/contracts/fix.ts";
 import {
   checkoutAt,
   fixtureGit,
@@ -76,7 +78,7 @@ beforeAll(async () => {
     throw new Error("ROPES_BINARY must be an absolute path to the candidate.");
   }
   if (process.env.ROPES_BINARY === undefined) {
-    const child = Bun.spawn([process.execPath, BUILD.pathname, binary], {
+    const child = Bun.spawn([process.execPath, fileURLToPath(BUILD), binary], {
       stderr: "pipe",
       stdout: "pipe",
     });
@@ -173,10 +175,20 @@ test("standalone rope previews and applies fenced repairs through its embedded r
   const index = await readFile(path.join(root, ".git/index"));
   const preview = await run(["fix", "README.md", "--dry-run", "--json"], root);
   expect(preview.exitCode).toBe(0);
+  const previewed = FixReportSchema.parse(JSON.parse(preview.stdout));
+  expect(previewed.dryRun).toBe(true);
+  expect(previewed.changed).toEqual(["README.md"]);
+  expect(previewed.diff).toBe(
+    "--- a/README.md\n+++ b/README.md\n@@ -1,5 +1,5 @@\n # Guide\n \n ```ts\n-const  a = 1\n+const a = 1;\n ```\n"
+  );
   expect(await checkoutAt(root).files()).toEqual(before);
   expect(await readFile(path.join(root, ".git/index"))).toEqual(index);
   const fixed = await run(["fix", "README.md", "--json"], root);
   expect(fixed.exitCode).toBe(0);
+  const applied = FixReportSchema.parse(JSON.parse(fixed.stdout));
+  expect(applied.dryRun).toBe(false);
+  expect(applied.changed).toEqual(previewed.changed);
+  expect(applied.diff).toBe(previewed.diff);
   expect(await Bun.file(path.join(root, "README.md")).text()).toBe(
     "# Guide\n\n```ts\nconst a = 1;\n```\n"
   );

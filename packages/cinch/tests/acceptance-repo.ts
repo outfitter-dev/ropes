@@ -2,6 +2,7 @@ import { test } from "bun:test";
 import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { devNull, tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { snapshot } from "./repo-bench.ts";
 
@@ -122,7 +123,7 @@ export const runEntry = (
   cwd: string,
   searchPath?: string
 ): Promise<Ran> =>
-  spawn([process.execPath, entry.pathname, ...args], cwd, searchPath);
+  spawn([process.execPath, fileURLToPath(entry), ...args], cwd, searchPath);
 
 export const checkoutAt = (root: string): Checkout => ({
   cinch: (args, { cwd = "", path: searchPath } = {}) =>

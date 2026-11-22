@@ -2,6 +2,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdir, mkdtemp, realpath, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import manifest from "../package.json" with { type: "json" };
 import { nativeCommand } from "../src/adapters/taplo/wasm.ts";
@@ -9,8 +10,10 @@ import { qualifyStandaloneCache } from "./binary-cache.ts";
 import { qualifyMiseInstall } from "./binary-install.ts";
 import { qualifyStandaloneTaplo } from "./binary-taplo.ts";
 
-const BUILD = new URL("../scripts/build-binary.ts", import.meta.url).pathname;
-const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
+const BUILD = fileURLToPath(
+  new URL("../scripts/build-binary.ts", import.meta.url)
+);
+const CLI = fileURLToPath(new URL("../src/cli.ts", import.meta.url));
 const SHIPPED = new URL("../presets/rumdl.toml", import.meta.url);
 const KEPT = ".outfitter/configs/presets/rumdl.toml";
 const README = "# Guide\n\n# Second title\n\nText.\n";

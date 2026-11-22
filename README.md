@@ -8,7 +8,7 @@ The broader [`outfitter` CLI](https://github.com/outfitter-dev/outfitter) lives 
 
 The `@ropes/core` package holds the existing Cinch implementation under `packages/cinch/`. `@ropes/cli` supplies `rope explain`, `rope check`, `rope fix`, and read-only `rope doctor` inspection. `fix --dry-run` previews content repairs. The Markdown fixture verifies matching plans, versioned results, and exits through Cinch, core, and `rope`.
 
-An installed `rope` delegates to the checkout's explicitly pinned `@ropes/cli` dependency. `rope --version` reports the selected version and entry path. See [repository-pinned invocation](docs/launcher.md) for installation selection and failure handling.
+The npm-installed `rope` launcher delegates to the checkout's explicitly pinned `@ropes/cli` dependency, and `rope --version` reports the selected version and entry path. The standalone executable runs its embedded version, pinned through mise, and reports `rope <version> (binary)`. See [installation selection](docs/launcher.md) for both routes and their failure handling.
 
 `rope explain` and `rope check` can compare an immutable cleanup candidate with its parent under an approved migration policy. See [staged cleanup](docs/cleanup.md) for the supported rule, scope and Git inputs.
 
