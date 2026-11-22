@@ -5,7 +5,7 @@
 Install the exact canary version.
 
 ```sh
-bun add --exact @ropes/core@0.1.0-canary.1
+bun add --exact @ropes/core@0.1.0-canary.2
 ```
 
 See the included LICENSE for the MIT terms.
