@@ -41,6 +41,9 @@ An adapter whose tool has such settings but cannot print what it resolves is lis
 | Adapter | Facts | How |
 | --- | --- | --- |
 | `rumdl` | `line_width` | `rumdl config`, which prints each setting with the file it came from. The rule's own `MD013.line-length` counts when it differs from `global.line-length`. |
+| `bun-fmt` | `line_width` | Bun selects the active config for each selected path. Ropes reads `printWidth` from a supported static compatibility config or `fmt.printWidth` from the selected `bunfig.toml`. |
+
+Reported facts carry their evidence. A value printed by the engine is `engine-confirmed`. A value read from a config file selected by the engine is `config-read`. Bun does not print its resolved options, so the formatter's report also states that limit. Dynamic configuration, per-file formatter overrides, and values that may come from `.editorconfig` carry an explicit limitation when Ropes cannot establish them. Older fact reports can omit the evidence field.
 
 Taplo is only used to lint, and its lint reads none of these facts, so it reports nothing.
 

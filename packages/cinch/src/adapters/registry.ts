@@ -12,7 +12,10 @@ import { bunInstallAdapter } from "./bun-install/adapter.ts";
 import { editorTextAdapter } from "./editor-text/adapter.ts";
 import { editorFileAdapter } from "./editorconfig/adapter.ts";
 import { lycheeAdapter } from "./lychee/adapter.ts";
-import { oxfmtPreset } from "./oxfmt/preset.ts";
+import {
+  CONFIG_FILES as FORMAT_CONFIG_FILES,
+  oxfmtPreset,
+} from "./oxfmt/preset.ts";
 import { oxlintAdapter } from "./oxlint/adapter.ts";
 import { oxlintPreset } from "./oxlint/preset.ts";
 import type { Pins } from "./pins.ts";
@@ -59,5 +62,8 @@ export const adaptersFor = (
   compilerApiAdapter(pins.bun, "tsconfig.json"),
   bunCheckAdapter({ version: pins.bun }),
   rulesAdapter({ local: localRules, version: pins["ast-grep"] }),
-  bunFmtAdapter({ version: pins.bun }),
+  bunFmtAdapter({
+    compatibilityConfigs: FORMAT_CONFIG_FILES,
+    version: pins.bun,
+  }),
 ];

@@ -8,6 +8,7 @@ import { allIncomplete } from "../batch.ts";
 import { markFixed } from "../changed.ts";
 import { probeOnPath } from "../on-path.ts";
 import { heldTo } from "../pins.ts";
+import { readFacts } from "./facts.ts";
 import { checkBatch, fixBatch } from "./run.ts";
 
 const ID = "bun-fmt";
@@ -27,6 +28,8 @@ const EXTENSIONS = [
 ].flatMap((kinds) => kinds.split(" "));
 
 export interface BunFmtOptions {
+  /** Compatibility config names owned by the corresponding registered adapter. */
+  readonly compatibilityConfigs?: readonly string[];
   /** The exact version the repository pins, when it pins one. */
   readonly version?: string | undefined;
   /** The executable to look up on `PATH`. */
@@ -51,6 +54,7 @@ export const bunFmtAdapter = (options: BunFmtOptions = {}): Adapter => {
     id: ID,
     optIn: true,
     platforms: ["darwin", "linux", "win32"],
+    reports: ["line_width"],
     tool: TOOL,
     unit: "file",
     writes: true,
@@ -67,6 +71,8 @@ export const bunFmtAdapter = (options: BunFmtOptions = {}): Adapter => {
   return {
     check: (input) => withBinary(input, (binary) => checkBatch(binary, input)),
     descriptor,
+    facts: (root, paths) =>
+      readFacts(command, root, paths, options.compatibilityConfigs),
     fix: (input) =>
       withBinary(input, (binary) =>
         markFixed(input, () => fixBatch(binary, input))

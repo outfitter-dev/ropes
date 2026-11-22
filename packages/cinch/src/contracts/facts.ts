@@ -10,11 +10,15 @@ export type FactValue = z.infer<typeof FactValueSchema>;
  */
 export const FactSchema = z
   .object({
+    /** How the reported value was established. Older reports may omit this. */
+    evidence: z.enum(["engine-confirmed", "config-read"]).optional(),
     /** Root-relative file that states the value. */
     file: z.string().min(1),
     /** The setting inside that file, in that file's own words. */
     key: z.string().min(1),
     name: z.string().min(1),
+    /** Selected content file whose native configuration supplied this value. */
+    path: z.string().min(1).optional(),
     value: FactValueSchema,
   })
   .readonly();
@@ -49,5 +53,21 @@ export type SharedFacts = z.infer<typeof SharedFactsSchema>;
  * reported: a tool's built-in default is not a statement anyone made.
  */
 export type FactReport =
-  | { readonly ok: true; readonly facts: readonly Fact[] }
+  | {
+      readonly ok: true;
+      readonly facts: readonly Fact[];
+      readonly limitations?: readonly string[];
+    }
   | { readonly ok: false; readonly reason: string };
+
+/** Observations retain the source evidence even when every value agrees. */
+export const FactObservationSchema = z
+  .object({
+    adapter: z.string().min(1),
+    facts: z.array(FactSchema).readonly(),
+    limitations: z.array(z.string().min(1)).readonly(),
+    problem: z.string().optional(),
+    tool: z.string().min(1),
+  })
+  .readonly();
+export type FactObservation = z.infer<typeof FactObservationSchema>;

@@ -154,7 +154,10 @@ export interface Adapter {
    * What the tool resolves for the facts the descriptor says it reports,
    * each with the file that sets it. It reads, and never writes.
    */
-  readonly facts?: (root: string) => Promise<FactReport>;
+  readonly facts?: (
+    root: string,
+    paths?: readonly string[]
+  ) => Promise<FactReport>;
   /**
    * Moves the tool's settings between a config a person wrote for it and
    * its table in the Cinch config. An adapter with no such table has none.
