@@ -42,7 +42,8 @@ const inspect = async ({ adapters, plan }: Prepared): Promise<FixReport> => ({
 const workspaceStatus = async (
   root: string,
   deps: CommandDeps,
-  strict: boolean
+  strict: boolean,
+  includeSettings: boolean
 ): Promise<
   | {
       readonly tools: DoctorReport["tools"];
@@ -63,7 +64,7 @@ const workspaceStatus = async (
     })),
   };
   const statuses = await toolStatuses(engines, adapters);
-  if (plan.facts === undefined) {
+  if (!includeSettings || plan.facts === undefined) {
     return { tools: statuses };
   }
   const observations = await observeFacts(
@@ -124,7 +125,8 @@ const workspaceStatus = async (
  */
 const inspectDoctor = async (
   request: CommandRequest,
-  deps: CommandDeps
+  deps: CommandDeps,
+  includeSettings = false
 ): Promise<Operation<DoctorReport>> => {
   if (request.paths.length > 0) {
     return {
@@ -154,7 +156,12 @@ const inspectDoctor = async (
   if (!ran.ok) {
     return { error: ran.error, ok: false };
   }
-  const found = await workspaceStatus(root, deps, request.strict === true);
+  const found = await workspaceStatus(
+    root,
+    deps,
+    request.strict === true,
+    includeSettings
+  );
   if (typeof found === "string") {
     return { error: found, ok: false };
   }
@@ -179,7 +186,8 @@ export const runDoctor = (request: ReadRequest, deps: CommandDeps) =>
       paths: request.paths,
       ...(request.strict === undefined ? {} : { strict: request.strict }),
     },
-    deps
+    deps,
+    true
   );
 
 export const doctor =

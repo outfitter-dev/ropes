@@ -11,6 +11,7 @@ import { fixtureGit, runEntry } from "./acceptance-repo.ts";
 import { snapshot } from "./repo-bench.ts";
 
 const CLI = new URL("../../cli/src/cli.ts", import.meta.url);
+const CINCH = new URL("../src/cli.ts", import.meta.url);
 const POLICY = `pilot = 0
 include = ["README.md", "a.ts"]
 [markdown]
@@ -171,5 +172,47 @@ test("rope doctor rejects content paths and write-only options", async () => {
       const ran = await runEntry(CLI, args, root);
       expect(ran.exitCode).toBe(2);
     }
+  });
+});
+
+test("generated settings guide repair through the authored tool table", async () => {
+  if (Bun.which("rumdl") === null) {
+    console.warn("skipped: rumdl is required for generated settings proof");
+    return;
+  }
+  await inRepo(async (root) => {
+    const policy = path.join(root, "rope.toml");
+    const managed = POLICY.replace(
+      "[markdown]\npreset = false",
+      "[markdown]\npreset = true"
+    );
+    const tool = "\n[tools.rumdl.global]\nline-length = ";
+    await rm(path.join(root, ".rumdl.toml"));
+    await Bun.write(policy, `${managed}${tool}120\n`);
+    const fix = ["doctor", "--fix", "--json"];
+    const initiallyRepaired = await runEntry(CINCH, fix, root);
+    expect(initiallyRepaired.exitCode).toBe(0);
+
+    const drift = await runEntry(CLI, ["doctor"], root);
+    expect(drift.exitCode).toBe(1);
+    expect(drift.stdout).toContain(".ropes/configs/rumdl.toml");
+    expect(drift.stdout).toContain(
+      "edit the tool's settings in the Ropes config"
+    );
+
+    await Bun.write(policy, `${managed}${tool}100\n`);
+    const oldFiles = await snapshot(root);
+    const preview = await runEntry(CINCH, [...fix, "--dry-run"], root);
+    expect(preview.exitCode).toBe(0);
+    const previewed = DoctorReportSchema.parse(JSON.parse(preview.stdout));
+    expect(previewed).toMatchObject({ dryRun: true, fix: true });
+    expect(previewed.changed).toContain(".ropes/configs/rumdl.toml");
+    expect(previewed.settings).toBeUndefined();
+    expect(await snapshot(root)).toEqual(oldFiles);
+
+    const applied = await runEntry(CINCH, fix, root);
+    const inspected = await runEntry(CLI, ["doctor", "--json"], root);
+    expect(applied.exitCode).toBe(preview.exitCode);
+    expect(inspected.exitCode).toBe(0);
   });
 });

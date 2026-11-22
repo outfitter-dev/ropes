@@ -23,7 +23,7 @@ const verdict = (report: DoctorReport): string => {
     return "Incomplete: a file could not be judged or a tool cannot run, so this is not a pass.";
   }
   if (outcomeOf(report.settings?.steps ?? []) === "findings") {
-    return "Shared settings disagree. Edit the source files shown above.";
+    return "Shared settings disagree. Update the authored settings behind the reported values. For a generated file, edit the tool's settings in the Ropes config and run `cinch doctor --fix`.";
   }
   return report.fix && !report.dryRun
     ? "Findings remain that `cinch doctor --fix` cannot repair. They need a person."

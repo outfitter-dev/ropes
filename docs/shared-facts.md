@@ -22,7 +22,7 @@ The comparison knows a fact only by its name. Which tool has which setting, and 
 
 ## When it runs
 
-`cinch check` and `cinch fix` compare the facts after their steps, for every adapter that has a step in the plan. So `cinch check README.md` compares what the Markdown linter resolves, and `cinch check cinch.toml` does not. `rope doctor` and `cinch doctor` inspect settings for the active tools in the workspace plan, alongside the setup and tool availability checks.
+`cinch check` and `cinch fix` compare the facts after their steps, for every adapter that has a step in the plan. So `cinch check README.md` compares what the Markdown linter resolves, and `cinch check cinch.toml` does not. `rope doctor` inspects settings for the active tools in the workspace plan, alongside the setup and tool availability checks. `cinch doctor --fix` and its dry run report the outcome of setup repair.
 
 Doctor's `settings` field records the policy values, the tool observations, their source evidence and limitations, and any drift findings. Human output shows the same information. A differing observed value produces exit 1. A required tool or settings query that cannot run produces exit 2. A config-read value retains its verification limit, including when it agrees with the policy.
 
