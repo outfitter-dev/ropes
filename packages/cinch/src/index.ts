@@ -51,3 +51,5 @@ export const compareMigration = (request: CleanupRequest, execute = true) =>
   runCleanup(request, deps, execute);
 export const snapshotPolicy = (request: ReadRequest) =>
   capturePolicy(request, deps, `${manifest.name}@${manifest.version}`);
+
+export { prepareRuntime, STANDALONE } from "./runtime.ts";
