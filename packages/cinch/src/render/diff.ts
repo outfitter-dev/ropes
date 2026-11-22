@@ -1,82 +1,13 @@
 import type { ChangeAt } from "../contracts/conflict.ts";
+import { lineOps } from "./diff-lines.ts";
+import type { Kind, Op } from "./diff-lines.ts";
 
 const CONTEXT = 3;
-/** Past this many cells the table is not built and the middle is replaced. */
-const MAX_CELLS = 4_000_000;
 const NO_EOL = "\\ No newline at end of file";
-
-type Kind = " " | "-" | "+";
-interface Op {
-  readonly kind: Kind;
-  readonly line: string;
-}
 
 /** Lines keep their terminator, so a missing final newline is a difference. */
 const linesOf = (text: string): string[] =>
   text.match(/[^\n]*\n|[^\n]+/gu) ?? [];
-
-const same = (lines: readonly string[]): Op[] =>
-  lines.map((line) => ({ kind: " ", line }));
-
-/** Longest common subsequence over the part the two sides do not share. */
-const middle = (old: readonly string[], next: readonly string[]): Op[] => {
-  const removed: Op[] = old.map((line) => ({ kind: "-", line }));
-  const added: Op[] = next.map((line) => ({ kind: "+", line }));
-  const width = next.length + 1;
-  if (old.length * next.length > MAX_CELLS) {
-    return [...removed, ...added];
-  }
-  const table = new Uint32Array((old.length + 1) * width);
-  const at = (row: number, column: number) => table[row * width + column] ?? 0;
-  for (let row = old.length - 1; row >= 0; row -= 1) {
-    for (let column = next.length - 1; column >= 0; column -= 1) {
-      table[row * width + column] =
-        old[row] === next[column]
-          ? at(row + 1, column + 1) + 1
-          : Math.max(at(row + 1, column), at(row, column + 1));
-    }
-  }
-  const ops: Op[] = [];
-  let row = 0;
-  let column = 0;
-  while (row < old.length && column < next.length) {
-    if (old[row] === next[column]) {
-      ops.push({ kind: " ", line: old[row] ?? "" });
-      row += 1;
-      column += 1;
-    } else if (at(row + 1, column) >= at(row, column + 1)) {
-      ops.push({ kind: "-", line: old[row] ?? "" });
-      row += 1;
-    } else {
-      ops.push({ kind: "+", line: next[column] ?? "" });
-      column += 1;
-    }
-  }
-  return [...ops, ...removed.slice(row), ...added.slice(column)];
-};
-
-const opsOf = (old: readonly string[], next: readonly string[]): Op[] => {
-  let head = 0;
-  while (head < old.length && head < next.length && old[head] === next[head]) {
-    head += 1;
-  }
-  let tail = 0;
-  while (
-    tail < old.length - head &&
-    tail < next.length - head &&
-    old[old.length - 1 - tail] === next[next.length - 1 - tail]
-  ) {
-    tail += 1;
-  }
-  return [
-    ...same(old.slice(0, head)),
-    ...middle(
-      old.slice(head, old.length - tail),
-      next.slice(head, next.length - tail)
-    ),
-    ...same(old.slice(old.length - tail)),
-  ];
-};
 
 /** Half-open ranges of ops: each change with its context, overlaps merged. */
 const hunkRanges = (ops: readonly Op[]): [number, number][] => {
@@ -154,7 +85,7 @@ const diffOf = (
   if (before === after) {
     return "";
   }
-  const ops = opsOf(linesOf(before), linesOf(after));
+  const ops = lineOps(linesOf(before), linesOf(after));
   const hunks = hunkRanges(ops)
     .filter(([start, end]) => keep(touched(ops, start, end)))
     .map(([start, end]) => {
