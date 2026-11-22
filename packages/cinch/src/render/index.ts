@@ -7,3 +7,5 @@ export { renderTrace } from "./trace.ts";
 
 export { renderCleanup } from "./cleanup.ts";
 export { renderPolicyPreview } from "./policy-preview.ts";
+
+export { doctorOutcome, renderDoctor, renderDoctorJson } from "./doctor.ts";

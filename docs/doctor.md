@@ -1,5 +1,7 @@
 # Doctor
 
+`rope doctor` inspects the setup, the workspace's required tools, and the shared settings those active tools can report. Use `--json` for the typed core report. The `settings` field shows the shared policy alongside observed values, their authored sources, and whether each value was confirmed by the engine or read from its selected config. Verification limits remain visible when a tool cannot expose a resolved value. `rope doctor` is read-only and rejects content paths and repair flags.
+
 `cinch doctor` checks the Cinch setup, not the repository's content. `cinch doctor --fix` repairs it. It takes no paths, because the setup belongs to the root as a whole.
 
 ## What it checks

@@ -3,6 +3,7 @@ import { parseArgs } from "node:util";
 
 import {
   check,
+  doctor,
   explain,
   EXIT_CODE,
   exitCodeOf,
@@ -12,6 +13,9 @@ import {
 } from "@ropes/core";
 import type { MigrationPreview, ReadRequest } from "@ropes/core";
 import {
+  doctorOutcome,
+  renderDoctor,
+  renderDoctorJson,
   renderFix,
   renderFixJson,
   renderHuman,
@@ -31,6 +35,7 @@ const HELP = `rope ${manifest.version}
 
 Usage: rope <explain|check|fix> [path...] [--json] [--strict]
        rope <explain|check> [path...] --at <UTC instant>
+       rope doctor [--json] [--strict]
        rope fix [path...] --dry-run
        rope explain [path...] --trace [--json]
        rope migrate [--dry-run] [--json]
@@ -40,6 +45,7 @@ Usage: rope <explain|check|fix> [path...] [--json] [--strict]
 
   explain   Show which checks apply and where the policy comes from
   check     Check the selected files without writing to the repository
+  doctor    Inspect setup, tool availability, and shared settings
   fix       Fix the selected files or preview changes with --dry-run
   migrate   Preview a legacy Cinch config migration
   policy    Capture and compare resolved rule policy
@@ -190,6 +196,14 @@ const main = async (argv: readonly string[]): Promise<number> => {
       }
       print(json ? renderJson(ran.value) : renderHuman(ran.value));
       return exitCodeOf(ran.value);
+    }
+    case "doctor": {
+      const ran = await doctor(request);
+      if (!ran.ok) {
+        return fail(ran.error, json);
+      }
+      print(json ? renderDoctorJson(ran.value) : renderDoctor(ran.value));
+      return EXIT_CODE[doctorOutcome(ran.value)];
     }
     case "fix": {
       const ran = await fix({ ...request, dryRun: values["dry-run"] === true });

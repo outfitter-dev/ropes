@@ -1,6 +1,17 @@
 import { z } from "zod";
 
+import { FactObservationSchema, FactSchema } from "./facts.ts";
 import { FixReportSchema } from "./fix.ts";
+import { StepResultSchema } from "./result.ts";
+
+export const SettingsReportSchema = z
+  .object({
+    observations: z.array(FactObservationSchema).readonly(),
+    stated: z.array(FactSchema).readonly(),
+    steps: z.array(StepResultSchema).readonly(),
+  })
+  .readonly();
+export type SettingsReport = z.infer<typeof SettingsReportSchema>;
 
 /** Whether a tool the plan needs can run here. */
 export const ToolStatusSchema = z
@@ -32,6 +43,8 @@ export const DoctorReportSchema = FixReportSchema.unwrap()
      * turns off. They do not change the outcome.
      */
     notAdopted: z.array(z.string().min(1)).readonly(),
+    /** Shared policy and the observations used to inspect active tool settings. */
+    settings: SettingsReportSchema.optional(),
     tools: z.array(ToolStatusSchema).readonly(),
   })
   .readonly();

@@ -1,4 +1,4 @@
-import type { DoctorReport } from "../contracts/doctor.ts";
+import type { DoctorReport, SettingsReport } from "../contracts/doctor.ts";
 import type { FixReport } from "../contracts/fix.ts";
 import { EXIT_CODE } from "../contracts/result.ts";
 import {
@@ -6,8 +6,15 @@ import {
   renderDoctor,
   renderDoctorJson,
 } from "../render/doctor.ts";
+import { factSteps, observeFacts } from "../runner/facts.ts";
 import { runPlan } from "../runner/run.ts";
-import type { Command, CommandResponse } from "./command.ts";
+import type {
+  Command,
+  CommandResponse,
+  CommandRequest,
+  Operation,
+  ReadRequest,
+} from "./command.ts";
 import { writePlan } from "./fix.ts";
 import type { FixRun } from "./fix.ts";
 import { prepare } from "./prepare.ts";
@@ -32,11 +39,18 @@ const inspect = async ({ adapters, plan }: Prepared): Promise<FixReport> => ({
 });
 
 /** The tools the workspace's plan needs, less Cinch's own setup steps. */
-const tools = async (
+const workspaceStatus = async (
   root: string,
   deps: CommandDeps,
-  strict: boolean
-): Promise<DoctorReport["tools"] | string> => {
+  strict: boolean,
+  includeSettings: boolean
+): Promise<
+  | {
+      readonly tools: DoctorReport["tools"];
+      readonly settings?: SettingsReport;
+    }
+  | string
+> => {
   const workspace = await prepare({ cwd: root, paths: [], strict }, deps);
   if (!workspace.ok) {
     return workspace.error;
@@ -49,7 +63,57 @@ const tools = async (
       steps: entry.steps.filter((step) => step.setup !== true),
     })),
   };
-  return await toolStatuses(engines, adapters);
+  const statuses = await toolStatuses(engines, adapters);
+  if (!includeSettings || plan.facts === undefined) {
+    return { tools: statuses };
+  }
+  const observations = await observeFacts(
+    plan.facts,
+    root,
+    (id) =>
+      Promise.resolve(
+        adapters.find(
+          (adapter) =>
+            adapter.descriptor.id === id &&
+            statuses.some(
+              (status) =>
+                status.tool === adapter.descriptor.tool &&
+                status.versionRange ===
+                  plan.batches.find((batch) => batch.adapter === id)
+                    ?.versionRange &&
+                status.problem === undefined
+            )
+        )
+      ),
+    plan.batches
+  );
+  const observed = new Set(
+    observations.map((observation) => observation.adapter)
+  );
+  for (const reporter of plan.facts.reporters) {
+    if (!observed.has(reporter.adapter)) {
+      const status = statuses.find(
+        (candidate) => candidate.tool === reporter.tool
+      );
+      observations.push({
+        adapter: reporter.adapter,
+        facts: [],
+        limitations: [],
+        problem:
+          status?.problem ??
+          "The adapter does not expose the requested settings",
+        tool: reporter.tool,
+      });
+    }
+  }
+  return {
+    settings: {
+      observations,
+      stated: plan.facts.stated,
+      steps: factSteps(plan.facts, observations),
+    },
+    tools: statuses,
+  };
 };
 
 /**
@@ -59,49 +123,84 @@ const tools = async (
  * one edit Cinch may make to a config a person wrote. It reads the same
  * plan as the other verbs, so it writes nothing `explain` does not show.
  */
+const inspectDoctor = async (
+  request: CommandRequest,
+  deps: CommandDeps,
+  includeSettings = false
+): Promise<Operation<DoctorReport>> => {
+  if (request.paths.length > 0) {
+    return {
+      error: "doctor checks the whole setup, so it takes no paths.",
+      ok: false,
+    };
+  }
+  const prepared = await prepareSetup(request.cwd, deps);
+  if (!prepared.ok) {
+    return { error: prepared.error, ok: false };
+  }
+  const setup = prepared.value;
+  const { root } = setup.root;
+  const fixing = request.fix === true;
+  // A new config carries over an older tool's settings, so a dry run's
+  // copy must hold that tool's files even when git ignores them.
+  const old = fixing
+    ? await oldConfigs(setup.adapters, setup.plan, root)
+    : null;
+  const ran: FixRun = fixing
+    ? await writePlan(setup, {
+        also: old?.files ?? [],
+        dryRun: request.dryRun === true,
+        mode: "doctor",
+      })
+    : { ok: true, value: await inspect(setup) };
+  if (!ran.ok) {
+    return { error: ran.error, ok: false };
+  }
+  const found = await workspaceStatus(
+    root,
+    deps,
+    request.strict === true,
+    includeSettings
+  );
+  if (typeof found === "string") {
+    return { error: found, ok: false };
+  }
+  // A repository that states rules are off has made its choice.
+  const report: DoctorReport = {
+    ...ran.value,
+    fix: fixing,
+    notAdopted: declined(setup.config)
+      ? []
+      : unadopted(setup.config, setup.adapters, setup.present),
+    ...found,
+  };
+  return { ok: true, value: report };
+};
+
+/** The public read-only inspection shares the legacy setup and tool checks. */
+export const runDoctor = (request: ReadRequest, deps: CommandDeps) =>
+  inspectDoctor(
+    {
+      cwd: request.cwd,
+      json: false,
+      paths: request.paths,
+      ...(request.strict === undefined ? {} : { strict: request.strict }),
+    },
+    deps,
+    true
+  );
+
 export const doctor =
   (deps: CommandDeps): Command =>
   async (request) => {
-    if (request.paths.length > 0) {
-      return unusable("doctor checks the whole setup, so it takes no paths.");
-    }
-    const prepared = await prepareSetup(request.cwd, deps);
-    if (!prepared.ok) {
-      return unusable(prepared.error);
-    }
-    const setup = prepared.value;
-    const { root } = setup.root;
-    const fixing = request.fix === true;
-    // A new config carries over an older tool's settings, so a dry run's
-    // copy must hold that tool's files even when git ignores them.
-    const old = fixing
-      ? await oldConfigs(setup.adapters, setup.plan, root)
-      : null;
-    const ran: FixRun = fixing
-      ? await writePlan(setup, {
-          also: old?.files ?? [],
-          dryRun: request.dryRun === true,
-          mode: "doctor",
-        })
-      : { ok: true, value: await inspect(setup) };
+    const ran = await inspectDoctor(request, deps);
     if (!ran.ok) {
       return unusable(ran.error);
     }
-    const found = await tools(root, deps, request.strict === true);
-    if (typeof found === "string") {
-      return unusable(found);
-    }
-    // A repository that states rules are off has made its choice.
-    const report: DoctorReport = {
-      ...ran.value,
-      fix: fixing,
-      notAdopted: declined(setup.config)
-        ? []
-        : unadopted(setup.config, setup.adapters, setup.present),
-      tools: found,
-    };
     return {
-      exitCode: EXIT_CODE[doctorOutcome(report)],
-      output: request.json ? renderDoctorJson(report) : renderDoctor(report),
+      exitCode: EXIT_CODE[doctorOutcome(ran.value)],
+      output: request.json
+        ? renderDoctorJson(ran.value)
+        : renderDoctor(ran.value),
     };
   };
