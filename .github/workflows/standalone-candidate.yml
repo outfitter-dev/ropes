@@ -1,0 +1,87 @@
+name: Standalone candidate
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: standalone-candidate
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    name: Candidate (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            platform: darwin-arm64
+            target: bun-darwin-arm64
+            machine: arm64
+          - runner: ubuntu-24.04
+            platform: linux-x64
+            target: bun-linux-x64
+            machine: x86_64
+          - runner: ubuntu-24.04-arm
+            platform: linux-arm64
+            target: bun-linux-arm64
+            machine: aarch64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        with:
+          version: 2026.11.10
+      - run: bun install --frozen-lockfile
+      - name: Build the native release candidate
+        env:
+          BUN_TARGET: ${{ matrix.target }}
+          MACHINE: ${{ matrix.machine }}
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "$MACHINE"
+          mkdir -p "$RUNNER_TEMP/ropes-binary"
+          bun run build:rope "$RUNNER_TEMP/ropes-binary/rope" "$BUN_TARGET"
+      - name: Exercise the retained executable without Bun on PATH
+        env:
+          ROPES_BINARY: ${{ runner.temp }}/ropes-binary/rope
+        run: bun test packages/cli/tests/binary.test.ts
+      - name: Package and verify the tested bytes
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          version=$(jq -er '.version | select(test("^(0|[1-9][0-9]*)([.](0|[1-9][0-9]*)){2}(-canary[.](0|[1-9][0-9]*))?$"))' packages/cli/package.json)
+          test "$(jq -r .version packages/cinch/package.json)" = "$version"
+          jq -e --arg version "$version" '.dependencies["@ropes/core"] == "workspace:*" or .dependencies["@ropes/core"] == $version' packages/cli/package.json > /dev/null
+          binary="$RUNNER_TEMP/ropes-binary/rope"
+          "$binary" --version | head -n 1 | grep -Fx "rope $version (binary)"
+          cp packages/cli/LICENSE "$RUNNER_TEMP/ropes-binary/LICENSE"
+          output="$RUNNER_TEMP/ropes-candidate"
+          mkdir -p "$output"
+          archive="ropes-$version-$PLATFORM.tar.gz"
+          tar -czf "$output/$archive" -C "$RUNNER_TEMP/ropes-binary" rope LICENSE
+          mkdir "$RUNNER_TEMP/ropes-extracted"
+          tar -xzf "$output/$archive" -C "$RUNNER_TEMP/ropes-extracted"
+          cmp "$binary" "$RUNNER_TEMP/ropes-extracted/rope"
+          test -x "$RUNNER_TEMP/ropes-extracted/rope"
+          cd "$output"
+          shasum -a 256 "$archive" > SHA256SUMS
+          shasum -a 256 -c SHA256SUMS
+          digest=$(cut -d ' ' -f 1 SHA256SUMS)
+          jq -n --arg version "$version" --arg platform "$PLATFORM" \
+            --arg source "$SOURCE_SHA" --arg archive "$archive" --arg sha256 "$digest" \
+            '{version: $version, platform: $platform, source: $source, archive: $archive, sha256: $sha256}' \
+            > candidate.json
+          cat candidate.json >> "$GITHUB_STEP_SUMMARY"
+          cat SHA256SUMS >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ropes-standalone-${{ matrix.platform }}
+          path: ${{ runner.temp }}/ropes-candidate/
+          if-no-files-found: error
+          retention-days: 30

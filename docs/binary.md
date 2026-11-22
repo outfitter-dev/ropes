@@ -1,8 +1,8 @@
 # The standalone binary
 
-Cinch is a Bun program. A repository with no Bun, such as a Python one, can still run it from one executable that has Bun's runtime inside it.
+The standalone `rope` and `cinch` executables embed Bun's runtime. A repository without a Bun installation, such as a Python repository, can run them with Git and its pinned external engines on `PATH`.
 
-This page covers building the executable and qualifying an installation from a local artifact. The first published release still needs approval.
+This page covers building the executable and qualifying an installation from a local artifact. See [Prepare a standalone release](standalone-candidate.md) for the native archive workflow and the `http:rope` mise recipe.
 
 ## Build it
 
@@ -87,4 +87,4 @@ On Linux x64 with Bun 1.4.4, on 2026-11-20:
 
 ## Still open
 
-- The first release needs an approved version, executable name, three platform artifacts and their digests, and a distribution location/authentication route. The local mise qualification supplies installation evidence. Hosted download and release publication remain to be qualified against the approved artifacts.
+- The first release needs approval of the exact versioned archives, source commit, and digests. Verify the public GitHub release downloads and clean installs against that record after publication.
