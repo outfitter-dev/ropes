@@ -25,6 +25,7 @@ test("the engine's printed config is read with the file behind each value", () =
   });
   expect(factsIn(PRINTED, "/repo")).toEqual([
     {
+      evidence: "engine-confirmed",
       file: ".rumdl.toml",
       key: "global.line-length",
       name: "line_width",
@@ -37,6 +38,7 @@ test("the engine's printed config is read with the file behind each value", () =
   );
   expect(factsIn(rule, "/repo")).toEqual([
     {
+      evidence: "engine-confirmed",
       file: "docs/base.toml",
       key: "MD013.line-length",
       name: "line_width",
@@ -55,6 +57,7 @@ test("a config path that holds a closing bracket is still read", () => {
   );
   expect(factsIn(bracketed, "/repo")).toEqual([
     {
+      evidence: "engine-confirmed",
       file: "configs/[shared]/base.toml",
       key: "global.line-length",
       name: "line_width",

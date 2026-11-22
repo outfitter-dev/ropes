@@ -1,8 +1,15 @@
 import type { Adapter } from "../adapters/adapter.ts";
-import type { Fact, FactReporter, SharedFacts } from "../contracts/facts.ts";
+import type {
+  Fact,
+  FactObservation,
+  FactReporter,
+  SharedFacts,
+} from "../contracts/facts.ts";
 import type { Finding } from "../contracts/finding.ts";
+import type { Plan, PlanBatch } from "../contracts/plan.ts";
 import type { StepResult } from "../contracts/result.ts";
-import { threw } from "./ready.ts";
+import type { Readiness } from "./ready.ts";
+import { threw, versionProblem } from "./ready.ts";
 
 /** The path a step about the whole workspace is reported under. */
 const WORKSPACE = ".";
@@ -29,7 +36,7 @@ const driftFinding = (adapter: string, fact: Fact, against: Fact): Finding => ({
 });
 
 /**
- * One finding for each reported value that differs from the first statement
+ * One finding for each distinct source that differs from the first statement
  * of the same fact. The Cinch config's statement comes first when it makes
  * one, and otherwise the adapters are held to each other. It knows a fact
  * by its name only.
@@ -39,49 +46,52 @@ export const driftOf = (
   reported: readonly Required<Statement>[]
 ): Finding[] => {
   const first = new Map<string, Fact>(stated.map((fact) => [fact.name, fact]));
+  const seen = new Set<string>();
   return reported.flatMap(({ adapter, fact }) => {
     const against = first.get(fact.name);
     if (against === undefined) {
       first.set(fact.name, fact);
       return [];
     }
-    return against.value === fact.value
-      ? []
-      : [driftFinding(adapter, fact, against)];
+    if (against.value === fact.value) {
+      return [];
+    }
+    const finding = driftFinding(adapter, fact, against);
+    const identity = JSON.stringify(finding);
+    if (seen.has(identity)) {
+      return [];
+    }
+    seen.add(identity);
+    return [finding];
   });
 };
-
-type Asked =
-  | { readonly facts: readonly Required<Statement>[] }
-  | { readonly step: StepResult };
 
 const ask = async (
   reporter: FactReporter,
   adapter: Adapter | undefined,
-  root: string
-): Promise<Asked> => {
-  const failed = (reason: string): Asked => ({
-    step: {
-      adapter: reporter.adapter,
-      findings: [],
-      path: WORKSPACE,
-      reason: `could not read the settings ${reporter.tool} resolves, so they were not compared: ${reason}`,
-      status: "incomplete",
-    },
+  root: string,
+  paths: readonly string[]
+): Promise<FactObservation> => {
+  const base = { adapter: reporter.adapter, tool: reporter.tool };
+  const failed = (problem: string): FactObservation => ({
+    ...base,
+    facts: [],
+    limitations: [],
+    problem,
   });
   if (adapter?.facts === undefined) {
     return failed("the adapter does not report them");
   }
   try {
-    const report = await adapter.facts(root);
+    const report = await adapter.facts(root, paths);
     if (!report.ok) {
       return failed(report.reason);
     }
     const wanted = new Set(reporter.reports);
     return {
-      facts: report.facts
-        .filter((fact) => wanted.has(fact.name))
-        .map((fact) => ({ adapter: reporter.adapter, fact })),
+      ...base,
+      facts: report.facts.filter((fact) => wanted.has(fact.name)),
+      limitations: report.limitations ?? [],
     };
   } catch (error) {
     return failed(threw(reporter.tool, error));
@@ -95,27 +105,54 @@ const ask = async (
  * finding on the file that states the differing value. A reporter that
  * could not answer is incomplete, never passed.
  */
-export const compareFacts = async (
+export const observeFacts = async (
   shared: SharedFacts,
   root: string,
-  usable: (adapter: string) => Promise<Adapter | undefined>
-): Promise<StepResult[]> => {
+  usable: (adapter: string) => Promise<Adapter | undefined>,
+  batches: readonly PlanBatch[] = []
+): Promise<FactObservation[]> => {
   const reporters = shared.reporters.filter(
     (reporter) => reporter.reports.length > 0
   );
   const asked = await Promise.all(
     reporters.map(async (reporter) => {
       const adapter = await usable(reporter.adapter);
-      return adapter === undefined ? null : await ask(reporter, adapter, root);
+      const paths = batches
+        .filter((batch) => batch.adapter === reporter.adapter)
+        .flatMap((batch) => batch.paths);
+      return adapter === undefined
+        ? null
+        : await ask(reporter, adapter, root, paths);
     })
   );
-  const answers = asked.filter((answer) => answer !== null);
+  return asked.filter((answer) => answer !== null);
+};
+
+/** Reuse the same observations in checks and setup inspection. */
+export const factSteps = (
+  shared: SharedFacts,
+  observations: readonly FactObservation[]
+): StepResult[] => {
   const findings = driftOf(
     shared.stated,
-    answers.flatMap((answer) => ("facts" in answer ? answer.facts : []))
+    observations.flatMap(({ adapter, facts }) =>
+      facts.map((fact) => ({ adapter, fact }))
+    )
   );
   return [
-    ...answers.flatMap((answer) => ("step" in answer ? [answer.step] : [])),
+    ...observations.flatMap((answer): StepResult[] =>
+      answer.problem === undefined
+        ? []
+        : [
+            {
+              adapter: answer.adapter,
+              findings: [],
+              path: WORKSPACE,
+              reason: `could not read the settings ${answer.tool} resolves, so they were not compared: ${answer.problem}`,
+              status: "incomplete",
+            },
+          ]
+    ),
     ...findings.map((finding): StepResult => ({
       adapter: finding.source,
       findings: [finding],
@@ -123,4 +160,46 @@ export const compareFacts = async (
       status: "findings",
     })),
   ];
+};
+
+/** Compare what the tools can report and retain verification limits in the run. */
+export const compareFacts = async (
+  plan: Plan,
+  ready: (id: string) => {
+    adapter: Adapter | undefined;
+    probe: Promise<Readiness> | undefined;
+  }
+): Promise<{ notices: string[]; steps: StepResult[] }> => {
+  if (plan.facts === undefined) {
+    return { notices: [], steps: [] };
+  }
+  const observations = await observeFacts(
+    plan.facts,
+    plan.root,
+    async (id) => {
+      const { adapter, probe } = ready(id);
+      const found = await probe;
+      // Hold tools to the same version ranges as their file steps.
+      const unfit =
+        found?.problem !== undefined ||
+        plan.batches.some(
+          (batch) =>
+            batch.adapter === id &&
+            versionProblem(
+              batch.tool,
+              found?.version,
+              batch.versionRange,
+              batch.tolerates
+            ) !== undefined
+        );
+      return unfit ? undefined : adapter;
+    },
+    plan.batches
+  );
+  return {
+    notices: observations.flatMap(({ limitations, tool }) =>
+      limitations.map((limit) => `${tool} settings: ${limit}`)
+    ),
+    steps: factSteps(plan.facts, observations),
+  };
 };

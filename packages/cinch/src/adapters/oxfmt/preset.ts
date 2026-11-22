@@ -11,6 +11,22 @@ export const PRESET_PATH = `${CINCH_MANAGED_DIR}/presets/oxfmt.ts`;
 /** The tool's own config, which must build on the copy. */
 export const ROOT_PATH = "oxfmt.config.ts";
 
+/** Compatibility config names the repository's formatter can discover. */
+export const CONFIG_FILES = [
+  ".oxfmtrc",
+  ".oxfmtrc.json",
+  ".oxfmtrc.jsonc",
+  ".oxfmtrc.yaml",
+  ".oxfmtrc.yml",
+  ".oxfmtrc.toml",
+  ROOT_PATH,
+  "oxfmt.config.mts",
+  "oxfmt.config.cts",
+  "oxfmt.config.js",
+  "oxfmt.config.mjs",
+  "oxfmt.config.cjs",
+] as const;
+
 /**
  * The shared formatter config. It builds on Ultracite, so a repository that
  * keeps it needs Ultracite and the formatter installed. The root

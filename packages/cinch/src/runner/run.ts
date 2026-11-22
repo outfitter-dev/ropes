@@ -211,29 +211,12 @@ export const runPlan = async (
   // Reported file by file, in the order the plan lists them.
   const ran = plan.paths.flatMap((planned) => byPath.get(planned.path) ?? []);
   // Compared last, so a config a step of this run wrote is the one read.
-  const compared =
-    plan.facts === undefined
-      ? []
-      : await compareFacts(plan.facts, plan.root, async (id) => {
-          const { adapter, probe } = ready(id);
-          const found = await probe;
-          // Held to the ranges the plan shows, as its file steps are.
-          const unfit =
-            found?.problem !== undefined ||
-            plan.batches.some(
-              (batch) =>
-                batch.adapter === id &&
-                versionProblem(
-                  batch.tool,
-                  found?.version,
-                  batch.versionRange,
-                  batch.tolerates
-                ) !== undefined
-            );
-          return unfit ? undefined : adapter;
-        });
-  const steps = enforce(plan, [...ran, ...undone, ...compared]);
-  const notices = await noticesFor(plan, (id) => ready(id).probe);
+  const settings = await compareFacts(plan, ready);
+  const steps = enforce(plan, [...ran, ...undone, ...settings.steps]);
+  const notices = [
+    ...(await noticesFor(plan, (id) => ready(id).probe)),
+    ...settings.notices,
+  ];
   return {
     ...(conflicts.length === 0 ? {} : { conflicts }),
     ...(notices.length === 0 ? {} : { notices }),

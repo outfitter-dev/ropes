@@ -85,7 +85,15 @@ export const factsIn = (text: string, root: string): Fact[] => {
     const file = path.isAbsolute(found.from)
       ? path.relative(root, found.from)
       : found.from;
-    return [{ file, key, name, value: valueOf(found.value) }];
+    return [
+      {
+        evidence: "engine-confirmed",
+        file,
+        key,
+        name,
+        value: valueOf(found.value),
+      },
+    ];
   });
 };
 
