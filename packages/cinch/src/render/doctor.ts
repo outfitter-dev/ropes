@@ -3,6 +3,7 @@ import { EXIT_CODE, outcomeOf } from "../contracts/result.ts";
 import type { Outcome } from "../contracts/result.ts";
 import { pathBlocks } from "./human.ts";
 import { toolLine } from "./plan.ts";
+import { renderSettings } from "./settings.ts";
 
 /**
  * A tool that cannot run leaves the setup unproven, so incomplete wins. The
@@ -11,7 +12,7 @@ import { toolLine } from "./plan.ts";
 export const doctorOutcome = (report: DoctorReport): Outcome =>
   report.tools.some((tool) => tool.problem !== undefined)
     ? "incomplete"
-    : outcomeOf(report.result.steps);
+    : outcomeOf([...report.result.steps, ...(report.settings?.steps ?? [])]);
 
 const verdict = (report: DoctorReport): string => {
   const outcome = doctorOutcome(report);
@@ -20,6 +21,9 @@ const verdict = (report: DoctorReport): string => {
   }
   if (outcome === "incomplete") {
     return "Incomplete: a file could not be judged or a tool cannot run, so this is not a pass.";
+  }
+  if (outcomeOf(report.settings?.steps ?? []) === "findings") {
+    return "Shared settings disagree. Edit the source files shown above.";
   }
   return report.fix && !report.dryRun
     ? "Findings remain that `cinch doctor --fix` cannot repair. They need a person."
@@ -56,6 +60,12 @@ export const renderDoctor = (report: DoctorReport): string =>
   [
     ...written(report),
     ...pathBlocks(report.result),
+    ...(report.settings === undefined
+      ? []
+      : [
+          renderSettings(report.settings),
+          ...pathBlocks({ ...report.result, steps: report.settings.steps }),
+        ]),
     ...(report.tools.length === 0
       ? []
       : [["Tools", ...report.tools.map(toolLine)].join("\n")]),

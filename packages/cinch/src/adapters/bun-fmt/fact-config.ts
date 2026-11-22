@@ -32,6 +32,17 @@ const CONFIG = /^(?:\.prettierrc(?:\..+)?|prettier\.config\..+)$/u;
 const DATA = /(?:\.jsonc?|\.toml)$/u;
 const ObjectSchema = z.record(z.string(), z.unknown());
 
+const directoryNames = async (directory: string): Promise<string[]> => {
+  try {
+    return await readdir(directory);
+  } catch (error) {
+    if (z.object({ code: z.literal("ENOENT") }).safeParse(error).success) {
+      return [];
+    }
+    throw error;
+  }
+};
+
 const executableOptions = (value: unknown): boolean => {
   if (typeof value === "string") {
     return true;
@@ -102,7 +113,7 @@ export const discoveryLimit = async (
   }
   for (const directory of directories) {
     // eslint-disable-next-line no-await-in-loop -- directory reads do not execute authored config
-    const names = await readdir(directory);
+    const names = await directoryNames(directory);
     for (const name of names) {
       const isConfig = CONFIG.test(name) || compatibilityConfigs.includes(name);
       if (!isConfig && name !== "package.json" && name !== "bunfig.toml") {

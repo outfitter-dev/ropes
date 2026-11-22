@@ -3,6 +3,7 @@ import { adaptersFor } from "./adapters/registry.ts";
 import { runCheck } from "./commands/check.ts";
 import { runCleanup } from "./commands/cleanup.ts";
 import type { FixRequest, ReadRequest } from "./commands/command.ts";
+import { runDoctor } from "./commands/doctor.ts";
 import { runExplain } from "./commands/explain.ts";
 import { runFix } from "./commands/fix.ts";
 import { runMigrationPreview } from "./commands/migrate.ts";
@@ -13,6 +14,7 @@ import type { CleanupRequest } from "./contracts/cleanup.ts";
 export type { FixRequest, Operation, ReadRequest } from "./commands/command.ts";
 export type { Explanation } from "./commands/explain.ts";
 export type { MigrationPreview } from "./commands/migrate.ts";
+export type { DoctorReport } from "./contracts/doctor.ts";
 export type { FixReport } from "./contracts/fix.ts";
 export {
   parseCleanup,
@@ -36,6 +38,7 @@ export type { RepairInput, RepairRecord } from "./contracts/repair.ts";
 
 const deps = { adapters: adaptersFor };
 
+export const doctor = (request: ReadRequest) => runDoctor(request, deps);
 export const check = (request: ReadRequest) => runCheck(request, deps);
 export const explain = (request: ReadRequest, probeTools = false) =>
   runExplain(request, deps, probeTools);
