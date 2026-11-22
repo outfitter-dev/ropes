@@ -1,3 +1,6 @@
+// eslint-disable-next-line typescript/triple-slash-reference -- Packed source consumers need this ambient declaration without a runtime import.
+/// <reference path="./wasm-cli.d.ts" />
+
 import { realpath } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
