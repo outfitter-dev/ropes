@@ -118,9 +118,25 @@ export const readFacts = async (
   }
   const binary = Bun.which(command) ?? command;
   try {
-    const limit = await discoveryLimit(root, paths, compatibilityConfigs);
-    if (limit !== undefined) {
-      return { facts: [], limitations: [limit], ok: true };
+    const limitsByDirectory = new Map<string, string | undefined>();
+    const limitations = new Set<string>();
+    const safe: string[] = [];
+    for (const file of paths) {
+      const directory = path.dirname(file);
+      if (!limitsByDirectory.has(directory)) {
+        // eslint-disable-next-line no-await-in-loop -- preflight each scope before any native query
+        const limit = await discoveryLimit(root, [file], compatibilityConfigs);
+        limitsByDirectory.set(directory, limit);
+      }
+      const limit = limitsByDirectory.get(directory);
+      if (limit === undefined) {
+        safe.push(file);
+      } else {
+        limitations.add(limit);
+      }
+    }
+    if (safe.length === 0) {
+      return { facts: [], limitations: [...limitations], ok: true };
     }
     const doctor = await exec(
       [
@@ -130,7 +146,7 @@ export const readFacts = async (
         "--doctor",
         "--format=json",
         "--",
-        ...paths.slice(0, 1).map((file) => `./${file}`),
+        ...safe.slice(0, 1).map((file) => `./${file}`),
       ],
       root
     );
@@ -149,7 +165,7 @@ export const readFacts = async (
       bunfig === undefined ? undefined : await staticOptions(bunfig);
     const reports = [];
     const selectedByDirectory = new Map<string, string>();
-    for (const file of paths) {
+    for (const file of safe) {
       // eslint-disable-next-line no-await-in-loop -- avoid one process per selected file running at once
       const report = await forPath(
         {
@@ -166,7 +182,10 @@ export const readFacts = async (
     return {
       facts: reports.flatMap((report) => report.facts),
       limitations: [
-        ...new Set(reports.flatMap((report) => report.limitations)),
+        ...new Set([
+          ...limitations,
+          ...reports.flatMap((report) => report.limitations),
+        ]),
       ],
       ok: true,
     };
