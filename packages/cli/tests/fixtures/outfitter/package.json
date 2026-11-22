@@ -10,7 +10,7 @@
   ],
   "type": "module",
   "dependencies": {
-    "@ropes/core": "0.1.0-canary.1"
+    "@ropes/core": "0.1.0-canary.2"
   },
   "engines": {
     "bun": ">=1.4.4"
