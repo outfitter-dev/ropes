@@ -6,7 +6,7 @@ import type { Result, StepResult } from "../contracts/result.ts";
 import { conflictsAfter, textsOf } from "./conflicts.ts";
 import type { Settled } from "./conflicts.ts";
 import { enforce } from "./enforcement.ts";
-import { factSteps, observeFacts } from "./facts.ts";
+import { compareFacts } from "./facts.ts";
 import { noticesFor } from "./notices.ts";
 import { probeAdapter, threw, versionProblem } from "./ready.ts";
 import type { Readiness } from "./ready.ts";
@@ -211,42 +211,11 @@ export const runPlan = async (
   // Reported file by file, in the order the plan lists them.
   const ran = plan.paths.flatMap((planned) => byPath.get(planned.path) ?? []);
   // Compared last, so a config a step of this run wrote is the one read.
-  const observations =
-    plan.facts === undefined
-      ? []
-      : await observeFacts(
-          plan.facts,
-          plan.root,
-          async (id) => {
-            const { adapter, probe } = ready(id);
-            const found = await probe;
-            // Held to the ranges the plan shows, as its file steps are.
-            const unfit =
-              found?.problem !== undefined ||
-              plan.batches.some(
-                (batch) =>
-                  batch.adapter === id &&
-                  versionProblem(
-                    batch.tool,
-                    found?.version,
-                    batch.versionRange,
-                    batch.tolerates
-                  ) !== undefined
-              );
-            return unfit ? undefined : adapter;
-          },
-          plan.batches
-        );
-  const compared =
-    plan.facts === undefined ? [] : factSteps(plan.facts, observations);
-  const steps = enforce(plan, [...ran, ...undone, ...compared]);
+  const settings = await compareFacts(plan, ready);
+  const steps = enforce(plan, [...ran, ...undone, ...settings.steps]);
   const notices = [
     ...(await noticesFor(plan, (id) => ready(id).probe)),
-    ...observations.flatMap((observation) =>
-      observation.limitations.map(
-        (limit) => `${observation.tool} settings: ${limit}`
-      )
-    ),
+    ...settings.notices,
   ];
   return {
     ...(conflicts.length === 0 ? {} : { conflicts }),

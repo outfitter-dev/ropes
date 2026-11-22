@@ -6,9 +6,10 @@ import type {
   SharedFacts,
 } from "../contracts/facts.ts";
 import type { Finding } from "../contracts/finding.ts";
-import type { PlanBatch } from "../contracts/plan.ts";
+import type { Plan, PlanBatch } from "../contracts/plan.ts";
 import type { StepResult } from "../contracts/result.ts";
-import { threw } from "./ready.ts";
+import type { Readiness } from "./ready.ts";
+import { threw, versionProblem } from "./ready.ts";
 
 /** The path a step about the whole workspace is reported under. */
 const WORKSPACE = ".";
@@ -161,10 +162,44 @@ export const factSteps = (
   ];
 };
 
+/** Compare what the tools can report and retain verification limits in the run. */
 export const compareFacts = async (
-  shared: SharedFacts,
-  root: string,
-  usable: (adapter: string) => Promise<Adapter | undefined>,
-  batches: readonly PlanBatch[] = []
-): Promise<StepResult[]> =>
-  factSteps(shared, await observeFacts(shared, root, usable, batches));
+  plan: Plan,
+  ready: (id: string) => {
+    adapter: Adapter | undefined;
+    probe: Promise<Readiness> | undefined;
+  }
+): Promise<{ notices: string[]; steps: StepResult[] }> => {
+  if (plan.facts === undefined) {
+    return { notices: [], steps: [] };
+  }
+  const observations = await observeFacts(
+    plan.facts,
+    plan.root,
+    async (id) => {
+      const { adapter, probe } = ready(id);
+      const found = await probe;
+      // Hold tools to the same version ranges as their file steps.
+      const unfit =
+        found?.problem !== undefined ||
+        plan.batches.some(
+          (batch) =>
+            batch.adapter === id &&
+            versionProblem(
+              batch.tool,
+              found?.version,
+              batch.versionRange,
+              batch.tolerates
+            ) !== undefined
+        );
+      return unfit ? undefined : adapter;
+    },
+    plan.batches
+  );
+  return {
+    notices: observations.flatMap(({ limitations, tool }) =>
+      limitations.map((limit) => `${tool} settings: ${limit}`)
+    ),
+    steps: factSteps(plan.facts, observations),
+  };
+};
