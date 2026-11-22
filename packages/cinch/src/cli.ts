@@ -2,14 +2,11 @@
 import { parseArgs } from "node:util";
 
 import manifest from "../package.json" with { type: "json" };
-import { startBundledEngine } from "./adapters/registry.ts";
-import { STANDALONE } from "./adapters/shipped-text.ts";
-import { configureStandIn } from "./adapters/stand-in.ts";
 import type { CommandResponse } from "./commands/command.ts";
 import { commands } from "./commands/registry.ts";
-import { enclosingCheckout, toRootRelative } from "./config/root.ts";
 import { EXIT_CODE } from "./contracts/result.ts";
 import { renderFailureJson } from "./render/failure.ts";
+import { prepareRuntime, STANDALONE } from "./runtime.ts";
 
 const HELP = `cinch ${manifest.version}
 
@@ -118,24 +115,12 @@ const main = async (argv: readonly string[]): Promise<number> => {
     strict: values.strict === true || process.env.CI === "true",
     yes: values.yes === true,
   };
-  if (STANDALONE) {
-    let checkout: Promise<string> | undefined;
-    configureStandIn(async (target) => {
-      checkout ??= enclosingCheckout(request.cwd);
-      const root = await checkout;
-      const location = await toRootRelative(root, root, target);
-      return !location.ok;
-    });
-  }
 
   const response = await command(request);
   print(response, request.json);
   return response.exitCode;
 };
 
-const worker = startBundledEngine(process.argv);
-if (worker === undefined) {
+if (!(await prepareRuntime(process.argv, process.cwd()))) {
   process.exitCode = await main(process.argv.slice(2));
-} else {
-  await worker;
 }

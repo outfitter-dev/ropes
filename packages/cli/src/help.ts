@@ -1,0 +1,44 @@
+import { STANDALONE } from "@ropes/core";
+
+import manifest from "../package.json" with { type: "json" };
+
+const setup = STANDALONE
+  ? `Setup requires a Git checkout with an initial commit, or Git-colocated jj.
+Pin this executable's immutable version and checksum through mise. Install
+and pin the external engines required by your repository's Ropes config.`
+  : `Setup requires a Git checkout with an initial commit, or Git-colocated jj.
+Git HEAD and the index must be readable. Track the pin and lockfile:
+  bun add --dev --exact @ropes/cli@${manifest.version}
+  git add package.json bun.lock
+  git commit -m "chore: pin Ropes"
+  ./node_modules/.bin/rope --help
+  ./node_modules/.bin/rope explain README.md`;
+
+export const HELP = `rope ${manifest.version}
+
+Usage: rope <explain|check|fix> [path...] [--json] [--strict]
+       rope <explain|check> [path...] --at <UTC instant>
+       rope doctor [--json] [--strict]
+       rope fix [path...] --dry-run
+       rope explain [path...] --trace [--json]
+       rope migrate [--dry-run] [--json]
+       rope <explain|check> --migration <commit>:<file> --parent <commit> --candidate <commit>
+       rope policy snapshot [path...] [--at <UTC instant>]
+       rope policy compare <before.json> <after.json> [--json]
+
+  explain   Show which checks apply and where the policy comes from
+  check     Check the selected files without writing to the repository
+  doctor    Inspect setup, tool availability, and shared settings
+  fix       Fix the selected files or preview changes with --dry-run
+  migrate   Preview a legacy Cinch config migration
+  policy    Capture and compare resolved rule policy
+
+${setup}
+
+Exit codes: 0 clean, 1 findings remain, 2 incomplete or unusable.
+`;
+
+export const version = (entry: string) =>
+  STANDALONE
+    ? `rope ${manifest.version} (binary)`
+    : `rope ${manifest.version}\n${entry}`;

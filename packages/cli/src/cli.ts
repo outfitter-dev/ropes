@@ -9,6 +9,8 @@ import {
   exitCodeOf,
   fix,
   previewMigration,
+  prepareRuntime,
+  STANDALONE,
   trace,
 } from "@ropes/core";
 import type { MigrationPreview, ReadRequest } from "@ropes/core";
@@ -25,41 +27,11 @@ import {
   renderTrace,
 } from "@ropes/core/render";
 
-import manifest from "../package.json" with { type: "json" };
 import { migrationCommand } from "./cleanup.ts";
 import { delegate } from "./delegate.ts";
+import { HELP, version } from "./help.ts";
 import { fail, print } from "./output.ts";
 import { policy } from "./policy.ts";
-
-const HELP = `rope ${manifest.version}
-
-Usage: rope <explain|check|fix> [path...] [--json] [--strict]
-       rope <explain|check> [path...] --at <UTC instant>
-       rope doctor [--json] [--strict]
-       rope fix [path...] --dry-run
-       rope explain [path...] --trace [--json]
-       rope migrate [--dry-run] [--json]
-       rope <explain|check> --migration <commit>:<file> --parent <commit> --candidate <commit>
-       rope policy snapshot [path...] [--at <UTC instant>]
-       rope policy compare <before.json> <after.json> [--json]
-
-  explain   Show which checks apply and where the policy comes from
-  check     Check the selected files without writing to the repository
-  doctor    Inspect setup, tool availability, and shared settings
-  fix       Fix the selected files or preview changes with --dry-run
-  migrate   Preview a legacy Cinch config migration
-  policy    Capture and compare resolved rule policy
-
-Setup requires a Git checkout with an initial commit, or Git-colocated jj.
-Git HEAD and the index must be readable. Track the pin and lockfile:
-  bun add --dev --exact @ropes/cli@${manifest.version}
-  git add package.json bun.lock
-  git commit -m "chore: pin Ropes"
-  ./node_modules/.bin/rope --help
-  ./node_modules/.bin/rope explain README.md
-
-Exit codes: 0 clean, 1 findings remain, 2 incomplete or unusable.
-`;
 
 const renderMigration = (preview: MigrationPreview): string => {
   const { source, target, managedFiles, rootReferences, recovery } = preview;
@@ -163,7 +135,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
   const { values, positionals } = invocation(argv);
   const [verb, ...paths] = positionals;
   if (values.version === true) {
-    print(`rope ${manifest.version}\n${import.meta.filename}`);
+    print(version(import.meta.filename));
     return EXIT_CODE.clean;
   }
   if (values.help === true || verb === undefined) {
@@ -227,7 +199,10 @@ const main = async (argv: readonly string[]): Promise<number> => {
 
 const argv = process.argv.slice(2);
 try {
-  process.exitCode = (await delegate(argv)) ?? (await main(argv));
+  if (!(await prepareRuntime(process.argv, process.cwd()))) {
+    process.exitCode =
+      (STANDALONE ? null : await delegate(argv)) ?? (await main(argv));
+  }
 } catch (error) {
   const separator = argv.indexOf("--");
   const options = separator === -1 ? argv : argv.slice(0, separator);

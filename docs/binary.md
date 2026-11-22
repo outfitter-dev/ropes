@@ -6,6 +6,20 @@ This page covers building the executable and qualifying an installation from a l
 
 ## Build it
 
+Build the Ropes executable with the public `rope` interface:
+
+```sh
+bun run build:rope dist/rope
+bun run build:rope dist/rope-linux-arm64 bun-linux-arm64
+./dist/rope --version
+./dist/rope doctor --json
+./dist/rope check README.md --json
+```
+
+The executable includes Bun's runtime, so the consuming repository needs Git and its pinned external engines on `PATH`. It can run in a repository with no `package.json`. `rope --version` reports `rope <version> (binary)`. It uses the same public commands and JSON contracts as the npm CLI, and `rope doctor` inspects the setup and active settings without writing to the repository. The native acceptance suite compares the compiled executable with the package and checks fenced-code repairs with Bun absent from `PATH`.
+
+The existing Cinch interface has its own build entry:
+
 ```sh
 bun run build:binary dist/cinch
 bun run build:binary dist/cinch-linux-arm64 bun-linux-arm64
