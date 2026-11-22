@@ -1,7 +1,10 @@
+import { nearbyDiff } from "./diff-nearby.ts";
 import { smallDiff } from "./diff-small.ts";
 
 /** Keep the existing shortest alignment within a bounded allocation. */
 const MAX_CELLS = 4_000_000;
+/** Bound cumulative anchor scans to eight times the input line count. */
+const ANCHOR_PASSES = 8;
 
 export type Kind = " " | "-" | "+";
 export interface Op {
@@ -10,6 +13,7 @@ export interface Op {
 }
 
 interface Region {
+  readonly anchored?: boolean;
   readonly oldStart: number;
   readonly oldEnd: number;
   readonly nextStart: number;
@@ -93,6 +97,7 @@ export const lineOps = (
     { nextEnd: next.length, nextStart: 0, oldEnd: old.length, oldStart: 0 },
   ];
   const ops: Op[] = [];
+  let anchorBudget = ANCHOR_PASSES * (old.length + next.length);
   while (pending.length > 0) {
     const region = pending.pop();
     if (region === undefined) {
@@ -123,17 +128,26 @@ export const lineOps = (
     const left = old.slice(oldStart, oldEnd);
     const right = next.slice(nextStart, nextEnd);
     if (left.length * right.length <= MAX_CELLS) {
-      for (const op of smallDiff(left, right)) {
+      const compared =
+        region.anchored === true
+          ? nearbyDiff(left, right, oldStart, nextStart)
+          : smallDiff(left, right);
+      for (const op of compared) {
         ops.push(op);
       }
       continue;
     }
-    const points = anchors(oldIds, nextIds, {
-      nextEnd,
-      nextStart,
-      oldEnd,
-      oldStart,
-    });
+    const work = left.length + right.length;
+    const points =
+      work > anchorBudget
+        ? []
+        : anchors(oldIds, nextIds, {
+            nextEnd,
+            nextStart,
+            oldEnd,
+            oldStart,
+          });
+    anchorBudget = Math.max(0, anchorBudget - work);
     if (points.length === 0) {
       for (const line of left) {
         ops.push({ kind: "-", line });
@@ -145,12 +159,18 @@ export const lineOps = (
     }
     const gaps: Region[] = [];
     for (const [oldIndex, nextIndex] of points) {
-      gaps.push({ nextEnd: nextIndex, nextStart, oldEnd: oldIndex, oldStart });
+      gaps.push({
+        anchored: true,
+        nextEnd: nextIndex,
+        nextStart,
+        oldEnd: oldIndex,
+        oldStart,
+      });
       // Include the anchor in the following region's shared prefix.
       oldStart = oldIndex;
       nextStart = nextIndex;
     }
-    gaps.push({ nextEnd, nextStart, oldEnd, oldStart });
+    gaps.push({ anchored: true, nextEnd, nextStart, oldEnd, oldStart });
     for (const gap of gaps.toReversed()) {
       pending.push(gap);
     }

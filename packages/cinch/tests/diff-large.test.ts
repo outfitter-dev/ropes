@@ -70,6 +70,44 @@ test("a large ambiguous region cannot consume unchanged anchors around it", () =
   ).toBe("");
 });
 
+test("thousands of separate hunks render within a linear preview budget", () => {
+  const before = lines(40_000);
+  const after = before.map((line, index) =>
+    index % 8 === 0 ? `changed ${index}\n` : line
+  );
+  const started = performance.now();
+  const diff = unifiedDiff("a.md", before.join(""), after.join(""));
+  expect(diff.split("\n").filter((line) => line.startsWith("@@"))).toHaveLength(
+    5000
+  );
+  expect(changedLines(diff)).toBe(10_000);
+  expect(performance.now() - started).toBeLessThan(2000);
+});
+
+test("nested anchor discovery has a cumulative work budget", () => {
+  const before: string[] = [];
+  const after: string[] = [];
+  for (let index = 10_000; index > 0; index -= 1) {
+    before.push("old edge\n", `anchor ${index - 1}\n`, `anchor ${index}\n`);
+    after.push("new edge\n", `anchor ${index - 1}\n`, `anchor ${index}\n`);
+  }
+  before.push(
+    "old edge\n",
+    "anchor 0\n",
+    ...Array.from({ length: 2100 }, () => "old fill\n")
+  );
+  after.push(
+    "new edge\n",
+    "anchor 0\n",
+    ...Array.from({ length: 2100 }, () => "new fill\n")
+  );
+  const started = performance.now();
+  expect(
+    changeAt("a.md", before.join(""), after.join(""), { from: 3, to: 3 })
+  ).toBe("");
+  expect(performance.now() - started).toBeLessThan(2000);
+});
+
 test("a formatter's distant edits do not turn an untouched finding into a conflict", async () => {
   const root = await realpath(
     await mkdtemp(path.join(tmpdir(), "diff-conflict-"))

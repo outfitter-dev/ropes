@@ -21,52 +21,75 @@ const RULES = JSON.stringify({
 
 const source = { kind: "default" } as const;
 
-test("a real lint rule that the real formatter undoes is one conflict", async () => {
-  if (!installed) {
-    console.warn(
-      "skipped: oxlint or bun is not installed, so the conflict between them was not run"
-    );
-    return;
+test.each([false, true])(
+  "a real lint conflict survives duplicate template text and distant edits (%s)",
+  async (large) => {
+    if (!installed) {
+      console.warn(
+        "skipped: oxlint or bun is not installed, so the conflict between them was not run"
+      );
+      return;
+    }
+    const root = await mkdtemp(path.join(tmpdir(), "cinch-cfe-"));
+    try {
+      await Bun.write(path.join(root, ".oxlintrc.json"), RULES);
+      const input = large
+        ? [
+            "export function example(sink: (value: number) => void) {\n",
+            "  const other=1;\n",
+            "  sink(0xabcdef);\n",
+            "  const source=`\n",
+            "  sink(0xabcdef);\n",
+            "  ` ;\n",
+            ...Array.from(
+              { length: 2500 },
+              (_, index) => `  // record ${index}\n`
+            ),
+            "  return other+source;\n",
+            "}\n",
+          ].join("")
+        : "export const mask = 0xabcdef;\n";
+      await Bun.write(path.join(root, "a.ts"), input);
+      await Bun.write(path.join(root, "b.ts"), "export const one = 1;\n");
+      const adapters = [oxlintAdapter(), bunFmtAdapter()];
+      const plan = resolvePlan({
+        config: {
+          ...DEFAULT_CONFIG,
+          include: { source, value: ["**/*.ts"] },
+          settings: [
+            { key: "lint.enabled", source, value: true },
+            { key: "format.enabled", source, value: true },
+          ],
+        },
+        descriptors: adapters.map((adapter) => adapter.descriptor),
+        packages: [],
+        paths: ["a.ts", "b.ts"],
+        root,
+        selection: { kind: "workspace" },
+      });
+      const fix = () => runPlan(plan, adapters, { changeAt, mode: "fix" });
+      const first = await fix();
+      expect(first.conflicts).toHaveLength(1);
+      expect(first.conflicts?.[0]).toMatchObject({
+        path: "a.ts",
+        rule: "unicorn(number-literal-case)",
+      });
+      expect(first.conflicts?.[0]?.diff).toContain(
+        large
+          ? "+  sink(0xabcdef);\n"
+          : "-export const mask = 0xABCDEF;\n+export const mask = 0xabcdef;\n"
+      );
+      expect(first.outcome).toBe("findings");
+      // Neither tool is run again to settle it, so the file is as it was.
+      const text = await Bun.file(path.join(root, "a.ts")).text();
+      expect(text).toContain(
+        large ? "  sink(0xabcdef);\n" : "export const mask = 0xabcdef;\n"
+      );
+      const second = await fix();
+      expect(second.conflicts).toHaveLength(1);
+      expect(await Bun.file(path.join(root, "a.ts")).text()).toBe(text);
+    } finally {
+      await rm(root, { force: true, recursive: true });
+    }
   }
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-cfe-"));
-  try {
-    await Bun.write(path.join(root, ".oxlintrc.json"), RULES);
-    await Bun.write(path.join(root, "a.ts"), "export const mask = 0xabcdef;\n");
-    await Bun.write(path.join(root, "b.ts"), "export const one = 1;\n");
-    const adapters = [oxlintAdapter(), bunFmtAdapter()];
-    const plan = resolvePlan({
-      config: {
-        ...DEFAULT_CONFIG,
-        include: { source, value: ["**/*.ts"] },
-        settings: [
-          { key: "lint.enabled", source, value: true },
-          { key: "format.enabled", source, value: true },
-        ],
-      },
-      descriptors: adapters.map((adapter) => adapter.descriptor),
-      packages: [],
-      paths: ["a.ts", "b.ts"],
-      root,
-      selection: { kind: "workspace" },
-    });
-    const fix = () => runPlan(plan, adapters, { changeAt, mode: "fix" });
-    const first = await fix();
-    expect(first.conflicts).toHaveLength(1);
-    expect(first.conflicts?.[0]).toMatchObject({
-      path: "a.ts",
-      rule: "unicorn(number-literal-case)",
-    });
-    expect(first.conflicts?.[0]?.diff).toContain(
-      "-export const mask = 0xABCDEF;\n+export const mask = 0xabcdef;\n"
-    );
-    expect(first.outcome).toBe("findings");
-    // Neither tool is run again to settle it, so the file is as it was.
-    const text = await Bun.file(path.join(root, "a.ts")).text();
-    expect(text).toBe("export const mask = 0xabcdef;\n");
-    const second = await fix();
-    expect(second.conflicts).toHaveLength(1);
-    expect(await Bun.file(path.join(root, "a.ts")).text()).toBe(text);
-  } finally {
-    await rm(root, { force: true, recursive: true });
-  }
-});
+);

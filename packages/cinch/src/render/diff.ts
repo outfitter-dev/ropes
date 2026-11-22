@@ -1,6 +1,6 @@
 import type { ChangeAt } from "../contracts/conflict.ts";
 import { lineOps } from "./diff-lines.ts";
-import type { Kind, Op } from "./diff-lines.ts";
+import type { Op } from "./diff-lines.ts";
 
 const CONTEXT = 3;
 const NO_EOL = "\\ No newline at end of file";
@@ -30,9 +30,6 @@ const hunkRanges = (ops: readonly Op[]): [number, number][] => {
 const span = (start: number, length: number): string =>
   `${length === 0 ? start : start + 1},${length}`;
 
-const count = (list: readonly Op[], not: Kind): number =>
-  list.filter((op) => op.kind !== not).length;
-
 const printed = (op: Op): string =>
   op.line.endsWith("\n")
     ? `${op.kind}${op.line}`
@@ -61,9 +58,14 @@ const header = (prefix: string, path: string): string => {
  * as the line that now sits where it was, or as the last line left when it
  * was removed from the end.
  */
-const touched = (ops: readonly Op[], start: number, end: number): number[] => {
-  const last = Math.max(count(ops, "-"), 1);
-  let line = count(ops.slice(0, start), "-");
+const touched = (
+  ops: readonly Op[],
+  start: number,
+  end: number,
+  offsets: readonly number[]
+): number[] => {
+  const last = Math.max(offsets.at(-1) ?? 0, 1);
+  let line = offsets[start] ?? 0;
   const lines: number[] = [];
   for (const op of ops.slice(start, end)) {
     if (op.kind !== "-") {
@@ -86,13 +88,19 @@ const diffOf = (
     return "";
   }
   const ops = lineOps(linesOf(before), linesOf(after));
+  const oldOffsets = [0];
+  const nextOffsets = [0];
+  for (const op of ops) {
+    oldOffsets.push((oldOffsets.at(-1) ?? 0) + Number(op.kind !== "+"));
+    nextOffsets.push((nextOffsets.at(-1) ?? 0) + Number(op.kind !== "-"));
+  }
   const hunks = hunkRanges(ops)
-    .filter(([start, end]) => keep(touched(ops, start, end)))
+    .filter(([start, end]) => keep(touched(ops, start, end, nextOffsets)))
     .map(([start, end]) => {
-      const lead = ops.slice(0, start);
-      const body = ops.slice(start, end);
-      const range = `@@ -${span(count(lead, "+"), count(body, "+"))} +${span(count(lead, "-"), count(body, "-"))} @@\n`;
-      return range + body.map(printed).join("");
+      const oldStart = oldOffsets[start] ?? 0;
+      const nextStart = nextOffsets[start] ?? 0;
+      const range = `@@ -${span(oldStart, (oldOffsets[end] ?? 0) - oldStart)} +${span(nextStart, (nextOffsets[end] ?? 0) - nextStart)} @@\n`;
+      return range + ops.slice(start, end).map(printed).join("");
     });
   return hunks.length === 0
     ? ""
