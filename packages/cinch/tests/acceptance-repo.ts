@@ -128,14 +128,9 @@ export const runEntry = (
 export const checkoutAt = (root: string): Checkout => ({
   cinch: (args, { cwd = "", path: searchPath } = {}) =>
     runEntry(CLI, args, path.join(root, cwd), searchPath),
-  files: async () => {
-    const all = await snapshot(root);
-    return Object.fromEntries(
-      Object.entries(all).filter(
-        ([name]) => name !== ".git" && !name.startsWith(".git/")
-      )
-    );
-  },
+  // Git may create or remove maintenance locks while the checkout is open.
+  files: () =>
+    snapshot(root, (name) => name !== ".git" && !name.startsWith(".git/")),
   root,
 });
 

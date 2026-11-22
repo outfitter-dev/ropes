@@ -69,11 +69,13 @@ export const withRepo = async <T>(
 };
 
 export const snapshot = async (
-  root: string
+  root: string,
+  include: (name: string) => boolean = () => true
 ): Promise<Record<string, string>> => {
-  const names = await Array.fromAsync(
+  const found = await Array.fromAsync(
     new Glob("**/*").scan({ cwd: root, dot: true, onlyFiles: true })
   );
+  const names = found.filter(include);
   const texts = await Promise.all(
     names.map((name) => Bun.file(path.join(root, name)).text())
   );
