@@ -62,8 +62,9 @@ const limitForFile = async (
   }
   try {
     const text = await Bun.file(file).text();
-    const parsed: unknown =
-      name === "bunfig.toml" ? Bun.TOML.parse(text) : Bun.JSON5.parse(text);
+    const parsed: unknown = name.endsWith(".toml")
+      ? Bun.TOML.parse(text)
+      : Bun.JSON5.parse(text);
     const object = ObjectSchema.safeParse(parsed);
     let settings = parsed;
     if (name === "package.json") {

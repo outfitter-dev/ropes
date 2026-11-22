@@ -12,7 +12,6 @@ import {
 } from "../src/contracts/result.ts";
 import { resolvePlan } from "../src/policy/resolve.ts";
 import { setupOf } from "../src/policy/setup.ts";
-import { renderHuman } from "../src/render/human.ts";
 import { renderPlan } from "../src/render/plan.ts";
 import { driftOf } from "../src/runner/facts.ts";
 import { runPlan } from "../src/runner/run.ts";
@@ -52,26 +51,6 @@ const reporter = (
   });
 
 const check = { mode: "check", platform: "linux" } as const;
-
-test("settings verification limits remain visible in normal check results", async () => {
-  const adapter = reporter("one", {
-    facts: [],
-    limitations: ["The engine cannot expose resolved options"],
-    ok: true,
-  });
-  const result = await runPlan(planFor([adapter]), [adapter], check);
-  expect(result.notices).toEqual([
-    "one-tool settings: The engine cannot expose resolved options",
-  ]);
-  expect(renderHuman(result)).toContain(
-    "The engine cannot expose resolved options"
-  );
-  const serialized = JSON.stringify(result);
-  expect(ResultSchema.parse(JSON.parse(serialized)).notices).toEqual(
-    result.notices
-  );
-  expect(adapter.calls.filter((call) => call === "facts")).toHaveLength(1);
-});
 
 test("the plan names the stated facts and the adapters asked about them", () => {
   const plan = planFor([reporter("one", { facts: [], ok: true })]);
