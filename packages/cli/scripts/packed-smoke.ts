@@ -168,6 +168,10 @@ console.log(JSON.stringify(parsed.value));
       "The packed CLI and public core API produced different plans"
     );
   }
+  const configSchema = await run([executable, "schema", "config"], consumer);
+  if (!configSchema.includes('"title": "rope.toml"')) {
+    throw new Error("Packed rope did not emit the Ropes config schema");
+  }
   await proveConsumer(consumer);
   await proveDelegation(folder, consumer);
 };

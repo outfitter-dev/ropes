@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { ROPES_FILE } from "../config/load.ts";
 import { configJsonSchema } from "../config/schema.ts";
 import { CleanupReportSchema } from "../contracts/cleanup.ts";
 import { DoctorReportSchema } from "../contracts/doctor.ts";
@@ -44,6 +45,30 @@ const NAMES = Object.keys(OUTPUT_SCHEMAS).toSorted();
 
 /** The name that asks for the schema of the config file, not of an output. */
 export const CONFIG_NAME = "config";
+
+const ROPES_OUTPUTS: readonly string[] = [
+  "check",
+  "doctor",
+  "explain",
+  "failure",
+  "fix",
+];
+
+export const listRopesSchemas = () => ({
+  commands: ROPES_OUTPUTS,
+  files: [CONFIG_NAME],
+  schemaVersion: SCHEMA_VERSION,
+});
+
+export const ropesSchema = (name: string) => {
+  if (name === CONFIG_NAME) {
+    return configJsonSchema(ROPES_FILE);
+  }
+  const schema = ROPES_OUTPUTS.includes(name)
+    ? OUTPUT_SCHEMAS[name]
+    : undefined;
+  return schema === undefined ? undefined : z.toJSONSchema(schema);
+};
 
 const print = (value: unknown): string => JSON.stringify(value, null, 2);
 

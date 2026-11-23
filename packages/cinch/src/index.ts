@@ -56,4 +56,6 @@ export const compareMigration = (request: CleanupRequest, execute = true) =>
 export const snapshotPolicy = (request: ReadRequest) =>
   capturePolicy(request, deps, `${manifest.name}@${manifest.version}`);
 
+export { listRopesSchemas, ropesSchema } from "./commands/schema.ts";
+
 export { prepareRuntime, STANDALONE } from "./runtime.ts";
