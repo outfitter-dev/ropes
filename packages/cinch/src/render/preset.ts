@@ -8,9 +8,14 @@ const line = (file: PresetFile): string =>
 const NEEDS_UPDATE = new Set(["stale", "missing"]);
 
 /** Text for a person: each preset, its files and the state of each. */
-export const renderPresets = (report: PresetReport): string => {
+export const renderPresets = (
+  report: PresetReport,
+  command: "cinch" | "rope" = "cinch"
+): string => {
   if (report.presets.length === 0) {
-    return "This version of Cinch ships no presets.";
+    return command === "rope"
+      ? "This version of Ropes ships no presets."
+      : "This version of Cinch ships no presets.";
   }
   const blocks = report.presets.map((preset) =>
     [preset.name, ...preset.files.map(line)].join("\n")
@@ -20,7 +25,9 @@ export const renderPresets = (report: PresetReport): string => {
   );
   return [
     ...blocks,
-    ...(behind ? ["Run `cinch preset update` to write what is behind."] : []),
+    ...(behind
+      ? [`Run \`${command} preset update\` to write what is behind.`]
+      : []),
   ].join("\n\n");
 };
 

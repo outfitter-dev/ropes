@@ -24,6 +24,8 @@ Usage: rope <explain|check|fix> [path...] [--json] [--strict]
        rope init [--yes] [--dry-run] [--json] [--strict]
        rope fix [path...] --dry-run
        rope explain [path...] --trace [--json]
+       rope preset [list|update] [name] [--dry-run] [--json]
+       rope preset <add|adopt|eject> <name> [--yes] [--dry-run] [--json]
        rope schema [command] [--json]
        rope migrate [--dry-run] [--json]
        rope <explain|check> --migration <commit>:<file> --parent <commit> --candidate <commit>
@@ -35,6 +37,7 @@ Usage: rope <explain|check|fix> [path...] [--json] [--strict]
   doctor    Inspect setup and active tools, or repair setup with --fix
   init      Preview or apply setup for this repository
   fix       Fix the selected files or preview changes with --dry-run
+  preset    Inspect or manage the repository presets
   schema    Print a JSON Schema or list the available names
   migrate   Preview a legacy Cinch config migration
   policy    Capture and compare resolved rule policy

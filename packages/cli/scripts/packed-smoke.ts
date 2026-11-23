@@ -130,6 +130,14 @@ export const smoke = async (
   await rm(managed, { recursive: true });
   await rm(path.join(consumer, ".rumdl.toml"));
   await Bun.write(path.join(consumer, "cinch.toml"), "pilot = 0\n");
+  const presets = await run([executable, "preset", "--json"], consumer, {
+    exitCode: 1,
+  });
+  if (!presets.includes(".outfitter/configs/presets/rumdl.toml")) {
+    throw new Error(
+      "The packed preset command did not preserve legacy managed paths"
+    );
+  }
   await Bun.write(
     path.join(consumer, "explain.ts"),
     `

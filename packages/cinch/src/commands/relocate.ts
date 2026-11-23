@@ -5,23 +5,19 @@ import { STANDALONE_FILE, loadConfig } from "../config/load.ts";
 import { toRootRelative } from "../config/root.ts";
 import { SCHEMA_VERSION } from "../contracts/plan.ts";
 import type { RelocateAction, RelocateReport } from "../contracts/relocate.ts";
-import { EXIT_CODE, outcomeOf } from "../contracts/result.ts";
+import { outcomeOf } from "../contracts/result.ts";
 import type { Outcome } from "../contracts/result.ts";
 import { unifiedDiff } from "../render/diff.ts";
-import { renderRelocate, renderRelocateJson } from "../render/relocate.ts";
 import { runPlan } from "../runner/run.ts";
-import type { CommandRequest, CommandResponse } from "./command.ts";
+import type { Operation } from "./command.ts";
 import { describeConfigError } from "./errors.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { describeGap, gapsOf } from "./preset-gaps.ts";
+import type { PresetRequest } from "./preset-operation.ts";
+import { ropesPresetAdvice } from "./preset-options.ts";
 import type { Preset } from "./presets.ts";
 import { STARTER_CONFIG } from "./starter.ts";
-
-const unusable = (message: string): CommandResponse => ({
-  error: `cinch: ${message}`,
-  exitCode: EXIT_CODE.incomplete,
-});
 
 const textAt = async (root: string, file: string): Promise<string | null> => {
   const handle = Bun.file(path.join(root, file));
@@ -117,35 +113,42 @@ export const outside = async (
 const UNSETTLED =
   "The Cinch setup is not clean after the move. Run `cinch doctor` to see why.";
 
+const respond = (
+  report: RelocateReport,
+  outcome: Outcome = "clean"
+): Operation<{
+  readonly report: RelocateReport;
+  readonly outcome: Outcome;
+}> => ({
+  ok: true,
+  value: { outcome, report },
+});
+
 /**
  * `cinch preset adopt <name>` moves the settings in a tool's own config
  * into the Cinch config, and `eject` moves them back out. Both only show
  * the change, and write it with `--yes`. Every file is settled before any
  * is written.
  */
-export const relocate = async (
-  request: CommandRequest,
+export const runRelocate = async (
+  request: PresetRequest,
   deps: CommandDeps,
   root: string,
-  moving: Moving
-): Promise<CommandResponse> => {
+  moving: Moving,
+  command: "cinch" | "rope" = "cinch"
+): Promise<
+  Operation<{ readonly report: RelocateReport; readonly outcome: Outcome }>
+> => {
   const { action, preset } = moving;
   const moved = await planned(deps, root, moving);
   if ("error" in moved) {
-    return unusable(moved.error);
+    return { error: moved.error, ok: false };
   }
   const base = {
     action,
     preset: preset.name,
     schemaVersion: SCHEMA_VERSION,
   } as const;
-  const respond = (
-    report: RelocateReport,
-    outcome: Outcome = "clean"
-  ): CommandResponse => ({
-    exitCode: EXIT_CODE[outcome],
-    output: request.json ? renderRelocateJson(report) : renderRelocate(report),
-  });
   if (!moved.ok) {
     return respond(
       {
@@ -153,7 +156,10 @@ export const relocate = async (
         changed: [],
         diff: "",
         notes: [],
-        stopped: moved.reasons,
+        stopped:
+          command === "rope"
+            ? moved.reasons.map(ropesPresetAdvice)
+            : moved.reasons,
         written: false,
       },
       "findings"
@@ -161,9 +167,10 @@ export const relocate = async (
   }
   const beyond = await outside(root, moved.files);
   if (beyond !== undefined) {
-    return unusable(
-      `${beyond} leads outside the repository, so Cinch will not write it.`
-    );
+    return {
+      error: `${beyond} leads outside the repository, so Cinch will not write it.`,
+      ok: false,
+    };
   }
   const before = await Promise.all(
     moved.files.map((file) => textAt(root, file.path))
@@ -190,7 +197,12 @@ export const relocate = async (
       ...base,
       changed: changes.map((file) => file.path),
       diff,
-      notes: clean ? moved.notes : [...moved.notes, UNSETTLED],
+      notes: clean
+        ? moved.notes
+        : [
+            ...moved.notes,
+            command === "rope" ? ropesPresetAdvice(UNSETTLED) : UNSETTLED,
+          ],
       written,
     },
     outcome

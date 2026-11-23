@@ -1,109 +1,32 @@
-import path from "node:path";
-
+import { loadConfig } from "../config/load.ts";
 import type { FixReport } from "../contracts/fix.ts";
 import type { Plan } from "../contracts/plan.ts";
-import type { PresetFile, PresetReport } from "../contracts/preset.ts";
+import type { PresetResponse } from "../contracts/preset.ts";
 import { RelocateActionSchema } from "../contracts/relocate.ts";
 import { EXIT_CODE } from "../contracts/result.ts";
-import type { ExitCode, Outcome, Result } from "../contracts/result.ts";
-import { renderFix, renderFixJson } from "../render/fix.ts";
-import { renderPresets, renderPresetsJson } from "../render/preset.ts";
-import { runPlan } from "../runner/run.ts";
-import type { Command, CommandRequest, CommandResponse } from "./command.ts";
+import type { ExitCode } from "../contracts/result.ts";
+import { renderPresetResponse } from "../render/preset-operation.ts";
+import type { Command, Operation } from "./command.ts";
 import { runWrite } from "./fix.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
-import { describeGap, gapOf, gapsOf } from "./preset-gaps.ts";
+import { describeGap, gapsOf } from "./preset-gaps.ts";
+import { listPresets } from "./preset-list.ts";
+import type { PresetRequest } from "./preset-operation.ts";
+import { presetOptionProblem } from "./preset-options.ts";
 import { locate, pick } from "./presets.ts";
 import type { Preset } from "./presets.ts";
-import { relocate } from "./relocate.ts";
+import { runRelocate } from "./relocate.ts";
 
 const ACTIONS = new Set(["list", "add", "update"]);
 
-const unusable = (message: string): CommandResponse => ({
-  error: `cinch: ${message}`,
-  exitCode: EXIT_CODE.incomplete,
+const unusable = (error: string): Operation<PresetResponse> => ({
+  error,
+  ok: false,
 });
 
 const filesOf = (presets: readonly Preset[]): string[] =>
   presets.flatMap((preset) => preset.files);
-
-const stateOf = async (
-  root: string,
-  preset: Preset,
-  file: string,
-  result: Result
-): Promise<PresetFile> => {
-  const gap = gapOf(preset, file, result.plan);
-  if (gap) {
-    return gap.why === "off"
-      ? { path: file, state: "off" }
-      : { message: describeGap(gap), path: file, state: "blocked" };
-  }
-  const step = result.steps.find(
-    (ran) => ran.adapter === preset.adapter && ran.path === file
-  );
-  if (!step || step.status === "incomplete") {
-    return { message: step?.reason, path: file, state: "unknown" };
-  }
-  if (step.status !== "findings") {
-    return { path: file, state: "current" };
-  }
-  const [finding] = step.findings;
-  if (finding && !finding.fixable) {
-    return { message: finding.message, path: file, state: "blocked" };
-  }
-  const exists = await Bun.file(path.join(root, file)).exists();
-  return { path: file, state: exists ? "stale" : "missing" };
-};
-
-const OUTCOME: Readonly<Record<PresetFile["state"], Outcome>> = {
-  blocked: "findings",
-  current: "clean",
-  missing: "findings",
-  off: "clean",
-  stale: "findings",
-  unknown: "incomplete",
-};
-
-/** Incomplete beats findings, and findings beat clean, as for a result. */
-const exitFor = (files: readonly PresetFile[]): ExitCode => {
-  const outcomes = new Set(files.map((file) => OUTCOME[file.state]));
-  if (outcomes.has("incomplete")) {
-    return EXIT_CODE.incomplete;
-  }
-  return outcomes.has("findings") ? EXIT_CODE.findings : EXIT_CODE.clean;
-};
-
-const list = async (
-  request: CommandRequest,
-  deps: CommandDeps,
-  root: string,
-  presets: readonly Preset[]
-): Promise<CommandResponse> => {
-  const prepared = await prepare({ cwd: root, paths: filesOf(presets) }, deps);
-  if (!prepared.ok) {
-    return unusable(prepared.error);
-  }
-  const { adapters, plan } = prepared.value;
-  const result = await runPlan(plan, adapters, { mode: "check" });
-  const described = await Promise.all(
-    presets.map(async (preset) => ({
-      files: await Promise.all(
-        preset.files.map((file) => stateOf(root, preset, file, result))
-      ),
-      name: preset.name,
-    }))
-  );
-  const report: PresetReport = {
-    presets: described,
-    schemaVersion: plan.schemaVersion,
-  };
-  return {
-    exitCode: exitFor(described.flatMap((item) => item.files)),
-    output: request.json ? renderPresetsJson(report) : renderPresets(report),
-  };
-};
 
 const exitOf = (report: FixReport): ExitCode =>
   EXIT_CODE[report.result.outcome];
@@ -131,11 +54,11 @@ const wanted = (
 };
 
 const write = async (
-  request: CommandRequest,
+  request: PresetRequest,
   deps: CommandDeps,
   root: string,
   picked: { readonly presets: readonly Preset[]; readonly named: boolean }
-): Promise<CommandResponse> => {
+): Promise<Operation<PresetResponse>> => {
   // Every file is settled before any is written: a preset the config
   // switches off, or a file it leaves out, stops the whole write.
   const prepared = await prepare(
@@ -155,11 +78,11 @@ const write = async (
     mode: "doctor",
   });
   if (!ran.ok) {
-    return { error: `cinch: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
+    return unusable(ran.error);
   }
   return {
-    exitCode: exitOf(ran.value),
-    output: request.json ? renderFixJson(ran.value) : renderFix(ran.value),
+    ok: true,
+    value: { exitCode: exitOf(ran.value), kind: "write", report: ran.value },
   };
 };
 
@@ -170,53 +93,110 @@ const write = async (
  * `adopt <name>` and `eject <name>` move a tool's settings into the Cinch
  * config and back out.
  */
+export const runPreset = async (
+  request: PresetRequest,
+  deps: CommandDeps,
+  command: "cinch" | "rope" = "cinch"
+): Promise<Operation<PresetResponse>> => {
+  const located = await locate(request.cwd, deps);
+  if (!located.ok) {
+    return unusable(located.error);
+  }
+  const action = request.action ?? "list";
+  const names = request.paths;
+  const moves = RelocateActionSchema.safeParse(action);
+  if (!moves.success && !ACTIONS.has(action)) {
+    return unusable(
+      `unknown preset action "${action}". Use list, add, update, adopt or eject.`
+    );
+  }
+  if (action === "add" && names.length === 0) {
+    return unusable(
+      `name the preset to add. Run \`${command} preset\` to see them.`
+    );
+  }
+  if (moves.success && names.length !== 1) {
+    return unusable(
+      `name one preset to ${action}. Run \`${command} preset\` to see them.`
+    );
+  }
+  const among = moves.success ? located.movables : located.presets;
+  const picked = pick(
+    among,
+    action === "list" && command === "cinch" ? [] : names
+  );
+  if (!picked.ok) {
+    const known = among.map((item) => item.name).join(", ");
+    return unusable(
+      moves.success
+        ? `there is nothing named "${picked.unknown}" to ${action}. Cinch can ${action}: ${known}.`
+        : `there is no preset named "${picked.unknown}". Cinch ships: ${known}.`
+    );
+  }
+  const { root } = located.root;
+  const [only] = picked.presets;
+  if (moves.success && only !== undefined) {
+    const moved = await runRelocate(
+      request,
+      deps,
+      root,
+      {
+        action: moves.data,
+        preset: only,
+      },
+      command
+    );
+    return moved.ok
+      ? {
+          ok: true,
+          value: {
+            exitCode: EXIT_CODE[moved.value.outcome],
+            kind: "move",
+            report: moved.value.report,
+          },
+        }
+      : moved;
+  }
+  return await (action === "list"
+    ? listPresets(deps, root, picked.presets)
+    : write(request, deps, root, {
+        named: names.length > 0,
+        presets: picked.presets,
+      }));
+};
+
 export const preset =
   (deps: CommandDeps): Command =>
   async (request) => {
-    const located = await locate(request.cwd, deps);
-    if (!located.ok) {
-      return unusable(located.error);
-    }
-    const action = request.action ?? "list";
-    const names = request.paths;
-    const moves = RelocateActionSchema.safeParse(action);
-    if (!moves.success && !ACTIONS.has(action)) {
-      return unusable(
-        `unknown preset action "${action}". Use list, add, update, adopt or eject.`
-      );
-    }
-    if (action === "add" && names.length === 0) {
-      return unusable(
-        "name the preset to add. Run `cinch preset` to see them."
-      );
-    }
-    if (moves.success && names.length !== 1) {
-      return unusable(
-        `name one preset to ${action}. Run \`cinch preset\` to see them.`
-      );
-    }
-    const among = moves.success ? located.movables : located.presets;
-    const picked = pick(among, action === "list" ? [] : names);
-    if (!picked.ok) {
-      const known = among.map((item) => item.name).join(", ");
-      return unusable(
-        moves.success
-          ? `there is nothing named "${picked.unknown}" to ${action}. Cinch can ${action}: ${known}.`
-          : `there is no preset named "${picked.unknown}". Cinch ships: ${known}.`
-      );
-    }
-    const { root } = located.root;
-    const [only] = picked.presets;
-    if (moves.success && only !== undefined) {
-      return await relocate(request, deps, root, {
-        action: moves.data,
-        preset: only,
-      });
-    }
-    return await (action === "list"
-      ? list(request, deps, root, picked.presets)
-      : write(request, deps, root, {
-          named: names.length > 0,
-          presets: picked.presets,
-        }));
+    const ran = await runPreset(request, deps);
+    return ran.ok
+      ? {
+          exitCode: ran.value.exitCode,
+          output: renderPresetResponse(ran.value, request.json),
+        }
+      : { error: `cinch: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
   };
+
+export const runRopesPreset = async (
+  request: PresetRequest,
+  deps: CommandDeps
+): Promise<Operation<PresetResponse>> => {
+  const problem = presetOptionProblem(request);
+  if (problem !== undefined) {
+    return unusable(problem);
+  }
+  const located = await locate(request.cwd, deps);
+  if (!located.ok) {
+    return unusable(located.error);
+  }
+  const config = await loadConfig(located.root.root);
+  if (!config.ok) {
+    return await runPreset(request, deps, "rope");
+  }
+  if (config.value.file === null) {
+    return unusable(
+      "Run `rope init` to preview repository setup before managing presets."
+    );
+  }
+  return await runPreset(request, deps, "rope");
+};

@@ -9,6 +9,8 @@ import { runExplain } from "./commands/explain.ts";
 import { runFix } from "./commands/fix.ts";
 import { runMigrationPreview } from "./commands/migrate.ts";
 import { capturePolicy } from "./commands/policy-preview.ts";
+import type { PresetRequest } from "./commands/preset-operation.ts";
+import { runRopesPreset } from "./commands/preset.ts";
 import { runRopesInit } from "./commands/ropes-init.ts";
 import type { InitRequest } from "./commands/ropes-init.ts";
 import { runTrace } from "./commands/trace.ts";
@@ -41,8 +43,12 @@ export { resolveLocalCli } from "./commands/local-cli.ts";
 export type { LocalCliRequest } from "./commands/local-cli.ts";
 export type { RepairInput, RepairRecord } from "./contracts/repair.ts";
 
+export type { PresetRequest } from "./commands/preset-operation.ts";
+export type { PresetResponse } from "./contracts/preset.ts";
+
 const deps = { adapters: adaptersFor };
 
+export const preset = (request: PresetRequest) => runRopesPreset(request, deps);
 export const doctor = (request: DoctorRequest) => runDoctor(request, deps);
 export const check = (request: ReadRequest) => runCheck(request, deps);
 export const explain = (request: ReadRequest, probeTools = false) =>

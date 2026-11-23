@@ -1,6 +1,4 @@
 #!/usr/bin/env bun
-import { parseArgs } from "node:util";
-
 import {
   check,
   doctor,
@@ -27,12 +25,14 @@ import {
   renderTrace,
 } from "@ropes/core/render";
 
+import { incompatibleOption, invocation } from "./args.ts";
 import { migrationCommand } from "./cleanup.ts";
 import { delegate } from "./delegate.ts";
 import { HELP, version } from "./help.ts";
 import { initialize } from "./initialize.ts";
 import { fail, print } from "./output.ts";
 import { policy } from "./policy.ts";
+import { presetCommand } from "./preset.ts";
 import { schema } from "./schema.ts";
 
 const renderMigration = (preview: MigrationPreview): string => {
@@ -96,55 +96,6 @@ const showExplanation = async (
   return EXIT_CODE.clean;
 };
 
-const invocation = (argv: readonly string[]) =>
-  parseArgs({
-    allowPositionals: true,
-    args: [...argv],
-    options: {
-      at: { type: "string" },
-      candidate: { type: "string" },
-      "dry-run": { type: "boolean" },
-      fix: { type: "boolean" },
-      help: { short: "h", type: "boolean" },
-      json: { type: "boolean" },
-      migration: { type: "string" },
-      parent: { type: "string" },
-      strict: { type: "boolean" },
-      trace: { type: "boolean" },
-      version: { short: "v", type: "boolean" },
-      yes: { type: "boolean" },
-    },
-  });
-
-const incompatibleOption = (
-  verb: string,
-  values: ReturnType<typeof invocation>["values"]
-): string | undefined => {
-  if (values.fix === true && verb !== "doctor") {
-    return "--fix is only for doctor.";
-  }
-  if (
-    values["dry-run"] === true &&
-    !["fix", "init", "migrate"].includes(verb) &&
-    !(verb === "doctor" && values.fix === true)
-  ) {
-    return "--dry-run is only for fix, init, migrate, and doctor --fix.";
-  }
-  if (values.yes === true && verb !== "init") {
-    return "--yes is only for init.";
-  }
-  if (values.trace === true && verb !== "explain") {
-    return "--trace is only for explain.";
-  }
-  if (
-    values.at !== undefined &&
-    !["explain", "check", "policy"].includes(verb)
-  ) {
-    return "--at is only for explain, check, and policy snapshot.";
-  }
-  return undefined;
-};
-
 const checkPaths = async (
   request: ReadRequest,
   json: boolean
@@ -157,32 +108,13 @@ const checkPaths = async (
   return exitCodeOf(ran.value);
 };
 
-const main = async (argv: readonly string[]): Promise<number> => {
-  const { values, positionals } = invocation(argv);
-  const [verb, ...paths] = positionals;
-  if (values.version === true) {
-    print(version(import.meta.filename));
-    return EXIT_CODE.clean;
-  }
-  if (values.help === true || verb === undefined) {
-    print(HELP.trimEnd());
-    return EXIT_CODE.clean;
-  }
-  const json = values.json === true;
-  const optionProblem = incompatibleOption(verb, values);
-  if (optionProblem !== undefined) {
-    return fail(optionProblem, json);
-  }
-  const migrationResult = await migrationCommand(verb, paths, values, json);
-  if (migrationResult !== null) {
-    return migrationResult;
-  }
-  const request = {
-    ...(values.at === undefined ? {} : { at: values.at }),
-    cwd: process.cwd(),
-    paths,
-    strict: values.strict === true || process.env.CI === "true",
-  };
+const dispatch = async (
+  verb: string,
+  request: ReadRequest,
+  values: ReturnType<typeof invocation>["values"],
+  json: boolean
+): Promise<number> => {
+  const { paths } = request;
   switch (verb) {
     case "explain": {
       return await showExplanation(request, json, values.trace === true);
@@ -221,6 +153,13 @@ const main = async (argv: readonly string[]): Promise<number> => {
     case "migrate": {
       return await migrate(request.cwd, paths, json);
     }
+    case "preset": {
+      return await presetCommand(request, {
+        dryRun: values["dry-run"] === true,
+        json,
+        yes: values.yes === true,
+      });
+    }
     case "schema": {
       return schema(paths, json);
     }
@@ -228,6 +167,35 @@ const main = async (argv: readonly string[]): Promise<number> => {
       return fail(`unknown command "${verb}". Run rope --help.`, json);
     }
   }
+};
+
+const main = async (argv: readonly string[]): Promise<number> => {
+  const { values, positionals } = invocation(argv);
+  const [verb, ...paths] = positionals;
+  if (values.version === true) {
+    print(version(import.meta.filename));
+    return EXIT_CODE.clean;
+  }
+  if (values.help === true || verb === undefined) {
+    print(HELP.trimEnd());
+    return EXIT_CODE.clean;
+  }
+  const json = values.json === true;
+  const optionProblem = incompatibleOption(verb, values);
+  if (optionProblem !== undefined) {
+    return fail(optionProblem, json);
+  }
+  const migrationResult = await migrationCommand(verb, paths, values, json);
+  if (migrationResult !== null) {
+    return migrationResult;
+  }
+  const request = {
+    ...(values.at === undefined ? {} : { at: values.at }),
+    cwd: process.cwd(),
+    paths,
+    strict: values.strict === true || process.env.CI === "true",
+  };
+  return await dispatch(verb, request, values, json);
 };
 
 const argv = process.argv.slice(2);
