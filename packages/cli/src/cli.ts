@@ -8,7 +8,6 @@ import {
   EXIT_CODE,
   exitCodeOf,
   fix,
-  init,
   previewMigration,
   prepareRuntime,
   STANDALONE,
@@ -31,6 +30,7 @@ import {
 import { migrationCommand } from "./cleanup.ts";
 import { delegate } from "./delegate.ts";
 import { HELP, version } from "./help.ts";
+import { initialize } from "./initialize.ts";
 import { fail, print } from "./output.ts";
 import { policy } from "./policy.ts";
 
@@ -137,35 +137,6 @@ const incompatibleOption = (
     return "--at is only for explain, check, and policy snapshot.";
   }
   return undefined;
-};
-
-const initialize = async (
-  request: ReadRequest,
-  values: ReturnType<typeof invocation>["values"],
-  json: boolean
-): Promise<number> => {
-  if (request.paths.length > 0) {
-    return fail(
-      "init sets up the whole repository, so it takes no paths.",
-      json
-    );
-  }
-  const ran = await init({
-    cwd: request.cwd,
-    dryRun: values["dry-run"] === true,
-    strict: request.strict === true,
-    yes: values.yes === true,
-  });
-  if (!ran.ok) {
-    return fail(ran.error, json);
-  }
-  const report = ran.value;
-  const hint =
-    report.dryRun && report.changed.length > 0
-      ? "\n\nRun `rope init --yes` to write this setup."
-      : "";
-  print(json ? renderFixJson(report) : renderFix(report) + hint);
-  return exitCodeOf(report.result);
 };
 
 const checkPaths = async (
