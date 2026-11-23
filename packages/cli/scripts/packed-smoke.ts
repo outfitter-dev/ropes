@@ -180,6 +180,15 @@ console.log(JSON.stringify(parsed.value));
   if (!configSchema.includes('"title": "rope.toml"')) {
     throw new Error("Packed rope did not emit the Ropes config schema");
   }
+  const rule = await run(
+    [executable, "explain", "--rule", "config/tsconfig-extends", "--json"],
+    consumer
+  );
+  if (!rule.includes('"id": "config/tsconfig-extends"')) {
+    throw new Error(
+      "The packed rule lookup did not find its bundled definition"
+    );
+  }
   await proveConsumer(consumer);
   await proveDelegation(folder, consumer);
 };

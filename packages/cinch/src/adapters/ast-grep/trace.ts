@@ -37,6 +37,7 @@ export const describeScan = async (
         "No engine was started or its version confirmed. Rule files may further narrow the planned file coverage.",
         "These are the initial invocations. A failed batch may retry files individually.",
       ],
+      paths: rules === "" ? [] : paths,
       rules: [
         ...(input.rules ?? []),
         ...[...local.ids].map((id) => `local/${id}`),

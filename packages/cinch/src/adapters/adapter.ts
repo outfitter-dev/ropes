@@ -1,6 +1,7 @@
 import type { FactReport } from "../contracts/facts.ts";
 import type { Finding } from "../contracts/finding.ts";
 import type { StepStatus } from "../contracts/result.ts";
+import type { RuleDefinitions } from "../contracts/rule-explanation.ts";
 import type { PackageTarget } from "../contracts/targets.ts";
 import type { CheckDescriptionResult } from "../contracts/trace.ts";
 import type { AdapterDescriptor } from "./descriptor.ts";
@@ -142,6 +143,7 @@ export interface Adapter {
     input: StepInput
   ) => Promise<readonly PreviewInput[]>;
   /** Describe initial check invocations without running or probing an engine. */
+  readonly describeRules?: (root: string) => Promise<RuleDefinitions>;
   readonly describeCheck?: (
     input: StepInput
   ) => Promise<CheckDescriptionResult>;

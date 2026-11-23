@@ -9,6 +9,8 @@ export interface PlannedInvocation {
 }
 
 export interface CheckDescription {
+  /** Existing literal file arguments that the described invocation will pass. */
+  readonly paths?: readonly string[];
   readonly invocations: readonly PlannedInvocation[];
   readonly rules: readonly string[];
   /** Authored rule files the maintainer can edit. */
