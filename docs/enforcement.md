@@ -28,6 +28,12 @@ rope check packages/trial/tsconfig.json packages/ready/tsconfig.json --json
 
 The same missing-extends diagnostic remains an error from the engine at both levels. Each explicitly governed finding carries its effective `enforcement.level` and `enforcement.source`. Advisory-only completed checks exit 0 and report the advisory count. A blocking match exits 1. A required tool that cannot run yields exit 2, including when other steps have already reported matches. The step's native `findings` status remains a record of its diagnostics, while the shared result verdict applies enforcement.
 
+## Discover and adopt packs
+
+Run `rope rules` or `rope rules list` to inspect each shipped pack's state and the repository's local rules. The report shows where a pack is relevant, whether the policy adopts it, and whether rules are enabled. An adopted pack whose files fall outside selection carries a note naming the policy and the selection to review.
+
+`rope rules adopt config` previews the policy edit. Add `--yes` to apply it, or combine `--yes --dry-run` to retain the preview. A repeat adoption produces no change. An existing rollout enabled only through path overrides keeps that scope when packs are adopted. If the active policy changes during planning, adoption stops so the saved edit can be reviewed before retrying. Adoption writes the active `rope.toml` or supported legacy policy file and leaves the Git index untouched. A repository without a policy config is directed to `rope init` first.
+
 ## Set a deadline
 
 Replace a level with a quoted calendar date, for example `"config/tsconfig-extends" = "2027-02-01"`. The rule is advisory before February 1 and blocking from midnight UTC on February 1. The same override order applies to deadlines and fixed levels. Each active path policy shows the resolved level, its source, and `blockingAt`. Unadopted or disabled rules and paths outside the rule's scope contribute no transition.

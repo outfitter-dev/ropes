@@ -15,12 +15,21 @@ import type { PresetRequest } from "./commands/preset-operation.ts";
 import { runRopesPreset } from "./commands/preset.ts";
 import { runRopesInit } from "./commands/ropes-init.ts";
 import type { InitRequest } from "./commands/ropes-init.ts";
+import { adoptRules } from "./commands/rules-adopt.ts";
+import type { RulesAdoptRequest } from "./commands/rules-adopt.ts";
+import { listRules } from "./commands/rules.ts";
 import { runTrace } from "./commands/trace.ts";
 import type { CleanupRequest } from "./contracts/cleanup.ts";
 
 export type { FixRequest, Operation, ReadRequest } from "./commands/command.ts";
 export type { RuleRequest } from "./commands/explain-rule.ts";
 export type { RuleExplanation } from "./contracts/rule-explanation.ts";
+export type { RulesListing } from "./commands/rules.ts";
+export type { RulesAdoptRequest } from "./commands/rules-adopt.ts";
+export type {
+  RulesReport,
+  RulesAdoptReport,
+} from "./contracts/rules-report.ts";
 export type { Explanation } from "./commands/explain.ts";
 export type { InitRequest } from "./commands/ropes-init.ts";
 export type { MigrationPreview } from "./commands/migrate.ts";
@@ -62,6 +71,9 @@ export const explain = (request: ReadRequest, probeTools = false) =>
 export const fix = (request: FixRequest) => runFix(request, deps, "rope");
 export const init = (request: InitRequest) => runRopesInit(request, deps);
 export const previewMigration = (cwd: string) => runMigrationPreview(cwd, deps);
+export const rules = (request: ReadRequest) => listRules(request, deps);
+export const rulesAdopt = (request: RulesAdoptRequest) =>
+  adoptRules(request, deps);
 export const trace = (request: ReadRequest) => runTrace(request, deps);
 
 export type { CleanupRequest, CleanupReport } from "./contracts/cleanup.ts";

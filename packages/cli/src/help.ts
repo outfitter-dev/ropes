@@ -21,6 +21,7 @@ export const HELP = `rope ${manifest.version}
 Usage: rope <explain|check|fix> [path...] [--json] [--strict]
        rope <explain|check> [path...] --at <UTC instant>
        rope doctor [--fix [--dry-run]] [--json] [--strict]
+       rope rules [list|adopt [pack...]] [--yes] [--dry-run] [--json]
        rope init [--yes] [--dry-run] [--json] [--strict]
        rope fix [path...] --dry-run
        rope explain [path...] [--rule <id>] [--trace] [--json]
@@ -40,6 +41,7 @@ Usage: rope <explain|check|fix> [path...] [--json] [--strict]
   preset    Inspect or manage the repository presets
   schema    Print a JSON Schema or list the available names
   migrate   Preview a legacy Cinch config migration
+  rules     List rule packs or preview and apply adoption
   policy    Capture and compare resolved rule policy
 
 ${setup}

@@ -29,6 +29,7 @@ import { initialize } from "./initialize.ts";
 import { fail, print } from "./output.ts";
 import { policy } from "./policy.ts";
 import { presetCommand } from "./preset.ts";
+import { rulesCommand } from "./rules.ts";
 import { schema } from "./schema.ts";
 
 const renderMigration = (preview: MigrationPreview): string => {
@@ -136,6 +137,9 @@ const dispatch = async (
         json,
         yes: values.yes === true,
       });
+    }
+    case "rules": {
+      return await rulesCommand(request, values, json);
     }
     case "schema": {
       return schema(paths, json);

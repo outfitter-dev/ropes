@@ -1,4 +1,4 @@
-import type { PackState } from "../contracts/plan.ts";
+import type { PackState, Plan } from "../contracts/plan.ts";
 import { SCHEMA_VERSION } from "../contracts/plan.ts";
 import { EXIT_CODE } from "../contracts/result.ts";
 import type {
@@ -6,9 +6,10 @@ import type {
   RulesPack,
   RulesReport,
 } from "../contracts/rules-report.ts";
-import { namedLocalRules, shippedStates } from "../policy/packs.ts";
+import { compileGlobs } from "../policy/glob.ts";
+import { keptWhole, namedLocalRules, shippedStates } from "../policy/packs.ts";
 import { renderRules } from "../render/rules.ts";
-import type { Command } from "./command.ts";
+import type { Command, Operation, ReadRequest } from "./command.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { adopt } from "./rules-adopt.ts";
@@ -39,11 +40,82 @@ const withStates = (pack: PackState, enabled: boolean): RulesPack => {
   };
 };
 
-/**
- * `cinch rules` lists the rule packs Cinch ships and how each stands in this
- * repository, whatever part of it the command was started in. It reads the
- * same plan `explain` shows and runs nothing.
- */
+const enabledInScope = (
+  pack: PackState,
+  plan: Plan,
+  enabled: boolean,
+  kept: ReadonlySet<string>
+): boolean => {
+  const matches = compileGlobs(pack.relevant);
+  const selected = plan.paths.filter(
+    (entry) =>
+      !kept.has(entry.path) &&
+      entry.skipped === undefined &&
+      matches(entry.path)
+  );
+  return selected.length === 0
+    ? enabled
+    : selected.some((entry) =>
+        entry.policy.some(
+          ({ key, value }) => key === "rules.enabled" && value === true
+        )
+      );
+};
+
+export interface RulesListing {
+  readonly report: RulesReport;
+  readonly config: { readonly file: string; readonly table: string };
+}
+
+export const listRules = async (
+  request: ReadRequest,
+  deps: CommandDeps,
+  defaultFile = "rope.toml"
+): Promise<Operation<RulesListing>> => {
+  const prepared = await prepare({ ...request, paths: [] }, deps);
+  if (!prepared.ok) {
+    return prepared;
+  }
+  const { adapters, config, plan, present, root } = prepared.value;
+  const enabled = plan.rules !== undefined;
+  const descriptors = adapters.map(({ descriptor }) => descriptor);
+  const packs = plan.rules ?? shippedStates(config, descriptors, present);
+  const kept = keptWhole(descriptors);
+  const local = plan.localRules ?? namedLocalRules(config, descriptors);
+  const file = root.configFile ?? defaultFile;
+  const notes = await unreached(request, deps, {
+    adapters,
+    file,
+    includeDisabled: defaultFile === "rope.toml",
+    names: packs
+      .filter((pack) => pack.named !== undefined && pack.off === undefined)
+      .map((pack) => pack.name),
+    present,
+    root: root.root,
+  });
+  return {
+    ok: true,
+    value: {
+      config: { file, table: `${config.prefix ?? ""}rules` },
+      report: {
+        enabled,
+        ...(local === undefined ? {} : { localRules: local }),
+        notes,
+        packs: packs.map((pack) =>
+          withStates(
+            pack,
+            defaultFile === "rope.toml"
+              ? enabledInScope(pack, plan, enabled, kept)
+              : enabled
+          )
+        ),
+        schemaVersion: SCHEMA_VERSION,
+      },
+    },
+  };
+};
+
+/** Lists rule packs or previews and applies explicit pack adoption. */
 export const rules =
   (deps: CommandDeps): Command =>
   async (request) => {
@@ -57,42 +129,15 @@ export const rules =
         exitCode: EXIT_CODE.incomplete,
       };
     }
-    const prepared = await prepare({ ...request, paths: [] }, deps);
-    if (!prepared.ok) {
-      return {
-        error: `cinch: ${prepared.error}`,
-        exitCode: EXIT_CODE.incomplete,
-      };
+    const ran = await listRules(request, deps, "cinch.toml");
+    if (!ran.ok) {
+      return { error: `cinch: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
     }
-    const { adapters, config, plan, present, root } = prepared.value;
-    const enabled = plan.rules !== undefined;
-    const descriptors = adapters.map(({ descriptor }) => descriptor);
-    const packs = plan.rules ?? shippedStates(config, descriptors, present);
-    const local = plan.localRules ?? namedLocalRules(config, descriptors);
-    const file = root.configFile ?? "cinch.toml";
-    const notes = await unreached(request, deps, {
-      adapters,
-      file,
-      names: packs
-        .filter((pack) => pack.named !== undefined && pack.off === undefined)
-        .map((pack) => pack.name),
-      present,
-      root: root.root,
-    });
-    const report: RulesReport = {
-      enabled,
-      ...(local === undefined ? {} : { localRules: local }),
-      notes,
-      packs: packs.map((pack) => withStates(pack, enabled)),
-      schemaVersion: SCHEMA_VERSION,
-    };
+    const { report, config } = ran.value;
     return {
       exitCode: EXIT_CODE.clean,
       output: request.json
         ? JSON.stringify(report, null, 2)
-        : renderRules(report, {
-            file,
-            table: `${config.prefix ?? ""}rules`,
-          }),
+        : renderRules(report, config),
     };
   };

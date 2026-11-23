@@ -75,7 +75,8 @@ const isOnlyThat = (
 const within = (
   lines: readonly string[],
   start: number,
-  packs: string
+  packs: string,
+  enable: boolean
 ): string[] => {
   const next = lines.findIndex(
     (line, index) => index > start && HEADER.test(line)
@@ -93,7 +94,7 @@ const within = (
   if (stated !== -1) {
     return [
       ...lines.slice(0, stated),
-      ...(enabled === -1 ? ["enabled = true"] : []),
+      ...(enabled === -1 && enable ? ["enabled = true"] : []),
       packs,
       ...lines.slice(valueEnd(lines, stated)),
     ];
@@ -101,7 +102,7 @@ const within = (
   const after = enabled === -1 ? start : enabled;
   return [
     ...lines.slice(0, after + 1),
-    ...(enabled === -1 ? ["enabled = true"] : []),
+    ...(enabled === -1 && enable ? ["enabled = true"] : []),
     packs,
     ...lines.slice(after + 1),
   ];
@@ -116,7 +117,8 @@ const within = (
 export const namePacks = (
   given: string,
   prefix: string,
-  packs: readonly string[]
+  packs: readonly string[],
+  enable = true
 ): NamedPacks => {
   // The edit is made on LF text and given back with the endings it came in.
   const crlf = given.includes("\r\n");
@@ -142,8 +144,8 @@ export const namePacks = (
   }
   const edited =
     start === -1
-      ? `${text.trimEnd()}\n\n[${title}]\nenabled = true\n${line}\n`
-      : within(lines, start, line).join("\n");
+      ? `${text.trimEnd()}\n\n[${title}]\n${enable ? "enabled = true\n" : ""}${line}\n`
+      : within(lines, start, line, enable).join("\n");
   if (crlf && back(text) !== given) {
     return {
       ok: false,
