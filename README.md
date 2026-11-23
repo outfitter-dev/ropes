@@ -8,7 +8,18 @@ The broader [`outfitter` CLI](https://github.com/outfitter-dev/outfitter) lives 
 
 The `@ropes/core` package holds the existing Cinch implementation under `packages/cinch/`. `@ropes/cli` supplies `rope init`, `rope explain`, `rope check`, `rope fix`, and `rope doctor` for setup inspection and repair. `fix --dry-run` previews content repairs. The Markdown fixture verifies matching plans, versioned results, and exits through Cinch, core, and `rope`.
 
-In a fresh checkout, run `rope init` to preview `rope.toml` and its managed setup. Run `rope init --yes` to write the setup, then `rope check README.md` to check Markdown with the pinned engine. Repositories with Cinch config can preview the conversion with `rope migrate`.
+## Quickstart
+
+Use a CLI version that includes `init` and `doctor --fix`. For npm, replace `VERSION` with that version and commit the exact dependency pin and lockfile in your Git checkout.
+
+```bash
+bun add --dev --exact @ropes/cli@VERSION
+./node_modules/.bin/rope init
+./node_modules/.bin/rope init --yes
+./node_modules/.bin/rope check README.md
+```
+
+`init` previews `rope.toml` and its managed setup. `init --yes` applies the preview. When the setup needs repair, run `rope doctor --fix --dry-run` to preview the changes and `rope doctor --fix` to apply them. Repositories with Cinch config can preview the conversion with `rope migrate`.
 
 The npm-installed `rope` launcher delegates to the checkout's explicitly pinned `@ropes/cli` dependency, and `rope --version` reports the selected version and entry path. The standalone executable runs its embedded version, pinned through mise, and reports `rope <version> (binary)`. See [installation selection](docs/launcher.md) for both routes and their failure handling.
 
