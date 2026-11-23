@@ -63,3 +63,28 @@ test("Taplo flags an unknown key against the published schema", async () => {
   expect(bad.code).toBe(1);
   expect(bad.said).toContain("'nope' was unexpected");
 });
+
+const ruleFolder = (folder: string): string =>
+  `pilot = 0\n[rules]\nlocal = [${JSON.stringify(folder)}]\n`;
+
+test("Taplo and the loader enforce the same local rule folder boundary", async () => {
+  if (Bun.which("taplo") === null) {
+    console.warn("skipped: taplo is not on PATH, so the schema was not tried");
+    return;
+  }
+  const good = "tooling/..rules";
+  const bad = "tooling/../shared-rules";
+  const [inside, outside] = await Promise.all([
+    lint(ruleFolder(good)),
+    lint(ruleFolder(bad)),
+  ]);
+  expect(
+    parseConfigTable({ pilot: 0, rules: { local: [good] } }, ORIGIN).ok
+  ).toBe(true);
+  expect(
+    parseConfigTable({ pilot: 0, rules: { local: [bad] } }, ORIGIN).ok
+  ).toBe(false);
+  expect(inside.code).toBe(0);
+  expect(outside.code).toBe(1);
+  expect(outside.said).toContain("does not match");
+});

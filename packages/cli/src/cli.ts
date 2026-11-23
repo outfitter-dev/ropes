@@ -33,6 +33,7 @@ import { HELP, version } from "./help.ts";
 import { initialize } from "./initialize.ts";
 import { fail, print } from "./output.ts";
 import { policy } from "./policy.ts";
+import { schema } from "./schema.ts";
 
 const renderMigration = (preview: MigrationPreview): string => {
   const { source, target, managedFiles, rootReferences, recovery } = preview;
@@ -219,6 +220,9 @@ const main = async (argv: readonly string[]): Promise<number> => {
     }
     case "migrate": {
       return await migrate(request.cwd, paths, json);
+    }
+    case "schema": {
+      return schema(paths, json);
     }
     default: {
       return fail(`unknown command "${verb}". Run rope --help.`, json);

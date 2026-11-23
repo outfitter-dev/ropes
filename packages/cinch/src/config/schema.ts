@@ -7,12 +7,12 @@ import { ConfigFileSchema } from "./parse.ts";
  * with. Draft 7, because that is what TOML tooling validates against.
  * Unstable, like the format it describes.
  */
-export const configJsonSchema = (): unknown =>
+export const configJsonSchema = (title = "cinch.toml"): unknown =>
   z.toJSONSchema(
     ConfigFileSchema.meta({
       description:
         "The pilot config of Cinch. Unstable: it will change without notice.",
-      title: "cinch.toml",
+      title,
     }),
     { target: "draft-7" }
   );
