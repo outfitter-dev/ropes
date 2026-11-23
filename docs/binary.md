@@ -33,31 +33,31 @@ The targeted `Standalone` workflow runs the binary acceptance tests on native Li
 
 ## Install a checked local artifact with mise
 
-Build the executable for the consumer's platform, record its SHA-256 digest, and put the artifact at a fixed absolute path available to that consumer. The consumer needs mise and its selected engines on `PATH`. Its `mise.toml` pins the exact version, local file URL and expected digest.
+Use the native `rope` archive for the consumer's platform and record the archive's SHA-256 digest. The consumer needs mise and its selected engines on `PATH`. Its `mise.toml` pins the exact version, local file URL and expected digest.
 
 ```toml
-[tools."http:cinch"]
-version = "0.1.0-canary.3"
-url = "file:///absolute/path/to/cinch"
-bin = "cinch"
-checksum = "sha256:REPLACE_WITH_THE_ARTIFACT_SHA256"
+[tools."http:rope"]
+version = "0.1.0-canary.4"
+url = "file:///absolute/path/to/ropes-0.1.0-canary.4-darwin-arm64.tar.gz"
+bin = "rope"
+checksum = "sha256:REPLACE_WITH_THE_ARCHIVE_SHA256"
 ```
 
-An approved release uses an immutable version that matches the artifact's `cinch --version`, with its own artifact URL and checksum. The example uses the version reported by a local build from the npm canary source.
+An approved release uses an immutable version that matches the executable's `rope --version`, with its own artifact URL and checksum. The example uses the version reported by a local build from the npm canary source.
 
-mise reuses a tool already installed under the same backend and version, even if its configured URL or checksum changed. A release upgrade needs a new version identity together with the new artifact URL and checksum. For a local candidate rebuilt at the same version, use `mise install --force http:cinch` to make mise retrieve and verify the configured bytes again. Changing the version label alone still downloads the same file when its URL is fixed.
+mise reuses a tool already installed under the same backend and version, even if its configured URL or checksum changed. A release upgrade needs a new version identity together with the new artifact URL and checksum. For a local candidate rebuilt at the same version, use `mise install --force http:rope` to make mise retrieve and verify the configured bytes again. Changing the version label alone still downloads the same file when its URL is fixed.
 
 ```sh
-mise install --force http:cinch
-mise exec -- cinch --version
-mise exec -- cinch init
-mise exec -- cinch init --yes
-mise exec -- cinch check --strict --json
+mise install --force http:rope
+mise exec -- rope --version
+mise exec -- rope init
+mise exec -- rope init --yes
+mise exec -- rope check --strict --json
 ```
 
-Review the config through the repository's normal mise trust process before installation. Commit the exact artifact location and expected checksum with the policy change. A `file://` URL depends on that absolute path existing on each consumer host. For a multi-platform repository, put the URL and checksum under `[tools."http:cinch".platforms]` with `macos-arm64`, `linux-x64`, and `linux-arm64` entries for the corresponding builds. An authenticated artifact download can populate those local paths after release approval. [mise HTTP backend](https://mise.jdx.dev/dev-tools/backends/http.html)
+Review the config through the repository's normal mise trust process before installation. Commit the exact artifact location and expected checksum with the policy change. A `file://` URL depends on that absolute path existing on each consumer host. For a multi-platform repository, put the URL and checksum under `[tools."http:rope".platforms]` with `macos-arm64`, `linux-x64`, and `linux-arm64` entries for the corresponding builds. An authenticated artifact download can populate those local paths after release approval. [mise HTTP backend](https://mise.jdx.dev/dev-tools/backends/http.html)
 
-The native acceptance suite tests this route with isolated mise data, config, system config and cache folders. It rejects an incorrect digest before installation and on forced reinstall, checks the cached behavior of a same-version pin change, and verifies a new mise version identity rejects a wrong digest and selects the checked bytes after correction. It runs setup and a Markdown check through `mise exec` with Bun absent from `PATH`. The installed executable returns the same JSON and exit code as direct execution of the built artifact.
+The automatic mise fixture tests a raw `cinch` executable with isolated data, config, and cache directories. It covers digest rejection, forced reinstall, and same-version caching. For a release candidate, use the separate [standalone archive qualification](standalone-candidate.md#verify-a-clean-install) to install the `rope` archive through mise and compare the results with the package CLI with Bun absent from `PATH`.
 
 ## What is inside
 
