@@ -7,7 +7,11 @@ import type {
 const origin = (source: Provenance): string =>
   source.kind === "default" ? "default" : `${source.file}: ${source.key}`;
 
-const stateOf = (pack: PackState, enabled: boolean): string => {
+const stateOf = (
+  pack: PackState & { readonly state?: string },
+  enabled: boolean,
+  command: string
+): string => {
   if (pack.off !== undefined) {
     return `off (${origin(pack.off)})`;
   }
@@ -15,18 +19,25 @@ const stateOf = (pack: PackState, enabled: boolean): string => {
     return `not relevant: no file matches ${pack.relevant.join(", ")}`;
   }
   if (pack.named === undefined) {
-    return `not adopted, and ${pack.found} is here. Run \`cinch rules adopt ${pack.name}\` to run it`;
+    return `not adopted, and ${pack.found} is here. Run \`${command} rules adopt ${pack.name}\` to run it`;
+  }
+  if (pack.state === "not-enabled" && enabled) {
+    return "not enabled on its selected files";
   }
   return `${enabled ? "on" : "would run"}, since ${pack.found} is here (${origin(pack.named)})`;
 };
 
-const packLines = (pack: PackState, enabled: boolean): string[] => {
+const packLines = (
+  pack: PackState,
+  enabled: boolean,
+  command: string
+): string[] => {
   const runs =
     pack.off === undefined &&
     pack.found !== undefined &&
     pack.named !== undefined;
   return [
-    `  ${pack.name}  ${stateOf(pack, enabled)}`,
+    `  ${pack.name}  ${stateOf(pack, enabled, command)}`,
     `    ${pack.about}`,
     ...pack.rules.map((rule) => {
       const off = rule.off === undefined ? "" : `  off (${origin(rule.off)})`;
@@ -38,11 +49,13 @@ const packLines = (pack: PackState, enabled: boolean): string[] => {
 /** The rule packs the plan's adapters ship, and why each runs or does not. */
 export const rulesBlock = (
   packs: readonly PackState[],
-  enabled = true
+  enabled = true,
+  command = "cinch"
 ): string =>
-  ["Rule packs", ...packs.flatMap((pack) => packLines(pack, enabled))].join(
-    "\n"
-  );
+  [
+    "Rule packs",
+    ...packs.flatMap((pack) => packLines(pack, enabled, command)),
+  ].join("\n");
 
 /** The folders of its own rules the repository names. */
 export const localRulesBlock = (
@@ -56,7 +69,8 @@ export const localRulesBlock = (
 /** What `cinch rules` prints: every pack Cinch ships and how it stands here. */
 export const renderRules = (
   report: RulesReport,
-  config: { readonly file: string; readonly table: string }
+  config: { readonly file: string; readonly table: string },
+  command: "cinch" | "rope" = "cinch"
 ): string =>
   [
     ...(report.enabled
@@ -65,8 +79,8 @@ export const renderRules = (
           `Rules are not switched on here, so none of these run. Set \`enabled = true\` under \`[${config.table}]\` in ${config.file} to run them.`,
         ]),
     report.packs.length === 0
-      ? "Cinch ships no rule pack."
-      : rulesBlock(report.packs, report.enabled),
+      ? `${command === "rope" ? "Ropes" : "Cinch"} ships no rule pack.`
+      : rulesBlock(report.packs, report.enabled, command),
     ...(report.localRules === undefined
       ? []
       : [localRulesBlock(report.localRules)]),

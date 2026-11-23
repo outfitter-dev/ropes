@@ -13,3 +13,5 @@ export { doctorOutcome, renderDoctor, renderDoctorJson } from "./doctor.ts";
 export { renderPresetResponse } from "./preset-operation.ts";
 
 export { renderRuleExplanation } from "./rule-explanation.ts";
+
+export { renderRules, renderAdopt } from "./rules.ts";

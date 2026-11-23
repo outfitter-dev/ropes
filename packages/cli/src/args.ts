@@ -17,7 +17,7 @@ export const invocation = (argv: readonly string[]) =>
       strict: { type: "boolean" },
       trace: { type: "boolean" },
       version: { short: "v", type: "boolean" },
-      yes: { type: "boolean" },
+      yes: { short: "y", type: "boolean" },
     },
   });
 
@@ -30,13 +30,13 @@ export const incompatibleOption = (
   }
   if (
     values["dry-run"] === true &&
-    !["fix", "init", "migrate", "preset"].includes(verb) &&
+    !["fix", "init", "migrate", "preset", "rules"].includes(verb) &&
     !(verb === "doctor" && values.fix === true)
   ) {
-    return "--dry-run is only for fix, init, migrate, preset, and doctor --fix.";
+    return "--dry-run is only for fix, init, migrate, preset, doctor --fix, and rules adopt.";
   }
-  if (values.yes === true && !["init", "preset"].includes(verb)) {
-    return "--yes is only for init, preset adopt, and preset eject.";
+  if (values.yes === true && !["init", "preset", "rules"].includes(verb)) {
+    return "--yes is only for init, preset adopt, preset eject, and rules adopt.";
   }
   if (values.rule !== undefined && values.migration !== undefined) {
     return "--rule cannot be combined with --migration.";

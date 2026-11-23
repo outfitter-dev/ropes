@@ -1,7 +1,7 @@
 import type { Adapter } from "../adapters/adapter.ts";
 import { compileGlobs } from "../policy/glob.ts";
 import { keptWhole } from "../policy/packs.ts";
-import type { CommandRequest } from "./command.ts";
+import type { ReadRequest } from "./command.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
 
@@ -16,11 +16,12 @@ const quoted = (globs: readonly string[]): string =>
  * one of the repository's own, so it does not count as a file a pack reads.
  */
 export const unreached = async (
-  request: CommandRequest,
+  request: ReadRequest,
   deps: CommandDeps,
   given: {
     readonly adapters: readonly Adapter[];
     readonly file: string;
+    readonly includeDisabled?: boolean;
     readonly names: readonly string[];
     readonly present: readonly string[];
     /** The repository root, which the files in `present` are relative to. */
@@ -51,12 +52,29 @@ export const unreached = async (
   if (!planned.ok) {
     return [];
   }
-  const skipped = new Map(
-    planned.value.plan.paths.map((entry) => [entry.path, entry.skipped?.reason])
+  const paths = new Map(
+    planned.value.plan.paths.map((entry) => [entry.path, entry])
   );
   return packs.flatMap((pack) => {
-    const reasons = new Set(pack.files.map((file) => skipped.get(file)));
-    if (reasons.has(undefined)) {
+    const entries = pack.files.flatMap((file) => {
+      const entry = paths.get(file);
+      return entry === undefined ? [] : [entry];
+    });
+    const selected = entries.filter((entry) => entry.skipped === undefined);
+    if (selected.length > 0) {
+      const enabled = selected.some((entry) =>
+        entry.policy.some(
+          ({ key, value }) => key === "rules.enabled" && value === true
+        )
+      );
+      return given.includeDisabled === true && !enabled
+        ? [
+            `${pack.name} will not run yet: rules are disabled on every selected file it reads. Review rules.enabled and its path overrides in ${given.file}.`,
+          ]
+        : [];
+    }
+    const reasons = new Set(entries.map((entry) => entry.skipped?.reason));
+    if (entries.length < pack.files.length || reasons.has(undefined)) {
       return [];
     }
     const [first = ""] = pack.files;

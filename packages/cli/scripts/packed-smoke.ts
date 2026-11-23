@@ -4,6 +4,7 @@ import path from "node:path";
 
 import workspace from "../../../package.json" with { type: "json" };
 import core from "../../cinch/package.json" with { type: "json" };
+import { RulesAdoptReportSchema } from "../../cinch/src/contracts/rules-report.ts";
 import cli from "../package.json" with { type: "json" };
 import fixture from "../tests/fixtures/outfitter/package.json" with { type: "json" };
 import { packConsumer, proveConsumer } from "./packed-consumer.ts";
@@ -189,6 +190,23 @@ console.log(JSON.stringify(parsed.value));
       "The packed rule lookup did not find its bundled definition"
     );
   }
+  const packs = await run([executable, "rules", "--json"], consumer);
+  if (!packs.includes('"packs"')) {
+    throw new Error("The packed CLI did not expose rule-pack inspection");
+  }
+  const rulesPreview = await run(
+    [executable, "rules", "adopt", "config", "--json"],
+    consumer
+  );
+  const adoption = RulesAdoptReportSchema.parse(JSON.parse(rulesPreview));
+  assert.deepEqual(adoption.adopted, ["config"]);
+  assert.deepEqual(adoption.changed, ["cinch.toml"]);
+  assert.ok(adoption.diff.includes('+packs = ["config"]'));
+  assert.equal(adoption.written, false);
+  assert.equal(
+    await Bun.file(path.join(consumer, "cinch.toml")).text(),
+    "pilot = 0\n"
+  );
   await proveConsumer(consumer);
   await proveDelegation(folder, consumer);
 };
