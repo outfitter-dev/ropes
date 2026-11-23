@@ -1,5 +1,5 @@
-# Taplo validates the Cinch config against the schema Cinch publishes.
-# `cinch check` runs it on every TOML file. Formatting stays with `bun fmt`.
+# Taplo validates Ropes and legacy Cinch configuration against the pilot schema.
+# `rope check` runs it on every selected TOML file. Formatting stays with `bun fmt`.
 [[rule]]
 include = ["cinch.toml", "rope.toml"]
 

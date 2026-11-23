@@ -1,4 +1,4 @@
-# Cinch's own configuration for this repository.
+# Ropes configuration for this repository.
 # The pilot format is unstable and will change without notice.
 pilot = 0
 
@@ -38,7 +38,7 @@ files = ["*.md"]
 trim_trailing_whitespace = false
 
 # The shared lint, formatter and TypeScript configs. The root configs extend
-# the copies Cinch keeps under `.outfitter/configs/presets/`.
+# the copies Ropes keeps under `.ropes/configs/presets/`.
 [lint]
 enabled = true
 preset = true

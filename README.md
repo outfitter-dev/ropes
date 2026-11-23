@@ -8,13 +8,24 @@ The broader [`outfitter` CLI](https://github.com/outfitter-dev/outfitter) lives 
 
 The `@ropes/core` package holds the existing Cinch implementation under `packages/cinch/`. `@ropes/cli` supplies `rope init`, `rope explain`, `rope check`, `rope fix`, and `rope doctor` for setup inspection and repair. `fix --dry-run` previews content repairs. The Markdown fixture verifies matching plans, versioned results, and exits through Cinch, core, and `rope`.
 
-In a fresh checkout, run `rope init` to preview `rope.toml` and its managed setup. Run `rope init --yes` to write the setup, then `rope check README.md` to check Markdown with the pinned engine. Repositories with Cinch config can preview the conversion with `rope migrate`.
+## Quickstart
+
+Use a CLI version that includes `init` and `doctor --fix`. For npm, replace `VERSION` with that version and commit the exact dependency pin and lockfile in your Git checkout.
+
+```bash
+bun add --dev --exact @ropes/cli@VERSION
+./node_modules/.bin/rope init
+./node_modules/.bin/rope init --yes
+./node_modules/.bin/rope check README.md
+```
+
+`init` previews `rope.toml` and its managed setup. `init --yes` applies the preview. When the setup needs repair, run `rope doctor --fix --dry-run` to preview the changes and `rope doctor --fix` to apply them. Repositories with Cinch config can preview the conversion with `rope migrate`.
 
 The npm-installed `rope` launcher delegates to the checkout's explicitly pinned `@ropes/cli` dependency, and `rope --version` reports the selected version and entry path. The standalone executable runs its embedded version, pinned through mise, and reports `rope <version> (binary)`. See [installation selection](docs/launcher.md) for both routes and their failure handling.
 
 `rope explain` and `rope check` can compare an immutable cleanup candidate with its parent under an approved migration policy. See [staged cleanup](docs/cleanup.md) for the supported rule, scope and Git inputs.
 
-Cinch remains the repository's setup and development entry point. Its `init`, `doctor`, `preset`, `rules`, and `schema` commands are available through `bun run cinch`. Ropes reads `rope.toml` and keeps its managed files under `.ropes/configs/`. During the pilot it also reads legacy `cinch.toml` or `[cinch]` in `outfitter.toml`, with managed files under `.outfitter/configs/`. The [cutover inventory](docs/cutover.md) records the compatibility choices.
+This repository checks and fixes itself through `rope`. The legacy `cinch` entry point remains available for compatibility. Ropes reads `rope.toml` and keeps its managed files under `.ropes/configs/`. During the pilot it also reads legacy `cinch.toml` or `[cinch]` in `outfitter.toml`, with managed files under `.outfitter/configs/`. The [cutover inventory](docs/cutover.md) records the compatibility choices.
 
 Capture two resolved rule policies with `rope policy snapshot` and compare them with `rope policy compare`. See [policy previews](docs/policy-preview.md).
 
@@ -93,7 +104,7 @@ A table under `tools` is copied into the config Cinch generates for that tool, a
 
 The `[editor]` table holds the facts editors and formatters share: indent, line endings, charset, line width. Cinch writes the whole root `.editorconfig` from it, and never overwrites one a person wrote. With `[editor] check = true`, the built-in text checker validates selected files that have no active formatter. See [editor settings](docs/editor-settings.md). A tool's own config that states one of these facts differently is a finding: see [shared facts](docs/shared-facts.md).
 
-This repository's own `cinch.toml` is the first user of the format.
+This repository uses `rope.toml` and tracks its generated configuration under `.ropes/configs/`.
 
 ## Layout
 
@@ -120,12 +131,12 @@ The `@ropes/core` package exports typed `explain`, `check`, and `fix` operations
 ./scripts/bootstrap.sh
 bun run check
 bun run rope --help
-bun run cinch --help
+bun run rope doctor
 ```
 
-`bun run check` runs the [workflow gate](docs/workflows.md), `cinch check` on this repository, then the tests. `cinch check` reads the root `cinch.toml` for code linting, type checking and formatting. `bun run fix` is `cinch fix`. `cinch check` needs the pinned rumdl, Lychee and Taplo on `PATH`. With mise activated in your shell it is. Otherwise run `mise exec -- bun run check`. Without them the step is incomplete and the check fails, which is the point: a check that could not run is not a pass.
+`bun run check` runs the [workflow gate](docs/workflows.md), `rope check` on this repository, then the tests. `rope check` reads the root `rope.toml` for code linting, type checking and formatting. `bun run fix` is `rope fix`. The check needs the pinned rumdl, Lychee and Taplo on `PATH`. With mise activated in your shell it is. Otherwise run `mise exec -- bun run check`. Without them the step is incomplete and the check fails, which is the point: a check that could not run is not a pass.
 
-The pre-commit hook runs `cinch fix` on the files you staged. It stages what it fixed and stops the commit when a finding is left, a type error included, or an engine could not run. It also stops, without fixing anything, when the Cinch setup needs repair, and says to run `cinch doctor --fix`. It works on the file in your working tree, so a partly staged file is staged whole.
+The pre-commit hook runs `rope fix` on the files you staged. It stages what it fixed and stops the commit when a finding is left, a type error included, or an engine could not run. It also stops, without fixing anything, when the Ropes setup needs repair, and says to run `rope doctor --fix`. It works on the file in your working tree, so a partly staged file is staged whole.
 
 [Rolling Cinch out](docs/rollout.md) lists the other Outfitter repositories and what each needs first.
 

@@ -1,5 +1,5 @@
 {
-  "extends": "./.outfitter/configs/presets/tsconfig.json",
+  "extends": "./.ropes/configs/presets/tsconfig.json",
   "include": [
     "packages/*/src/**/*.ts",
     "packages/*/tests/**/*.ts",
@@ -8,7 +8,7 @@
     "tests/*.ts",
     "tests/fixtures/typed-lint/*.ts",
     "*.config.ts",
-    ".outfitter/configs/presets/*.ts",
+    ".ropes/configs/presets/*.ts",
     "packages/*/presets/*.ts"
   ],
   "exclude": ["node_modules", "dist"]
