@@ -1,6 +1,6 @@
 # Output
 
-Run `rope schema` to list the available schemas. `rope schema explain`, `rope schema check`, and `rope schema fix` print the JSON Schema for the corresponding structured reports. `rope schema config` prints the schema for `rope.toml`.
+Run `rope schema` to list the available schemas. `rope schema explain`, `rope schema check`, and `rope schema fix` describe the ordinary structured reports. The `--migration` variants use `rope schema explain migration` and `rope schema check migration`. The `explain --trace` report has its own shape and has no schema in this listing. `rope schema config` prints the schema for `rope.toml`.
 
 Every Cinch command prints plain text for a person, or one JSON document with `--json`. Neither depends on a terminal, so both can be piped.
 

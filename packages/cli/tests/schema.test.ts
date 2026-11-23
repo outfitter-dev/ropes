@@ -22,7 +22,15 @@ test("rope lists public schemas and describes real versioned output", async () =
     const listing = await run("schema", "--json");
     expect(listing.exitCode).toBe(0);
     expect(JSON.parse(listing.stdout)).toEqual({
-      commands: ["check", "doctor", "explain", "failure", "fix"],
+      commands: [
+        "check",
+        "check migration",
+        "doctor",
+        "explain",
+        "explain migration",
+        "failure",
+        "fix",
+      ],
       files: ["config"],
       schemaVersion: 3,
     });

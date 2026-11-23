@@ -48,8 +48,10 @@ export const CONFIG_NAME = "config";
 
 const ROPES_OUTPUTS: readonly string[] = [
   "check",
+  "check migration",
   "doctor",
   "explain",
+  "explain migration",
   "failure",
   "fix",
 ];

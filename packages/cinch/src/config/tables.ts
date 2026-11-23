@@ -2,11 +2,9 @@ import { z } from "zod";
 
 import { EnforcementSettingSchema } from "../contracts/enforcement.ts";
 
-/** Whether a root-relative path stays under the root it is read from. */
-const isInside = (folder: string): boolean =>
-  !/^[\\/]/u.test(folder) &&
-  !/^[A-Za-z]:/u.test(folder) &&
-  !folder.split(/[\\/]/u).includes("..");
+/** Reject absolute paths and a complete ".." segment, with either separator. */
+const REPO_FOLDER =
+  /^(?![\\/]|[A-Za-z]:)(?!(?:[\s\S]*[\\/])?\.\.(?:[\\/]|(?![\s\S])))/u;
 
 export const Globs = z.array(z.string().min(1));
 export const ProfileSchema = z.strictObject({
@@ -72,7 +70,7 @@ export const OPT_IN = {
         z
           .string()
           .min(1)
-          .refine(isInside, "must be a folder inside the repository")
+          .regex(REPO_FOLDER, "must be a folder inside the repository")
       )
       .optional()
       .describe(
