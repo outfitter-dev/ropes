@@ -17,6 +17,7 @@ import { prepare } from "./prepare.ts";
 import type { CommandDeps, Prepared } from "./prepare.ts";
 import { collectPreviewInputs } from "./preview-inputs.ts";
 import { CopyError, withCopy } from "./scratch.ts";
+import { setupLinkProblem } from "./setup-links.ts";
 import { prepareSetup } from "./setup.ts";
 
 /** `fix` writes the repository's files, and `doctor` the Cinch setup. */
@@ -99,6 +100,10 @@ export const writePlan = async (
 ): Promise<FixRun> => {
   const { plan, root } = prepared;
   const { also = [], dryRun, mode } = options;
+  const linked = await setupLinkProblem(plan);
+  if (linked !== null) {
+    return { error: linked, ok: false };
+  }
   if (!dryRun) {
     return {
       ok: true,
@@ -150,8 +155,10 @@ export const runWrite = async (
     : prepared;
 };
 
-const STOPPED =
-  "Nothing was fixed: the Cinch setup needs repair first. Run `cinch doctor --fix`, then run this again.";
+const stopped = (command: "cinch" | "rope"): string => {
+  const product = command === "rope" ? "Ropes" : "Cinch";
+  return `Nothing was fixed: the ${product} setup needs repair first. Run \`${command} doctor --fix\`, then run this again.`;
+};
 
 /**
  * The setup is checked before anything is written. A config Cinch keeps
@@ -160,7 +167,8 @@ const STOPPED =
  */
 const brokenSetup = async (
   request: FixRequest,
-  deps: CommandDeps
+  deps: CommandDeps,
+  command: "cinch" | "rope"
 ): Promise<FixRun | null> => {
   const setup = await prepareSetup(request.cwd, deps);
   if (!setup.ok) {
@@ -179,7 +187,7 @@ const brokenSetup = async (
       dryRun: request.dryRun === true,
       result,
       schemaVersion: plan.schemaVersion,
-      stopped: STOPPED,
+      stopped: stopped(command),
     },
   };
 };
@@ -190,10 +198,11 @@ const brokenSetup = async (
  */
 export const runFix = async (
   request: FixRequest,
-  deps: CommandDeps
+  deps: CommandDeps,
+  command: "cinch" | "rope" = "cinch"
 ): Promise<FixRun> =>
   request.at === undefined
-    ? ((await brokenSetup(request, deps)) ??
+    ? ((await brokenSetup(request, deps, command)) ??
       (await runWrite(request, deps, { mode: "fix" })))
     : {
         error: "An explicit evaluation time is only for explain and check.",

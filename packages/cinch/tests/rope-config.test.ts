@@ -3,8 +3,14 @@ import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { markdownPaths } from "../src/adapters/rumdl/paths.ts";
+import { pointerFor, POINTER } from "../src/adapters/rumdl/root-config.ts";
 import { configFileIn, loadConfig } from "../src/config/load.ts";
 import { discoverRoot } from "../src/config/root.ts";
+import {
+  CINCH_MANAGED_DIR,
+  ROPES_MANAGED_DIR,
+} from "../src/contracts/managed-config.ts";
 
 const withFiles = async <T>(
   files: Readonly<Record<string, string>>,
@@ -172,4 +178,12 @@ test("rope.toml above a linked checkout is outside its boundary", async () => {
       });
     }
   );
+});
+
+test("generated Markdown pointers name the active setup command", () => {
+  expect(pointerFor(markdownPaths(CINCH_MANAGED_DIR))).toBe(POINTER);
+  expect(POINTER).toContain("cinch doctor --fix");
+  const ropes = pointerFor(markdownPaths(ROPES_MANAGED_DIR));
+  expect(ropes).toContain("rope doctor --fix");
+  expect(ropes).toContain("in the Ropes config");
 });

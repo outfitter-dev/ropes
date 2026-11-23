@@ -161,11 +161,11 @@ test("public doctor preserves unavailable and unobservable settings limits", asy
   });
 });
 
-test("rope doctor rejects content paths and write-only options", async () => {
+test("rope doctor rejects content paths and dry run without repair", async () => {
   await inRepo(async (root) => {
     for (const args of [
       ["doctor", "a.ts"],
-      ["doctor", "--fix"],
+      ["doctor", "--fix", "README.md"],
       ["doctor", "--dry-run"],
     ]) {
       // eslint-disable-next-line no-await-in-loop -- each CLI shape must fail without writes
