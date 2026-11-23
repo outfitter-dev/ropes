@@ -57,7 +57,7 @@ mise exec -- rope check --strict --json
 
 Review the config through the repository's normal mise trust process before installation. Commit the exact artifact location and expected checksum with the policy change. A `file://` URL depends on that absolute path existing on each consumer host. For a multi-platform repository, put the URL and checksum under `[tools."http:rope".platforms]` with `macos-arm64`, `linux-x64`, and `linux-arm64` entries for the corresponding builds. An authenticated artifact download can populate those local paths after release approval. [mise HTTP backend](https://mise.jdx.dev/dev-tools/backends/http.html)
 
-The native acceptance suite tests this route with isolated mise data, config, system config and cache folders. It rejects an incorrect digest before installation and on forced reinstall, checks the cached behavior of a same-version pin change, and verifies a new mise version identity rejects a wrong digest and selects the checked bytes after correction. It runs setup and a Markdown check through `mise exec` with Bun absent from `PATH`. The installed executable returns the same JSON and exit code as direct execution of the built artifact.
+The automatic mise fixture tests a raw `cinch` executable with isolated data, config, and cache directories. It covers digest rejection, forced reinstall, and same-version caching. For a release candidate, use the separate [standalone archive qualification](standalone-candidate.md#verify-a-clean-install) to install the `rope` archive through mise and compare the results with the package CLI with Bun absent from `PATH`.
 
 ## What is inside
 
