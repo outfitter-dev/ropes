@@ -207,9 +207,9 @@ test("an unknown key is invalid and names the key", async () => {
   expect(JSON.stringify(loaded)).toContain("markdwon");
 });
 
-test("this repository's own cinch.toml loads", async () => {
+test("this repository's own rope.toml loads", async () => {
   const loaded = await loadConfig(REPO_ROOT);
-  expect(loaded.ok && loaded.value.file).toBe("cinch.toml");
+  expect(loaded.ok && loaded.value.file).toBe("rope.toml");
 });
 
 test("the toml table is read at the top and in an override", async () => {

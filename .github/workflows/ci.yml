@@ -24,7 +24,7 @@ jobs:
       - run: bun run check
       - name: Check the packed Ropes packages
         run: bun run check:packed
-      - name: Run the cinch command from the workspace
-        run: bun run cinch --version
+      - name: Run the rope command from the workspace
+        run: bun run rope --version
       - name: Confirm the pinned external tools resolve
         run: rumdl --version && taplo --version

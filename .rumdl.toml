@@ -2,4 +2,4 @@
 # in the Cinch config and run `cinch doctor --fix`. To write this file
 # yourself, delete this comment and keep the `extends` line.
 
-extends = ".outfitter/configs/rumdl.toml"
+extends = ".ropes/configs/rumdl.toml"

@@ -9,7 +9,7 @@ on:
       - bun.lock
       - bunfig.toml
       - tsconfig.json
-      - .outfitter/configs/presets/tsconfig.json
+      - .ropes/configs/presets/tsconfig.json
       - mise.toml
       - mise.lock
   push:
@@ -22,7 +22,7 @@ on:
       - bun.lock
       - bunfig.toml
       - tsconfig.json
-      - .outfitter/configs/presets/tsconfig.json
+      - .ropes/configs/presets/tsconfig.json
       - mise.toml
       - mise.lock
 permissions:

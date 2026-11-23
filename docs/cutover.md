@@ -25,6 +25,12 @@ The [Cinch baseline](https://github.com/outfitter-dev/ropes/tree/64d311fd54a5dde
 | Standalone binary | `packages/cinch/scripts/build-binary.ts` builds `cinch`. Its Bun stand-in uses the user's `cinch/stand-in` cache directory. | Ropes. Binary distribution remains in ROPE-47. |
 | Names and rollout | README, AGENTS, `docs/rollout.md`, the Linear plan, and the decision register describe different points in the transition. | Ropes. ROPE-82 updates repository ownership. ROPE-83 updates planning references and uses the repository split to hand off Outfitter work. Treat the rollout document's trial counts as historical. |
 
+## Ropes checks its own repository
+
+This repository uses `rope.toml` and `.ropes/configs/` for its own checks. `bun run check` runs workflow validation, the public `rope check` command and the test suite. Lefthook runs `rope fix` before committing and uses the same full check before pushing.
+
+To roll back the repository's setup cutover, revert its commit as a unit. The previous revision supplies both the legacy policy and the matching tool references. A partial rollback can leave competing root configs or stale preset pointers.
+
 ## Consumers and repository links
 
 On November 20, 2026, a tracked-file search across the 17 mounted Outfitter sibling checkouts found no active Cinch or Ropes package caller outside Ropes. A hosted GitHub code search for `@outfitter/cinch`, `@ropes/core`, `@ropes/cli`, `cinch check`, `cinch fix`, and `cinch.toml` found no indexed consumer outside Ropes. Record a consumer's exact pin and owner when it appears. The searches do not cover private local scripts, unindexed branches, global installs, or registry consumers.
