@@ -30,15 +30,16 @@ test("rope lists public schemas and describes real versioned output", async () =
         "explain migration",
         "failure",
         "fix",
+        "init",
       ],
       files: ["config"],
       schemaVersion: 3,
     });
-    for (const command of ["explain", "check", "fix"]) {
+    for (const command of ["explain", "check", "fix", "init"]) {
       // eslint-disable-next-line no-await-in-loop -- verify schema and report for each command
       const [schema, report] = await Promise.all([
         run("schema", command),
-        run(command, "README.md", "--json"),
+        run(command, ...(command === "init" ? [] : ["README.md"]), "--json"),
       ]);
       expect(schema.exitCode).toBe(0);
       expect(report.exitCode).toBe(0);

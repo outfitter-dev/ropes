@@ -54,6 +54,7 @@ const ROPES_OUTPUTS: readonly string[] = [
   "explain migration",
   "failure",
   "fix",
+  "init",
 ];
 
 export const listRopesSchemas = () => ({
@@ -65,6 +66,9 @@ export const listRopesSchemas = () => ({
 export const ropesSchema = (name: string) => {
   if (name === CONFIG_NAME) {
     return configJsonSchema(ROPES_FILE);
+  }
+  if (name === "init") {
+    return z.toJSONSchema(FixReportSchema);
   }
   const schema = ROPES_OUTPUTS.includes(name)
     ? OUTPUT_SCHEMAS[name]
