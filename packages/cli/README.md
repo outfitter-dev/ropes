@@ -3,7 +3,7 @@
 `@ropes/cli` installs the `rope` command. Use Bun 1.4.4 or newer and put the engines required by your repository's policy on `PATH`. Run these commands in a Git checkout with an initial commit.
 
 ```sh
-bun add --dev --exact @ropes/cli@0.1.0-canary.3
+bun add --dev --exact @ropes/cli@0.1.0-canary.4
 ./node_modules/.bin/rope --version
 ```
 

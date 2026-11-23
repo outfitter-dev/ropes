@@ -90,7 +90,7 @@ beforeAll(async () => {
       throw new Error(`Standalone rope build failed: ${stderr}`);
     }
   }
-});
+}, 30_000);
 afterAll(() => rm(directory, { force: true, recursive: true }));
 
 const fixture = async (name: string, text = "# Guide\n\n# Another title\n") => {

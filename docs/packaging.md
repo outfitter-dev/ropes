@@ -38,7 +38,7 @@ When the pair is ready to release, dispatch `publish` on `main` with the candida
 After the workflow succeeds, install the exact CLI version in a clean Git checkout with an initial commit and check the launcher.
 
 ```sh
-bun add --dev --exact @ropes/cli@0.1.0-canary.3
+bun add --dev --exact @ropes/cli@0.1.0-canary.4
 ./node_modules/.bin/rope --version
 ```
 
