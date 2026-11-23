@@ -2,6 +2,7 @@ import { loadConfig } from "../config/load.ts";
 import { managedDirFor } from "../config/managed.ts";
 import { discoverRoot } from "../config/root.ts";
 import { DEFAULT_CONFIG } from "../contracts/config.ts";
+import type { CinchConfig } from "../contracts/config.ts";
 import { setupOf } from "../policy/setup.ts";
 import { describeRootError } from "./errors.ts";
 import { prepare } from "./prepare.ts";
@@ -18,9 +19,10 @@ import { settle } from "./settle.ts";
  */
 export const setupFiles = async (
   deps: CommandDeps,
-  root: string
+  root: string,
+  starter?: CinchConfig
 ): Promise<string[]> => {
-  const config = await loadConfig(root);
+  const config = await loadConfig(root, starter);
   const stated = config.ok ? config.value : DEFAULT_CONFIG;
   const adapters = deps.adapters(
     {},
@@ -72,7 +74,8 @@ const excludedKept = ({ adapters, plan }: Prepared): string[] =>
  */
 export const prepareSetup = async (
   cwd: string,
-  deps: CommandDeps
+  deps: CommandDeps,
+  options?: { readonly starter?: CinchConfig; readonly strict?: boolean }
 ): Promise<PrepareResult> => {
   const found = await discoverRoot(cwd);
   if (!found.ok) {
@@ -80,8 +83,13 @@ export const prepareSetup = async (
   }
   // With no file to keep, no paths means the whole workspace, and
   // `setupOf` then leaves an empty plan.
-  const paths = await setupFiles(deps, found.value.root);
-  const prepared = await prepare({ cwd: found.value.root, paths }, deps);
+  const paths = await setupFiles(deps, found.value.root, options?.starter);
+  const prepared = await prepare(
+    { cwd: found.value.root, paths, strict: options?.strict === true },
+    deps,
+    false,
+    options?.starter
+  );
   if (!prepared.ok) {
     return prepared;
   }

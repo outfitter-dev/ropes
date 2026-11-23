@@ -8,11 +8,14 @@ import { runExplain } from "./commands/explain.ts";
 import { runFix } from "./commands/fix.ts";
 import { runMigrationPreview } from "./commands/migrate.ts";
 import { capturePolicy } from "./commands/policy-preview.ts";
+import { runRopesInit } from "./commands/ropes-init.ts";
+import type { InitRequest } from "./commands/ropes-init.ts";
 import { runTrace } from "./commands/trace.ts";
 import type { CleanupRequest } from "./contracts/cleanup.ts";
 
 export type { FixRequest, Operation, ReadRequest } from "./commands/command.ts";
 export type { Explanation } from "./commands/explain.ts";
+export type { InitRequest } from "./commands/ropes-init.ts";
 export type { MigrationPreview } from "./commands/migrate.ts";
 export type { DoctorReport } from "./contracts/doctor.ts";
 export type { FixReport } from "./contracts/fix.ts";
@@ -43,6 +46,7 @@ export const check = (request: ReadRequest) => runCheck(request, deps);
 export const explain = (request: ReadRequest, probeTools = false) =>
   runExplain(request, deps, probeTools);
 export const fix = (request: FixRequest) => runFix(request, deps);
+export const init = (request: InitRequest) => runRopesInit(request, deps);
 export const previewMigration = (cwd: string) => runMigrationPreview(cwd, deps);
 export const trace = (request: ReadRequest) => runTrace(request, deps);
 

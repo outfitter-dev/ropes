@@ -140,6 +140,55 @@ test("standalone rope identifies itself and shows help before setup", async () =
   expect(Bun.which("bun", { PATH: engines })).toBeNull();
 });
 
+test("standalone rope previews and initializes a fresh repository without Bun", async () => {
+  if (needsEngine()) {
+    return;
+  }
+  const root = path.join(directory, "init");
+  await mkdir(root);
+  await Bun.write(path.join(root, "README.md"), "# Guide\n\nText.\n");
+  await fixtureGit(root, "init", "--quiet");
+  await fixtureGit(root, "add", ".");
+  await fixtureGit(root, "commit", "--quiet", "--message", "fixture");
+  const checkout = checkoutAt(root);
+  const before = await checkout.files();
+  const index = Bun.file(path.join(root, ".git/index"));
+  const indexed = await index.bytes();
+  const preview = await run(["init", "--json"], root);
+  expect(preview.exitCode).toBe(0);
+  const report = FixReportSchema.parse(JSON.parse(preview.stdout));
+  expect(report.changed).toContain("rope.toml");
+  expect(report.changed).toContain(".ropes/configs/presets/rumdl.toml");
+  expect(report.dryRun).toBe(true);
+  expect(await run(["init", "--yes", "--dry-run", "--json"], root)).toEqual(
+    preview
+  );
+  expect(await checkout.files()).toEqual(before);
+  expect(await index.bytes()).toEqual(indexed);
+  const apply = await run(["init", "--yes", "--json"], root);
+  expect(apply.exitCode).toBe(0);
+  const applied = FixReportSchema.parse(JSON.parse(apply.stdout));
+  expect(applied.changed).toEqual(report.changed);
+  expect(applied.diff).toBe(report.diff);
+  const checked = await run(["check", "README.md", "--json"], root);
+  expect(checked.exitCode).toBe(0);
+  const repeat = await run(["init", "--yes", "--json"], root);
+  expect(repeat.exitCode).toBe(0);
+  expect(FixReportSchema.parse(JSON.parse(repeat.stdout)).changed).toEqual([]);
+  expect(await index.bytes()).toEqual(indexed);
+
+  await Bun.write(path.join(root, "cinch.toml"), "pilot = 0\n");
+  const conflict = await run(["init", "--yes", "--json"], root);
+  expect(conflict.exitCode).toBe(2);
+  expect(conflict.stderr).toContain("cinch.toml");
+  expect(conflict.stderr).toContain("rope.toml");
+  await rm(path.join(root, "rope.toml"));
+  const legacy = await run(["init", "--yes", "--json"], root);
+  expect(legacy.exitCode).toBe(2);
+  expect(legacy.stderr).toContain("rope migrate");
+  expect(await Bun.file(path.join(root, "rope.toml")).exists()).toBe(false);
+});
+
 test("standalone rope matches package plans, results and doctor without writes or Bun", async () => {
   if (needsEngine()) {
     return;

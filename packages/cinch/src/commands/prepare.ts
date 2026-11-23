@@ -71,7 +71,8 @@ const exactly = ({
 export const prepare = async (
   request: ReadRequest,
   deps: CommandDeps,
-  includeSkipped = false
+  includeSkipped = false,
+  starter?: CinchConfig
 ): Promise<PrepareResult> => {
   const evaluation = evaluationAt(request.at);
   if (!evaluation.ok) {
@@ -83,7 +84,7 @@ export const prepare = async (
   }
   const root = found.value;
   const [config, pins] = await Promise.all([
-    loadConfig(root.root),
+    loadConfig(root.root, starter),
     pinsFor(root),
   ]);
   if (!config.ok) {

@@ -8,6 +8,7 @@ import {
   EXIT_CODE,
   exitCodeOf,
   fix,
+  init,
   previewMigration,
   prepareRuntime,
   STANDALONE,
@@ -109,6 +110,7 @@ const invocation = (argv: readonly string[]) =>
       strict: { type: "boolean" },
       trace: { type: "boolean" },
       version: { short: "v", type: "boolean" },
+      yes: { type: "boolean" },
     },
   });
 
@@ -116,8 +118,14 @@ const incompatibleOption = (
   verb: string,
   values: ReturnType<typeof invocation>["values"]
 ): string | undefined => {
-  if (values["dry-run"] === true && verb !== "fix" && verb !== "migrate") {
-    return "--dry-run is only for fix and migrate.";
+  if (
+    values["dry-run"] === true &&
+    !["fix", "init", "migrate"].includes(verb)
+  ) {
+    return "--dry-run is only for fix, init, and migrate.";
+  }
+  if (values.yes === true && verb !== "init") {
+    return "--yes is only for init.";
   }
   if (values.trace === true && verb !== "explain") {
     return "--trace is only for explain.";
@@ -129,6 +137,47 @@ const incompatibleOption = (
     return "--at is only for explain, check, and policy snapshot.";
   }
   return undefined;
+};
+
+const initialize = async (
+  request: ReadRequest,
+  values: ReturnType<typeof invocation>["values"],
+  json: boolean
+): Promise<number> => {
+  if (request.paths.length > 0) {
+    return fail(
+      "init sets up the whole repository, so it takes no paths.",
+      json
+    );
+  }
+  const ran = await init({
+    cwd: request.cwd,
+    dryRun: values["dry-run"] === true,
+    strict: request.strict === true,
+    yes: values.yes === true,
+  });
+  if (!ran.ok) {
+    return fail(ran.error, json);
+  }
+  const report = ran.value;
+  const hint =
+    report.dryRun && report.changed.length > 0
+      ? "\n\nRun `rope init --yes` to write this setup."
+      : "";
+  print(json ? renderFixJson(report) : renderFix(report) + hint);
+  return exitCodeOf(report.result);
+};
+
+const checkPaths = async (
+  request: ReadRequest,
+  json: boolean
+): Promise<number> => {
+  const ran = await check(request);
+  if (!ran.ok) {
+    return fail(ran.error, json);
+  }
+  print(json ? renderJson(ran.value) : renderHuman(ran.value));
+  return exitCodeOf(ran.value);
 };
 
 const main = async (argv: readonly string[]): Promise<number> => {
@@ -162,12 +211,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
       return await showExplanation(request, json, values.trace === true);
     }
     case "check": {
-      const ran = await check(request);
-      if (!ran.ok) {
-        return fail(ran.error, json);
-      }
-      print(json ? renderJson(ran.value) : renderHuman(ran.value));
-      return exitCodeOf(ran.value);
+      return await checkPaths(request, json);
     }
     case "doctor": {
       const ran = await doctor(request);
@@ -184,6 +228,9 @@ const main = async (argv: readonly string[]): Promise<number> => {
       }
       print(json ? renderFixJson(ran.value) : renderFix(ran.value));
       return exitCodeOf(ran.value.result);
+    }
+    case "init": {
+      return await initialize(request, values, json);
     }
     case "policy": {
       return await policy(request, json);

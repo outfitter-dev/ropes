@@ -12,13 +12,16 @@ Git HEAD and the index must be readable. Track the pin and lockfile:
   git add package.json bun.lock
   git commit -m "chore: pin Ropes"
   ./node_modules/.bin/rope --help
-  ./node_modules/.bin/rope explain README.md`;
+  ./node_modules/.bin/rope init
+  ./node_modules/.bin/rope init --yes
+  ./node_modules/.bin/rope check README.md`;
 
 export const HELP = `rope ${manifest.version}
 
 Usage: rope <explain|check|fix> [path...] [--json] [--strict]
        rope <explain|check> [path...] --at <UTC instant>
        rope doctor [--json] [--strict]
+       rope init [--yes] [--dry-run] [--json] [--strict]
        rope fix [path...] --dry-run
        rope explain [path...] --trace [--json]
        rope migrate [--dry-run] [--json]
@@ -29,6 +32,7 @@ Usage: rope <explain|check|fix> [path...] [--json] [--strict]
   explain   Show which checks apply and where the policy comes from
   check     Check the selected files without writing to the repository
   doctor    Inspect setup, tool availability, and shared settings
+  init      Preview or apply setup for this repository
   fix       Fix the selected files or preview changes with --dry-run
   migrate   Preview a legacy Cinch config migration
   policy    Capture and compare resolved rule policy

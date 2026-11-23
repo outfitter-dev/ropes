@@ -1,4 +1,5 @@
-import { mkdir, realpath } from "node:fs/promises";
+import assert from "node:assert/strict";
+import { mkdir, realpath, rm } from "node:fs/promises";
 import path from "node:path";
 
 import workspace from "../../../package.json" with { type: "json" };
@@ -114,6 +115,20 @@ export const smoke = async (
     path.join(consumer, "README.md"),
     "# Packed consumer\n\nText.\n"
   );
+  const config = path.join(consumer, "rope.toml");
+  const managed = path.join(consumer, ".ropes");
+  const preview = await run([executable, "init", "--json"], consumer);
+  assert.ok(preview.includes(".ropes/configs/"));
+  assert.equal(await Bun.file(config).exists(), false);
+  const index = Bun.file(path.join(consumer, ".git/index"));
+  const before = await index.bytes();
+  await run([executable, "init", "--yes"], consumer);
+  assert.equal(await Bun.file(config).exists(), true);
+  await run([executable, "check", "README.md", "--json"], consumer);
+  assert.deepEqual(await index.bytes(), before);
+  await rm(config);
+  await rm(managed, { recursive: true });
+  await rm(path.join(consumer, ".rumdl.toml"));
   await Bun.write(path.join(consumer, "cinch.toml"), "pilot = 0\n");
   await Bun.write(
     path.join(consumer, "explain.ts"),

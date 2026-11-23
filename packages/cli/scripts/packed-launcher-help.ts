@@ -48,7 +48,8 @@ export const proveLauncherHelp = async (
     assert.match(help, /bun add --dev --exact @ropes\/cli@99\.0\.0/u);
     assert.match(help, /git add package\.json bun\.lock/u);
     assert.match(help, /git commit -m "chore: pin Ropes"/u);
-    assert.match(help, /\.\/node_modules\/\.bin\/rope explain README\.md/u);
+    assert.match(help, /\.\/node_modules\/\.bin\/rope init --yes/u);
+    assert.match(help, /\.\/node_modules\/\.bin\/rope check README\.md/u);
   }
   const selected = await run(
     [process.execPath, executable, "--help"],
