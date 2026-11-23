@@ -80,7 +80,10 @@ export const configFileIn = async (dir: string): Promise<string | null> => {
  * `[cinch]` table in `outfitter.toml` are alternatives. Multiple sources are
  * an error. With none, the defaults apply. Errors come back as data.
  */
-export const loadConfig = async (root: string): Promise<ConfigResult> => {
+export const loadConfig = async (
+  root: string,
+  starter = DEFAULT_CONFIG
+): Promise<ConfigResult> => {
   const [sharedFile, standalone, ropes] = await Promise.all([
     readToml(root, SHARED_FILE),
     readToml(root, STANDALONE_FILE),
@@ -125,5 +128,5 @@ export const loadConfig = async (root: string): Promise<ConfigResult> => {
       prefix: "",
     });
   }
-  return { ok: true, value: DEFAULT_CONFIG };
+  return { ok: true, value: starter };
 };

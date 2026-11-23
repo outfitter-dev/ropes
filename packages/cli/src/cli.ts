@@ -30,6 +30,7 @@ import {
 import { migrationCommand } from "./cleanup.ts";
 import { delegate } from "./delegate.ts";
 import { HELP, version } from "./help.ts";
+import { initialize } from "./initialize.ts";
 import { fail, print } from "./output.ts";
 import { policy } from "./policy.ts";
 
@@ -109,6 +110,7 @@ const invocation = (argv: readonly string[]) =>
       strict: { type: "boolean" },
       trace: { type: "boolean" },
       version: { short: "v", type: "boolean" },
+      yes: { type: "boolean" },
     },
   });
 
@@ -116,8 +118,14 @@ const incompatibleOption = (
   verb: string,
   values: ReturnType<typeof invocation>["values"]
 ): string | undefined => {
-  if (values["dry-run"] === true && verb !== "fix" && verb !== "migrate") {
-    return "--dry-run is only for fix and migrate.";
+  if (
+    values["dry-run"] === true &&
+    !["fix", "init", "migrate"].includes(verb)
+  ) {
+    return "--dry-run is only for fix, init, and migrate.";
+  }
+  if (values.yes === true && verb !== "init") {
+    return "--yes is only for init.";
   }
   if (values.trace === true && verb !== "explain") {
     return "--trace is only for explain.";
@@ -129,6 +137,18 @@ const incompatibleOption = (
     return "--at is only for explain, check, and policy snapshot.";
   }
   return undefined;
+};
+
+const checkPaths = async (
+  request: ReadRequest,
+  json: boolean
+): Promise<number> => {
+  const ran = await check(request);
+  if (!ran.ok) {
+    return fail(ran.error, json);
+  }
+  print(json ? renderJson(ran.value) : renderHuman(ran.value));
+  return exitCodeOf(ran.value);
 };
 
 const main = async (argv: readonly string[]): Promise<number> => {
@@ -162,12 +182,7 @@ const main = async (argv: readonly string[]): Promise<number> => {
       return await showExplanation(request, json, values.trace === true);
     }
     case "check": {
-      const ran = await check(request);
-      if (!ran.ok) {
-        return fail(ran.error, json);
-      }
-      print(json ? renderJson(ran.value) : renderHuman(ran.value));
-      return exitCodeOf(ran.value);
+      return await checkPaths(request, json);
     }
     case "doctor": {
       const ran = await doctor(request);
@@ -184,6 +199,9 @@ const main = async (argv: readonly string[]): Promise<number> => {
       }
       print(json ? renderFixJson(ran.value) : renderFix(ran.value));
       return exitCodeOf(ran.value.result);
+    }
+    case "init": {
+      return await initialize(request, values, json);
     }
     case "policy": {
       return await policy(request, json);
