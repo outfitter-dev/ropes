@@ -2,14 +2,12 @@
 import {
   check,
   doctor,
-  explain,
   EXIT_CODE,
   exitCodeOf,
   fix,
   previewMigration,
   prepareRuntime,
   STANDALONE,
-  trace,
 } from "@ropes/core";
 import type { MigrationPreview, ReadRequest } from "@ropes/core";
 import {
@@ -20,14 +18,12 @@ import {
   renderFixJson,
   renderHuman,
   renderJson,
-  renderPlan,
-  renderPlanJson,
-  renderTrace,
 } from "@ropes/core/render";
 
 import { incompatibleOption, invocation } from "./args.ts";
 import { migrationCommand } from "./cleanup.ts";
 import { delegate } from "./delegate.ts";
+import { showExplanation } from "./explain.ts";
 import { HELP, version } from "./help.ts";
 import { initialize } from "./initialize.ts";
 import { fail, print } from "./output.ts";
@@ -72,30 +68,6 @@ const migrate = async (
   return EXIT_CODE.clean;
 };
 
-const showExplanation = async (
-  request: ReadRequest,
-  json: boolean,
-  detailed: boolean
-): Promise<number> => {
-  if (detailed) {
-    const traced = await trace(request);
-    if (!traced.ok) {
-      return fail(traced.error, json);
-    }
-    print(
-      json ? JSON.stringify(traced.value, null, 2) : renderTrace(traced.value)
-    );
-    return EXIT_CODE.clean;
-  }
-  const ran = await explain(request, !json);
-  if (!ran.ok) {
-    return fail(ran.error, json);
-  }
-  const { plan } = ran.value;
-  print(json ? renderPlanJson(plan) : renderPlan(plan, ran.value));
-  return EXIT_CODE.clean;
-};
-
 const checkPaths = async (
   request: ReadRequest,
   json: boolean
@@ -117,7 +89,12 @@ const dispatch = async (
   const { paths } = request;
   switch (verb) {
     case "explain": {
-      return await showExplanation(request, json, values.trace === true);
+      return await showExplanation(
+        request,
+        json,
+        values.trace === true,
+        values.rule
+      );
     }
     case "check": {
       return await checkPaths(request, json);

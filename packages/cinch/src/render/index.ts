@@ -11,3 +11,5 @@ export { renderPolicyPreview } from "./policy-preview.ts";
 export { doctorOutcome, renderDoctor, renderDoctorJson } from "./doctor.ts";
 
 export { renderPresetResponse } from "./preset-operation.ts";
+
+export { renderRuleExplanation } from "./rule-explanation.ts";

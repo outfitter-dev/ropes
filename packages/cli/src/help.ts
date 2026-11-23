@@ -23,7 +23,7 @@ Usage: rope <explain|check|fix> [path...] [--json] [--strict]
        rope doctor [--fix [--dry-run]] [--json] [--strict]
        rope init [--yes] [--dry-run] [--json] [--strict]
        rope fix [path...] --dry-run
-       rope explain [path...] --trace [--json]
+       rope explain [path...] [--rule <id>] [--trace] [--json]
        rope preset [list|update] [name] [--dry-run] [--json]
        rope preset <add|adopt|eject> <name> [--yes] [--dry-run] [--json]
        rope schema [command] [--json]

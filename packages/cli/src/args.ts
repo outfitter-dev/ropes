@@ -13,6 +13,7 @@ export const invocation = (argv: readonly string[]) =>
       json: { type: "boolean" },
       migration: { type: "string" },
       parent: { type: "string" },
+      rule: { type: "string" },
       strict: { type: "boolean" },
       trace: { type: "boolean" },
       version: { short: "v", type: "boolean" },
@@ -36,6 +37,12 @@ export const incompatibleOption = (
   }
   if (values.yes === true && !["init", "preset"].includes(verb)) {
     return "--yes is only for init, preset adopt, and preset eject.";
+  }
+  if (values.rule !== undefined && values.migration !== undefined) {
+    return "--rule cannot be combined with --migration.";
+  }
+  if (values.rule !== undefined && verb !== "explain") {
+    return "--rule is only for explain.";
   }
   if (values.trace === true && verb !== "explain") {
     return "--trace is only for explain.";

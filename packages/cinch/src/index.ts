@@ -5,6 +5,8 @@ import { runCleanup } from "./commands/cleanup.ts";
 import type { FixRequest, ReadRequest } from "./commands/command.ts";
 import { runDoctor } from "./commands/doctor.ts";
 import type { DoctorRequest } from "./commands/doctor.ts";
+import { runExplainRule } from "./commands/explain-rule.ts";
+import type { RuleRequest } from "./commands/explain-rule.ts";
 import { runExplain } from "./commands/explain.ts";
 import { runFix } from "./commands/fix.ts";
 import { runMigrationPreview } from "./commands/migrate.ts";
@@ -17,6 +19,8 @@ import { runTrace } from "./commands/trace.ts";
 import type { CleanupRequest } from "./contracts/cleanup.ts";
 
 export type { FixRequest, Operation, ReadRequest } from "./commands/command.ts";
+export type { RuleRequest } from "./commands/explain-rule.ts";
+export type { RuleExplanation } from "./contracts/rule-explanation.ts";
 export type { Explanation } from "./commands/explain.ts";
 export type { InitRequest } from "./commands/ropes-init.ts";
 export type { MigrationPreview } from "./commands/migrate.ts";
@@ -49,6 +53,8 @@ export type { PresetResponse } from "./contracts/preset.ts";
 const deps = { adapters: adaptersFor };
 
 export const preset = (request: PresetRequest) => runRopesPreset(request, deps);
+export const explainRule = (request: RuleRequest) =>
+  runExplainRule(request, deps);
 export const doctor = (request: DoctorRequest) => runDoctor(request, deps);
 export const check = (request: ReadRequest) => runCheck(request, deps);
 export const explain = (request: ReadRequest, probeTools = false) =>

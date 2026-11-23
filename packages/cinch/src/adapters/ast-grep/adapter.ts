@@ -3,6 +3,7 @@ import { allIncomplete } from "../batch.ts";
 import type { FoundRules } from "../found.ts";
 import { probeOnPath } from "../on-path.ts";
 import { heldTo } from "../pins.ts";
+import { describeRules } from "./definitions.ts";
 import { readProject, tidy } from "./project.ts";
 import {
   shippedDigests,
@@ -105,6 +106,7 @@ export const rulesAdapter = (options: RulesOptions = {}): Adapter => {
   return {
     check: run,
     describeCheck: (input) => describeScan(command, input, folders),
+    describeRules: (root) => describeRules(root, folders),
     descriptor,
     fix: run,
     probe: () => probeOnPath(command),
