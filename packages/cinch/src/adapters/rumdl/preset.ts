@@ -5,6 +5,7 @@ import type { Adapter } from "../adapter.ts";
 import { managedAdapter } from "../managed.ts";
 import { generated, preset } from "./generated.ts";
 import { markdownlintSource } from "./migrate/markdownlint/index.ts";
+import { CONFIG_INPUTS } from "./migrate/markdownlint/source.ts";
 import { CONFIG_PATH, markdownPaths, RUMDL_TABLE, standard } from "./paths.ts";
 import { adopt } from "./relocate/adopt.ts";
 import { eject } from "./relocate/eject.ts";
@@ -44,7 +45,7 @@ export const rumdlPresetAdapter = (
         want: () => generated(options.table),
       },
       {
-        beside: ELSEWHERE,
+        beside: [...ELSEWHERE, ...CONFIG_INPUTS],
         layer: "root",
         path: CONFIG_PATH,
         want: (current, root, migrate) =>

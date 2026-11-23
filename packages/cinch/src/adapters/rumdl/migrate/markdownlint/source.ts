@@ -170,8 +170,10 @@ export const runnerIn = async (
     : { file, table };
 };
 
-/** Every file the old linter reads its config from, scripts included. */
+/** Standalone legacy configs, which can be retired after a successful migration. */
 export const CONFIG_FILES = [...SCRIPTS, ...RUNNER_FILES, ...RULE_FILES];
+/** Preview also needs package.json, even though it must never be retired. */
+export const CONFIG_INPUTS = [...CONFIG_FILES, PACKAGE];
 
 /**
  * Finds the config the old linter would have used and reads its rules. A

@@ -57,30 +57,40 @@ test("rejected initialization keeps implicit Cinch setup in place", async () => 
   });
 });
 
-test("init carries ignored Markdown rules and file scope into its preview", async () => {
-  if (!hasRumdl()) {
-    return;
+const markdown = {
+  config: { MD007: { indent: 4 } },
+  globs: ["docs/**/*.md"],
+  ignores: ["docs/vendor"],
+};
+
+test.each([
+  { config: markdown, source: ".markdownlint-cli2.jsonc" },
+  { config: { "markdownlint-cli2": markdown }, source: "package.json" },
+])(
+  "init previews the scope and rules from ignored $source",
+  async ({ config, source }) => {
+    if (!hasRumdl()) {
+      return;
+    }
+    await inRepo(async (root) => {
+      await Bun.write(path.join(root, ".gitignore"), `${source}\n`);
+      const old = `${JSON.stringify(config)}\n`;
+      await Bun.write(path.join(root, source), old);
+      const checkout = checkoutAt(root);
+      const before = await checkout.files();
+      const preview = await runEntry(cli, ["init", "--json"], root);
+      expect(preview.exitCode).toBe(0);
+      const proposed = FixReportSchema.parse(JSON.parse(preview.stdout));
+      expect(proposed.diff).toContain('"docs/**/*.md"');
+      expect(proposed.diff).toContain('"docs/vendor/**"');
+      expect(proposed.diff).toContain("indent = 4");
+      expect(await checkout.files()).toEqual(before);
+      const apply = await runEntry(cli, ["init", "--yes", "--json"], root);
+      expect(apply.exitCode).toBe(0);
+      expect(FixReportSchema.parse(JSON.parse(apply.stdout)).diff).toBe(
+        proposed.diff
+      );
+      expect(await readFile(path.join(root, source), "utf-8")).toBe(old);
+    });
   }
-  await inRepo(async (root) => {
-    const source = ".markdownlint-cli2.jsonc";
-    await Bun.write(path.join(root, ".gitignore"), `${source}\n`);
-    const old =
-      '{"globs":["docs/**/*.md"],"ignores":["docs/vendor"],"config":{"MD007":{"indent":4}}}\n';
-    await Bun.write(path.join(root, source), old);
-    const checkout = checkoutAt(root);
-    const before = await checkout.files();
-    const preview = await runEntry(cli, ["init", "--json"], root);
-    expect(preview.exitCode).toBe(0);
-    const proposed = FixReportSchema.parse(JSON.parse(preview.stdout));
-    expect(proposed.diff).toContain('"docs/**/*.md"');
-    expect(proposed.diff).toContain('"docs/vendor/**"');
-    expect(proposed.diff).toContain("indent = 4");
-    expect(await checkout.files()).toEqual(before);
-    const apply = await runEntry(cli, ["init", "--yes", "--json"], root);
-    expect(apply.exitCode).toBe(0);
-    expect(FixReportSchema.parse(JSON.parse(apply.stdout)).diff).toBe(
-      proposed.diff
-    );
-    expect(await readFile(path.join(root, source), "utf-8")).toBe(old);
-  });
-});
+);

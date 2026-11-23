@@ -7,9 +7,7 @@ import type { FixReport } from "../contracts/fix.ts";
 import { unifiedDiff } from "../render/diff.ts";
 import type { Operation } from "./command.ts";
 import { writePlan } from "./fix.ts";
-import type { WriteOptions } from "./fix.ts";
 import type { CommandDeps, Prepared } from "./prepare.ts";
-import { oldConfigs } from "./retire.ts";
 import { prepareSetup } from "./setup.ts";
 import {
   inheritedBy,
@@ -80,12 +78,10 @@ const writeFresh = async (
   starter: string,
   dryRun: boolean
 ): Promise<Operation<FixReport>> => {
-  const { adapters, plan, root } = setup;
-  const { files: also } = await oldConfigs(adapters, plan, root.root);
-  const options: WriteOptions = { also, dryRun: true, mode: "doctor" };
+  const { root } = setup;
   // Installing a policy changes what every other command reads. Settle the
   // proposed setup in scratch first, including untracked migration inputs.
-  const preview = await writePlan(setup, options);
+  const preview = await writePlan(setup, { dryRun: true, mode: "doctor" });
   if (!preview.ok || preview.value.result.outcome !== "clean") {
     return preview;
   }
@@ -97,7 +93,9 @@ const writeFresh = async (
     // An overlapping init must never replace another writer's config.
     await writeFile(path.join(root.root, ROPES_FILE), starter, { flag: "wx" });
   }
-  const ran = dryRun ? preview : await writePlan(setup, { ...options, dryRun });
+  const ran = dryRun
+    ? preview
+    : await writePlan(setup, { dryRun, mode: "doctor" });
   if (!ran.ok) {
     return ran;
   }
@@ -121,18 +119,12 @@ export const runRopesInit = async (
     return prepared;
   }
   const { fresh, setup } = prepared.value;
-  const { root } = setup;
   if (setup.config.file !== ROPES_FILE) {
     return { error: priorConfig, ok: false };
   }
   const dryRun = request.yes !== true || request.dryRun === true;
   if (!fresh) {
-    const { files: also } = await oldConfigs(
-      setup.adapters,
-      setup.plan,
-      root.root
-    );
-    return await writePlan(setup, { also, dryRun, mode: "doctor" });
+    return await writePlan(setup, { dryRun, mode: "doctor" });
   }
   const starter = await starterFor(setup);
   if (starter === initial) {
