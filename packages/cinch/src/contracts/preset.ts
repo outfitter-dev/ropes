@@ -1,6 +1,9 @@
 import { z } from "zod";
 
+import type { FixReport } from "./fix.ts";
 import { SCHEMA_VERSION } from "./plan.ts";
+import type { RelocateReport } from "./relocate.ts";
+import type { ExitCode } from "./result.ts";
 
 /**
  * `current` matches what Cinch ships. `stale` differs and `missing` is not
@@ -45,3 +48,9 @@ export const PresetReportSchema = z
   })
   .readonly();
 export type PresetReport = z.infer<typeof PresetReportSchema>;
+
+export type PresetResponse = (
+  | { readonly kind: "list"; readonly report: PresetReport }
+  | { readonly kind: "write"; readonly report: FixReport }
+  | { readonly kind: "move"; readonly report: RelocateReport }
+) & { readonly exitCode: ExitCode };

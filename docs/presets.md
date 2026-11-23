@@ -1,5 +1,7 @@
 # Presets
 
+Use `rope preset` to inspect preset files in a configured repository, or `rope preset list <name>` to inspect one preset. `rope preset add <name>` writes a selected active preset, and `rope preset update [name]` refreshes stale or missing files. Each operation accepts at most one preset name, and `add`, `adopt`, and `eject` require one. Add `--dry-run` to preview these writes. `rope preset adopt <name>` and `rope preset eject <name>` preview moving authored settings into `rope.toml` or back into the tool’s root config. Apply either move with `--yes`. A repository with no policy starts with `rope init`. Legacy Cinch configurations retain their existing managed paths when used through either executable.
+
 A preset is a shared config that Cinch ships and keeps in a repository. Cinch writes a managed copy under `.outfitter/configs/presets/`. Beside it, under `.outfitter/configs/`, Cinch writes a config generated from the `[tools.<tool>]` table of the Cinch config, which extends the copy. The tool's root config extends the generated one. All of it is committed, so the tool works without Cinch installed. Do not edit the copy or the generated config. Put a repository's own choices in the Cinch config.
 
 The first preset is `markdown`. See [markdown-standard.md](markdown-standard.md) for what it sets.
