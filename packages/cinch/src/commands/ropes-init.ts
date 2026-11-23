@@ -7,9 +7,16 @@ import type { FixReport } from "../contracts/fix.ts";
 import { unifiedDiff } from "../render/diff.ts";
 import type { Operation } from "./command.ts";
 import { writePlan } from "./fix.ts";
-import type { CommandDeps } from "./prepare.ts";
+import type { WriteOptions } from "./fix.ts";
+import type { CommandDeps, Prepared } from "./prepare.ts";
+import { oldConfigs } from "./retire.ts";
 import { prepareSetup } from "./setup.ts";
-import { STARTER_CONFIG } from "./starter.ts";
+import {
+  inheritedBy,
+  sparing,
+  starterConfig,
+  STARTER_CONFIG,
+} from "./starter.ts";
 
 export interface InitRequest {
   readonly cwd: string;
@@ -18,19 +25,22 @@ export interface InitRequest {
   readonly yes?: boolean;
 }
 
-const starterText = STARTER_CONFIG.replace(
-  "# Cinch config.",
-  "# Ropes config."
-);
+const branded = (text: string): string =>
+  text.replace("# Cinch config.", "# Ropes config.");
 
 const priorConfig =
   "This repository already uses a Cinch config. Run `rope migrate` to preview the conversion.";
+const configChanged =
+  "The repository config changed during setup. Run rope init again.";
 
-export const runRopesInit = async (
+const prepareStarter = async (
   request: InitRequest,
-  deps: CommandDeps
-): Promise<Operation<FixReport>> => {
-  const starter = parseConfigTable(Bun.TOML.parse(starterText), {
+  deps: CommandDeps,
+  text: string
+): Promise<
+  Operation<{ readonly fresh: boolean; readonly setup: Prepared }>
+> => {
+  const starter = parseConfigTable(Bun.TOML.parse(text), {
     file: ROPES_FILE,
     prefix: "",
   });
@@ -41,31 +51,54 @@ export const runRopesInit = async (
     starter: starter.value,
     strict: request.strict === true,
   });
-  if (!prepared.ok) {
-    return prepared;
+  return prepared.ok
+    ? {
+        ok: true,
+        value: {
+          fresh: prepared.value.config === starter.value,
+          setup: prepared.value,
+        },
+      }
+    : prepared;
+};
+
+const starterFor = async ({
+  adapters,
+  plan,
+  root,
+}: Prepared): Promise<string> => {
+  const found = await inheritedBy(adapters, root.root);
+  const kept = [
+    ...plan.paths.map((file) => file.path),
+    ...found.flatMap((input) => input.keeps ?? []),
+  ];
+  return branded(starterConfig(sparing(found, kept)));
+};
+
+const writeFresh = async (
+  setup: Prepared,
+  starter: string,
+  dryRun: boolean
+): Promise<Operation<FixReport>> => {
+  const { adapters, plan, root } = setup;
+  const { files: also } = await oldConfigs(adapters, plan, root.root);
+  const options: WriteOptions = { also, dryRun: true, mode: "doctor" };
+  // Installing a policy changes what every other command reads. Settle the
+  // proposed setup in scratch first, including untracked migration inputs.
+  const preview = await writePlan(setup, options);
+  if (!preview.ok || preview.value.result.outcome !== "clean") {
+    return preview;
   }
-  const setup = prepared.value;
-  if (setup.config.file !== ROPES_FILE) {
-    return { error: priorConfig, ok: false };
-  }
-  const fresh = setup.config === starter.value;
-  const dryRun = request.yes !== true || request.dryRun === true;
-  if (fresh && !dryRun) {
-    const current = await loadConfig(setup.root.root);
+  if (!dryRun) {
+    const current = await loadConfig(root.root);
     if (!current.ok || current.value.file !== null) {
-      return {
-        error:
-          "The repository config changed during setup. Run rope init again.",
-        ok: false,
-      };
+      return { error: configChanged, ok: false };
     }
     // An overlapping init must never replace another writer's config.
-    await writeFile(path.join(setup.root.root, ROPES_FILE), starterText, {
-      flag: "wx",
-    });
+    await writeFile(path.join(root.root, ROPES_FILE), starter, { flag: "wx" });
   }
-  const ran = await writePlan(setup, { dryRun, mode: "doctor" });
-  if (!ran.ok || !fresh) {
+  const ran = dryRun ? preview : await writePlan(setup, { ...options, dryRun });
+  if (!ran.ok) {
     return ran;
   }
   return {
@@ -73,7 +106,43 @@ export const runRopesInit = async (
     value: {
       ...ran.value,
       changed: [ROPES_FILE, ...ran.value.changed],
-      diff: unifiedDiff(ROPES_FILE, "", starterText) + ran.value.diff,
+      diff: unifiedDiff(ROPES_FILE, "", starter) + ran.value.diff,
     },
   };
+};
+
+export const runRopesInit = async (
+  request: InitRequest,
+  deps: CommandDeps
+): Promise<Operation<FixReport>> => {
+  const initial = branded(STARTER_CONFIG);
+  const prepared = await prepareStarter(request, deps, initial);
+  if (!prepared.ok) {
+    return prepared;
+  }
+  const { fresh, setup } = prepared.value;
+  const { root } = setup;
+  if (setup.config.file !== ROPES_FILE) {
+    return { error: priorConfig, ok: false };
+  }
+  const dryRun = request.yes !== true || request.dryRun === true;
+  if (!fresh) {
+    const { files: also } = await oldConfigs(
+      setup.adapters,
+      setup.plan,
+      root.root
+    );
+    return await writePlan(setup, { also, dryRun, mode: "doctor" });
+  }
+  const starter = await starterFor(setup);
+  if (starter === initial) {
+    return await writeFresh(setup, starter, dryRun);
+  }
+  const revised = await prepareStarter(request, deps, starter);
+  if (!revised.ok) {
+    return revised;
+  }
+  return revised.value.fresh
+    ? await writeFresh(revised.value.setup, starter, dryRun)
+    : { error: configChanged, ok: false };
 };

@@ -26,7 +26,9 @@ export const initialize = async (
   }
   const report = ran.value;
   const hint =
-    report.dryRun && report.changed.length > 0
+    report.dryRun &&
+    report.changed.length > 0 &&
+    report.result.outcome === "clean"
       ? "\n\nRun `rope init --yes` to write this setup."
       : "";
   print(json ? renderFixJson(report) : renderFix(report) + hint);
