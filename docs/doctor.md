@@ -1,6 +1,10 @@
 # Doctor
 
-`rope doctor` inspects the setup, the workspace's required tools, and the shared settings those active tools can report. Use `--json` for the typed core report. The `settings` field shows the shared policy alongside observed values, their authored sources, and whether each value was confirmed by the engine or read from its selected config. Verification limits remain visible when a tool cannot expose a resolved value. `rope doctor` is read-only and rejects content paths and repair flags.
+`rope doctor` inspects the setup, the workspace's required tools, and the shared settings those active tools can report. Use `--json` for the typed core report. The `settings` field shows the shared policy alongside observed values, their authored sources, and whether each value was confirmed by the engine or read from its selected config. Verification limits remain visible when a tool cannot expose a resolved value. `rope doctor` is read-only by default. Run `rope doctor --fix` to repair managed setup, or add `--dry-run` to preview the diff. It takes no paths because setup belongs to the whole repository.
+
+A successful `rope doctor --fix` establishes that its managed setup repairs completed and the required tools are available. Run plain `rope doctor` afterward to inspect the active tools' observed shared settings as well. Use the authored sources listed by plain doctor to resolve shared-setting disagreements. The public core operation follows the CLI option rules, including rejecting an evaluation time and a dry run without repair.
+
+Setup paths must be regular files and directories. Doctor rejects an active setup path that is a symbolic link, including a dangling link or a linked parent directory, before writing any setup file. A preset disabled by policy has no setup path to repair.
 
 `cinch doctor` checks the Cinch setup, not the repository's content. `cinch doctor --fix` repairs it. It takes no paths, because the setup belongs to the root as a whole.
 

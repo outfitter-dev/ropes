@@ -3,6 +3,7 @@ import { managedDirFor } from "../config/managed.ts";
 import { discoverRoot } from "../config/root.ts";
 import { DEFAULT_CONFIG } from "../contracts/config.ts";
 import type { CinchConfig } from "../contracts/config.ts";
+import { resolvePlan } from "../policy/resolve.ts";
 import { setupOf } from "../policy/setup.ts";
 import { describeRootError } from "./errors.ts";
 import { prepare } from "./prepare.ts";
@@ -10,6 +11,7 @@ import type { CommandDeps, Prepared, PrepareResult } from "./prepare.ts";
 import { describeGap, gapsOf, settingOf } from "./preset-gaps.ts";
 import { presetsOf } from "./presets.ts";
 import { settle } from "./settle.ts";
+import { setupLinkProblem } from "./setup-links.ts";
 
 /**
  * The files of the Cinch setup at `root`. An adapter that keeps files needs
@@ -92,6 +94,20 @@ export const prepareSetup = async (
   );
   if (!prepared.ok) {
     return prepared;
+  }
+  const { evaluation } = prepared.value.plan;
+  const rawSetup = resolvePlan({
+    config: prepared.value.config,
+    descriptors: prepared.value.adapters.map(({ descriptor }) => descriptor),
+    ...(evaluation === undefined ? {} : { evaluation }),
+    packages: [],
+    paths,
+    root: found.value.root,
+    selection: { kind: "workspace" },
+  });
+  const linked = await setupLinkProblem(rawSetup);
+  if (linked !== null) {
+    return { error: linked, ok: false };
   }
   const gaps = gapsOf(
     presetsOf(prepared.value.adapters),

@@ -103,6 +103,7 @@ const invocation = (argv: readonly string[]) =>
       at: { type: "string" },
       candidate: { type: "string" },
       "dry-run": { type: "boolean" },
+      fix: { type: "boolean" },
       help: { short: "h", type: "boolean" },
       json: { type: "boolean" },
       migration: { type: "string" },
@@ -118,11 +119,15 @@ const incompatibleOption = (
   verb: string,
   values: ReturnType<typeof invocation>["values"]
 ): string | undefined => {
+  if (values.fix === true && verb !== "doctor") {
+    return "--fix is only for doctor.";
+  }
   if (
     values["dry-run"] === true &&
-    !["fix", "init", "migrate"].includes(verb)
+    !["fix", "init", "migrate"].includes(verb) &&
+    !(verb === "doctor" && values.fix === true)
   ) {
-    return "--dry-run is only for fix, init, and migrate.";
+    return "--dry-run is only for fix, init, migrate, and doctor --fix.";
   }
   if (values.yes === true && verb !== "init") {
     return "--yes is only for init.";
@@ -185,11 +190,17 @@ const main = async (argv: readonly string[]): Promise<number> => {
       return await checkPaths(request, json);
     }
     case "doctor": {
-      const ran = await doctor(request);
+      const ran = await doctor({
+        ...request,
+        dryRun: values["dry-run"] === true,
+        fix: values.fix === true,
+      });
       if (!ran.ok) {
         return fail(ran.error, json);
       }
-      print(json ? renderDoctorJson(ran.value) : renderDoctor(ran.value));
+      print(
+        json ? renderDoctorJson(ran.value) : renderDoctor(ran.value, "rope")
+      );
       return EXIT_CODE[doctorOutcome(ran.value)];
     }
     case "fix": {

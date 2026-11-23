@@ -11,7 +11,6 @@ import { runPlan } from "../runner/run.ts";
 import type {
   Command,
   CommandResponse,
-  CommandRequest,
   Operation,
   ReadRequest,
 } from "./command.ts";
@@ -23,6 +22,11 @@ import { oldConfigs } from "./retire.ts";
 import { declined, unadopted } from "./rules-adopt.ts";
 import { prepareSetup } from "./setup.ts";
 import { toolStatuses } from "./tools.ts";
+
+export interface DoctorRequest extends ReadRequest {
+  readonly fix?: boolean;
+  readonly dryRun?: boolean;
+}
 
 const unusable = (message: string): CommandResponse => ({
   error: `cinch: ${message}`,
@@ -124,7 +128,7 @@ const workspaceStatus = async (
  * plan as the other verbs, so it writes nothing `explain` does not show.
  */
 const inspectDoctor = async (
-  request: CommandRequest,
+  request: DoctorRequest,
   deps: CommandDeps,
   includeSettings = false
 ): Promise<Operation<DoctorReport>> => {
@@ -177,18 +181,24 @@ const inspectDoctor = async (
   return { ok: true, value: report };
 };
 
-/** The public read-only inspection shares the legacy setup and tool checks. */
-export const runDoctor = (request: ReadRequest, deps: CommandDeps) =>
-  inspectDoctor(
-    {
-      cwd: request.cwd,
-      json: false,
-      paths: request.paths,
-      ...(request.strict === undefined ? {} : { strict: request.strict }),
-    },
-    deps,
-    true
-  );
+export const runDoctor = (
+  request: DoctorRequest,
+  deps: CommandDeps
+): Promise<Operation<DoctorReport>> => {
+  if (request.at !== undefined) {
+    return Promise.resolve({
+      error: "An explicit evaluation time is only for explain and check.",
+      ok: false,
+    });
+  }
+  if (request.dryRun === true && request.fix !== true) {
+    return Promise.resolve({
+      error: "A doctor dry run requires fix to be enabled.",
+      ok: false,
+    });
+  }
+  return inspectDoctor(request, deps, request.fix !== true);
+};
 
 export const doctor =
   (deps: CommandDeps): Command =>

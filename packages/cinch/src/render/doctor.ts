@@ -14,20 +14,22 @@ export const doctorOutcome = (report: DoctorReport): Outcome =>
     ? "incomplete"
     : outcomeOf([...report.result.steps, ...(report.settings?.steps ?? [])]);
 
-const verdict = (report: DoctorReport): string => {
+const verdict = (report: DoctorReport, command: "cinch" | "rope"): string => {
+  const product = command === "rope" ? "Ropes" : "Cinch";
+  const repair = `\`${command} doctor --fix\``;
   const outcome = doctorOutcome(report);
   if (outcome === "clean") {
-    return "The Cinch setup is in good shape.";
+    return `The ${product} setup is in good shape.`;
   }
   if (outcome === "incomplete") {
     return "Incomplete: a file could not be judged or a tool cannot run, so this is not a pass.";
   }
   if (outcomeOf(report.settings?.steps ?? []) === "findings") {
-    return "Shared settings disagree. Update the authored settings behind the reported values. For a generated file, edit the tool's settings in the Ropes config and run `cinch doctor --fix`.";
+    return `Shared settings disagree. Update the authored settings behind the reported values. For a generated file, edit the tool's settings in the Ropes config and run ${repair}.`;
   }
   return report.fix && !report.dryRun
-    ? "Findings remain that `cinch doctor --fix` cannot repair. They need a person."
-    : "The Cinch setup needs repair. Run `cinch doctor --fix`.";
+    ? `Findings remain that ${repair} cannot repair. They need a person.`
+    : `The ${product} setup needs repair. Run ${repair}.`;
 };
 
 const written = (report: DoctorReport): string[] => {
@@ -56,7 +58,10 @@ const packs = ({ notAdopted }: DoctorReport): string[] =>
       ];
 
 /** Text for a person: what was written, what is still wrong, and the tools. */
-export const renderDoctor = (report: DoctorReport): string =>
+export const renderDoctor = (
+  report: DoctorReport,
+  command: "cinch" | "rope" = "cinch"
+): string =>
   [
     ...written(report),
     ...pathBlocks(report.result),
@@ -70,7 +75,7 @@ export const renderDoctor = (report: DoctorReport): string =>
       ? []
       : [["Tools", ...report.tools.map(toolLine)].join("\n")]),
     ...packs(report),
-    `${verdict(report)} Exit code ${EXIT_CODE[doctorOutcome(report)]}.`,
+    `${verdict(report, command)} Exit code ${EXIT_CODE[doctorOutcome(report)]}.`,
   ].join("\n\n");
 
 /** The whole report, and nothing else, so stdout stays machine-readable. */
