@@ -31,8 +31,20 @@ test("a shipped rewrite is eligible only when its pack opts in by rule name", as
   expect(reportOnly.packs[0]?.fixable).toEqual([]);
 });
 
-test("a pack rejects unknown, duplicate and missing shipped rewrites", async () => {
+test.each(['fix: ""\n', 'fix: { template: "after" }\n'])(
+  "the pack recognizes the pinned engine rewrite form %s",
+  async (fix) => {
+    const optedIn = await pack(["sample"], fix);
+    expect(optedIn.packs[0]?.fixable).toEqual(["sample"]);
+  }
+);
+
+test("a pack rejects unknown, duplicate and unsupported shipped rewrites", async () => {
   await assert.rejects(pack(["missing"]), /unknown fixable rule/u);
   await assert.rejects(pack(["sample", "sample"]), /more than once/u);
-  await assert.rejects(pack(["sample"], ""), /without a rewrite/u);
+  await assert.rejects(pack(["sample"], ""), /without a supported rewrite/u);
+  await assert.rejects(
+    pack(["sample"], 'fix: ["first", "second"]\n'),
+    /expected a string or a template object/u
+  );
 });

@@ -11,7 +11,10 @@ import { shippedFolder } from "../shipped-text.ts";
 /** Where this Cinch keeps the rules it ships, one folder for each pack. */
 const SHIPPED = new URL("../../../rules/", import.meta.url);
 const MANIFEST = "pack.toml";
-const Rewrite = z.object({ fix: z.string().min(1) });
+// An empty template is a deletion. The engine validates the rest of FixConfig.
+const Rewrite = z.object({
+  fix: z.union([z.string(), z.object({ template: z.string() })]),
+});
 const Scope = z.object({
   files: z.array(z.string()).optional(),
   ignores: z.array(z.string()).optional(),
@@ -67,7 +70,7 @@ export const readPacks = async (folder: URL) => {
       }
       if (!Rewrite.safeParse(YAML.parse(definition)).success) {
         throw new Error(
-          `${file} declares fixable rule "${rule}" without a rewrite`
+          `${file} declares fixable rule "${rule}" without a supported rewrite (expected a string or a template object)`
         );
       }
     }
