@@ -36,7 +36,7 @@ const hasRumdl = (): boolean => {
   return false;
 };
 
-test("rejected initialization keeps implicit Cinch setup in place", async () => {
+test("rejected initialization keeps retired managed setup in place", async () => {
   await inRepo(async (root) => {
     await Bun.write(
       path.join(root, ".outfitter/configs/rumdl.toml"),

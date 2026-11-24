@@ -6,7 +6,7 @@ import { renderRelocate } from "./relocate.ts";
 export const renderPresetResponse = (
   response: PresetResponse,
   json: boolean,
-  command: "cinch" | "rope" = "cinch"
+  command = "rope"
 ): string => {
   if (json) {
     return JSON.stringify(response.report, null, 2);

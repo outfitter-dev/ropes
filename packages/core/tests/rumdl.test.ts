@@ -35,7 +35,7 @@ const inRepo = async <T>(
   body: (root: string) => Promise<T>
 ): Promise<T> => {
   const root = await realpath(
-    await mkdtemp(path.join(tmpdir(), "cinch-rumdl-"))
+    await mkdtemp(path.join(tmpdir(), "ropes-rumdl-"))
   );
   const userConfig = Bun.env.XDG_CONFIG_HOME;
   const userHome = Bun.env.HOME;
@@ -90,7 +90,7 @@ test("the registry hands the adapter the pinned version", () => {
 });
 
 test("with the binary missing, the step is incomplete and the run exits 2", async () => {
-  const adapter = rumdlAdapter({ command: "cinch-test-no-such-rumdl" });
+  const adapter = rumdlAdapter({ command: "ropes-test-no-such-rumdl" });
   const result = await inRepo({ "a.md": CLEAN }, (root) =>
     runPlan(planFor(root, adapter), [adapter], { mode: "check" })
   );
@@ -99,7 +99,7 @@ test("with the binary missing, the step is incomplete and the run exits 2", asyn
       adapter: "rumdl",
       findings: [],
       path: "a.md",
-      reason: "cinch-test-no-such-rumdl is not on PATH",
+      reason: "ropes-test-no-such-rumdl is not on PATH",
       status: "incomplete",
     },
   ]);

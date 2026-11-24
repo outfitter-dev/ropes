@@ -75,7 +75,7 @@ enabled = true
 # A missing formatter is a failure, never a silent pass.
 on-missing-tool-binary = "fail"
 # A block the formatter fails on is reported as a warning, and the blocks
-# after it are still checked. Cinch reads the warning: a block that is not
+# after it are still checked. Ropes reads the warning: a block that is not
 # valid code is reported as a finding, and any other failure is incomplete.
 on-error = "warn"
 

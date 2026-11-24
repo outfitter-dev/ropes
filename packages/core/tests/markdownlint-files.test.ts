@@ -18,7 +18,7 @@ const RUNNER = ".markdownlint-cli2.jsonc";
 
 let root = "";
 beforeEach(async () => {
-  root = await mkdtemp(path.join(tmpdir(), "cinch-files-"));
+  root = await mkdtemp(path.join(tmpdir(), "ropes-files-"));
 });
 afterEach(async () => {
   await rm(root, { force: true, recursive: true });
@@ -87,14 +87,14 @@ test("globs become include, and a negated glob becomes exclude", async () => {
   });
 });
 
-test("globs that say what Cinch already does are left out", async () => {
+test("globs that say what Ropes already does are left out", async () => {
   expect(await chosen({ globs: ["**/*.md"] })).toBeNull();
   expect(
     await chosen({ config: { MD013: false }, gitignore: true })
   ).toBeNull();
 });
 
-test("a pattern a Cinch glob cannot say is noted and not written", async () => {
+test("a pattern a Ropes glob cannot say is noted and not written", async () => {
   const found = await chosen({
     globs: ["#keep.md"],
     ignores: ["/abs/**", "../up/**", "+(a|b)/**", "ok/**"],
@@ -102,10 +102,10 @@ test("a pattern a Cinch glob cannot say is noted and not written", async () => {
   expect(found?.exclude).toEqual(["ok/**"]);
   expect(found?.include).toEqual([]);
   expect(found?.notes).toEqual([
-    '"#keep.md" in `globs` was not carried over, because a Cinch glob cannot say it.',
-    '"/abs/**" in `ignores` was not carried over, because a Cinch glob cannot say it.',
-    '"../up/**" in `ignores` was not carried over, because a Cinch glob cannot say it.',
-    '"+(a|b)/**" in `ignores` was not carried over, because a Cinch glob cannot say it.',
+    '"#keep.md" in `globs` was not carried over, because a Ropes glob cannot say it.',
+    '"/abs/**" in `ignores` was not carried over, because a Ropes glob cannot say it.',
+    '"../up/**" in `ignores` was not carried over, because a Ropes glob cannot say it.',
+    '"+(a|b)/**" in `ignores` was not carried over, because a Ropes glob cannot say it.',
   ]);
 });
 

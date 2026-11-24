@@ -23,11 +23,8 @@ export interface InitRequest {
   readonly yes?: boolean;
 }
 
-const branded = (text: string): string =>
-  text.replace("# Cinch config.", "# Ropes config.");
-
 const priorConfig =
-  "This repository already uses a Cinch config. Run `rope migrate` to preview the conversion.";
+  "This repository uses retired policy configuration. Run `rope migrate` for manual migration steps.";
 const configChanged =
   "The repository config changed during setup. Run rope init again.";
 
@@ -70,7 +67,7 @@ const starterFor = async ({
     ...plan.paths.map((file) => file.path),
     ...found.flatMap((input) => input.keeps ?? []),
   ];
-  return branded(starterConfig(sparing(found, kept)));
+  return starterConfig(sparing(found, kept));
 };
 
 const writeFresh = async (
@@ -113,7 +110,7 @@ export const runRopesInit = async (
   request: InitRequest,
   deps: CommandDeps
 ): Promise<Operation<FixReport>> => {
-  const initial = branded(STARTER_CONFIG);
+  const initial = STARTER_CONFIG;
   const prepared = await prepareStarter(request, deps, initial);
   if (!prepared.ok) {
     return prepared;

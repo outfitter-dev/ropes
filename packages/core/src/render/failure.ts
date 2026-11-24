@@ -1,9 +1,9 @@
 import type { Failure } from "../contracts/failure.ts";
 import { SCHEMA_VERSION } from "../contracts/plan.ts";
 
-const PREFIX = /^cinch: /gmu;
+const PREFIX = /^(?:cinch|rope): /gmu;
 
-/** One line of JSON for stderr. The `cinch: ` prefix is for people only. */
+/** One line of JSON for stderr. The `rope: ` prefix is for people only. */
 export const renderFailureJson = (message: string): string => {
   const failure: Failure = {
     error: { message: message.replaceAll(PREFIX, "") },

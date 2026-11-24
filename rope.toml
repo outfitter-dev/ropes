@@ -22,7 +22,7 @@ enabled = true
 isolated = true
 minimum_release_age = "7 days"
 
-# The facts editors and formatters have to agree on. Cinch writes
+# The facts editors and formatters have to agree on. Ropes writes
 # `.editorconfig` from this table.
 [editor]
 charset = "utf-8"
@@ -51,12 +51,12 @@ preset = true
 enabled = true
 preset = true
 
-# The structural rules Cinch ships, run through ast-grep.
+# The structural rules Ropes ships, run through ast-grep.
 [rules]
 enabled = true
 packs = ["config"]
 
-# The compiler options Cinch ships are the base, so they extend nothing.
+# The compiler options Ropes ships are the base, so they extend nothing.
 [[overrides]]
 paths = ["packages/core/presets/tsconfig.json"]
 

@@ -119,7 +119,7 @@ const planned = (input: {
         plan.added.push([name, key, value]);
       } else {
         plan.notes.push(
-          `\`${key}\` on ${id} is ${show(value)} in ${file}. Cinch could not add it to the ${name} settings here, so add it by hand.`
+          `\`${key}\` on ${id} is ${show(value)} in ${file}. Ropes could not add it to the ${name} settings here, so add it by hand.`
         );
       }
     }
@@ -220,7 +220,7 @@ export const merge = (input: {
     same: input.same ?? {},
     sections: input.sections,
   });
-  const marked = comment([`Carried over from ${file} by Cinch.`]).trimEnd();
+  const marked = comment([`Carried over from ${file} by Ropes.`]).trimEnd();
   const kept = lines.flatMap((text) => {
     const extra = plan.under.get(opened(text) ?? "");
     return extra === undefined ? [text] : [text, marked, ...extra];
@@ -233,7 +233,7 @@ export const merge = (input: {
   return holds(text, have, plan)
     ? { notes: plan.notes, ok: true, text }
     : {
-        message: `Cinch could not add the Markdown rules in ${file} to this file and keep it valid. Add \`extends\` and those rules by hand.`,
+        message: `Ropes could not add the Markdown rules in ${file} to this file and keep it valid. Add \`extends\` and those rules by hand.`,
         ok: false,
       };
 };

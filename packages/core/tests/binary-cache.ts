@@ -13,7 +13,7 @@ type Run = (
 
 const helpers = (cache: string): Promise<string[]> =>
   Array.fromAsync(
-    new Bun.Glob("cinch/stand-in/*/bun").scan({ cwd: cache, dot: true })
+    new Bun.Glob("ropes/stand-in/*/bun").scan({ cwd: cache, dot: true })
   );
 
 /** Exercise the real binary below the checkout root with no Bun on PATH. */
@@ -33,7 +33,7 @@ export const qualifyStandaloneCache = async (input: {
   const outside = path.join(state, "external");
   const existingHelper = path.join(
     outside,
-    "cinch",
+    "ropes",
     "stand-in",
     Bun.hash(binary).toString(16)
   );
@@ -50,7 +50,7 @@ export const qualifyStandaloneCache = async (input: {
     Bun.write(path.join(docs, "overview.md"), contents),
     Bun.write(occupied, "unusable cache"),
     symlink(root, alias),
-    symlink(root, path.join(nestedAlias, "cinch")),
+    symlink(root, path.join(nestedAlias, "ropes")),
   ]);
   // A helper entry hard-linked to a tracked file must be replaced in the cache.
   await link(path.join(root, "README.md"), path.join(existingHelper, "bun"));

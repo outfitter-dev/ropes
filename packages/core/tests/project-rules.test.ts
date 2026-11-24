@@ -87,7 +87,7 @@ const ENV = {
 
 let root = "";
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-project-")));
+  root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-project-")));
   await mkdir(path.join(root, ".git"));
   await Bun.write(path.join(root, "rope.toml"), CONFIG);
   await Bun.write(path.join(root, "a.ts"), "console.log(1);\n");
@@ -96,7 +96,7 @@ afterEach(() => rm(root, { force: true, recursive: true }));
 
 const write = (file: string, text: string) =>
   Bun.write(path.join(root, file), text);
-const cinch = async (...args: readonly string[]) => {
+const rope = async (...args: readonly string[]) => {
   const child = Bun.spawn(["bun", CLI, ...args], {
     cwd: root,
     env: ENV,
@@ -157,7 +157,7 @@ test("explain shows the project config as the source, and the file is left as wr
   const text = "ruleDirs:\n  - ./rules/\nutilDirs:\n  - utils\n";
   await write(PROJECT, text);
   await write("rules/no-log.yml", NO_LOG);
-  const shown = await cinch("explain");
+  const shown = await rope("explain");
   expect(shown.stdout).toContain(
     `Local rules\n  rules  (${PROJECT}: ruleDirs)`
   );
@@ -171,7 +171,7 @@ test("a folder both files name, spelled two ways, is listed once", async () => {
     "rope.toml",
     CONFIG.replace("enabled = true", 'enabled = true\nlocal = ["./rules/"]')
   );
-  const shown = await cinch("explain");
+  const shown = await rope("explain");
   expect(shown.stdout).toContain(
     "Local rules\n  rules  (rope.toml: rules.local)\n\n"
   );
@@ -179,13 +179,13 @@ test("a folder both files name, spelled two ways, is listed once", async () => {
 
 test("a project config that cannot be read stops a run that asks for rules, and no other", async () => {
   await write(PROJECT, "ruleDirs: rules\n");
-  const stopped = await cinch("explain");
+  const stopped = await rope("explain");
   expect(stopped.stderr).toContain(
     `${PROJECT}: ruleDirs must be a list of folders`
   );
   expect(stopped.exitCode).toBe(2);
   await write("rope.toml", CONFIG.replace("enabled = true", "enabled = false"));
-  const ran = await cinch("explain");
+  const ran = await rope("explain");
   expect(ran.exitCode).toBe(0);
 });
 
@@ -196,7 +196,7 @@ test("with only a project config, its rules run, one that uses a utility rule to
   await write(PROJECT, "ruleDirs:\n  - rules\nutilDirs:\n  - utils\n");
   await write("utils/is-log.yml", UTILITY);
   await write("rules/no-log.yml", NO_LOG);
-  const ran = await cinch("check", "--json");
+  const ran = await rope("check", "--json");
   const result: unknown = JSON.parse(ran.stdout);
   expect(JSON.stringify(result)).toContain('"rule":"local/no-log"');
   expect(ran.stdout).toContain("Say it through the logger.");
@@ -208,7 +208,7 @@ test("a folder the project config names that is not there is incomplete, and say
     return;
   }
   await write(PROJECT, "ruleDirs:\n  - rules\n");
-  const ran = await cinch("check");
+  const ran = await rope("check");
   expect(ran.stdout).toContain(
     `${PROJECT}: ruleDirs names rules, which is not a folder here`
   );

@@ -6,7 +6,7 @@ import path from "node:path";
 import { packagesAbove } from "../src/commands/packages.ts";
 
 test("a directory with a manifest above a selected file is a package", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-packages-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-packages-"));
   try {
     await Promise.all(
       [

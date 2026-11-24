@@ -72,10 +72,10 @@ const blocked = (
   generatedPath: string
 ): string | null => {
   if (isMarked(current)) {
-    return `${CONFIG_PATH} says Cinch generated it, but it holds more than Cinch wrote. Delete its first comment to make the file your own, then run this again.`;
+    return `${CONFIG_PATH} says Ropes generated it, but it holds more than Ropes wrote. Delete its first comment to make the file your own, then run this again.`;
   }
   if (own === null) {
-    return `${CONFIG_PATH} is not valid TOML, so Cinch cannot read its settings.`;
+    return `${CONFIG_PATH} is not valid TOML, so Ropes cannot read its settings.`;
   }
   return own.extends === generatedPath
     ? null
@@ -95,7 +95,7 @@ const stale = async (
   const shipped = await preset();
   return shipped.ok && installed === shipped.text
     ? null
-    : `${presetPath} is not the preset this Cinch ships, so what the settings sit above is not what Cinch would compare them with. Run \`rope doctor --fix\` first.`;
+    : `${presetPath} is not the preset this Ropes ships, so what the settings sit above is not what Ropes would compare them with. Run \`rope doctor --fix\` first.`;
 };
 
 /**
@@ -120,7 +120,7 @@ export const adopt = async (
   const before = parsed(config.text);
   const shipped = parsed(await standard());
   if (reason !== null || own === null || before === null || shipped === null) {
-    return stop(reason ?? `Cinch could not read ${config.file}.`);
+    return stop(reason ?? `Ropes could not read ${config.file}.`);
   }
   const family = familyOf(config);
   const { extends: _chain, ...settings } = own;
@@ -145,7 +145,7 @@ export const adopt = async (
   const after = parsed(text);
   if (after === null || !same(after, withTable(before, family, merged))) {
     return stop(
-      `Cinch could not add the settings to ${config.file} without changing what it already says. Move them under \`[${family.join(".")}]\` by hand.`
+      `Ropes could not add the settings to ${config.file} without changing what it already says. Move them under \`[${family.join(".")}]\` by hand.`
     );
   }
   const below = await generated(merged);

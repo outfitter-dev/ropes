@@ -5,7 +5,7 @@ import { pointerFor } from "../src/adapters/rumdl/root-config.ts";
 import { commands } from "../src/commands/registry.ts";
 import { ROPES_MANAGED_DIR } from "../src/contracts/managed-config.ts";
 import {
-  CINCH,
+  POLICY,
   CONFIG,
   EXTENDS,
   GENERATED,
@@ -42,22 +42,22 @@ exclude = ["vendor/**"]
 `;
 
 test("the preview names every file and writes none", async () => {
-  const root = await repo({ [CINCH]: HELD });
+  const root = await repo({ [POLICY]: HELD });
   const { exitCode, report } = await move(root, "eject");
   expect(exitCode).toBe(0);
   expect(report).toMatchObject({ action: "eject", written: false });
-  expect(report.changed).toEqual([CINCH, GENERATED, ROOT]);
+  expect(report.changed).toEqual([POLICY, GENERATED, ROOT]);
   expect(report.diff).toContain("+[MD007]");
-  expect(await read(root, CINCH)).toBe(HELD);
+  expect(await read(root, POLICY)).toBe(HELD);
   expect(await read(root, ROOT)).toBe(POINTER);
 });
 
 test("--yes moves the tables and their comments out, and a second run changes nothing", async () => {
-  const root = await repo({ [CINCH]: HELD });
+  const root = await repo({ [POLICY]: HELD });
   const { exitCode, report } = await move(root, "eject", { yes: true });
   expect(exitCode).toBe(0);
   expect(report).toMatchObject({ notes: [], written: true });
-  expect(await read(root, CINCH)).toBe(CONFIG);
+  expect(await read(root, POLICY)).toBe(CONFIG);
   expect(await read(root, ROOT)).toBe(OWN);
   expect(await read(root, GENERATED)).not.toContain("MD007");
   const again = await move(root, "eject", { yes: true });
@@ -65,31 +65,31 @@ test("--yes moves the tables and their comments out, and a second run changes no
 });
 
 test("adopt undoes eject, to the byte", async () => {
-  const root = await repo({ [CINCH]: HELD });
+  const root = await repo({ [POLICY]: HELD });
   await move(root, "eject", { yes: true });
   await move(root, "adopt", { yes: true });
-  expect(await read(root, CINCH)).toBe(HELD);
+  expect(await read(root, POLICY)).toBe(HELD);
   expect(await read(root, ROOT)).toBe(POINTER);
 });
 
 test("a root config the repository wrote is not overwritten", async () => {
-  const root = await repo({ [CINCH]: HELD, [ROOT]: OWN });
+  const root = await repo({ [POLICY]: HELD, [ROOT]: OWN });
   const { exitCode, report } = await move(root, "eject", { yes: true });
   expect(exitCode).toBe(1);
   expect(report.changed).toEqual([]);
   expect(report.stopped?.[0]).toContain(
-    ".rumdl.toml is the repository's own, so Cinch will not overwrite it."
+    ".rumdl.toml is the repository's own, so Ropes will not overwrite it."
   );
-  expect(await read(root, CINCH)).toBe(HELD);
+  expect(await read(root, POLICY)).toBe(HELD);
   expect(await read(root, ROOT)).toBe(OWN);
 });
 
 test("a table written inline is not taken apart", async () => {
   const held = `${CONFIG}\n[tools]\nrumdl = { MD007 = { indent = 4 } }\n`;
-  const root = await repo({ [CINCH]: held });
+  const root = await repo({ [POLICY]: held });
   const { report } = await move(root, "eject", { yes: true });
   expect(report.stopped?.[0]).toContain("Move it by hand.");
-  expect(await read(root, CINCH)).toBe(held);
+  expect(await read(root, POLICY)).toBe(held);
 });
 
 test("ejection refuses retired shared policy and retains unrelated tables", async () => {

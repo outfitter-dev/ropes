@@ -10,7 +10,7 @@ const refuser = (log: string): string =>
   `#!/bin/sh\necho start >> '${log}'\necho 'Error: Cannot parse rule' >&2\necho '╰▻ unknown field' >&2\nexit 8\n`;
 
 test("a refused local rule is looked for once, not once for each file", async () => {
-  const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-rf-")));
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-rf-")));
   try {
     const log = path.join(root, "starts.log");
     const binary = path.join(root, "engine.sh");

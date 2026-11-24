@@ -37,7 +37,7 @@ export const init =
     const located = await locate(request.cwd, deps);
     if (!located.ok) {
       return {
-        error: `cinch: ${located.error}`,
+        error: `rope: ${located.error}`,
         exitCode: EXIT_CODE.incomplete,
       };
     }
@@ -52,7 +52,7 @@ export const init =
     const planned = await prepare({ cwd: root, paths, strict }, deps);
     if (!planned.ok) {
       return {
-        error: `cinch: ${planned.error}`,
+        error: `rope: ${planned.error}`,
         exitCode: EXIT_CODE.incomplete,
       };
     }
@@ -80,7 +80,7 @@ export const init =
       { also: old.files, mode: "init" }
     );
     if (!ran.ok) {
-      return { error: `cinch: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
+      return { error: `rope: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
     }
     const fixed = starter === null ? ran.value : withConfig(ran.value, starter);
     const retired = await retire(

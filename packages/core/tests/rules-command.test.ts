@@ -34,7 +34,7 @@ const report = async (request: Partial<CommandRequest> = {}) => {
 };
 
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-rules-")));
+  root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-rules-")));
   await mkdir(path.join(root, ".git"));
 });
 afterEach(async () => {
@@ -99,7 +99,7 @@ test("a relevant pack the config does not name is not adopted", async () => {
   expect(await state()).toBe("not-adopted");
   const shown = await run({ json: false });
   expect(shown.output).toContain(
-    "config  not adopted, and tsconfig.json is here. Run `cinch rules adopt config` to run it"
+    "config  not adopted, and tsconfig.json is here. Run `rope rules adopt config` to run it"
   );
 });
 
@@ -108,7 +108,7 @@ test("a pack name nothing has is refused", async () => {
   const refused = await run();
   expect(refused.exitCode).toBe(2);
   expect(refused.error).toBe(
-    'cinch: rope.toml: rules.packs: Cinch ships no rule pack named "nope".'
+    'rope: rope.toml: rules.packs: Ropes ships no rule pack named "nope".'
   );
 });
 
@@ -150,7 +150,7 @@ test("an action it does not have is refused", async () => {
   const refused = await run({ action: "nope" });
   expect(refused.exitCode).toBe(2);
   expect(refused.error).toBe(
-    'cinch: unknown rules action "nope". Use list or adopt.'
+    'rope: unknown rules action "nope". Use list or adopt.'
   );
 });
 

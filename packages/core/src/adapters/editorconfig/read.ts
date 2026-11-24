@@ -61,7 +61,7 @@ const preamble = (key: string, value: string, walk: Walk): void => {
 const pair = (line: string, at: number, walk: Walk): void => {
   const found = PAIR.exec(line)?.groups;
   if (found?.key === undefined || found.value === undefined) {
-    walk.dropped.push(`line ${at}, which Cinch could not read`);
+    walk.dropped.push(`line ${at}, which Ropes could not read`);
     return;
   }
   const key = found.key.toLowerCase();

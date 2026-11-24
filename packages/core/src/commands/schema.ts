@@ -76,11 +76,11 @@ const listing = (json: boolean): string =>
         schemaVersion: SCHEMA_VERSION,
       })
     : [
-        "Run `cinch schema <command>` for the JSON Schema of its --json output.",
+        "Run `rope schema <command>` for the JSON Schema of its --json output.",
         "",
         ...NAMES.map((name) => `  ${name}`),
         "",
-        `Run \`cinch schema ${CONFIG_NAME}\` for the JSON Schema of the Cinch config file.`,
+        `Run \`rope schema ${CONFIG_NAME}\` for the JSON Schema of the Ropes config file.`,
       ].join("\n");
 
 /**
@@ -106,7 +106,7 @@ export const schema: Command = (request) => {
   const found = outputSchema(name);
   if (!found) {
     return Promise.resolve({
-      error: `cinch: no schema for "${name}". Run \`cinch schema\` for the names.`,
+      error: `rope: no schema for "${name}". Run \`rope schema\` for the names.`,
       exitCode: EXIT_CODE.incomplete,
     });
   }

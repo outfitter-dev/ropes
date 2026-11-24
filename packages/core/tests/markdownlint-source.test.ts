@@ -9,7 +9,7 @@ const inRoot = async <T>(
   files: Readonly<Record<string, string>>,
   body: (root: string) => Promise<T>
 ): Promise<T> => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-source-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-source-"));
   try {
     await Promise.all(
       Object.entries(files).map(([name, text]) =>
@@ -58,7 +58,7 @@ test("a repository with no old config has no source", async () => {
 
 for (const name of [".markdownlint.cjs", ".markdownlint-cli2.mjs"]) {
   test(`${name} is a script, so it is reported and not run`, async () => {
-    const marker = path.join(tmpdir(), `cinch-ran-${crypto.randomUUID()}`);
+    const marker = path.join(tmpdir(), `ropes-ran-${crypto.randomUUID()}`);
     const script = `require("node:fs").writeFileSync(${JSON.stringify(marker)}, "x");`;
     const found = await find({
       ".markdownlint.json": JSON_RULES,
@@ -78,7 +78,7 @@ test("a file that does not parse stops the migration", async () => {
   );
 });
 
-test("the runner's own settings are named, with the Cinch key for paths", async () => {
+test("the runner's own settings are named, with the Ropes key for paths", async () => {
   const text = JSON.stringify({
     config: RULES,
     customRules: ["./rule.js"],
@@ -89,14 +89,14 @@ test("the runner's own settings are named, with the Cinch key for paths", async 
   expect(found).toMatchObject({
     notes: [
       "`customRules` in .markdownlint-cli2.jsonc is a markdownlint-cli2 setting with no equivalent here.",
-      "`globs` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `rope init` writes it as `include` in a new Cinch config. Add it by hand to one that is already there.",
-      "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `rope init` writes it as `exclude` in a new Cinch config. Add it by hand to one that is already there.",
+      "`globs` in .markdownlint-cli2.jsonc chooses files, which is the Ropes config's job. `rope init` writes it as `include` in a new Ropes config. Add it by hand to one that is already there.",
+      "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Ropes config's job. `rope init` writes it as `exclude` in a new Ropes config. Add it by hand to one that is already there.",
     ],
     rules: RULES,
     // The file choices are the Ropes config's to carry.
     settled: [
-      "`globs` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `rope init` writes it as `include` in a new Cinch config. Add it by hand to one that is already there.",
-      "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `rope init` writes it as `exclude` in a new Cinch config. Add it by hand to one that is already there.",
+      "`globs` in .markdownlint-cli2.jsonc chooses files, which is the Ropes config's job. `rope init` writes it as `include` in a new Ropes config. Add it by hand to one that is already there.",
+      "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Ropes config's job. `rope init` writes it as `exclude` in a new Ropes config. Add it by hand to one that is already there.",
     ],
   });
 });
@@ -127,7 +127,7 @@ test("a runner with no rules of its own leaves them to the rules file", async ()
   expect(found).toMatchObject({
     file: ".markdownlint.json",
     notes: [
-      "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `rope init` writes it as `exclude` in a new Cinch config. Add it by hand to one that is already there.",
+      "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Ropes config's job. `rope init` writes it as `exclude` in a new Ropes config. Add it by hand to one that is already there.",
     ],
     rules: RULES,
   });

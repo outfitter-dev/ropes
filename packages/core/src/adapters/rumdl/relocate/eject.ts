@@ -73,7 +73,7 @@ export const eject = async (
   const current = (await file.exists()) ? await file.text() : null;
   if (!isPointer(current, paths)) {
     return stop(
-      `${CONFIG_PATH} is the repository's own, so Cinch will not overwrite it. Move the settings into it by hand, or delete it and run this again.`
+      `${CONFIG_PATH} is the repository's own, so Ropes will not overwrite it. Move the settings into it by hand, or delete it and run this again.`
     );
   }
   const other = current === null ? await configuredElsewhere(root) : null;
@@ -98,7 +98,7 @@ export const eject = async (
     !same(after, withTable(before, family, {}))
   ) {
     return stop(
-      `Cinch could not take \`[${family.join(".")}]\` out of ${config.file} by itself: the table is not written as plain \`[table]\` sections. Move it by hand.`
+      `Ropes could not take \`[${family.join(".")}]\` out of ${config.file} by itself: the table is not written as plain \`[table]\` sections. Move it by hand.`
     );
   }
   const read = parsed(taken);
@@ -115,7 +115,7 @@ export const eject = async (
   const whole = parsed(own);
   if (whole === null || !same(whole, { ...table, extends: paths.generated })) {
     return stop(
-      `Cinch could not write \`[${family.join(".")}]\` as a ${CONFIG_PATH} that says the same. Move it by hand.`
+      `Ropes could not write \`[${family.join(".")}]\` as a ${CONFIG_PATH} that says the same. Move it by hand.`
     );
   }
   return {

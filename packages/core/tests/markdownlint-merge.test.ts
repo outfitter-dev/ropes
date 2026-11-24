@@ -16,7 +16,7 @@ const KNOWN = [
   { aliases: ["ul-indent"], code: "MD007", name: "ul-indent" },
   { aliases: ["line-length"], code: "MD013", name: "line-length" },
 ];
-const MARK = `# Carried over from ${OLD} by Cinch.`;
+const MARK = `# Carried over from ${OLD} by Ropes.`;
 
 const merged = (
   current: string,
@@ -95,7 +95,7 @@ test("a table written inline gets a note, not a second table", () => {
   const text = merged(current, { MD013: { "code-blocks": false } });
   expect(text).toStartWith(current);
   expect(text).toContain(
-    `\`code-blocks\` on MD013 is false in ${OLD}. Cinch could not add it to the MD013 settings here, so add it by hand.`
+    `\`code-blocks\` on MD013 is false in ${OLD}. Ropes could not add it to the MD013 settings here, so add it by hand.`
   );
   expect(text).not.toContain("[MD013]");
 });
@@ -200,7 +200,7 @@ test("init merges the old rules into a config, and doctor adds one line", async 
     console.warn("skipped: rumdl is not on PATH, so the merge did not run");
     return;
   }
-  const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-mrg-")));
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-mrg-")));
   try {
     await mkdir(path.join(root, ".git"));
     await Bun.write(

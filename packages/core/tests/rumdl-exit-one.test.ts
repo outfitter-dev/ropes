@@ -16,7 +16,7 @@ exit 1
 `;
 
 const run = async (warns: string) => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-exit-one-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-exit-one-"));
   try {
     const command = path.join(root, "engine");
     await Promise.all([
@@ -61,7 +61,7 @@ test("exit 1 with only a fence warning gives that file its own reason", async ()
 });
 
 test("a file that is gone when its comments are read is incomplete, never passed", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-exit-one-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-exit-one-"));
   try {
     const command = path.join(root, "engine");
     await Bun.write(command, '#!/bin/sh\necho "[]"\n');

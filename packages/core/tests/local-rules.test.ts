@@ -111,7 +111,7 @@ const ENV = {
 
 let root = "";
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-local-")));
+  root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-local-")));
   await mkdir(path.join(root, ".git"));
   await Bun.write(
     path.join(root, "rope.toml"),
@@ -121,7 +121,7 @@ beforeEach(async () => {
 });
 afterEach(() => rm(root, { force: true, recursive: true }));
 
-const cinch = async (...args: readonly string[]) => {
+const rope = async (...args: readonly string[]) => {
   const child = Bun.spawn(["bun", CLI, ...args], {
     cwd: root,
     env: ENV,
@@ -149,7 +149,7 @@ const hasEngine = (): boolean => {
 
 test("explain shows the folder, and a folder that is not there is incomplete", async () => {
   await rule("no-log.yml", NO_LOG);
-  const shown = await cinch("explain");
+  const shown = await rope("explain");
   expect(shown.stdout).toContain(
     "Local rules\n  rules  (rope.toml: rules.local)"
   );
@@ -157,7 +157,7 @@ test("explain shows the folder, and a folder that is not there is incomplete", a
     return;
   }
   await rm(path.join(root, "rules"), { recursive: true });
-  const ran = await cinch("check");
+  const ran = await rope("check");
   expect(ran.stdout).toContain(
     "rules.local names rules, which is not a folder here"
   );
@@ -169,7 +169,7 @@ test("a local rule's finding is reported as the repository's own", async () => {
     return;
   }
   await rule("no-log.yml", NO_LOG);
-  const ran = await cinch("check", "--json");
+  const ran = await rope("check", "--json");
   const result: unknown = JSON.parse(ran.stdout);
   expect(JSON.stringify(result)).toContain('"rule":"local/no-log"');
   expect(ran.stdout).toContain("Say it through the logger.");
@@ -185,27 +185,27 @@ test("a rule file the engine refuses is incomplete, and is named", async () => {
     "deep/bad.yml",
     "id: bad\nlanguage: typescript\nrule:\n  nope: 1\n"
   );
-  const ran = await cinch("check");
+  const ran = await rope("check");
   expect(ran.stdout).toContain("rules/deep/bad.yml: error: line 3");
   expect(ran.stdout).toContain("unknown field `nope`");
   expect(ran.exitCode).toBe(2);
 });
 
-test("an id is used once: not twice here, and not one Cinch ships", async () => {
+test("an id is used once: not twice here, and not one Ropes ships", async () => {
   if (!hasEngine()) {
     return;
   }
   await rule("no-log.yml", NO_LOG);
   await rule("twice.yml", NO_LOG);
-  const twice = await cinch("check");
+  const twice = await rope("check");
   expect(twice.stdout).toContain(
     "rules/twice.yml: the id no-log is already used by rules/no-log.yml"
   );
   expect(twice.exitCode).toBe(2);
   await rule("twice.yml", NO_LOG.replace("no-log", "config/tsconfig-extends"));
-  const shipped = await cinch("check");
+  const shipped = await rope("check");
   expect(shipped.stdout).toContain(
-    "the id config/tsconfig-extends is already used by a rule Cinch ships"
+    "the id config/tsconfig-extends is already used by a rule Ropes ships"
   );
   expect(shipped.exitCode).toBe(2);
 });
@@ -216,7 +216,7 @@ test("a rule in a dot-named file or folder is read like any other", async () => 
   }
   await rule(".shared/no-log.yml", NO_LOG);
   await rule(".todo.yml", NO_LOG.replace("no-log", "no-log-again"));
-  const ran = await cinch("check");
+  const ran = await rope("check");
   expect(ran.stdout).toContain("local/no-log ");
   expect(ran.stdout).toContain("local/no-log-again ");
 });

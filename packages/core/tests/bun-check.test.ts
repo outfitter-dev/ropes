@@ -22,7 +22,7 @@ const inRepo = async <T>(
   files: Readonly<Record<string, string>>,
   body: (root: string) => Promise<T>
 ): Promise<T> => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-types-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-types-"));
   try {
     await Promise.all(
       Object.entries({ "tsconfig.json": STRICT, ...files }).map(
@@ -68,7 +68,7 @@ test("the adapter is off until asked for, never writes, and follows the pin", ()
 });
 
 test("a command that is not on PATH is not available, and its steps are incomplete", async () => {
-  const adapter = bunCheckAdapter({ command: "cinch-no-such-bun" });
+  const adapter = bunCheckAdapter({ command: "ropes-no-such-bun" });
   const probe = await adapter.probe();
   expect(probe.available).toBe(false);
   await inRepo({ "a.ts": "" }, async (root) => {

@@ -6,10 +6,7 @@ export const print = (output: string): void => {
 };
 
 export const fail = (message: string, json: boolean): number => {
-  // Setup errors join later lines with `cinch: `. Rebrand those as rope.
-  const text = json
-    ? renderFailureJson(message)
-    : `rope: ${message.replaceAll("\ncinch: ", "\nrope: ")}`;
+  const text = json ? renderFailureJson(message) : `rope: ${message}`;
   process.stderr.write(`${text}\n`);
   return EXIT_CODE.incomplete;
 };

@@ -38,7 +38,7 @@ const notAdopted = async (): Promise<readonly string[]> => {
 };
 
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-setup-")));
+  root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-setup-")));
   await mkdir(path.join(root, ".git"));
 });
 afterEach(async () => {
@@ -107,7 +107,7 @@ test("doctor names a pack that applies and is not adopted, as a note", async () 
   const shown = await run("doctor", { json: false });
   expect(shown.exitCode).toBe(0);
   expect(shown.output).toContain(
-    "Rule packs not adopted\n  config\nRun `cinch rules adopt` to see the change, and add `--yes` to write it."
+    "Rule packs not adopted\n  config\nRun `rope rules adopt` to see the change, and add `--yes` to write it."
   );
 });
 

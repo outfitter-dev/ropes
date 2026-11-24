@@ -82,7 +82,7 @@ test("what the table cannot hold is listed and left out", () => {
     "`indent_size = tab` in `[*]`",
     "`tab_width = 4` in `[*]`",
     "`max_line_length = off` in `[*]`",
-    "line 14, which Cinch could not read",
+    "line 14, which Ropes could not read",
     "the settings of a `.editorconfig` in a folder above, which apply until this file states `root = true`",
     "the section `[[Mm]akefile]`, whose glob the table cannot state",
     "a `[*]` section below a narrower one, where it wins over that one",
@@ -114,7 +114,7 @@ test("the table written for a config states the facts the file stated", () => {
 
 let root = "";
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-read-")));
+  root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-read-")));
   await mkdir(path.join(root, ".git"));
 });
 afterEach(async () => {
@@ -174,7 +174,7 @@ test("after init, doctor --fix writes the generated file", async () => {
   await run("init", { yes: true });
   await quiet();
   expect(await messages()).toEqual([
-    "This file was written by hand and states what `[editor]` in the Cinch config states. Run `rope doctor --fix` to have Cinch write it from the table.",
+    "This file was written by hand and states what `[editor]` in the Ropes config states. Run `rope doctor --fix` to have Ropes write it from the table.",
   ]);
   const fixed = await run("doctor", { fix: true });
   expect(fixed.exitCode).toBe(0);
@@ -234,7 +234,7 @@ test("init does not carry an old exclude that leaves the editor file out", async
   await run("init", { yes: true });
   const config = await text("rope.toml");
   expect(config).toContain("[editor]");
-  expect(config).toContain(`which Cinch keeps`);
+  expect(config).toContain(`which Ropes keeps`);
   await quiet();
   const doctor = await run("doctor");
   expect(doctor.error).toBeUndefined();

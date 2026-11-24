@@ -21,7 +21,7 @@ const KEPT = ".ropes/configs/presets/oxlint.ts";
 
 let root = "";
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-package-")));
+  root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-package-")));
   await mkdir(path.join(root, ".git"));
   await Bun.write(
     path.join(root, "rope.toml"),

@@ -29,7 +29,7 @@ export interface DoctorRequest extends ReadRequest {
 }
 
 const unusable = (message: string): CommandResponse => ({
-  error: `cinch: ${message}`,
+  error: `rope: ${message}`,
   exitCode: EXIT_CODE.incomplete,
 });
 

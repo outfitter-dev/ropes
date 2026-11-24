@@ -72,7 +72,7 @@ const write = async (
   const paths = filesOf(presets);
   const gaps = gapsOf(presets, prepared.value.plan);
   if (gaps.length > 0) {
-    return unusable([...new Set(gaps.map(describeGap))].join("\ncinch: "));
+    return unusable([...new Set(gaps.map(describeGap))].join("\nrope: "));
   }
   const ran = await runWrite({ ...request, cwd: root, paths }, deps, {
     mode: "doctor",
@@ -95,8 +95,7 @@ const write = async (
  */
 export const runPreset = async (
   request: PresetRequest,
-  deps: CommandDeps,
-  command: "cinch" | "rope" = "cinch"
+  deps: CommandDeps
 ): Promise<Operation<PresetResponse>> => {
   const located = await locate(request.cwd, deps);
   if (!located.ok) {
@@ -111,41 +110,30 @@ export const runPreset = async (
     );
   }
   if (action === "add" && names.length === 0) {
-    return unusable(
-      `name the preset to add. Run \`${command} preset\` to see them.`
-    );
+    return unusable(`name the preset to add. Run \`rope preset\` to see them.`);
   }
   if (moves.success && names.length !== 1) {
     return unusable(
-      `name one preset to ${action}. Run \`${command} preset\` to see them.`
+      `name one preset to ${action}. Run \`rope preset\` to see them.`
     );
   }
   const among = moves.success ? located.movables : located.presets;
-  const picked = pick(
-    among,
-    action === "list" && command === "cinch" ? [] : names
-  );
+  const picked = pick(among, names);
   if (!picked.ok) {
     const known = among.map((item) => item.name).join(", ");
     return unusable(
       moves.success
-        ? `there is nothing named "${picked.unknown}" to ${action}. Cinch can ${action}: ${known}.`
-        : `there is no preset named "${picked.unknown}". Cinch ships: ${known}.`
+        ? `there is nothing named "${picked.unknown}" to ${action}. Ropes can ${action}: ${known}.`
+        : `there is no preset named "${picked.unknown}". Ropes ships: ${known}.`
     );
   }
   const { root } = located.root;
   const [only] = picked.presets;
   if (moves.success && only !== undefined) {
-    const moved = await runRelocate(
-      request,
-      deps,
-      root,
-      {
-        action: moves.data,
-        preset: only,
-      },
-      command
-    );
+    const moved = await runRelocate(request, deps, root, {
+      action: moves.data,
+      preset: only,
+    });
     return moved.ok
       ? {
           ok: true,
@@ -174,7 +162,7 @@ export const preset =
           exitCode: ran.value.exitCode,
           output: renderPresetResponse(ran.value, request.json),
         }
-      : { error: `cinch: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
+      : { error: `rope: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
   };
 
 export const runRopesPreset = async (
@@ -191,12 +179,12 @@ export const runRopesPreset = async (
   }
   const config = await loadConfig(located.root.root);
   if (!config.ok) {
-    return await runPreset(request, deps, "rope");
+    return await runPreset(request, deps);
   }
   if (config.value.file === null) {
     return unusable(
       "Run `rope init` to preview repository setup before managing presets."
     );
   }
-  return await runPreset(request, deps, "rope");
+  return await runPreset(request, deps);
 };

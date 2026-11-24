@@ -41,7 +41,7 @@ exit 1
 `;
 
 const run = async (from: number, engine = QUIET) => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-quiet-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-quiet-"));
   try {
     const command = path.join(root, "engine");
     await Promise.all([

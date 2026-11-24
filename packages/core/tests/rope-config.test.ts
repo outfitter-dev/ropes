@@ -185,7 +185,7 @@ test("rope.toml above a linked checkout is outside its boundary", async () => {
 
 test("generated Markdown pointers name the active setup command", () => {
   expect(pointerFor(markdownPaths(LEGACY_MANAGED_DIR))).toBe(POINTER);
-  expect(POINTER).toContain("cinch doctor --fix");
+  expect(POINTER).toContain("rope doctor --fix");
   const ropes = pointerFor(markdownPaths(ROPES_MANAGED_DIR));
   expect(ropes).toContain("rope doctor --fix");
   expect(ropes).toContain("in the Ropes config");

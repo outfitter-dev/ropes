@@ -107,7 +107,7 @@ const setupKeeper = describeFake({
   setup: true,
 });
 
-test("another adapter reads a file Cinch writes whole, and never writes it", () => {
+test("another adapter reads a file Ropes writes whole, and never writes it", () => {
   const plan = resolve([".tool/preset.md", "a.md", "tool.md"], {
     descriptors: [markdown, setupKeeper],
   });
@@ -139,8 +139,8 @@ const rewrite = async (input: FileInput): Promise<StepOutcome> => {
   return FIXED;
 };
 
-test("a fix leaves a file Cinch writes whole as it was, byte for byte", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-kept-"));
+test("a fix leaves a file Ropes writes whole as it was, byte for byte", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-kept-"));
   try {
     const files = { ".tool/preset.md": "TODO\n", "a.md": "TODO\n" };
     await Promise.all(

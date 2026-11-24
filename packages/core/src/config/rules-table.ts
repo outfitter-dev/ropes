@@ -149,11 +149,11 @@ export const namePacks = (
   if (crlf && back(text) !== given) {
     return {
       ok: false,
-      reason: `The file mixes line endings, so Cinch will not edit it. ${by}`,
+      reason: `The file mixes line endings, so Ropes will not edit it. ${by}`,
     };
   }
   const kept = isOnlyThat(text, edited, names, packs);
   return kept
     ? { ok: true, text: back(edited) }
-    : { ok: false, reason: `Cinch could not make the edit safely. ${by}` };
+    : { ok: false, reason: `Ropes could not make the edit safely. ${by}` };
 };

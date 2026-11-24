@@ -156,10 +156,8 @@ export const runWrite = async (
     : prepared;
 };
 
-const stopped = (command: "cinch" | "rope"): string => {
-  const product = command === "rope" ? "Ropes" : "Cinch";
-  return `Nothing was fixed: the ${product} setup needs repair first. Run \`${command} doctor --fix\`, then run this again.`;
-};
+const STOPPED =
+  "Nothing was fixed: the Ropes setup needs repair first. Run `rope doctor --fix`, then run this again.";
 
 /**
  * The setup is checked before anything is written. A config Ropes keeps
@@ -168,8 +166,7 @@ const stopped = (command: "cinch" | "rope"): string => {
  */
 const brokenSetup = async (
   request: FixRequest,
-  deps: CommandDeps,
-  command: "cinch" | "rope"
+  deps: CommandDeps
 ): Promise<FixRun | null> => {
   const setup = await prepareSetup(request.cwd, deps);
   if (!setup.ok) {
@@ -188,7 +185,7 @@ const brokenSetup = async (
       dryRun: request.dryRun === true,
       result,
       schemaVersion: plan.schemaVersion,
-      stopped: stopped(command),
+      stopped: STOPPED,
     },
   };
 };
@@ -199,11 +196,10 @@ const brokenSetup = async (
  */
 export const runFix = async (
   request: FixRequest,
-  deps: CommandDeps,
-  command: "cinch" | "rope" = "cinch"
+  deps: CommandDeps
 ): Promise<FixRun> =>
   request.at === undefined
-    ? ((await brokenSetup(request, deps, command)) ??
+    ? ((await brokenSetup(request, deps)) ??
       (await runWrite(request, deps, { mode: "fix" })))
     : {
         error: "An explicit evaluation time is only for explain and check.",
@@ -216,5 +212,5 @@ export const fix =
     const ran = await runFix(request, deps);
     return ran.ok
       ? respond(request, ran.value)
-      : { error: `cinch: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
+      : { error: `rope: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
   };

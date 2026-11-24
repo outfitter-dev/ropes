@@ -117,7 +117,7 @@ export const leftovers = async (root: string): Promise<string[]> => {
     ...(ignore === null || ignore === undefined
       ? []
       : [
-          `${IGNORE_FILE} lists files the old linter skipped. Add the ones that still matter to \`exclude\` in the Cinch config, then delete it.`,
+          `${IGNORE_FILE} lists files the old linter skipped. Add the ones that still matter to \`exclude\` in the Ropes config, then delete it.`,
         ]),
     ...(manifest === null || manifest === undefined ? [] : inPackage(manifest)),
     ...calling.map((name) => `${name} still mentions ${NAME}.`),

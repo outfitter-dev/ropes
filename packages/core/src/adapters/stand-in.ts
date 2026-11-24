@@ -32,7 +32,7 @@ const cacheFolder = async (
     }
     const target = path.join(
       cache,
-      "cinch",
+      "ropes",
       "stand-in",
       Bun.hash(executable).toString(16)
     );

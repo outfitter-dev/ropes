@@ -71,7 +71,7 @@ export interface ManagedOptions {
 
 /** The rule every finding about a kept file is reported under. */
 export const MANAGED_RULE = "ropes/managed-file";
-const TOOL = "cinch";
+const TOOL = "ropes";
 
 const read = async (file: string): Promise<string | null> => {
   const handle = Bun.file(file);
@@ -158,7 +158,7 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
       return { findings: [], status: "fixed" } satisfies StepOutcome;
     }
     const problem =
-      current === null ? "is missing" : `differs from what Ropes manages here`;
+      current === null ? "is missing" : "differs from what Ropes keeps here";
     return {
       findings: [
         finding(

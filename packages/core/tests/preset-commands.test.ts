@@ -51,7 +51,7 @@ const commands = createCommands({
 
 let root = "";
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-preset-")));
+  root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-preset-")));
   await mkdir(path.join(root, ".git"));
 });
 afterEach(async () => {
@@ -89,7 +89,7 @@ test("init shows what it would write and writes nothing", async () => {
 
 test("init only shows the change unless --yes is given", async () => {
   const hint =
-    "Dry run: nothing was written. Run `cinch init --yes` to write this.";
+    "Dry run: nothing was written. Run `rope init --yes` to write this.";
   const plain = await run("init", { json: false });
   expect(plain.output).toEndWith(hint);
   const dry = await run("init", { dryRun: true, json: false });
@@ -125,7 +125,7 @@ test("init carries the file choices of a config an adapter replaces", async () =
   expect(await run("check")).toMatchObject({ exitCode: 0 });
 });
 
-test("init does not carry an exclude that covers a file Cinch keeps", async () => {
+test("init does not carry an exclude that covers a file Ropes keeps", async () => {
   await Bun.write(path.join(root, OLD), '"kept"');
   const shown = await run("init");
   const report = FixReportSchema.parse(JSON.parse(shown.output ?? "null"));
@@ -135,7 +135,7 @@ test("init does not carry an exclude that covers a file Cinch keeps", async () =
   const config = (await textOf("rope.toml")) ?? "";
   expect(config).not.toContain("exclude = [");
   expect(config).toContain(
-    `# From ${OLD}: ".ropes/**" was not carried over, because it would leave out ${KEPT}, which Cinch keeps.`
+    `# From ${OLD}: ".ropes/**" was not carried over, because it would leave out ${KEPT}, which Ropes keeps.`
   );
 });
 
@@ -189,7 +189,7 @@ test("a preset the config switches off is listed as off and not written", async 
 test("preset rejects a name or an action it does not know", async () => {
   const name = await run("preset", { action: "add", paths: ["nope"] });
   expect(name).toMatchObject({ exitCode: 2 });
-  expect(name.error).toContain('no preset named "nope". Cinch ships: notes.');
+  expect(name.error).toContain('no preset named "nope". Ropes ships: notes.');
   expect(await run("preset", { action: "add" })).toMatchObject({ exitCode: 2 });
   const action = await run("preset", { action: "remove" });
   expect(action.error).toContain('unknown preset action "remove"');

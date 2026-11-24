@@ -30,7 +30,7 @@ test.each([false, true])(
       );
       return;
     }
-    const root = await mkdtemp(path.join(tmpdir(), "cinch-cfe-"));
+    const root = await mkdtemp(path.join(tmpdir(), "ropes-cfe-"));
     try {
       await Bun.write(path.join(root, ".oxlintrc.json"), RULES);
       const input = large

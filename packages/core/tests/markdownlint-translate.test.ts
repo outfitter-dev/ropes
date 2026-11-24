@@ -118,7 +118,7 @@ test("the rendered text names its source and lists what was left out", () => {
   expect(text).toBe(
     [
       "",
-      "# Carried over from old.json by Cinch.",
+      "# Carried over from old.json by Ropes.",
       "# Only what differs from the Markdown standard is here.",
       "[global]",
       'extend-disable = ["MD001"]',

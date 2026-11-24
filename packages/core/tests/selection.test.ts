@@ -51,7 +51,7 @@ test("unusable input exits 2 with a reason and no output", async () => {
       expect(response.exitCode).toBe(2);
       expect(response.output).toBeUndefined();
     }
-    expect(responses[0]?.error).toBe("cinch: missing.md does not exist.");
+    expect(responses[0]?.error).toBe("rope: missing.md does not exist.");
     expect(responses[1]?.error).toContain("is outside the root");
   });
 });

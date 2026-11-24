@@ -6,7 +6,7 @@ import path from "node:path";
 import { pinsFrom, readPins } from "../src/adapters/pins.ts";
 
 const withMise = async (text: string | null) => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-pins-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-pins-"));
   try {
     if (text !== null) {
       await Bun.write(path.join(root, "mise.toml"), text);
