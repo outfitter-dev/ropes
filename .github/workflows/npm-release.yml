@@ -50,7 +50,7 @@ jobs:
   publish:
     if: github.ref == 'refs/heads/main' && inputs.operation == 'publish'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
     permissions:
       actions: read
       id-token: write
@@ -123,21 +123,37 @@ jobs:
           }
 
           verify_published() {
-            local package=$1 metadata deadline=$((SECONDS + 300))
+            local package=$1 metadata pending="registry metadata"
+            local deadline=$(($(date +%s) + 900))
             local archive_url="$registry/@ropes/$package/-/$package-$VERSION.tgz"
-            while (( SECONDS < deadline )); do
-              if metadata=$(registry_state "$package") &&
-                jq -e --arg version "$VERSION" --arg tag "$DIST_TAG" --arg url "$archive_url" '
-                  .["dist-tags"][$tag] == $version and .versions[$version].dist.tarball == $url
-                ' <<< "$metadata" > /dev/null &&
-                curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
-                  "$archive_url?fresh=$(date +%s)" -o "$package.published.tgz"; then
-                cmp "$package.tgz" "$package.published.tgz"
-                return
+            echo "Waiting up to 15 minutes for @ropes/$package@$VERSION at $DIST_TAG."
+            while (( $(date +%s) < deadline )); do
+              pending="registry metadata"
+              if metadata=$(registry_state "$package"); then
+                pending="version metadata"
+                if jq -e --arg version "$VERSION" --arg url "$archive_url" '
+                  .versions[$version].dist.tarball == $url
+                ' <<< "$metadata" > /dev/null; then
+                  pending="dist-tag"
+                  if jq -e --arg version "$VERSION" --arg tag "$DIST_TAG" '
+                    .["dist-tags"][$tag] == $version
+                  ' <<< "$metadata" > /dev/null; then
+                    pending="public tarball"
+                    if curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
+                      "$archive_url?fresh=$(date +%s)" -o "$package.published.tgz"; then
+                      if ! cmp "$package.tgz" "$package.published.tgz"; then
+                        echo "Public @ropes/$package@$VERSION differs from the approved candidate."
+                        return 1
+                      fi
+                      return
+                    fi
+                  fi
+                fi
               fi
               sleep 6
             done
-            echo "Timed out verifying @ropes/$package@$VERSION at $DIST_TAG in the public registry."
+            echo "Timed out waiting for $pending for @ropes/$package@$VERSION at $DIST_TAG."
+            echo "Rerun publish with the same artifact ID and SHA-256 inputs to verify the existing version."
             return 1
           }
 
