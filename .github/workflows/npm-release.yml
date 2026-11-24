@@ -153,7 +153,7 @@ jobs:
               sleep 6
             done
             echo "Timed out waiting for $pending for @ropes/$package@$VERSION at $DIST_TAG."
-            echo "Rerun publish with the same artifact ID and SHA-256 inputs to verify the existing version."
+            echo "Wait until this exact version appears in registry metadata, then rerun publish with the same artifact ID and SHA-256 inputs to verify it."
             return 1
           }
 

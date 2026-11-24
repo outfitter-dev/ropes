@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { chmod, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { YAML } from "bun";
 
@@ -27,7 +28,20 @@ const script = steps
 if (typeof script !== "string") {
   throw new TypeError("Missing release publication step");
 }
-const fixture = new URL("npm-release-fixture.ts", import.meta.url).pathname;
+const fixture = fileURLToPath(
+  new URL("npm-release-fixture.ts", import.meta.url)
+);
+const required = ["bash", "sh", "jq", "cmp"];
+const missing = required.filter((name) => Bun.which(name) === null);
+if (missing.length > 0) {
+  const message = `npm release regressions require these shell tools on PATH: ${missing.join(", ")}`;
+  if (process.env.CI === "true") {
+    throw new Error(message);
+  }
+  console.warn(`skipped: ${message}`);
+}
+const releaseTest = test.skipIf(missing.length > 0);
+const shell = Bun.which("sh");
 
 const rehearse = async (
   options: {
@@ -47,7 +61,7 @@ const rehearse = async (
         const wrapper = path.join(bin, name);
         await Bun.write(
           wrapper,
-          `#!/bin/sh\nexec "${process.execPath}" "${fixture}" "${name}" "$@"\n`
+          `#!${shell}\nexec "${process.execPath}" "${fixture}" "${name}" "$@"\n`
         );
         await chmod(wrapper, 0o755);
       })
@@ -103,62 +117,88 @@ const rehearse = async (
   }
 };
 
-test("publication waits for metadata and archives beyond five minutes", async () => {
-  const result = await rehearse({ archiveDelay: 660, metadataDelay: 360 });
-  expect(result.exitCode).toBe(0);
-  expect(result.now).toBe(1320);
-  expect(result.events.filter((event) => event.startsWith("publish"))).toEqual([
-    "publish core",
-    "publish cli",
-  ]);
-  expect(result.events.indexOf("publish cli")).toBeGreaterThan(
-    result.events.lastIndexOf("archive core")
-  );
-  expect(result.summary).toContain("Verified @ropes/core@0.1.0-canary.4");
-  expect(result.summary).toContain("Verified @ropes/cli@0.1.0-canary.4");
-  expect(publish["timeout-minutes"]).toBeGreaterThan(30);
-}, 30_000);
+releaseTest(
+  "publication waits for metadata and archives beyond five minutes",
+  async () => {
+    const result = await rehearse({ archiveDelay: 660, metadataDelay: 360 });
+    expect(result.exitCode).toBe(0);
+    expect(result.now).toBe(1320);
+    expect(
+      result.events.filter((event) => event.startsWith("publish"))
+    ).toEqual(["publish core", "publish cli"]);
+    expect(result.events.indexOf("publish cli")).toBeGreaterThan(
+      result.events.lastIndexOf("archive core")
+    );
+    expect(result.summary).toContain("Verified @ropes/core@0.1.0-canary.4");
+    expect(result.summary).toContain("Verified @ropes/cli@0.1.0-canary.4");
+    expect(publish["timeout-minutes"]).toBeGreaterThan(30);
+  },
+  30_000
+);
 
-test("a same-artifact rerun verifies published versions without publishing again", async () => {
-  const result = await rehearse({
-    archiveDelay: 660,
-    published: { cli: 0, core: 0 },
-  });
-  expect(result.exitCode).toBe(0);
-  expect(result.events.filter((event) => event.startsWith("publish"))).toEqual(
-    []
-  );
-}, 30_000);
+releaseTest(
+  "a same-artifact rerun verifies visible versions without publishing again",
+  async () => {
+    const result = await rehearse({
+      archiveDelay: 660,
+      published: { cli: 0, core: 0 },
+    });
+    expect(result.exitCode).toBe(0);
+    expect(
+      result.events.filter((event) => event.startsWith("publish"))
+    ).toEqual([]);
+  },
+  30_000
+);
 
-test("an unavailable tarball times out with exact-input recovery guidance", async () => {
-  const result = await rehearse({ archiveDelay: 1200 });
-  expect(result.exitCode).toBe(1);
-  expect(result.now).toBe(900);
-  expect(result.output).toContain("waiting for public tarball for @ropes/core");
-  expect(result.output).toContain("same artifact ID and SHA-256 inputs");
-  expect(result.events).not.toContain("publish cli");
-}, 30_000);
+releaseTest(
+  "an unavailable tarball times out with exact-input recovery guidance",
+  async () => {
+    const result = await rehearse({ archiveDelay: 1200 });
+    expect(result.exitCode).toBe(1);
+    expect(result.now).toBe(900);
+    expect(result.output).toContain(
+      "waiting for public tarball for @ropes/core"
+    );
+    expect(result.output).toContain(
+      "Wait until this exact version appears in registry metadata"
+    );
+    expect(result.output).toContain("same artifact ID and SHA-256 inputs");
+    expect(result.events).not.toContain("publish cli");
+  },
+  30_000
+);
 
-test("missing version metadata has its own bounded timeout", async () => {
-  const result = await rehearse({ metadataDelay: 1200 });
-  expect(result.exitCode).toBe(1);
-  expect(result.now).toBe(900);
-  expect(result.output).toContain(
-    "waiting for version metadata for @ropes/core"
-  );
-  expect(result.events.filter((event) => event.startsWith("archive"))).toEqual(
-    []
-  );
-}, 30_000);
+releaseTest(
+  "missing version metadata has its own bounded timeout",
+  async () => {
+    const result = await rehearse({ metadataDelay: 1200 });
+    expect(result.exitCode).toBe(1);
+    expect(result.now).toBe(900);
+    expect(result.output).toContain(
+      "waiting for version metadata for @ropes/core"
+    );
+    expect(
+      result.events.filter((event) => event.startsWith("archive"))
+    ).toEqual([]);
+  },
+  30_000
+);
 
-test("a different tag and different public bytes cannot pass verification", async () => {
-  const tag = await rehearse({ wrongTag: true });
-  expect(tag.exitCode).toBe(1);
-  expect(tag.output).toContain("waiting for dist-tag for @ropes/core");
-  expect(tag.events.filter((event) => event.startsWith("archive"))).toEqual([]);
-  const bytes = await rehearse({ wrongBytes: true });
-  expect(bytes.exitCode).toBe(1);
-  expect(bytes.output).toContain("differs from the approved candidate");
-  expect(bytes.now).toBe(0);
-  expect(bytes.events).not.toContain("publish cli");
-}, 30_000);
+releaseTest(
+  "a different tag and different public bytes cannot pass verification",
+  async () => {
+    const tag = await rehearse({ wrongTag: true });
+    expect(tag.exitCode).toBe(1);
+    expect(tag.output).toContain("waiting for dist-tag for @ropes/core");
+    expect(tag.events.filter((event) => event.startsWith("archive"))).toEqual(
+      []
+    );
+    const bytes = await rehearse({ wrongBytes: true });
+    expect(bytes.exitCode).toBe(1);
+    expect(bytes.output).toContain("differs from the approved candidate");
+    expect(bytes.now).toBe(0);
+    expect(bytes.events).not.toContain("publish cli");
+  },
+  30_000
+);
