@@ -52,9 +52,9 @@ Every command prints plain text that can be piped, or one JSON document with `--
 | --- | --- |
 | `explain`, `check`, `doctor` | Nothing |
 | `fix` | The repository's own files: what the plan's engines fix |
-| `doctor --fix` | The presets and generated configs Cinch keeps under `.outfitter/configs/`, a root config Cinch creates when there is none, and the `extends` line in one a person wrote |
-| `preset adopt`, `preset eject` | With `--yes`, a tool's settings, moved between its root config and its table in the Cinch config, and the generated config rewritten to match |
-| `rules adopt` | With `--yes`, the Cinch config, with the rule packs named under `[rules] packs` |
+| `doctor --fix` | The presets and generated configs Ropes keeps under `.ropes/configs/`, a root config Ropes creates when there is none, and the `extends` line in one a person wrote |
+| `preset adopt`, `preset eject` | With `--yes`, a tool's settings, moved between its root config and its table in `rope.toml`, and the generated config rewritten to match |
+| `rules adopt` | With `--yes`, `rope.toml`, with the rule packs named under `[rules] packs` |
 
 `init` and `preset add` or `update` write the same files as `doctor --fix`, through the same steps. Only `init` also carries an older tool's settings over. [Outcomes and exit codes](docs/exit-codes.md) has the full contract, and [Selecting files](docs/selection.md) says which files a command looks at. Markdown is held to [the Markdown standard](docs/markdown-standard.md), which also formats fenced TypeScript and JavaScript. A TypeScript repository can ask for the shared lint, formatter and compiler presets, and have Cinch run the linter, the type check and the formatter: see [the TypeScript standard](docs/typescript-standard.md).
 
@@ -68,9 +68,9 @@ The plan, result and finding that `--json` prints are provisional. They carry `s
 
 The `[install]` table can generate Bun's install config and report release-age drift in authored Renovate config. See [install policy](docs/install-policy.md).
 
-Use [the Ropes migration preview](docs/config-migration.md) to see the proposed `rope.toml` and managed paths for an existing Cinch configuration.
+Run `rope migrate` for manual guidance when converting retired Cinch policy and generated files. The [migration guide](docs/config-migration.md) covers the file changes, verification, and recovery.
 
-Cinch reads the `[cinch]` table in `outfitter.toml`, or a standalone `cinch.toml`. It looks in the directory it was run from and then in each parent up to the top of the checkout, and the nearest one found sets the root. A linked Git worktree or a jj workspace is its own checkout. Having both is an error, because one repository gets one source. With neither, the defaults apply. The file must state `pilot = 0`, and a missing or unknown marker stops the run. The format is unstable and will change without notice.
+Ropes reads `rope.toml`. It searches the current directory and its parents up to the checkout boundary, and the nearest policy sets the root. A linked Git worktree or jj workspace is its own checkout. With no policy, documented defaults apply. A policy file must state `pilot = 0`, and a missing or unknown value stops the run. Retired `cinch.toml`, a `[cinch]` table in `outfitter.toml`, or `.outfitter/configs/` causes exit 2 with manual migration guidance.
 
 ```toml
 pilot = 0

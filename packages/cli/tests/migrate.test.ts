@@ -41,6 +41,7 @@ for (const source of ["cinch.toml", "outfitter.toml"]) {
         expect(ran.exitCode).toBe(2);
         expect(ran.stdout).toBe("");
         expect(ran.stderr).toContain("Manual migration required");
+        expect(ran.stderr).toContain("docs/config-migration.md");
         expect(ran.stderr).toContain(NEXT);
         // eslint-disable-next-line no-await-in-loop -- preserve authored content after each guidance run
         expect(await main.files()).toEqual(before);
@@ -125,6 +126,7 @@ proof(
     const checked = await runEntry(ROPE, ["check", "--json"], main.root);
     expect(checked.exitCode).toBe(2);
     expect(checked.stderr).toContain("[cinch]");
+    expect(checked.stderr).toContain("docs/config-migration.md");
     expect(checked.stderr).toContain("rope.toml");
     const migration = await runEntry(ROPE, ["migrate", "--json"], main.root);
     expect(migration.exitCode).toBe(2);

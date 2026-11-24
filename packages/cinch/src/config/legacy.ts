@@ -3,6 +3,9 @@ import path from "node:path";
 
 import type { ConfigError } from "../contracts/config.ts";
 
+export const CONFIG_MIGRATION_GUIDE =
+  "https://github.com/outfitter-dev/ropes/blob/main/docs/config-migration.md";
+
 export const pathPresent = async (target: string): Promise<boolean> => {
   try {
     await lstat(target);

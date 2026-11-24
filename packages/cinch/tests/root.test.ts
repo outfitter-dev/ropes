@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -64,6 +64,31 @@ test("from a nested package, discovery walks up to the same root", async () => {
         configFile: "rope.toml",
         root: repo,
         startedIn: "packages/app/src",
+      });
+    }
+  );
+});
+
+test("a dangling supported policy does not hide the valid parent policy", async () => {
+  await withTree(
+    {
+      "repo/.git/": "",
+      "repo/packages/app/": "",
+      "repo/rope.toml": CONFIG,
+    },
+    async (base) => {
+      const repo = path.join(base, "repo");
+      const nested = path.join(repo, "packages/app");
+      await symlink("missing-policy.toml", path.join(nested, "rope.toml"));
+      expect(await discoverRoot(nested)).toEqual({
+        ok: true,
+        value: {
+          configFile: "rope.toml",
+          root: repo,
+          startedIn: "packages/app",
+          vcs: "git",
+          vcsRoot: repo,
+        },
       });
     }
   );
