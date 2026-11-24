@@ -11,6 +11,7 @@ import { shippedFolder } from "../shipped-text.ts";
 /** Where this Cinch keeps the rules it ships, one folder for each pack. */
 const SHIPPED = new URL("../../../rules/", import.meta.url);
 const MANIFEST = "pack.toml";
+const Rewrite = z.object({ fix: z.string().min(1) });
 const Scope = z.object({
   files: z.array(z.string()).optional(),
   ignores: z.array(z.string()).optional(),
@@ -53,6 +54,22 @@ export const readPacks = async (folder: URL) => {
       throw new Error(
         `${file} declares an occurrence identity for an unknown rule`
       );
+    }
+    const fixable = manifest.fixable ?? [];
+    if (new Set(fixable).size !== fixable.length) {
+      throw new Error(`${file} declares the same fixable rule more than once`);
+    }
+    for (const rule of fixable) {
+      const id = `${folderName}/${rule}`;
+      const definition = texts.get(id);
+      if (!rules.includes(id) || definition === undefined) {
+        throw new Error(`${file} declares unknown fixable rule "${rule}"`);
+      }
+      if (!Rewrite.safeParse(YAML.parse(definition)).success) {
+        throw new Error(
+          `${file} declares fixable rule "${rule}" without a rewrite`
+        );
+      }
     }
     return [{ ...manifest, rules }];
   });
