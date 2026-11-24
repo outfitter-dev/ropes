@@ -1,0 +1,285 @@
+{
+  "README.md": {
+    "lines": [
+      "Run `rope migrate` for manual guidance when converting retired Cinch policy and generated files. The [migration guide](docs/config-migration.md) covers the file changes, verification, and recovery.",
+      "Ropes reads `rope.toml`. It searches the current directory and its parents up to the checkout boundary, and the nearest policy sets the root. A linked Git worktree or jj workspace is its own checkout. With no policy, documented defaults apply. A policy file must state `pilot = 0`, and a missing or unknown marker stops the run. The format remains provisional. Retired `cinch.toml`, `[cinch]` tables, and `.outfitter/configs/` stop repository operations with exit 2 and manual migration guidance."
+    ],
+    "reason": "Manual migration guidance and the policy refusal contract."
+  },
+  "docs/binary.md": {
+    "lines": [
+      "The Markdown preset formats JavaScript and TypeScript fenced blocks by calling `bun`. The binary has Bun's runtime inside it, so it stands in: it keeps a small `bun` command in the user's cache folder (`$XDG_CACHE_HOME/ropes/stand-in/`, or `~/.cache/ropes/stand-in/`) that starts the binary as Bun, and puts that folder last on the `PATH` the engines get. A `bun` the machine already has is found first. New runs use the `ropes` directory. After switching to Ropes, you can delete the old `cinch/stand-in` cache directory. An empty, relative or checkout-local XDG cache falls back to the home cache. Ropes checks the helper directory against the outermost enclosing checkout, resolving aliases before writing, and uses it only when it is outside the checkout. If it cannot create a helper and the engine needs Bun, the check reports the affected file as incomplete. A test formats `ts` and `js` blocks with no Bun in reach and compares the result with the package's.",
+      "- The historical Cinch build started in about 60 ms for `cinch --version`."
+    ],
+    "reason": "Retired stand-in cache migration and the historical startup measurement."
+  },
+  "docs/cleanup.md": {
+    "lines": [
+      "The command scans intervening commits too, so removing an occurrence retires its allowance along that lineage. A later reintroduction remains blocking even when another commit carries it forward. It rejects repeated diagnostics that cannot have the pilot's one-occurrence identity. Every comparison freezes all root and nested `rope.toml`, `cinch.toml`, `outfitter.toml`, `mise.toml`, `sgconfig.yml`, `sgconfig.yaml`, `package.json` and `bun.lock` files at the approved revision. Snapshots containing retired policy or managed paths require manual migration before a current comparison. A changed context, unknown rule digest, missing engine, unsupported snapshot or incomplete scope exits 2. A new or reintroduced occurrence exits 1. A fully evaluated compliant change exits 0."
+    ],
+    "reason": "Historical policy files remain part of migration evidence fingerprints."
+  },
+  "docs/config-migration.md": {
+    "lines": [
+      "Ropes reads repository policy from `rope.toml` and generates setup files under `.ropes/configs/`. Repository commands exit 2 when they find `cinch.toml`, a `[cinch]` table in `outfitter.toml`, or `.outfitter/configs/`. Run `rope migrate` for a short message with the manual steps. It exits 2 and writes no files. `--json` returns the same guidance in the v4 error envelope.",
+      "1. Preserve the working policy and tool pointers in a revision you can recover. Move settings from `cinch.toml` to `rope.toml`. For `outfitter.toml`, move only the `[cinch]` settings and keep unrelated tables in the shared file."
+    ],
+    "reason": "Manual steps identify the retired policy inputs to move."
+  },
+  "docs/cutover.md": {
+    "reason": "Historical inventory and cutover decisions."
+  },
+  "docs/markdown-standard.md": {
+    "lines": [
+      "A repository using the former Cinch configuration must complete the [manual cutover](config-migration.md) before running Ropes. The retired `cinch.toml` and `.outfitter/configs/` layout causes exit 2 and a diagnostic naming the replacement paths.",
+      "- A misspelled `ropes-` comment or a retired `cinch-` comment raises `ropes/unknown-disable` with the supported spelling. The original finding remains visible."
+    ],
+    "reason": "Migration notes identify retired policies and markers."
+  },
+  "docs/output.md": {
+    "lines": [
+      "`parsePlan` and `parseResult` reject older versions, including version 3 results with `cinch/` finding IDs. Rerun the command to produce current qualification evidence. The offline repair reader preserves version 3 and version 2 observations and their original IDs verbatim. New repair submissions require current results. Repair records and policy snapshots retain their own version 1 envelopes. Cleanup reports use envelope version 1 and require the current output version for nested plans and results. Rerun cleanup to replace an older report before qualification."
+    ],
+    "reason": "Explains how qualification and the offline reader handle old finding IDs."
+  },
+  "docs/presets.md": {
+    "lines": [
+      "Use `rope preset` to inspect preset files in a configured repository, or `rope preset list <name>` to inspect one preset. `rope preset add <name>` writes a selected active preset, and `rope preset update [name]` refreshes stale or missing files. Each operation accepts at most one preset name, and `add`, `adopt`, and `eject` require one. Add `--dry-run` to preview these writes. `rope preset adopt <name>` and `rope preset eject <name>` preview moving authored settings into `rope.toml` or back into the tool’s root config. Apply either move with `--yes`. A repository with no policy starts with `rope init`. Legacy Cinch policy and managed paths stop the run with exit 2. Complete the manual cutover before using these commands. See [the cutover guide](config-migration.md)."
+    ],
+    "reason": "Explains the exit code for a retired policy."
+  },
+  "docs/rollout.md": {
+    "reason": "Dated rollout trial and historical commands."
+  },
+  "packages/cli/scripts/check-packed.ts": {
+    "lines": [
+      "    throw new Error(\"The core tarball contains the legacy Cinch entry point\");"
+    ],
+    "reason": "Checks that the public core tarball omits the retired entry point."
+  },
+  "packages/cli/scripts/packed-smoke.ts": {
+    "lines": ["  const legacyConfig = path.join(consumer, \"cinch.toml\");"],
+    "reason": "Packed consumer proof for an actual retired policy file."
+  },
+  "packages/cli/tests/binary.test.ts": {
+    "lines": [
+      "  await Bun.write(path.join(root, \"cinch.toml\"), \"pilot = 0\\n\");",
+      "  expect(conflict.stderr).toContain(\"cinch.toml\");"
+    ],
+    "reason": "Standalone binary refuses an actual retired policy file."
+  },
+  "packages/cli/tests/doctor-repair.test.ts": {
+    "lines": [
+      "    await Bun.write(path.join(root, \"cinch.toml\"), \"pilot = 0\\n\");",
+      "    expect(rejected.stderr).toContain(\"cinch.toml\");"
+    ],
+    "reason": "Retired standalone policy refusal and no-writes evidence."
+  },
+  "packages/cli/tests/migrate.test.ts": {
+    "lines": [
+      "for (const source of [\"cinch.toml\", \"outfitter.toml\"]) {",
+      "        source === \"cinch.toml\"",
+      "          : `[another]\\nkept = true\\n[cinch]\\n${standalone}`;",
+      "    const original = \"[another]\\nenabled = true\\n\\n[cinch]\\npilot = 0\\n\";",
+      "    expect(checked.stderr).toContain(\"[cinch]\");"
+    ],
+    "reason": "Manual migration guidance preserves actual retired sources and unrelated tables."
+  },
+  "packages/cli/tests/preset.test.ts": {
+    "lines": [
+      "    expect(await Bun.file(path.join(root, \"cinch.toml\")).exists()).toBe(false);"
+    ],
+    "reason": "Assert current preset operation never creates retired policy."
+  },
+  "packages/cli/tests/rules.test.ts": {
+    "lines": [
+      "    expect(await Bun.file(path.join(root, \"cinch.toml\")).exists()).toBe(false);",
+      "    await Bun.write(path.join(root, \"cinch.toml\"), policy);",
+      "    expect(await Bun.file(path.join(root, \"cinch.toml\")).text()).toBe(policy);"
+    ],
+    "reason": "Explicit retired standalone policy refusal and authored bytes preservation."
+  },
+  "packages/core/src/adapters/bun-install/read.ts": {
+    "lines": ["const LEGACY_MARK = \"# Generated by Cinch from `[install]`\";"],
+    "reason": "Recognizes older owned install headers for safe regeneration."
+  },
+  "packages/core/src/adapters/editorconfig/render.ts": {
+    "lines": ["const LEGACY_MARK = \"# Generated by Cinch\";"],
+    "reason": "Recognizes older owned editor headers for safe regeneration."
+  },
+  "packages/core/src/adapters/rumdl/markers.ts": {
+    "lines": [
+      "const COMMENT = /^<!--\\s*(?<body>(?:ropes|cinch)-\\S*(?:\\s+\\S+)*?)\\s*-->$/u;"
+    ],
+    "reason": "Recognizes the retired marker solely to report it as unknown."
+  },
+  "packages/core/src/adapters/rumdl/root-config.ts": {
+    "lines": [
+      "const LEGACY_MARK = \"# Generated by Cinch.\";",
+      "  command: \"cinch\" | \"rope\" = \"rope\"",
+      "  const product = command === \"cinch\" ? \"Cinch\" : \"Ropes\";",
+      "  const mark = command === \"cinch\" ? LEGACY_MARK : MARK;",
+      "  if (current === pointerFor(paths, \"cinch\")) {"
+    ],
+    "reason": "Reconstructs the exact old generated pointer to distinguish owned bytes from authored settings."
+  },
+  "packages/core/src/commands/cleanup/inputs.ts": {
+    "lines": ["  \"cinch.toml\","],
+    "reason": "Fingerprints retired policy names in immutable historical snapshots."
+  },
+  "packages/core/src/commands/migrate.ts": {
+    "lines": [
+      "  error: `Manual migration required. Move the policy from cinch.toml or [cinch] in outfitter.toml to rope.toml. Preserve unrelated tables in outfitter.toml. Remove the retired policy inputs and .outfitter/configs before running rope. Regenerate managed files under .ropes/configs and update root tool references. Guide: ${CONFIG_MIGRATION_GUIDE}`,"
+    ],
+    "reason": "Manual migration guidance names the retired policy inputs."
+  },
+  "packages/core/src/config/legacy.ts": {
+    "lines": [
+      "  let file = path.join(root, \"cinch.toml\");",
+      "          \"Move its policy to rope.toml and remove cinch.toml before running rope.\",",
+      "    return typeof shared === \"object\" && shared !== null && \"cinch\" in shared",
+      "            \"Move the [cinch] policy to rope.toml and remove that table. Keep unrelated shared tables in outfitter.toml.\","
+    ],
+    "reason": "Detects retired policy inputs and explains how to move them."
+  },
+  "packages/core/src/render/failure.ts": {
+    "lines": ["const PREFIX = /^(?:cinch|rope): /gmu;"],
+    "reason": "Normalizes the retired prefix in explicitly supplied failure text."
+  },
+  "packages/core/tests/cli.test.ts": {
+    "lines": [
+      "    expect(failure.error.message).not.toStartWith(\"cinch: \");"
+    ],
+    "reason": "Negative assertion rejects the retired diagnostic brand."
+  },
+  "packages/core/tests/config.test.ts": {
+    "lines": [
+      "test(\"the retired [cinch] table is refused before its settings are applied\", async () => {",
+      "    \"outfitter.toml\": \"[cinch]\\npilot = 0\\n[cinch.markdown]\\nenabled = false\\n\",",
+      "test(\"an outfitter.toml without a [cinch] table does not shadow rope.toml\", async () => {",
+      "    \"outfitter.toml\": \"[cinch]\\npilot = 0\\n\","
+    ],
+    "reason": "Legacy [cinch] refusal and harmless unrelated shared-table coverage."
+  },
+  "packages/core/tests/editor-adopt.test.ts": {
+    "lines": [
+      "  const shared = `[cinch]\\n${QUIET.replaceAll(\"[\", \"[cinch.\")}`;",
+      "  expect(response.error).toContain(\"[cinch]\");"
+    ],
+    "reason": "Retired shared policy refusal fixture and diagnostic."
+  },
+  "packages/core/tests/generated-config.test.ts": {
+    "lines": [
+      "test(\"the bare line an older Cinch wrote becomes the marked pointer\", async () => {"
+    ],
+    "reason": "Historical bare-pointer upgrade case explicitly names the earlier writer."
+  },
+  "packages/core/tests/generated-migrate.test.ts": {
+    "lines": [
+      "  const reworded = `# Generated by Cinch. An older wording.\\n${POINTER.split(\"\\n\").at(-2)}\\n\\n`;"
+    ],
+    "reason": "Actual old ownership-header bytes test recognized ownership refresh."
+  },
+  "packages/core/tests/legacy-runtime.test.ts": {
+    "lines": [
+      "test.each([\"cinch.toml\", \".outfitter/configs\"])(",
+      "    await Bun.write(path.join(root, \"cinch.toml\"), \"this is not valid TOML\");",
+      "      expect(result.ok ? \"\" : result.error).toContain(\"cinch.toml\");",
+      "    expect(await Bun.file(path.join(root, \"cinch.toml\")).text()).toBe(",
+      "test(\"shared Cinch policy is detected without interpreting its settings\", async () => {",
+      "      '[app]\\nname = \"sample\"\\n[cinch]\\npilot = \"unsupported\"\\n'",
+      "    ).toContain(\"[cinch]\");",
+      "    await Bun.write(path.join(root, \"cinch.toml\"), \"retired content\");",
+      "        error: { file: path.join(root, \"cinch.toml\"), kind: \"legacy\" },",
+      "    await rm(path.join(root, \"cinch.toml\"));",
+      "    await Bun.write(path.join(root, \"outfitter.toml\"), \"[cinch]\\npilot = 0\\n\");",
+      "    await Bun.write(path.join(root, \"cinch.toml\"), \"retired content\");",
+      "    expect(await Bun.file(path.join(root, \"cinch.toml\")).text()).toBe("
+    ],
+    "reason": "Tripwire regression fixtures require actual retired filenames and table names."
+  },
+  "packages/core/tests/output-words.test.ts": {
+    "lines": [
+      "  text.replaceAll(\"Ropes\", \"Cinch\").replaceAll(\"rope doctor\", \"cinch doctor\");",
+      "    expect(text).not.toContain(\"Cinch\");",
+      "    JSON.parse(renderFailureJson(\"rope: first\\ncinch: second\"))",
+      "      expect(result.stdout).not.toContain(\"Cinch\");",
+      "      expect(result.stdout).not.toContain(\"Run `cinch\");",
+      "    expect(plan.stdout.toLowerCase()).not.toContain(\"cinch\");",
+      "    await Bun.write(path.join(root, \"cinch.toml\"), \"pilot = 0\\n\");",
+      "    expect(retired.stderr).toContain(\"cinch.toml\");"
+    ],
+    "reason": "Old ownership-header inputs, negative branding assertions, authored failure bytes, and retired-policy diagnostics."
+  },
+  "packages/core/tests/relocate-adopt.test.ts": {
+    "lines": [
+      "  const shared = \"[cinch]\\npilot = 0\\n\\n[cinch.markdown]\\nenabled = true\\n\";",
+      "  expect(response?.error).toContain(\"[cinch]\");"
+    ],
+    "reason": "Retired shared [cinch] policy is rejected without authored-data writes."
+  },
+  "packages/core/tests/relocate-eject.test.ts": {
+    "lines": [
+      "  const shared = `[cinch]\\npilot = 0\\n\\n[cinch.markdown]\\nenabled = true\\n\\n[cinch.tools.rumdl.MD007]\\nindent = 4\\n\\n[other]\\nkept = true\\n`;",
+      "  expect(response?.error).toContain(\"[cinch]\");"
+    ],
+    "reason": "Retired shared [cinch] policy is rejected without authored-data writes."
+  },
+  "packages/core/tests/repair-storage.test.ts": {
+    "lines": ["            rule: \"cinch/managed-file\","],
+    "reason": "Archived version 2/3 observations preserve old rule IDs verbatim."
+  },
+  "packages/core/tests/root.test.ts": {
+    "lines": [
+      "test(\"a nested outfitter.toml without a [cinch] table does not hide the root config\", async () => {",
+      "  await withTree({ \"loose/cinch.toml\": CONFIG }, async (base) => {"
+    ],
+    "reason": "Unrelated shared table handling and loose-directory retired-source boundary evidence."
+  },
+  "packages/core/tests/rope-config.test.ts": {
+    "lines": [
+      "  { files: { \"cinch.toml\": VALID, \"rope.toml\": VALID }, retired: \"cinch.toml\" },",
+      "    files: { \"outfitter.toml\": \"[cinch]\\npilot = 0\\n\", \"rope.toml\": VALID },",
+      "      \"cinch.toml\": VALID,",
+      "      \"outfitter.toml\": \"[cinch]\\npilot = 0\\n\",",
+      "    retired: \"cinch.toml\",",
+      "test(\"a shared file with no cinch table leaves rope.toml in charge\", async () => {",
+      "  { file: \"cinch.toml\", kind: \"legacy\" },"
+    ],
+    "reason": "Retired policy detection and valid unrelated shared-table coverage."
+  },
+  "packages/core/tests/rules-adopt-review.test.ts": {
+    "lines": [
+      "                        change === \"source\" ? \"cinch.toml\" : \"rope.toml\"",
+      "        expect(await Bun.file(path.join(root, \"cinch.toml\")).text()).toBe("
+    ],
+    "reason": "A competing retired policy introduced during planning must stop adoption."
+  },
+  "packages/core/tests/rules-adopt.test.ts": {
+    "lines": [
+      "      '[cinch]\\npilot = 0\\n\\n[cinch.rules]\\nlocal = [\"r\"]\\n',",
+      "      \"cinch.\"",
+      "    '[cinch]\\npilot = 0\\n\\n[cinch.rules]\\nenabled = true\\npacks = [\"config\"]\\nlocal = [\"r\"]\\n'"
+    ],
+    "reason": "Pure text-edit utility preserves historical table prefixes; no runtime policy reader involved."
+  },
+  "packages/core/tests/rumdl-markers.test.ts": {
+    "lines": [
+      "const LEGACY = \"<!-- cinch-disable-next-line code-block-parse -->\";"
+    ],
+    "reason": "Retired suppression marker must remain unchanged for rejection/recognition coverage."
+  },
+  "packages/core/tests/stand-in-cache.test.ts": {
+    "lines": [
+      "    const retired = path.join(cache, \"cinch/stand-in/old/bun\");"
+    ],
+    "reason": "Historical cache location is intentionally untouched."
+  },
+  "scripts/terminology-allowlist.json": {
+    "reason": "This registry quotes each approved historical or compatibility occurrence."
+  },
+  "scripts/terminology-guard.ts": {
+    "lines": ["const retired = \"cinch\";"],
+    "reason": "The retired product name the guard searches for."
+  }
+}
