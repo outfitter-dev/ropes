@@ -168,7 +168,7 @@ const adopted = async (current: string, run: Run): Promise<Wanted> => {
   return added.ok
     ? {
         ...added,
-        why: `${OWN} It does not extend the config Cinch generates. Add \`${extendsLine}\` as its first line, or run \`cinch doctor --fix\`, which adds it and changes nothing else.`,
+        why: `${OWN} It does not extend the config Cinch generates. Add \`${extendsLine}\` as its first line, or run \`rope doctor --fix\`, which adds it and changes nothing else.`,
       }
     : added;
 };

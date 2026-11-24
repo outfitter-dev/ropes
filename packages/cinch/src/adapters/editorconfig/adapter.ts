@@ -11,11 +11,11 @@ import { handWritten } from "./source.ts";
 export { EDITOR_PATH } from "./path.ts";
 
 const STALE =
-  "This file differs from `[editor]` in the Cinch config. Make the change there, then run `cinch doctor --fix`.";
-const BY_HAND = `This file was written by hand, and the Cinch config has an \`[editor]\` table that Cinch writes it from. Run \`cinch preset adopt editor\` to see how the two differ, make the table state what you want and delete this file, then run \`cinch doctor --fix\`.`;
+  "This file differs from `[editor]` in the Cinch config. Make the change there, then run `rope doctor --fix`.";
+const BY_HAND = `This file was written by hand, and the Cinch config has an \`[editor]\` table that Cinch writes it from. Run \`rope preset adopt editor\` to see how the two differ, make the table state what you want and delete this file, then run \`rope doctor --fix\`.`;
 
 const SAME =
-  "This file was written by hand and states what `[editor]` in the Cinch config states. Run `cinch doctor --fix` to have Cinch write it from the table.";
+  "This file was written by hand and states what `[editor]` in the Cinch config states. Run `rope doctor --fix` to have Cinch write it from the table.";
 
 /** A file a person wrote: replaced only when nothing in it would be lost. */
 const byHand = (current: string, settings: EditorSettings): Wanted => {

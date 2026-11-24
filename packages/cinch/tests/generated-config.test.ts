@@ -73,7 +73,7 @@ test("a changed table makes the generated config stale until it is rewritten", a
     await fixOne(rumdlPresetAdapter(), input);
     const changed = rumdlPresetAdapter({ table: TABLE });
     const stale = await checkOne(changed, input);
-    expect(stale.findings[0]?.message).toContain("cinch doctor --fix");
+    expect(stale.findings[0]?.message).toContain("rope doctor --fix");
     await fixOne(changed, input);
     expect(await checkOne(changed, input)).toEqual({
       findings: [],

@@ -21,7 +21,11 @@ let proof: Awaited<ReturnType<typeof standaloneFixture>>;
 beforeAll(async () => {
   proof = await standaloneFixture();
 }, 30_000);
-afterAll(() => rm(proof.directory, { force: true, recursive: true }));
+afterAll(async () => {
+  if (proof !== undefined) {
+    await rm(proof.directory, { force: true, recursive: true });
+  }
+});
 
 test("standalone rope identifies itself and shows help before setup", async () => {
   const version = await proof.run(["--version"], proof.directory, "");
@@ -37,7 +41,7 @@ test("standalone rope identifies itself and shows help before setup", async () =
 });
 
 test("standalone rope previews and initializes a fresh repository without Bun", async () => {
-  if (proof.needsEngine()) {
+  if (proof.needsTools("git", "rumdl")) {
     return;
   }
   const root = path.join(proof.directory, "init");
@@ -96,7 +100,7 @@ test("standalone rope previews and initializes a fresh repository without Bun", 
 });
 
 test("standalone rope matches package plans, results and doctor without writes or Bun", async () => {
-  if (proof.needsEngine()) {
+  if (proof.needsTools("git", "rumdl")) {
     return;
   }
   const root = await proof.fixture("parity");
@@ -126,7 +130,7 @@ test("standalone rope matches package plans, results and doctor without writes o
 });
 
 test("standalone rope previews and applies fenced repairs through its embedded runtime", async () => {
-  if (proof.needsEngine()) {
+  if (proof.needsTools("git", "rumdl")) {
     return;
   }
   const root = await proof.fixture(
@@ -164,7 +168,7 @@ test("standalone rope previews and applies fenced repairs through its embedded r
 test.skipIf(process.platform !== "darwin")(
   "standalone rope recovers a native Taplo panic with its embedded worker",
   async () => {
-    if (proof.needsEngine()) {
+    if (proof.needsTools("git", "rumdl")) {
       return;
     }
     const root = await proof.fixture("taplo-recovery");
@@ -173,6 +177,9 @@ test.skipIf(process.platform !== "darwin")(
 );
 
 test("rope keeps its shipped preset when the external engine is unavailable", async () => {
+  if (proof.needsTools("git", "rumdl")) {
+    return;
+  }
   const root = await proof.fixture("missing-engine-setup");
   await rm(path.join(root, ".ropes"), { recursive: true });
   await rm(path.join(root, ".rumdl.toml"));
@@ -195,6 +202,9 @@ test("rope keeps its shipped preset when the external engine is unavailable", as
 });
 
 test("mise installs the checked rope and verifies cache identity without Bun", async () => {
+  if (proof.needsTools("mise", "git", "rumdl", "taplo")) {
+    return;
+  }
   await qualifyMiseInstall({
     binary: proof.binary,
     engines: proof.engines,
@@ -203,7 +213,7 @@ test("mise installs the checked rope and verifies cache identity without Bun", a
 }, 30_000);
 
 test("read-only rope keeps its Bun helper outside the checkout", async () => {
-  if (proof.needsEngine()) {
+  if (proof.needsTools("git", "rumdl")) {
     return;
   }
   await qualifyStandaloneCache({
@@ -223,8 +233,7 @@ test("read-only rope keeps its Bun helper outside the checkout", async () => {
 });
 
 test("rope carries its shipped rules with no Bun in reach", async () => {
-  if (Bun.which("ast-grep", { PATH: proof.engines }) === null) {
-    console.warn("skipped: ast-grep is required for the embedded rule proof");
+  if (proof.needsTools("git", "rumdl", "ast-grep")) {
     return;
   }
   const root = await proof.fixture("rules");

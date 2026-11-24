@@ -43,7 +43,7 @@ const withEngine = (name: string, body: () => Promise<void>) => {
 
 const unformatted = (file: string): Finding => ({
   fixable: true,
-  message: "The file is not formatted. `cinch fix` formats it.",
+  message: "The file is not formatted. `rope fix` formats it.",
   path: file,
   range: { start: { column: 1, line: 1 } },
   rule: "format",

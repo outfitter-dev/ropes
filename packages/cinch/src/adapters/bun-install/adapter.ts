@@ -19,7 +19,7 @@ const want = (text: string | null, settings: InstallSettings): Wanted => {
       ? { ok: true, text }
       : {
           message:
-            "The authored bunfig.toml disagrees with [install]. Update the shared native values in place or preview `cinch preset adopt install`.",
+            "The authored bunfig.toml disagrees with [install]. Update the shared native values in place or preview `rope preset adopt install`.",
           ok: false,
         };
   } catch {

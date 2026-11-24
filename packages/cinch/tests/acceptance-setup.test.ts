@@ -82,7 +82,7 @@ proof(
     // Until the setup is repaired, the stale generated config is reported.
     const stale = await main.rope(["check", "README.md", KEPT]);
     expect(stale.exitCode).toBe(1);
-    expect(stale.stdout).toContain("cinch doctor --fix");
+    expect(stale.stdout).toContain("rope doctor --fix");
     expect(await exit("fix")).toBe(1);
 
     const repaired = DoctorReportSchema.parse(

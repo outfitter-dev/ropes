@@ -158,12 +158,12 @@ export const managedAdapter = (options: ManagedOptions): Adapter => {
       return { findings: [], status: "fixed" } satisfies StepOutcome;
     }
     const problem =
-      current === null ? "is missing" : `differs from what ${TOOL} keeps here`;
+      current === null ? "is missing" : `differs from what Ropes manages here`;
     return {
       findings: [
         finding(
           input,
-          wanted.why ?? `This file ${problem}. Run \`${TOOL} doctor --fix\`.`,
+          wanted.why ?? `This file ${problem}. Run \`rope doctor --fix\`.`,
           true
         ),
       ],

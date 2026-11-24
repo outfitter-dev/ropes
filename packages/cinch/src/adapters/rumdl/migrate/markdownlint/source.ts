@@ -62,7 +62,7 @@ const CHOOSES: Readonly<Record<string, string>> = {
 const runnerNote = (file: string, key: string): string => {
   const ours = CHOOSES[key];
   if (ours !== undefined) {
-    return `\`${key}\` in ${file} chooses files, which is the Cinch config's job. \`cinch init\` writes it as \`${ours}\` in a new Cinch config. Add it by hand to one that is already there.`;
+    return `\`${key}\` in ${file} chooses files, which is the Cinch config's job. \`rope init\` writes it as \`${ours}\` in a new Cinch config. Add it by hand to one that is already there.`;
   }
   return key === "gitignore"
     ? `\`gitignore\` in ${file} needs no line here: Cinch leaves out the files git ignores.`
