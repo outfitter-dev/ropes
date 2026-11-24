@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { parsePlan, parseResult } from "@ropes/core";
 
-import core from "../../cinch/package.json" with { type: "json" };
+import core from "../../core/package.json" with { type: "json" };
 import cli from "../package.json" with { type: "json" };
 import { run } from "./packed-run.ts";
 import { portableSnapshot } from "./portable-snapshot.ts";

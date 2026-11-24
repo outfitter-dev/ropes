@@ -4,4 +4,4 @@
 include = ["cinch.toml", "rope.toml"]
 
 [rule.schema]
-path = "packages/cinch/schemas/cinch.schema.json"
+path = "packages/core/schemas/cinch.schema.json"

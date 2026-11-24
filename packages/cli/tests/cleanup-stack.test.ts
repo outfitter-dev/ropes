@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import path from "node:path";
 
-import { fixtureGit, withFixture } from "../../cinch/tests/acceptance-repo.ts";
+import { fixtureGit, withFixture } from "../../core/tests/acceptance-repo.ts";
 import {
   BEFORE,
   campaign,

@@ -2,7 +2,7 @@ import path from "node:path";
 
 import { DEFAULT_CONFIG } from "../contracts/config.ts";
 import type { ConfigError, ConfigResult } from "../contracts/config.ts";
-import { legacyConfig } from "./legacy.ts";
+import { legacyConfig, pathPresent } from "./legacy.ts";
 import { parseConfigTable } from "./parse.ts";
 
 /** The supported Ropes policy file. */
@@ -42,7 +42,7 @@ const readToml = async (root: string, name: string): Promise<Read> => {
 
 /** Root discovery checks legacy paths separately before choosing a policy. */
 export const configFileIn = async (dir: string): Promise<string | null> =>
-  (await Bun.file(path.join(dir, ROPES_FILE)).exists()) ? ROPES_FILE : null;
+  (await pathPresent(path.join(dir, ROPES_FILE))) ? ROPES_FILE : null;
 
 /** Read the Ropes policy after rejecting retired configuration inputs. */
 export const loadConfig = async (

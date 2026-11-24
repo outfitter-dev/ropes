@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import core from "../../cinch/package.json" with { type: "json" };
+import core from "../../core/package.json" with { type: "json" };
 import cli from "../package.json" with { type: "json" };
 import { checkFiles } from "./packed-contents.ts";
 import { provePortable } from "./packed-portable.ts";
@@ -52,7 +52,7 @@ try {
       "--filename",
       coreArchive,
     ],
-    path.join(ROOT, "packages/cinch")
+    path.join(ROOT, "packages/core")
   );
   await run(
     [

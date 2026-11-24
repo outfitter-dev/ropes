@@ -2,13 +2,13 @@ import { expect, test } from "bun:test";
 import { link, unlink } from "node:fs/promises";
 import path from "node:path";
 
-import { FixReportSchema } from "../../cinch/src/contracts/fix.ts";
-import { ResultSchema } from "../../cinch/src/contracts/result.ts";
+import { FixReportSchema } from "../../core/src/contracts/fix.ts";
+import { ResultSchema } from "../../core/src/contracts/result.ts";
 import {
   fixtureGit,
   runEntry,
   withFixture,
-} from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
 
 const CLI = new URL("../src/cli.ts", import.meta.url);
 const RULE = "config-spelling/tsconfig-module-esnext";

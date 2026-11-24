@@ -2,7 +2,7 @@
 
 This repository owns the Ropes quality engine and CLI, including contracts, policy, runner, adapters, shared presets, rules, schemas, standalone build, tests, and quality setup.
 
-- `@ropes/core` is the unpublished package under `packages/cinch/`. It exposes typed quality operations and versioned contract parsers. This directory also owns the setup implementation.
+- `@ropes/core` is the unpublished package under `packages/core/`. It exposes typed quality operations and versioned contract parsers. This directory also owns the setup implementation.
 - `@ropes/cli` is the unpublished package under `packages/cli/`, with the `rope` executable. Its first slice exposes `explain`, `check`, and `fix` through public core imports. Use `bun run rope` from this checkout.
 - The separate [`outfitter` application](https://github.com/outfitter-dev/outfitter) will consume the public core API. Application initialization, cross-tool configuration migration, and the unscoped `outfitter` npm cutover belong to that repository. New consumer examples use the `outfitter` executable.
 
@@ -20,7 +20,7 @@ Read README.md, the [design tenets](docs/tenets.md), the [product direction](htt
 - A required step that could not run is incomplete, never passed. Exit codes are 0 for a completed run without blocking findings, 1 for blocking findings, and 2 for an incomplete or unusable run. Advisory findings remain visible, and incomplete wins.
 - The plan, result and config shapes are provisional. An unknown schema or config version is an error, never a silent default.
 
-`packages/cinch/tests/boundaries.test.ts` enforces the import rules above. If it fails, fix the import. Do not loosen the test to make room for it.
+`packages/core/tests/boundaries.test.ts` enforces the import rules above. If it fails, fix the import. Do not loosen the test to make room for it.
 
 ## How to work here
 

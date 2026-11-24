@@ -8,8 +8,8 @@ import {
   json,
   runEntry,
   withFixture,
-} from "../../cinch/tests/acceptance-repo.ts";
-import type { Ran } from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
+import type { Ran } from "../../core/tests/acceptance-repo.ts";
 import {
   apiPackage,
   BEFORE,

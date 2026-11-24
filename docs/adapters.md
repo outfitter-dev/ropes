@@ -4,7 +4,7 @@ An adapter is the only code that knows about one engine, such as a linter or a f
 
 ## Add one
 
-1. Make a folder under `packages/cinch/src/adapters/`, named for the engine.
+1. Make a folder under `packages/core/src/adapters/`, named for the engine.
 2. Export an `Adapter` from it. The interface is in `adapters/adapter.ts`.
 3. Add it to the list in `adapters/registry.ts`. Order in that list is the order steps run on a file, after the adapters that keep files, which always go first.
 
@@ -104,7 +104,7 @@ An adapter takes a root and the files of a batch and returns data. It does not r
 
 ## Testing
 
-`packages/cinch/tests/fake-adapter.ts` is an in-memory adapter that records the calls made to it. Use it for anything that tests the runner or the resolver. A test for a real adapter that needs the engine installed skips with a visible reason when the engine is absent. CI installs every pinned tool, so those tests always run there. Locally, `mise exec -- bun run check` runs them when the tools are not on your `PATH`. The last step of `bun run check` is `cinch check` on this repository, and that step does not skip: without the engine it is incomplete and the check fails.
+`packages/core/tests/fake-adapter.ts` is an in-memory adapter that records the calls made to it. Use it for anything that tests the runner or the resolver. A test for a real adapter that needs the engine installed skips with a visible reason when the engine is absent. CI installs every pinned tool, so those tests always run there. Locally, `mise exec -- bun run check` runs them when the tools are not on your `PATH`. The last step of `bun run check` is `cinch check` on this repository, and that step does not skip: without the engine it is incomplete and the check fails.
 
 ## Taplo
 
@@ -138,7 +138,7 @@ An adapter takes a root and the files of a batch and returns data. It does not r
 `adapters/ast-grep/` runs the rules Cinch ships through [ast-grep](https://ast-grep.github.io). A rule is a few lines of YAML that match a shape in a file, for a check no linter has a rule for. It checks batches from the repository root. An explicitly adopted pack may mark particular shipped rules as eligible to write during `fix`. Local rules always report findings only.
 
 - It is off until the Cinch config sets `rules.enabled = true`, and `include` has to name the files, for example `**/*.json`.
-- The rules live in `packages/cinch/rules/<pack>/<rule>.yml`. A rule's id is `<pack>/<rule>`, and a finding carries it. Cinch hands the rules to ast-grep on the command line, so nothing is copied into the repository, and a Cinch version is a rules version.
+- The rules live in `packages/core/rules/<pack>/<rule>.yml`. A rule's id is `<pack>/<rule>`, and a finding carries it. Cinch hands the rules to ast-grep on the command line, so nothing is copied into the repository, and a Cinch version is a rules version.
 - Rules come in packs. A pack is a folder with a `pack.toml` that states its `name`, one line `about` it, and `relevant`: globs for the files that make it worth running. A pack applies when the repository has a file that matches, wherever the selection points. When no pack runs, the adapter gets no step.
 - A pack runs only where the Cinch config names it under `[rules] packs`, for example `packs = ["config"]`. `cinch rules adopt` names every pack that applies to the repository and is not named yet, and `cinch rules adopt <pack>` names one. Both show the change and write it with `--yes`, and the Cinch config is the only file they change. A pack that applies and is not named does not run: `cinch rules` and `cinch explain` list it as not adopted, so a Cinch upgrade that ships a new pack changes nothing until the repository takes it. A name no shipped pack has is an error. `cinch init` names the packs that apply in the config it starts and adds the files they read to its `include`, so a new setup runs them from the first check. `cinch rules adopt` does not change `include`, so a pack adopted later runs only on files the config already includes. When the config leaves out every file an adopted pack reads, the command says so and names what to add, `cinch rules` gives the same note for a pack the config already names, and `cinch doctor` lists a pack that applies and is not adopted.
 - `[rules] off = ["config/tsconfig-extends"]` in the Cinch config turns one rule off, and a pack's name turns the whole pack off. A name no shipped pack or rule has is an error. `cinch explain` lists each pack, whether it runs and why, and each rule that is off with the setting that turned it off.
@@ -148,7 +148,7 @@ An adapter takes a root and the files of a batch and returns data. It does not r
 - ast-grep exits 0 when no error-level rule matched and 1 when one did, and says how many. A run whose exit code, count and printed matches do not agree is incomplete, and so is one where it refuses a rule or cannot read a file.
 - ast-grep does not say which files it read, and a file that does not parse matches nothing. A broken JSON file is the formatter's finding, not this step's.
 - The first rule, `config/tsconfig-extends`, reports a `tsconfig.json` with no `extends` line.
-- Each rule has a cases file at `packages/cinch/tests/rules/<pack>/<rule>.yml`, in the form `ast-grep test` reads: the rule's `id`, some `valid` text it must pass and some `invalid` text it must report. The tests fail a rule that has no cases file, or one with no case on either side, and run every rule against its cases on the real engine. The cases sit outside the rules folder because ast-grep reads every YAML file there as a rule.
+- Each rule has a cases file at `packages/core/tests/rules/<pack>/<rule>.yml`, in the form `ast-grep test` reads: the rule's `id`, some `valid` text it must pass and some `invalid` text it must report. The tests fail a rule that has no cases file, or one with no case on either side, and run every rule against its cases on the real engine. The cases sit outside the rules folder because ast-grep reads every YAML file there as a rule.
 
 ## The type check
 

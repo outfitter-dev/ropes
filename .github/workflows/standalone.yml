@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - .github/workflows/standalone.yml
-      - packages/cinch/**
+      - packages/core/**
       - packages/cli/**
       - package.json
       - bun.lock
@@ -16,7 +16,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/standalone.yml
-      - packages/cinch/**
+      - packages/core/**
       - packages/cli/**
       - package.json
       - bun.lock

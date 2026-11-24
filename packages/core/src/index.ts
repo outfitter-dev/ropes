@@ -9,7 +9,7 @@ import { runExplainRule } from "./commands/explain-rule.ts";
 import type { RuleRequest } from "./commands/explain-rule.ts";
 import { runExplain } from "./commands/explain.ts";
 import { runFix } from "./commands/fix.ts";
-import { manualMigration } from "./commands/migrate.ts";
+import { runMigrationPreview } from "./commands/migrate.ts";
 import { capturePolicy } from "./commands/policy-preview.ts";
 import type { PresetRequest } from "./commands/preset-operation.ts";
 import { runRopesPreset } from "./commands/preset.ts";
@@ -70,8 +70,7 @@ export const explain = (request: ReadRequest, probeTools = false) =>
   runExplain(request, deps, probeTools);
 export const fix = (request: FixRequest) => runFix(request, deps, "rope");
 export const init = (request: InitRequest) => runRopesInit(request, deps);
-export const previewMigration = (_cwd: string) =>
-  Promise.resolve(manualMigration());
+export const previewMigration = (cwd: string) => runMigrationPreview(cwd, deps);
 export const rules = (request: ReadRequest) => listRules(request, deps);
 export const rulesAdopt = (request: RulesAdoptRequest) =>
   adoptRules(request, deps);

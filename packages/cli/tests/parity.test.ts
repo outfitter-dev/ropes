@@ -3,9 +3,9 @@ import path from "node:path";
 
 import { parsePlan, parseResult } from "@ropes/core";
 
-import { FixReportSchema } from "../../cinch/src/contracts/fix.ts";
-import { SCHEMA_VERSION } from "../../cinch/src/contracts/plan.ts";
-import { json, proof, runEntry } from "../../cinch/tests/acceptance-repo.ts";
+import { FixReportSchema } from "../../core/src/contracts/fix.ts";
+import { SCHEMA_VERSION } from "../../core/src/contracts/plan.ts";
+import { json, proof, runEntry } from "../../core/tests/acceptance-repo.ts";
 import manifest from "../package.json" with { type: "json" };
 
 const ROPE = new URL(manifest.bin.rope, new URL("../", import.meta.url));

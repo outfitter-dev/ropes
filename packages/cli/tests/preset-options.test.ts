@@ -5,13 +5,13 @@ import path from "node:path";
 
 import { preset } from "@ropes/core";
 
-import { PresetReportSchema } from "../../cinch/src/contracts/preset.ts";
-import { RelocateReportSchema } from "../../cinch/src/contracts/relocate.ts";
+import { PresetReportSchema } from "../../core/src/contracts/preset.ts";
+import { RelocateReportSchema } from "../../core/src/contracts/relocate.ts";
 import {
   checkoutAt,
   fixtureGit,
   runEntry,
-} from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
 
 const cli = new URL("../src/cli.ts", import.meta.url);
 

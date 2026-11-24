@@ -10,7 +10,7 @@ import {
   json,
   runEntry,
   withFixture,
-} from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
 import manifest from "../package.json" with { type: "json" };
 import { FILES, RATIONALE } from "./trace-fixture.ts";
 

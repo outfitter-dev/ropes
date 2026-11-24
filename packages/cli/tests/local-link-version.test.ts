@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
 
-import { runEntry, withFixture } from "../../cinch/tests/acceptance-repo.ts";
+import { runEntry, withFixture } from "../../core/tests/acceptance-repo.ts";
 import { CONFIG } from "./local-links-fixture.ts";
 
 const ROPE = new URL("../src/cli.ts", import.meta.url);

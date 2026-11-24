@@ -5,7 +5,7 @@ import {
   fixtureGit,
   runEntry,
   withFixture,
-} from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
 import { save } from "./cleanup-stack-fixture.ts";
 import { apiPackage, BEFORE, packageAt } from "./compatibility-fixture.ts";
 

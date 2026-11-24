@@ -58,7 +58,7 @@ packs = ["config"]
 
 # The compiler options Cinch ships are the base, so they extend nothing.
 [[overrides]]
-paths = ["packages/cinch/presets/tsconfig.json"]
+paths = ["packages/core/presets/tsconfig.json"]
 
 [overrides.rules]
 enabled = false

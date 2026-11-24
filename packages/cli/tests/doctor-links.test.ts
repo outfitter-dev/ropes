@@ -12,8 +12,8 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { doctor } from "../../cinch/src/index.ts";
-import { fixtureGit, runEntry } from "../../cinch/tests/acceptance-repo.ts";
+import { doctor } from "../../core/src/index.ts";
+import { fixtureGit, runEntry } from "../../core/tests/acceptance-repo.ts";
 
 const cli = new URL("../src/cli.ts", import.meta.url);
 

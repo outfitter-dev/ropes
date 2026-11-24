@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import path from "node:path";
 
-import { withFixture } from "../packages/cinch/tests/acceptance-repo.ts";
+import { withFixture } from "../packages/core/tests/acceptance-repo.ts";
 
 const SCRIPT = new URL("../scripts/check-workflows.ts", import.meta.url)
   .pathname;

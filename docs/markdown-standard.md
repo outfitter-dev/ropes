@@ -1,6 +1,6 @@
 # The Markdown standard
 
-Outfitter repositories share one set of Markdown rules. It lives in `packages/cinch/presets/rumdl.toml`, in the format [rumdl](https://rumdl.dev) reads, and ships inside Cinch. A Cinch version is therefore also a version of the standard.
+Outfitter repositories share one set of Markdown rules. It lives in `packages/core/presets/rumdl.toml`, in the format [rumdl](https://rumdl.dev) reads, and ships inside Cinch. A Cinch version is therefore also a version of the standard.
 
 The Markdown profile also checks local destinations and heading anchors with pinned Lychee. [Markdown links](markdown-links.md) describes its scope, offline contract, preview limits and scheduled external URL report.
 
@@ -146,7 +146,7 @@ The Markdown migration parity fixture runs markdownlint and the production rumdl
 The frozen workspace install supplies the pinned `markdownlint` engine, and CI runs the fixture with the pinned rumdl on `PATH`. Run it on its own with:
 
 ```sh
-bun test packages/cinch/tests/markdownlint-parity.test.ts
+bun test packages/core/tests/markdownlint-parity.test.ts
 ```
 
 Test authors can reuse `markdownlintParity` with a trusted legacy rules file, the rule catalog from the migration, and an explicit file list. It uses the migration's config reader and the markdownlint engine API, so personal settings and discovery rules cannot change the selection or findings. The fixture compares built-in rules, with custom rules and inherited legacy configs outside its scope.

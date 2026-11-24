@@ -3,8 +3,8 @@ import { mkdir, realpath, rm } from "node:fs/promises";
 import path from "node:path";
 
 import workspace from "../../../package.json" with { type: "json" };
-import core from "../../cinch/package.json" with { type: "json" };
-import { RulesAdoptReportSchema } from "../../cinch/src/contracts/rules-report.ts";
+import core from "../../core/package.json" with { type: "json" };
+import { RulesAdoptReportSchema } from "../../core/src/contracts/rules-report.ts";
 import cli from "../package.json" with { type: "json" };
 import fixture from "../tests/fixtures/outfitter/package.json" with { type: "json" };
 import { packConsumer, proveConsumer } from "./packed-consumer.ts";

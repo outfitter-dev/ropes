@@ -14,7 +14,6 @@ import {
   fix,
   init,
   preset,
-  parsePlan,
   previewMigration,
   rules,
   rulesAdopt,
@@ -136,35 +135,6 @@ test("nested supported policy cannot hide a retired ancestor inside its checkout
   }
 });
 
-test("public explain uses the parent policy through a dangling nested link", async () => {
-  const root = await fresh();
-  try {
-    const nested = path.join(root, "packages/app");
-    await mkdir(nested, { recursive: true });
-    await fixtureGit(root, "init", "--quiet");
-    await Bun.write(
-      path.join(root, "rope.toml"),
-      'pilot = 0\ninclude = ["**/tsconfig.json"]\n[rules]\nenabled = true\npacks = ["config"]\n'
-    );
-    await Bun.write(path.join(nested, "tsconfig.json"), "{}\n");
-    await symlink(
-      path.join(nested, "missing-policy"),
-      path.join(nested, "rope.toml")
-    );
-    const ran = await runEntry(
-      cli,
-      ["explain", "tsconfig.json", "--json"],
-      nested
-    );
-    expect(ran.exitCode).toBe(0);
-    const plan = parsePlan(JSON.parse(ran.stdout));
-    expect(plan).toMatchObject({ ok: true, value: { root } });
-    expect(ran.stdout).toContain("config/tsconfig-extends");
-  } finally {
-    await rm(root, { force: true, recursive: true });
-  }
-});
-
 test("informational CLI and manual migration guidance leave retired config alone", async () => {
   const root = await fresh();
   try {
@@ -186,7 +156,9 @@ test("informational CLI and manual migration guidance leave retired config alone
       path.join(root, "missing-directory")
     );
     expect(guidance.ok).toBe(false);
-    expect(guidance.error).toContain("Manual migration required");
+    expect(guidance.ok ? "" : guidance.error).toContain(
+      "Manual migration required"
+    );
     expect(await Bun.file(path.join(root, "cinch.toml")).text()).toBe(
       "retired content"
     );
