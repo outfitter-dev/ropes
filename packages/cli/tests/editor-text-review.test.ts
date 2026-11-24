@@ -27,7 +27,7 @@ final_newline = true
 test("the CLI checks empty files, independent indentation, Unicode, long lines and CR lines", async () => {
   await withFixture(async ({ main }) => {
     await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
-    await main.cinch(["doctor", "--fix", "--json"]);
+    await main.rope(["doctor", "--fix", "--json"]);
     await Promise.all([
       Bun.write(path.join(main.root, "__init__.py"), ""),
       Bun.write(path.join(main.root, "unicode.txt"), "café!\n"),
@@ -82,7 +82,7 @@ test("the CLI checks empty files, independent indentation, Unicode, long lines a
 test("undecodable and binary selected files are incomplete without guessing their charset", async () => {
   await withFixture(async ({ main }) => {
     await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
-    await main.cinch(["doctor", "--fix", "--json"]);
+    await main.rope(["doctor", "--fix", "--json"]);
     await Bun.write(path.join(main.root, "bytes.txt"), new Uint8Array([0xff]));
     await Bun.write(
       path.join(main.root, "binary.bin"),

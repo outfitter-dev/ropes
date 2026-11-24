@@ -48,4 +48,4 @@ jobs:
           version: 2026.11.10
       - run: bun install --frozen-lockfile
       - name: Build and exercise the native binary without Bun on PATH
-        run: bun test packages/cinch/tests/binary.test.ts packages/cli/tests/binary.test.ts
+        run: bun test packages/cli/tests/binary.test.ts

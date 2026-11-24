@@ -16,7 +16,7 @@ import { resolvePlan } from "../src/policy/resolve.ts";
 import { rulesBlock } from "../src/render/rules.ts";
 import { describeFake } from "./fake-adapter.ts";
 
-const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
+const CLI = new URL("../../cli/src/cli.ts", import.meta.url).pathname;
 const RULES = path.join(import.meta.dir, "..", "rules");
 const ORIGIN = { file: "cinch.toml", prefix: "" };
 const OFF: Provenance = { file: "cinch.toml", key: "rules.off", kind: "file" };

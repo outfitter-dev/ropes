@@ -47,15 +47,15 @@ const NOTES = "packages/app/docs/notes.md";
 proof(
   "proof 1: a nested package and a linked worktree each resolve to their own root",
   async ({ main, worktree }) => {
-    const fromRoot = planOf(await main.cinch(["explain", "--json"]));
+    const fromRoot = planOf(await main.rope(["explain", "--json"]));
     const fromPackage = planOf(
-      await main.cinch(["explain", "--json"], { cwd: "packages/app" })
+      await main.rope(["explain", "--json"], { cwd: "packages/app" })
     );
     expect(fromPackage).toEqual(fromRoot);
     expect(fromRoot.paths.map((entry) => entry.path)).toContain(NOTES);
 
     const scoped = planOf(
-      await main.cinch(["explain", "docs/notes.md", "--json"], {
+      await main.rope(["explain", "docs/notes.md", "--json"], {
         cwd: "packages/app",
       })
     );
@@ -64,7 +64,7 @@ proof(
     const linked = await worktree();
     await Bun.write(path.join(linked.root, "cinch.toml"), "pilot = 0\n");
     const inLinked = planOf(
-      await linked.cinch(["explain", "--json"], { cwd: "packages/app" })
+      await linked.rope(["explain", "--json"], { cwd: "packages/app" })
     );
     expect(stepsOf(inLinked, LEGACY)).toEqual(["rumdl"]);
     expect(stepsOf(fromRoot, LEGACY)).toEqual([]);
@@ -77,7 +77,7 @@ proof(
 proof(
   "proof 2: an override changes both what explain says and what check runs",
   async ({ main }) => {
-    const plan = planOf(await main.cinch(["explain", "--json"]));
+    const plan = planOf(await main.rope(["explain", "--json"]));
     const legacy = plan.paths.find((entry) => entry.path === LEGACY);
     expect(legacy?.steps).toEqual([]);
     expect(legacy?.policy).toEqual([
@@ -94,18 +94,18 @@ proof(
     ]);
     expect(stepsOf(plan, "README.md")).toEqual(["rumdl"]);
 
-    const text = await main.cinch(["explain", LEGACY]);
+    const text = await main.rope(["explain", LEGACY]);
     expect(text.stdout).toContain("overrides.0.markdown.enabled");
     expect(text.stdout).toContain("no step applies");
 
-    const ran = await main.cinch(["check", "--json"]);
+    const ran = await main.rope(["check", "--json"]);
     const result = resultOf(ran);
     expect(ran.exitCode).toBe(1);
     expect(rulesOf(result, "README.md")).toEqual(["MD025"]);
     expect(result.steps.some((step) => step.path === LEGACY)).toBe(false);
 
     await Bun.write(path.join(main.root, "cinch.toml"), "pilot = 0\n");
-    const without = resultOf(await main.cinch(["check", "--json"]));
+    const without = resultOf(await main.rope(["check", "--json"]));
     expect(rulesOf(without, LEGACY)).toEqual(["MD025"]);
   }
 );
@@ -114,10 +114,10 @@ proof(
   "proof 3: fix is previewed, then applied, then has nothing left to do",
   async ({ main }) => {
     expect(await main.files()).toEqual({ ...FILES });
-    await main.cinch(["doctor", "--fix"]);
+    await main.rope(["doctor", "--fix"]);
     const before = await main.files();
 
-    const preview = await main.cinch(["fix", "--dry-run", "--json"]);
+    const preview = await main.rope(["fix", "--dry-run", "--json"]);
     const previewed = FixReportSchema.parse(json(preview));
     expect(previewed.dryRun).toBe(true);
     expect(previewed.changed).toContain("README.md");
@@ -126,7 +126,7 @@ proof(
     expect(await main.files()).toEqual(before);
     expect(before["README.md"]).toBe(FILES["README.md"]);
 
-    const apply = await main.cinch(["fix", "--json"]);
+    const apply = await main.rope(["fix", "--json"]);
     const applied = FixReportSchema.parse(json(apply));
     expect(apply.exitCode).toBe(0);
     expect(applied.changed).toEqual(previewed.changed);
@@ -136,13 +136,13 @@ proof(
     expect(after[NOTES]).toBe("# App\n\nToo many blanks above.\n");
     expect(after[LEGACY]).toBe(FILES[LEGACY]);
 
-    const again = await main.cinch(["fix", "--json"]);
+    const again = await main.rope(["fix", "--json"]);
     const repeated = FixReportSchema.parse(json(again));
     expect(repeated.changed).toEqual([]);
     expect(repeated.diff).toBe("");
     expect(await main.files()).toEqual(after);
 
-    const check = await main.cinch(["check"]);
+    const check = await main.rope(["check"]);
     expect(check.exitCode).toBe(0);
   }
 );
@@ -150,7 +150,7 @@ proof(
 proof(
   "proof 4: a missing tool makes the run incomplete and exits 2",
   async ({ emptyPath, main }) => {
-    const ran = await main.cinch(["check", "--json"], { path: emptyPath });
+    const ran = await main.rope(["check", "--json"], { path: emptyPath });
     const result = resultOf(ran);
     expect(ran.exitCode).toBe(2);
     expect(result.outcome).toBe("incomplete");
@@ -159,12 +159,12 @@ proof(
     expect(readme?.reason).toContain("not on PATH");
     expect(readme?.findings).toEqual([]);
 
-    const text = await main.cinch(["check"], { path: emptyPath });
+    const text = await main.rope(["check"], { path: emptyPath });
     expect(text.exitCode).toBe(2);
     expect(text.stdout).toContain("Exit code 2");
 
-    await main.cinch(["doctor", "--fix"]);
-    const fix = await main.cinch(["fix"], { path: emptyPath });
+    await main.rope(["doctor", "--fix"]);
+    const fix = await main.rope(["fix"], { path: emptyPath });
     expect(fix.exitCode).toBe(2);
     const left = await main.files();
     expect(left["README.md"]).toBe(FILES["README.md"]);
@@ -174,11 +174,11 @@ proof(
 proof(
   "proof 5: the JSON a run prints parses with the published parser",
   async ({ main }) => {
-    const explain = await main.cinch(["explain", "--json"]);
+    const explain = await main.rope(["explain", "--json"]);
     expect(parsePlan(json(explain)).ok).toBe(true);
     expect(explain.stderr).toBe("");
 
-    const check = await main.cinch(["check", "--json"]);
+    const check = await main.rope(["check", "--json"]);
     const result = resultOf(check);
     expect(check.stderr).toBe("");
     expect(check.exitCode).toBe(exitCodeOf(result));

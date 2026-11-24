@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { fixtureGit } from "./acceptance-repo.ts";
 
-const CLI = new URL("../src/cli.ts", import.meta.url);
+const CLI = new URL("../../cli/src/cli.ts", import.meta.url);
 
 export const inRepo = async (
   body: (root: string, bin: string) => Promise<void>

@@ -14,7 +14,6 @@ import {
 } from "../../cinch/tests/acceptance-repo.ts";
 
 const cli = new URL("../src/cli.ts", import.meta.url);
-const legacy = new URL("../../cinch/src/cli.ts", import.meta.url);
 
 const withFixture = async (body: (root: string) => Promise<void>) => {
   const root = await realpath(
@@ -34,7 +33,7 @@ const withFixture = async (body: (root: string) => Promise<void>) => {
   }
 };
 
-test("public preset commands honor single-name scope while legacy commands keep their arguments", async () => {
+test("public preset commands honor single-name scope", async () => {
   await withFixture(async (root) => {
     const run = (...args: readonly string[]) =>
       runEntry(cli, ["preset", ...args], root);
@@ -66,21 +65,6 @@ test("public preset commands honor single-name scope while legacy commands keep 
     const unknown = await run("list", "unknown", "--json");
     expect(unknown.exitCode).toBe(2);
     expect(await checkoutAt(root).files()).toEqual(before);
-    const legacyList = await runEntry(
-      legacy,
-      ["preset", "list", "markdown", "--json"],
-      root
-    );
-    expect(
-      PresetReportSchema.parse(JSON.parse(legacyList.stdout)).presets.length
-    ).toBeGreaterThan(1);
-    const legacyAdd = await runEntry(
-      legacy,
-      ["preset", "add", "markdown", "typescript", "--dry-run", "--json"],
-      root
-    );
-    expect(legacyAdd.exitCode).toBe(0);
-    expect(await checkoutAt(root).files()).toEqual(before);
   });
 });
 
@@ -107,7 +91,7 @@ test("public preset API rejects explicit evaluation time before any action", asy
   });
 });
 
-test("public adoption recovery uses rope and legacy recovery retains cinch", async () => {
+test("public adoption recovery uses rope", async () => {
   await withFixture(async (root) => {
     const added = await runEntry(
       cli,
@@ -135,17 +119,6 @@ test("public adoption recovery uses rope and legacy recovery retains cinch", asy
         "\n"
       )
     ).toContain("`rope doctor --fix`");
-    const legacyMove = await runEntry(
-      legacy,
-      ["preset", "adopt", "markdown", "--json"],
-      root
-    );
-    expect(legacyMove.exitCode).toBe(1);
-    expect(
-      RelocateReportSchema.parse(JSON.parse(legacyMove.stdout)).stopped?.join(
-        "\n"
-      )
-    ).toContain("`cinch doctor --fix`");
     expect(await checkoutAt(root).files()).toEqual(before);
   });
 });

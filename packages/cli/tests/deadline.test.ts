@@ -73,7 +73,7 @@ test("a scheduled rule changes verdict at midnight UTC on unchanged source", asy
       json(await run(["explain", ADVISORY, "--at", BEFORE, "--json"]))
     ).toEqual(plan);
     expect(
-      json(await main.cinch(["explain", ADVISORY, "--at", BEFORE, "--json"]))
+      json(await main.rope(["explain", ADVISORY, "--at", BEFORE, "--json"]))
     ).toEqual(plan);
     expect(json(await checkAt(BEFORE))).toEqual(observed.value);
     const text = await run(["check", ADVISORY, "--at", BEFORE]);
@@ -106,9 +106,9 @@ test("a scheduled rule changes verdict at midnight UTC on unchanged source", asy
     expect(json(unavailable)).toMatchObject({ outcome: "incomplete" });
     const noZone = await checkAt("2099-02-01T00:00:00");
     expect(noZone.stderr).toContain("Use a UTC instant");
-    const bare = await main.cinch(["check", ADVISORY, "--json", "--at"]);
+    const bare = await main.rope(["check", ADVISORY, "--json", "--at"]);
     expect(bare.exitCode).toBe(2);
-    expect(bare.stderr).toContain("--at requires a UTC instant.");
+    expect(bare.stderr).toContain("Option '--at <value>' argument missing");
     const write = await run(["fix", ADVISORY, "--at", BEFORE]);
     expect(write.exitCode).toBe(2);
     expect(await main.files()).toEqual(files);
@@ -215,7 +215,7 @@ test("the setup report omits deadlines for content steps", async () => {
       ),
       Bun.write(path.join(main.root, "tsconfig.json"), "{}\n"),
     ]);
-    const explain = await main.cinch([
+    const explain = await main.rope([
       "explain",
       "tsconfig.json",
       "--json",
@@ -223,7 +223,7 @@ test("the setup report omits deadlines for content steps", async () => {
       BEFORE,
     ]);
     expect(explain.stdout).toContain("nextTransitionAt");
-    const doctor = await main.cinch(["doctor", "--json"]);
+    const doctor = await main.rope(["doctor", "--json"]);
     expect(json(doctor)).toHaveProperty("result.plan.paths");
     expect(doctor.stdout).toContain('"tsconfig.json"');
     expect(doctor.stdout).not.toContain('"evaluation"');

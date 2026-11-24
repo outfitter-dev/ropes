@@ -11,7 +11,7 @@ const ORIGIN = { file: "cinch.toml", prefix: "" };
 
 test("the published schema is the one the loader's definition gives", async () => {
   const published: unknown = await Bun.file(PUBLISHED).json();
-  // To refresh: bun run cinch schema config > packages/cinch/schemas/cinch.schema.json
+  // The fixture uses the original config title until the schema rename.
   expect(published).toEqual(configJsonSchema());
 });
 

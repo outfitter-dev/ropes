@@ -10,7 +10,7 @@ import type { Provenance } from "../src/contracts/plan.ts";
 import { resolvePlan } from "../src/policy/resolve.ts";
 import { describeFake } from "./fake-adapter.ts";
 
-const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
+const CLI = new URL("../../cli/src/cli.ts", import.meta.url).pathname;
 const ENGINE = "ast-grep";
 const PROJECT = "sgconfig.yml";
 const STATED: Provenance = {

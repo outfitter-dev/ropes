@@ -11,7 +11,6 @@ import { fixtureGit, runEntry } from "./acceptance-repo.ts";
 import { snapshot } from "./repo-bench.ts";
 
 const CLI = new URL("../../cli/src/cli.ts", import.meta.url);
-const CINCH = new URL("../src/cli.ts", import.meta.url);
 const POLICY = `pilot = 0
 include = ["README.md", "a.ts"]
 [markdown]
@@ -190,7 +189,7 @@ test("generated settings guide repair through the authored tool table", async ()
     await rm(path.join(root, ".rumdl.toml"));
     await Bun.write(policy, `${managed}${tool}120\n`);
     const fix = ["doctor", "--fix", "--json"];
-    const initiallyRepaired = await runEntry(CINCH, fix, root);
+    const initiallyRepaired = await runEntry(CLI, fix, root);
     expect(initiallyRepaired.exitCode).toBe(0);
 
     const drift = await runEntry(CLI, ["doctor"], root);
@@ -202,7 +201,7 @@ test("generated settings guide repair through the authored tool table", async ()
 
     await Bun.write(policy, `${managed}${tool}100\n`);
     const oldFiles = await snapshot(root);
-    const preview = await runEntry(CINCH, [...fix, "--dry-run"], root);
+    const preview = await runEntry(CLI, [...fix, "--dry-run"], root);
     expect(preview.exitCode).toBe(0);
     const previewed = DoctorReportSchema.parse(JSON.parse(preview.stdout));
     expect(previewed).toMatchObject({ dryRun: true, fix: true });
@@ -210,7 +209,7 @@ test("generated settings guide repair through the authored tool table", async ()
     expect(previewed.settings).toBeUndefined();
     expect(await snapshot(root)).toEqual(oldFiles);
 
-    const applied = await runEntry(CINCH, fix, root);
+    const applied = await runEntry(CLI, fix, root);
     const inspected = await runEntry(CLI, ["doctor", "--json"], root);
     expect(applied.exitCode).toBe(preview.exitCode);
     expect(inspected.exitCode).toBe(0);

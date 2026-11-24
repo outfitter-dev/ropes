@@ -11,7 +11,7 @@ import { resolvePlan } from "../src/policy/resolve.ts";
 import { localRulesBlock } from "../src/render/rules.ts";
 import { describeFake } from "./fake-adapter.ts";
 
-const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
+const CLI = new URL("../../cli/src/cli.ts", import.meta.url).pathname;
 const ENGINE = "ast-grep";
 const ORIGIN = { file: "cinch.toml", prefix: "" };
 const LOCAL: Provenance = {

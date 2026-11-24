@@ -10,7 +10,6 @@
   },
   "files": [
     "src",
-    "!src/cli.ts",
     "presets",
     "rules",
     "schemas"

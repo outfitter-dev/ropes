@@ -21,7 +21,7 @@ exit 101
   await chmod(taplo, 0o755);
   expect(Bun.which("bun", { PATH: engines })).toBeNull();
   await Bun.write(
-    path.join(root, "cinch.toml"),
+    path.join(root, "rope.toml"),
     'pilot = 0\ninclude = ["sample.toml"]\n[markdown]\nenabled = false\npreset = false\n[toml]\nenabled = true\n'
   );
   await Bun.write(path.join(root, "sample.toml"), 'name = "ropes"\n');

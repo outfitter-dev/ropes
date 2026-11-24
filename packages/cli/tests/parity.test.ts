@@ -12,9 +12,9 @@ const ROPE = new URL(manifest.bin.rope, new URL("../", import.meta.url));
 const CORE = new URL("core-entry.ts", import.meta.url);
 
 proof(
-  "Cinch, rope and core agree on the Markdown fixture",
+  "rope and core agree on the Markdown fixture",
   async ({ main, emptyPath }) => {
-    const setup = await main.cinch(["doctor", "--fix"]);
+    const setup = await main.rope(["doctor", "--fix"]);
     expect(setup.exitCode).toBe(0);
     await Bun.write(path.join(main.root, "clean.md"), "# Clean\n\nText.\n");
     const before = await main.files();
@@ -31,19 +31,16 @@ proof(
         "--json",
         ...(options.preview === true ? ["--dry-run"] : []),
       ];
-      const [cinch, rope, core] = await Promise.all([
-        main.cinch(args, options),
+      const [rope, core] = await Promise.all([
         runEntry(ROPE, args, main.root, options.path),
         runEntry(CORE, [verb, file], main.root, options.path),
       ]);
-      expect([cinch.exitCode, rope.exitCode, core.exitCode]).toEqual([
-        expectedExit,
+      expect([rope.exitCode, core.exitCode]).toEqual([
         expectedExit,
         expectedExit,
       ]);
-      expect([cinch.stderr, rope.stderr, core.stderr]).toEqual(["", "", ""]);
-      const document = json(cinch);
-      expect(json(rope)).toEqual(document);
+      expect([rope.stderr, core.stderr]).toEqual(["", ""]);
+      const document = json(rope);
       expect(json(core)).toEqual(document);
       return document;
     };
