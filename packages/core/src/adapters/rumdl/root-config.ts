@@ -192,7 +192,7 @@ export const rootConfig = async (
   if (current === pointer || current === paths.extendsLine) {
     return { ok: true, text: pointer };
   }
-  // Older Ropes versions generated the same pointer with Ropes instructions.
+  // Recognize a pointer that still suggests the retired repair command.
   if (current === pointerFor(paths, "cinch")) {
     return { ok: true, text: current };
   }
