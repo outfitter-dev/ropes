@@ -66,7 +66,7 @@ const planned = async (
       (gap.why === "left-out" && gap.skipped?.reason === "excluded")
   );
   if (gaps.length > 0) {
-    return { error: gaps.map(describeGap).join("\nrope: ") };
+    return { error: gaps.map(describeGap).join("\n") };
   }
   const relocates = keeper?.relocates;
   if (relocates === undefined) {

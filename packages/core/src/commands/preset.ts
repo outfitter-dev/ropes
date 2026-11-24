@@ -72,7 +72,7 @@ const write = async (
   const paths = filesOf(presets);
   const gaps = gapsOf(presets, prepared.value.plan);
   if (gaps.length > 0) {
-    return unusable([...new Set(gaps.map(describeGap))].join("\nrope: "));
+    return unusable([...new Set(gaps.map(describeGap))].join("\n"));
   }
   const ran = await runWrite({ ...request, cwd: root, paths }, deps, {
     mode: "doctor",

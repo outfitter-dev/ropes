@@ -88,8 +88,7 @@ test("init shows what it would write and writes nothing", async () => {
 });
 
 test("init only shows the change unless --yes is given", async () => {
-  const hint =
-    "Dry run: nothing was written. Run `rope init --yes` to write this.";
+  const hint = "Dry run: nothing was written.";
   const plain = await run("init", { json: false });
   expect(plain.output).toEndWith(hint);
   const dry = await run("init", { dryRun: true, json: false });

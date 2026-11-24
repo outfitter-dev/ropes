@@ -115,7 +115,7 @@ export const prepareSetup = async (
   ).filter((gap) => gap.why === "left-out");
   const problems = [...gaps.map(describeGap), ...excludedKept(prepared.value)];
   if (problems.length > 0) {
-    return { error: problems.join("\nrope: "), ok: false };
+    return { error: problems.join("\n"), ok: false };
   }
   return {
     ok: true,

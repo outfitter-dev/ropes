@@ -3,11 +3,15 @@ import { SCHEMA_VERSION } from "../contracts/plan.ts";
 
 const PREFIX = /^(?:cinch|rope): /gmu;
 
-/** One line of JSON for stderr. The `rope: ` prefix is for people only. */
-export const renderFailureJson = (message: string): string => {
+/** Serialize a raw operation error without interpreting its authored text. */
+export const renderOperationFailureJson = (message: string): string => {
   const failure: Failure = {
-    error: { message: message.replaceAll(PREFIX, "") },
+    error: { message },
     schemaVersion: SCHEMA_VERSION,
   };
   return JSON.stringify(failure);
 };
+
+/** Serialize an internal command-wrapper error with its display prefixes removed. */
+export const renderFailureJson = (message: string): string =>
+  renderOperationFailureJson(message.replaceAll(PREFIX, ""));

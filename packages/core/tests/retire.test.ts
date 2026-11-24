@@ -106,9 +106,9 @@ test("the preview names the old file and leaves it there", async () => {
   expect(await exists(OLD)).toBe(true);
   const shown = await commands.init?.({ cwd: root, json: false, paths: [] });
   expect(shown?.output).toContain(
-    `Old config files \`rope init --yes\` will remove:\n  ${OLD}`
+    `Old config files scheduled for removal:\n  ${OLD}`
   );
-  expect(shown?.output).toEndWith("Run `rope init --yes` to write this.");
+  expect(shown?.output).toEndWith("Dry run: nothing was written.");
 });
 
 test("--yes removes an old file that was carried over whole", async () => {

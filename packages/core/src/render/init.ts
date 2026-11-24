@@ -9,7 +9,7 @@ const retiredBlocks = (retired: Retired, dryRun: boolean): string[] => {
     return [];
   }
   const removal = dryRun
-    ? "Old config files `rope init --yes` will remove:"
+    ? "Old config files scheduled for removal:"
     : "Removed old config files:";
   return [
     listed(
@@ -24,9 +24,7 @@ const retiredBlocks = (retired: Retired, dryRun: boolean): string[] => {
 
 /** What `init` adds below the report when it only showed the change. */
 const hint = (changes: number): string =>
-  changes === 0
-    ? "Nothing to set up."
-    : "Dry run: nothing was written. Run `rope init --yes` to write this.";
+  changes === 0 ? "Nothing to set up." : "Dry run: nothing was written.";
 
 /**
  * Text for a person: the fix report, then the old tool's config files and
