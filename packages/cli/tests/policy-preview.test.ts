@@ -9,6 +9,7 @@ import {
 
 const ROPE = new URL("../src/cli.ts", import.meta.url);
 const RULE = "config/tsconfig-extends";
+const REWRITE = "config-spelling/tsconfig-module-esnext";
 const API = "typescript-api/removed-map";
 const FILE = "packages/app/tsconfig.json";
 const SOURCE = "packages/app/index.ts";
@@ -55,8 +56,20 @@ test("policy preview compares the clock and package target without running engin
       evidence: "planned",
       paths: [
         { path: SOURCE, rules: [{ rule: API, state: "blocking" }] },
-        { path: FILE, rules: [{ rule: RULE, state: "blocking" }] },
-        { path: EXCLUDED, rules: [{ rule: RULE, state: "exempt" }] },
+        {
+          path: FILE,
+          rules: [
+            { rule: REWRITE, state: "inapplicable" },
+            { rule: RULE, state: "blocking" },
+          ],
+        },
+        {
+          path: EXCLUDED,
+          rules: [
+            { rule: REWRITE, state: "exempt" },
+            { rule: RULE, state: "exempt" },
+          ],
+        },
       ],
     });
     const names = ["../before.json", "../after.json"];
@@ -162,7 +175,7 @@ test("policy preview distinguishes pack adoption, unrelated edits and missing co
     const adopted = await compare("../bare.json", "../adopted.json");
     expect(adopted.exitCode).toBe(0);
     expect(json(adopted)).toMatchObject({
-      after: { catalog: [RULE, API] },
+      after: { catalog: [REWRITE, RULE, API] },
       changes: [
         {
           after: { state: "blocking" },

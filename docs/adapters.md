@@ -135,7 +135,7 @@ An adapter takes a root and the files of a batch and returns data. It does not r
 
 ## The shipped rules
 
-`adapters/ast-grep/` runs the rules Cinch ships through [ast-grep](https://ast-grep.github.io). A rule is a few lines of YAML that match a shape in a file, for a check no linter has a rule for. It runs once for the files of a batch, from the repository root, and never writes, so `fix` only checks.
+`adapters/ast-grep/` runs the rules Cinch ships through [ast-grep](https://ast-grep.github.io). A rule is a few lines of YAML that match a shape in a file, for a check no linter has a rule for. It checks batches from the repository root. An explicitly adopted pack may mark particular shipped rules as eligible to write during `fix`. Local rules always report findings only.
 
 - It is off until the Cinch config sets `rules.enabled = true`, and `include` has to name the files, for example `**/*.json`.
 - The rules live in `packages/cinch/rules/<pack>/<rule>.yml`. A rule's id is `<pack>/<rule>`, and a finding carries it. Cinch hands the rules to ast-grep on the command line, so nothing is copied into the repository, and a Cinch version is a rules version.

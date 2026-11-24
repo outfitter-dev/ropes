@@ -18,7 +18,7 @@ import { checkOne } from "./one-file.ts";
 const RULES = path.join(import.meta.dir, "..", "rules");
 const ENGINE = "ast-grep";
 
-test("the adapter is off until asked for, never writes, and follows the pin", () => {
+test("the adapter is off until asked for, defaults to read-only, and follows the pin", () => {
   expect(rulesAdapter().descriptor).toMatchObject({
     enabledBy: "rules.enabled",
     optIn: true,

@@ -5,7 +5,7 @@ import { existingPaths, inlineRules, scanInvocation } from "./invocation.ts";
 import { readLocal, refusedFile } from "./local.ts";
 import type { LocalRules, RuleFolder } from "./local.ts";
 import { parseOutput } from "./output.ts";
-import { shippedIds } from "./rules.ts";
+import { shippedIds, shippedRewrites } from "./rules.ts";
 
 type Local = Extract<LocalRules, { ok: true }>;
 
@@ -73,7 +73,12 @@ const start = async (
       refused ?? `${source} exited ${exitCode}: ${firstLine(stderr)}`
     );
   }
-  const parsed = parseOutput(stdout, source, local.ids);
+  const parsed = parseOutput(
+    stdout,
+    source,
+    local.ids,
+    new Set(shippedRewrites(input.rules))
+  );
   if (!parsed.ok) {
     return allIncomplete(input, `${source} ran, but ${parsed.message}`);
   }

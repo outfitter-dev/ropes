@@ -34,6 +34,18 @@ Run `rope rules` or `rope rules list` to inspect each shipped pack's state and t
 
 `rope rules adopt config` previews the policy edit. Add `--yes` to apply it, or combine `--yes --dry-run` to retain the preview. A repeat adoption produces no change. An existing rollout enabled only through path overrides keeps that scope when packs are adopted. If the active policy changes during planning, adoption stops so the saved edit can be reviewed before retrying. Adoption writes the active `rope.toml` or supported legacy policy file and leaves the Git index untouched. A repository without a policy config is directed to `rope init` first.
 
+## Preview a shipped rewrite
+
+The optional `config-spelling` pack changes the exact lowercase `"esnext"` value of `compilerOptions.module` in `tsconfig.json` to `"ESNext"`. TypeScript treats both spellings as the same module kind. Adopt the pack explicitly and inspect the patch before applying it.
+
+```sh
+rope rules adopt config-spelling --yes
+rope fix --dry-run tsconfig.json
+rope fix tsconfig.json
+```
+
+Only selected files covered by the adopted rule are eligible. Adding `"config-spelling/tsconfig-module-esnext"` to `[rules] off` turns the rule off. Local rules remain report-only, including local rules with a native ast-grep `fix` field.
+
 ## Set a deadline
 
 Replace a level with a quoted calendar date, for example `"config/tsconfig-extends" = "2027-02-01"`. The rule is advisory before February 1 and blocking from midnight UTC on February 1. The same override order applies to deadlines and fixed levels. Each active path policy shows the resolved level, its source, and `blockingAt`. Unadopted or disabled rules and paths outside the rule's scope contribute no transition.

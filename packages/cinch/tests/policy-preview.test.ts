@@ -33,7 +33,9 @@ test("a skipped artifact version still shows a newly introduced blocking rule", 
                     ...adapter.descriptor,
                     packs: adapter.descriptor.packs.map((pack) => ({
                       ...pack,
-                      rules: [],
+                      rules: pack.rules.filter(
+                        (id) => id !== "config/tsconfig-extends"
+                      ),
                     })),
                   },
                 }

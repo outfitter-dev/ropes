@@ -1,0 +1,5 @@
+name = "config-spelling"
+about = "Use the canonical spelling of equivalent compiler options."
+explicitOnly = true
+relevant = ["**/tsconfig.json"]
+fixable = ["tsconfig-module-esnext"]

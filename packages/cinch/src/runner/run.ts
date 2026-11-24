@@ -28,6 +28,8 @@ export const writesIn = (
 
 export interface RunOptions {
   readonly mode: RunMode;
+  /** Original checkout whose write constraints also apply in a preview. */
+  readonly sourceRoot?: string;
   /** Defaults to the platform this process runs on. */
   readonly platform?: string;
   /**
@@ -112,7 +114,7 @@ const runBatch = async (
   ready: ReturnType<typeof readiness>,
   batch: PlanBatch,
   root: string,
-  mode: RunMode
+  { mode, sourceRoot }: RunOptions
 ): Promise<FileOutcome[]> => {
   const all = (reason: string) =>
     batch.paths.map((path) => ({ ...incomplete(reason), path }));
@@ -140,6 +142,9 @@ const runBatch = async (
     package: batch.package,
     paths: batch.paths,
     root,
+    ...(sourceRoot === undefined || !writesIn(mode, batch)
+      ? {}
+      : { sourceRoot }),
     ...(batch.rules === undefined ? {} : { rules: batch.rules }),
     ...(batch.target === undefined ? {} : { target: batch.target }),
   };
@@ -183,7 +188,7 @@ export const runPlan = async (
     // wrote, and a kept config is written before the step that reads it.
     /* eslint-disable no-await-in-loop */
     const held = watched ? await textsOf(plan.root, batch.paths) : undefined;
-    const outcomes = await runBatch(ready, batch, plan.root, mode);
+    const outcomes = await runBatch(ready, batch, plan.root, options);
     if (held !== undefined && changeAt !== undefined) {
       const found = await conflictsAfter(settled, {
         adapterOf: (id) => ready(id).adapter,

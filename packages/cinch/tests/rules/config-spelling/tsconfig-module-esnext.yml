@@ -1,0 +1,23 @@
+id: config-spelling/tsconfig-module-esnext
+valid:
+  - '{"compilerOptions":{"module":"ESNext"}}'
+  - '{"compilerOptions":{"module":"commonjs"}}'
+  - '{"compilerOptions":{"module":"es2022"}}'
+  - '{"compilerOptions":{"moduleResolution":"esnext"}}'
+  - '{"module":"esnext"}'
+  - '{"other":{"compilerOptions":{"module":"esnext"}}}'
+  - '{"compilerOptions":{"paths":{"module":"esnext"}}}'
+  - '{"compilerOptions":{"module":["esnext"]}}'
+  - '{"compilerOptions":{"module":null}}'
+  - '{"compilerOptions":{"Module":"esnext"}}'
+  - '{"CompilerOptions":{"module":"esnext"}}'
+  - '{"compilerOptions":{"module":"ESNEXT"}}'
+invalid:
+  - '{"compilerOptions":{"module":"esnext"}}'
+  - '{"extends":"./base.json","compilerOptions":{"module":"esnext","strict":true}}'
+  - |
+    {
+      "compilerOptions": {
+        "module": "esnext"
+      }
+    }

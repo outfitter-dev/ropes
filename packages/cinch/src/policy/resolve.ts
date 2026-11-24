@@ -4,9 +4,11 @@ import { batchesFor } from "./batches.ts";
 import { resolveDeadlines } from "./deadlines.ts";
 import { sharedFacts } from "./facts.ts";
 import { compileGlobs } from "./glob.ts";
+import type { Matcher } from "./glob.ts";
 import { localRules, packStates, rulesOn } from "./packs.ts";
 import { planPath } from "./plan-path.ts";
 import type { PathPlanInput, Scope } from "./plan-path.ts";
+import { rewriteScope } from "./rule-scope.ts";
 
 export interface ResolveInput extends PathPlanInput {
   readonly root: string;
@@ -34,10 +36,16 @@ export const resolvePlan = (given: ResolveInput): Plan => {
     given.descriptors,
     given.present ?? []
   );
-  // An adapter that ships rule packs has nothing to run when none is on
-  // and the repository names no rules of its own.
+  const ruleWriters = new Map(
+    given.descriptors.flatMap((descriptor): [string, Matcher][] => {
+      const matches = rewriteScope(descriptor, rulesOn(rules, descriptor.id));
+      return matches === undefined ? [] : [[descriptor.id, matches]];
+    })
+  );
+  // A pack adapter has no work without active shipped or local rules.
   const input = {
     ...given,
+    ruleWriters,
     ...(given.present === undefined
       ? {}
       : { presentFiles: new Set(given.present) }),
