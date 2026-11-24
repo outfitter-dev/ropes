@@ -6,7 +6,7 @@ The broader [`outfitter` CLI](https://github.com/outfitter-dev/outfitter) lives 
 
 ## Status
 
-The `@ropes/core` package holds the existing Cinch implementation under `packages/cinch/`. `@ropes/cli` supplies `rope init`, `rope explain`, `rope check`, `rope fix`, and `rope doctor` for setup inspection and repair. `fix --dry-run` previews content repairs. The Markdown fixture verifies matching plans, versioned results, and exits through Cinch, core, and `rope`.
+The `@ropes/core` package holds the existing Cinch implementation under `packages/cinch/`. `@ropes/cli` supplies `rope init`, `rope explain`, `rope check`, `rope fix`, and `rope doctor` for setup inspection and repair. `fix --dry-run` previews content repairs. The Markdown fixture verifies matching plans, versioned results, and exits through the public core API and `rope`.
 
 ## Quickstart
 
@@ -25,13 +25,13 @@ The npm-installed `rope` launcher delegates to the checkout's explicitly pinned 
 
 `rope explain` and `rope check` can compare an immutable cleanup candidate with its parent under an approved migration policy. See [staged cleanup](docs/cleanup.md) for the supported rule, scope and Git inputs.
 
-This repository checks and fixes itself through `rope`. The legacy `cinch` entry point remains available for compatibility. Ropes reads `rope.toml` and keeps its managed files under `.ropes/configs/`. During the pilot it also reads legacy `cinch.toml` or `[cinch]` in `outfitter.toml`, with managed files under `.outfitter/configs/`. The [cutover inventory](docs/cutover.md) records the compatibility choices.
+This repository checks and fixes itself through `rope`. Ropes reads `rope.toml` and keeps its managed files under `.ropes/configs/`. During the pilot it also reads legacy `cinch.toml` or `[cinch]` in `outfitter.toml`, with managed files under `.outfitter/configs/`. The [cutover inventory](docs/cutover.md) records the compatibility choices.
 
 `rope rules` lists the shipped packs and their state in this repository. Use `rope rules adopt [pack...]` to preview an adoption and add `--yes` to write it. The active policy file is the only file adoption changes.
 
 Capture two resolved rule policies with `rope policy snapshot` and compare them with `rope policy compare`. See [policy previews](docs/policy-preview.md).
 
-## Current Cinch commands
+## Ropes commands
 
 Given a path, Cinch resolves one plan: which policy applies, where each value came from, and which tools will run. Four verbs read that same plan, and each may write only its own files.
 

@@ -54,7 +54,7 @@ The automatic mise fixture tests a raw `rope` executable with isolated data, con
 
 ## What is inside
 
-- The `cinch` command, with every verb.
+- The public `rope` command and its supported verbs.
 - The presets, as text. The binary writes the same `.ropes/configs/presets/` files as the package of the same version.
 - The rules Ropes ships, as text. The binary still needs `ast-grep` on `PATH` to run them.
 
