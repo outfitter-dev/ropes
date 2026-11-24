@@ -3,7 +3,7 @@
   "type": "object",
   "properties": {
     "editor": {
-      "description": "Facts about text files that several tools must agree on. Cinch writes the root editor settings file from this table.",
+      "description": "Facts about text files that several tools must agree on. Ropes writes the root editor settings file from this table.",
       "type": "object",
       "properties": {
         "charset": {
@@ -105,7 +105,7 @@
       "additionalProperties": false
     },
     "exclude": {
-      "description": "Root-relative globs for files Cinch leaves alone.",
+      "description": "Root-relative globs for files Ropes leaves alone.",
       "type": "array",
       "items": {
         "type": "string",
@@ -116,7 +116,7 @@
       "type": "object",
       "properties": {
         "preset": {
-          "description": "Whether Cinch keeps the shared formatter config in the repository. Off unless set to true.",
+          "description": "Whether Ropes keeps the shared formatter config in the repository. Off unless set to true.",
           "type": "boolean"
         },
         "enabled": {
@@ -127,7 +127,7 @@
       "additionalProperties": false
     },
     "include": {
-      "description": "Root-relative globs for the files Cinch checks.",
+      "description": "Root-relative globs for the files Ropes checks.",
       "type": "array",
       "items": {
         "type": "string",
@@ -162,7 +162,7 @@
       "type": "object",
       "properties": {
         "preset": {
-          "description": "Whether Cinch keeps the shared lint config in the repository. Off unless set to true.",
+          "description": "Whether Ropes keeps the shared lint config in the repository. Off unless set to true.",
           "type": "boolean"
         },
         "enabled": {
@@ -184,7 +184,7 @@
           "type": "boolean"
         },
         "preset": {
-          "description": "Whether Cinch keeps the shared Markdown standard in the repository.",
+          "description": "Whether Ropes keeps the shared Markdown standard in the repository.",
           "type": "boolean"
         }
       },
@@ -228,7 +228,7 @@
                 "type": "boolean"
               },
               "preset": {
-                "description": "Whether Cinch keeps the shared Markdown standard in the repository.",
+                "description": "Whether Ropes keeps the shared Markdown standard in the repository.",
                 "type": "boolean"
               }
             },
@@ -350,7 +350,7 @@
           }
         },
         "packs": {
-          "description": "Shipped rule packs, by name, that are run. `cinch rules adopt` writes this.",
+          "description": "Shipped rule packs, by name, that are run. `rope rules adopt` writes this.",
           "type": "array",
           "items": {
             "type": "string",
@@ -371,7 +371,7 @@
       "additionalProperties": false
     },
     "tools": {
-      "description": "One table for each tool, in the tool's own settings. Cinch copies it into the config it generates for that tool.",
+      "description": "One table for each tool, in the tool's own settings. Ropes copies it into the config it generates for that tool.",
       "type": "object",
       "propertyNames": {
         "type": "string",
@@ -389,7 +389,7 @@
       "type": "object",
       "properties": {
         "preset": {
-          "description": "Whether Cinch keeps the shared TypeScript compiler options in the repository. Off unless set to true.",
+          "description": "Whether Ropes keeps the shared TypeScript compiler options in the repository. Off unless set to true.",
           "type": "boolean"
         },
         "enabled": {
@@ -402,6 +402,6 @@
   },
   "required": ["pilot"],
   "additionalProperties": false,
-  "description": "The pilot config of Cinch. Unstable: it will change without notice.",
-  "title": "cinch.toml"
+  "description": "The pilot config of Ropes. Unstable: it will change without notice.",
+  "title": "rope.toml"
 }

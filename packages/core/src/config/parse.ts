@@ -33,19 +33,19 @@ const OverrideSchema = z.strictObject({
   typescript: overrideSwitch("the matching files are type checked"),
 });
 /**
- * The shape of `cinch.toml`, and of the `[cinch]` table in `outfitter.toml`.
+ * The shape of `rope.toml`.
  * The loader and the published JSON Schema both come from this definition.
  */
 export const ConfigFileSchema = z.strictObject({
   editor: EditorSchema.optional().describe(
-    "Facts about text files that several tools must agree on. Cinch writes the root editor settings file from this table."
+    "Facts about text files that several tools must agree on. Ropes writes the root editor settings file from this table."
   ),
   exclude: Globs.optional().describe(
-    "Root-relative globs for files Cinch leaves alone."
+    "Root-relative globs for files Ropes leaves alone."
   ),
   format: OPT_IN.format.optional(),
   include: Globs.optional().describe(
-    "Root-relative globs for the files Cinch checks."
+    "Root-relative globs for the files Ropes checks."
   ),
   install: InstallSchema.optional(),
   lint: OPT_IN.lint.optional(),
@@ -63,7 +63,7 @@ export const ConfigFileSchema = z.strictObject({
     .record(z.string().min(1), z.record(z.string(), z.unknown()))
     .optional()
     .describe(
-      "One table for each tool, in the tool's own settings. Cinch copies it into the config it generates for that tool."
+      "One table for each tool, in the tool's own settings. Ropes copies it into the config it generates for that tool."
     ),
   typescript: OPT_IN.typescript.optional(),
 });
@@ -73,7 +73,7 @@ const VersionedSchema = z.looseObject({ pilot: z.unknown().optional() });
 export interface TableOrigin {
   /** Root-relative file name. */
   readonly file: string;
-  /** Empty for `cinch.toml`, `cinch.` for the table in `outfitter.toml`. */
+  /** Empty for a top-level policy. Nested table callers include the trailing dot. */
   readonly prefix: string;
 }
 
