@@ -1,6 +1,6 @@
 # Tool versions
 
-`mise.toml` is the one place a tool version is pinned. That covers Bun and every external binary the repository runs, starting with rumdl and Taplo. Local runs, CI and Cinch all read it.
+`mise.toml` is the one place a tool version is pinned. That covers Bun and every external binary the repository runs, starting with rumdl and Taplo. Local runs, CI and Ropes all read it.
 
 ## Change a version
 
@@ -17,15 +17,15 @@ If mise refuses to read `mise.toml` because the file is not trusted, which its p
 
 ## Without mise
 
-`scripts/bootstrap.sh` uses mise when it is installed and installs every pinned tool at its exact version. Without mise it accepts a Bun at or above the pin and prints a warning, because a newer runtime on the host is not a reason to stop. It does not install the other tools in that case, so the `cinch check` step of `bun run check` reports required engines such as rumdl, Lychee and Taplo as missing and the check fails until they are on `PATH`. CI always uses mise, so CI always runs the exact pins.
+`scripts/bootstrap.sh` uses mise when it is installed and installs every pinned tool at its exact version. Without mise it accepts a Bun at or above the pin and prints a warning, because a newer runtime on the host is not a reason to stop. It does not install the other tools in that case, so the `rope check` step of `bun run check` reports required engines such as rumdl, Lychee and Taplo as missing and the check fails until they are on `PATH`. CI always uses mise, so CI always runs the exact pins.
 
-## How a Cinch adapter learns its engine's version
+## How a Ropes adapter learns its engine's version
 
-`adapters/pins.ts` reads the `[tools]` table of `mise.toml`, and the registry hands each adapter the version pinned for its tool. The file is plain TOML, so reading it does not need mise installed. Only an exact three-part version counts as a pin. The runner compares the pin with the version the binary on `PATH` reports. Cinch does not install tools. A required tool that is missing or at the wrong version makes the step incomplete, never passed.
+`adapters/pins.ts` reads the `[tools]` table of `mise.toml`, and the registry hands each adapter the version pinned for its tool. The file is plain TOML, so reading it does not need mise installed. Only an exact three-part version counts as a pin. The runner compares the pin with the version the binary on `PATH` reports. Ropes does not install tools. A required tool that is missing or at the wrong version makes the step incomplete, never passed.
 
 ## A tool newer than its pin
 
-A host often has a newer tool than the pin, and that alone should not stop local work. So a tool that is newer than its pin still runs when it is inside the range its adapter was tested on. The run prints a note that names the installed version, the pin and the range, and the exit code does not change. `cinch explain` and `cinch doctor` show the same note beside the tool.
+A host often has a newer tool than the pin, and that alone should not stop local work. So a tool that is newer than its pin still runs when it is inside the range its adapter was tested on. The run prints a note that names the installed version, the pin and the range, and the exit code does not change. `rope explain` and `rope doctor` show the same note beside the tool.
 
 With `--strict`, or when the `CI` environment variable is `true`, only the exact pin will do, and a newer tool makes its steps incomplete as before. A tool older than its pin, or outside the tested range, is always incomplete.
 
@@ -35,7 +35,7 @@ When a repository does not pin a tool, the adapter falls back to the range of ve
 
 ## How installs behave
 
-The `[install]` table states the linker and minimum release age. Cinch generates this repository's `bunfig.toml` from that table. New package resolution waits seven days, and an existing reviewed lockfile retains its resolved versions. Deliberate package or exact-version exceptions belong in `release_age_exempt`. The [install policy guide](install-policy.md) covers adoption and authored configs.
+The `[install]` table states the linker and minimum release age. Ropes generates this repository's `bunfig.toml` from that table. New package resolution waits seven days, and an existing reviewed lockfile retains its resolved versions. Deliberate package or exact-version exceptions belong in `release_age_exempt`. The [install policy guide](install-policy.md) covers adoption and authored configs.
 
 ## Dependency versions across packages
 
