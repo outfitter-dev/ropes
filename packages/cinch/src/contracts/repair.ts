@@ -37,9 +37,20 @@ export const RepairInputSchema = z.object({
 });
 export type RepairInput = z.infer<typeof RepairInputSchema>;
 
-// The offline reader preserves observations made before results carried a
-// clock. Qualification still uses parseResult and requires the current version.
-const ArchivedResultSchema = z
+// Historical observations retain their original finding IDs. Only the offline
+// reader accepts them; new repairs and qualification require current results.
+const ArchivedV3ResultSchema = z
+  .object({
+    ...ResultSchema.unwrap().shape,
+    plan: PlanSchema.unwrap()
+      .extend({ schemaVersion: z.literal(3) })
+      .readonly(),
+    schemaVersion: z.literal(3),
+  })
+  .refine((result) => result.outcome === outcomeOf(result.steps))
+  .readonly();
+
+const ArchivedV2ResultSchema = z
   .object({
     ...ResultSchema.unwrap().shape,
     plan: PlanSchema.unwrap()
@@ -53,7 +64,11 @@ const ArchivedResultSchema = z
   .refine((result) => result.outcome === outcomeOf(result.steps))
   .readonly();
 
-const ObservedResultSchema = z.union([ResultSchema, ArchivedResultSchema]);
+const ObservedResultSchema = z.union([
+  ResultSchema,
+  ArchivedV3ResultSchema,
+  ArchivedV2ResultSchema,
+]);
 
 export const RepairRecordSchema = RepairInputSchema.extend({
   capturedAt: z.iso.datetime(),

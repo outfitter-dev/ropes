@@ -70,7 +70,7 @@ export interface ManagedOptions {
 }
 
 /** The rule every finding about a kept file is reported under. */
-export const MANAGED_RULE = "cinch/managed-file";
+export const MANAGED_RULE = "ropes/managed-file";
 const TOOL = "cinch";
 
 const read = async (file: string): Promise<string | null> => {
