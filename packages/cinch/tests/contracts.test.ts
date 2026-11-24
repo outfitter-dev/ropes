@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test";
 
+import { BUILT_ON_RULE } from "../src/adapters/built-on.ts";
+import { MANAGED_RULE } from "../src/adapters/managed.ts";
+import { UNKNOWN_RULE, UNUSED_RULE } from "../src/adapters/rumdl/markers.ts";
+import { CONFLICT_RULE } from "../src/contracts/conflict.ts";
 import {
   parseCleanup,
   parseFinding,
@@ -24,6 +28,22 @@ const [finding, plan, result] = await Promise.all([
   fixture("plan"),
   fixture("result"),
 ]);
+
+test("Ropes-owned findings use the v4 namespace", () => {
+  expect([
+    MANAGED_RULE,
+    BUILT_ON_RULE,
+    CONFLICT_RULE,
+    UNUSED_RULE,
+    UNKNOWN_RULE,
+  ]).toEqual([
+    "ropes/managed-file",
+    "ropes/preset-dependency",
+    "ropes/fix-conflict",
+    "ropes/unused-disable",
+    "ropes/unknown-disable",
+  ]);
+});
 
 test("the golden fixtures parse and come back unchanged", () => {
   const parsed: unknown[] = [
