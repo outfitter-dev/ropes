@@ -43,19 +43,19 @@ A repository set up by an older Cinch has the standard at `.outfitter/configs/ru
 The standard formats fenced TypeScript and JavaScript. A block that does not parse cannot be formatted, and is a finding under `code-block-parse`. Documentation sometimes shows a fragment on purpose: one object member, or a line with `...` in it. Put this comment right above the fence to say so. A blank line between the two is fine, and is what the formatter writes:
 
 ````md
-<!-- cinch-disable-next-line code-block-parse -->
+<!-- ropes-disable-next-line code-block-parse -->
 
 ```ts
 retries: 3,
 ```
 ````
 
-The comment is Cinch's, not rumdl's. rumdl 0.3.5 has no way to leave one block out of formatting, and its own `rumdl-disable` comments do not stop it. The comment is written the way rumdl writes its own, so it can give way to a native form when rumdl has one. Running rumdl by hand still warns about the block.
+Ropes handles this comment. rumdl 0.3.5 has no way to leave one block out of formatting, and its own `rumdl-disable` comments do not stop it. The comment is written the way rumdl writes its own, so it can give way to a native form when rumdl has one. Running rumdl by hand still warns about the block.
 
-Cinch checks that the comment is used correctly:
+Ropes checks how the comment is used.
 
 - Above a block that parses, or anywhere but right above a fence, it does nothing. That is a finding under `ropes/unused-disable`, on the comment's line.
-- A comment that starts with `cinch-` and is spelled any other way is a finding under `ropes/unknown-disable`, which names the right spelling. It excuses nothing.
+- A misspelled `ropes-` comment or a retired `cinch-` comment raises `ropes/unknown-disable` with the supported spelling. The original finding remains visible.
 - A comment inside a fenced block is that block's text, as in the example above.
 
 The comment covers `code-block-parse` only. For a rumdl rule, use rumdl's own comments.
