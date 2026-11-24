@@ -1,7 +1,9 @@
 import { afterAll, expect, test } from "bun:test";
 
-import { POINTER } from "../src/adapters/rumdl/preset.ts";
+import { markdownPaths } from "../src/adapters/rumdl/paths.ts";
+import { pointerFor } from "../src/adapters/rumdl/root-config.ts";
 import { commands } from "../src/commands/registry.ts";
+import { ROPES_MANAGED_DIR } from "../src/contracts/managed-config.ts";
 import {
   CINCH,
   CONFIG,
@@ -14,6 +16,8 @@ import {
   read,
   repo,
 } from "./relocate-repo.ts";
+
+const POINTER = pointerFor(markdownPaths(ROPES_MANAGED_DIR));
 
 afterAll(cleanUp);
 
@@ -88,15 +92,20 @@ test("a table written inline is not taken apart", async () => {
   expect(await read(root, CINCH)).toBe(held);
 });
 
-test("in the shared file the tables come out from under `cinch`", async () => {
+test("ejection refuses retired shared policy and retains unrelated tables", async () => {
   const shared = `[cinch]\npilot = 0\n\n[cinch.markdown]\nenabled = true\n\n[cinch.tools.rumdl.MD007]\nindent = 4\n\n[other]\nkept = true\n`;
   const root = await repo({ [SHARED]: shared });
-  const { report } = await move(root, "eject", { yes: true });
-  expect(report.changed[0]).toBe(SHARED);
-  expect(await read(root, SHARED)).toBe(
-    "[cinch]\npilot = 0\n\n[cinch.markdown]\nenabled = true\n\n[other]\nkept = true\n"
-  );
-  expect(await read(root, ROOT)).toBe(`${EXTENDS}\n[MD007]\nindent = 4\n`);
+  const response = await commands.preset?.({
+    action: "eject",
+    cwd: root,
+    json: true,
+    paths: ["markdown"],
+    yes: true,
+  });
+  expect(response?.exitCode).toBe(2);
+  expect(response?.error).toContain("[cinch]");
+  expect(await read(root, SHARED)).toBe(shared);
+  expect(await Bun.file(`${root}/${ROOT}`).exists()).toBe(false);
 });
 
 test("exactly one preset is named", async () => {

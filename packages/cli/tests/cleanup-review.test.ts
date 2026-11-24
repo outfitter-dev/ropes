@@ -23,7 +23,7 @@ test.skipIf(missingEngine)(
   "nested cleanup invocations keep the full repository tree and sibling findings",
   async () => {
     await withFixture(async ({ main }) => {
-      await Bun.write(path.join(main.root, "a/cinch.toml"), CONFIG);
+      await Bun.write(path.join(main.root, "a/rope.toml"), CONFIG);
       await Bun.write(
         path.join(main.root, "a/mise.toml"),
         '[tools]\n"ast-grep" = "0.51.3"\n'

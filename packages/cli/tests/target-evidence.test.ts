@@ -29,7 +29,7 @@ const resultOf = (ran: Ran) => {
 
 test("unresolved required target evidence stays incomplete and scoped", async () => {
   await withFixture(async ({ main, emptyPath }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     const known = await packageAt(main.root, "known", "^5.0.0");
     const ambiguous = await packageAt(main.root, "ambiguous", ">=4.9.0 <6.0.0");
     await Promise.all(
@@ -79,7 +79,7 @@ test("unresolved required target evidence stays incomplete and scoped", async ()
       "cannot read declared target"
     );
     const overridden = `${CONFIG}\n[[overrides]]\npaths = ["packages/ambiguous/**"]\n[overrides.rules]\nenabled = false\n`;
-    await Bun.write(path.join(main.root, "cinch.toml"), overridden);
+    await Bun.write(path.join(main.root, "rope.toml"), overridden);
     const disabled = await runEntry(
       ROPE,
       ["check", "packages/ambiguous", "--json"],
@@ -93,7 +93,7 @@ test("unresolved required target evidence stays incomplete and scoped", async ()
       )
     ).toBe(true);
     await Bun.write(
-      path.join(main.root, "cinch.toml"),
+      path.join(main.root, "rope.toml"),
       CONFIG.replace(
         'exclude = ["**/node_modules/**"]',
         'exclude = ["**/node_modules/**", "packages/ambiguous/**"]'
@@ -110,7 +110,7 @@ test("unresolved required target evidence stays incomplete and scoped", async ()
       skipped: { reason: "excluded" },
       steps: [],
     });
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(path.join(main.root, "index.ts"), BEFORE);
     await rm(path.join(main.root, "package.json"), { force: true });
     const missing = await runEntry(
@@ -129,7 +129,7 @@ test("unresolved required target evidence stays incomplete and scoped", async ()
 
 test("unsupported compiler diagnostics cannot claim a successful compatibility proof", async () => {
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     const current = await packageAt(main.root, "current", "^5.0.0");
     await Bun.write(
       path.join(current, "index.ts"),
@@ -149,7 +149,7 @@ test("unsupported compiler diagnostics cannot claim a successful compatibility p
 
 test("compiler aliases cannot substitute another module for the API proof", async () => {
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     const current = await packageAt(main.root, "current", "^5.0.0");
     await Bun.write(path.join(current, "index.ts"), BEFORE);
     await Bun.write(
@@ -191,7 +191,7 @@ test("compiler aliases cannot substitute another module for the API proof", asyn
 
 test("a nearer API install must satisfy the source package support target", async () => {
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     const current = await packageAt(main.root, "current", "^5.0.0");
     const nested = path.join(current, "nested");
     await Bun.write(path.join(nested, "index.ts"), BEFORE);

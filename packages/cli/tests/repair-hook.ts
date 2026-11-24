@@ -77,7 +77,7 @@ try {
   if (!explained.ok) {
     throw new Error(explained.error);
   }
-  const config = "cinch.toml";
+  const config = "rope.toml";
   const rule = "rules/private-import.yml";
   const tracked = await git("ls-files", "-z");
   const files = tracked.split("\0").filter((file) => file.length > 0);

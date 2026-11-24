@@ -6,7 +6,7 @@ import { DoctorReportSchema } from "../src/contracts/doctor.ts";
 import { FixReportSchema } from "../src/contracts/fix.ts";
 import { FILES, json, proof } from "./acceptance-repo.ts";
 
-const KEPT = ".outfitter/configs/rumdl.toml";
+const KEPT = ".ropes/configs/rumdl.toml";
 
 proof(
   "proof 6: fix leaves the managed setup alone, and doctor --fix repairs it",
@@ -33,7 +33,7 @@ proof(
       json(await main.rope(["doctor", "--fix", "--json"]))
     );
     expect(repaired.changed).toEqual([
-      ".outfitter/configs/presets/rumdl.toml",
+      ".ropes/configs/presets/rumdl.toml",
       KEPT,
       ".rumdl.toml",
     ]);
@@ -66,7 +66,7 @@ const rumdl = async (root: string, file: string): Promise<number> => {
 };
 
 proof(
-  "proof 7: a rule set in cinch.toml reaches the engine through doctor --fix",
+  "proof 7: a rule set in rope.toml reaches the engine through doctor --fix",
   async ({ main }) => {
     const exit = async (...args: string[]): Promise<number> => {
       const ran = await main.rope(args);
@@ -77,8 +77,8 @@ proof(
     expect(before.stdout).toContain("MD025");
     expect(await rumdl(main.root, "README.md")).toBe(1);
 
-    const stated = `${FILES["cinch.toml"]}\n[tools.rumdl.global]\nextend-disable = ["MD025", "MD082"]\n`;
-    await Bun.write(path.join(main.root, "cinch.toml"), stated);
+    const stated = `${FILES["rope.toml"]}\n[tools.rumdl.global]\nextend-disable = ["MD025", "MD082"]\n`;
+    await Bun.write(path.join(main.root, "rope.toml"), stated);
     // Until the setup is repaired, the stale generated config is reported.
     const stale = await main.rope(["check", "README.md", KEPT]);
     expect(stale.exitCode).toBe(1);

@@ -1,3 +1,5 @@
+import type { ConfigError } from "./config.ts";
+
 /** How the version-control boundary was recognised. */
 export type VcsKind =
   /** A `.git` directory. */
@@ -21,6 +23,7 @@ export interface RepoRoot {
 }
 
 export type RootError =
+  | { readonly kind: "configuration"; readonly error: ConfigError }
   /** No version-control boundary at or above the start directory. */
   | { readonly kind: "no-repo"; readonly from: string }
   /** A selected path lies outside the root. */

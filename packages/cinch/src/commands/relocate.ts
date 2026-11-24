@@ -1,7 +1,7 @@
 import path from "node:path";
 
 import type { ConfigText, Relocation } from "../adapters/relocation.ts";
-import { STANDALONE_FILE, loadConfig } from "../config/load.ts";
+import { ROPES_FILE, loadConfig } from "../config/load.ts";
 import { toRootRelative } from "../config/root.ts";
 import { SCHEMA_VERSION } from "../contracts/plan.ts";
 import type { RelocateAction, RelocateReport } from "../contracts/relocate.ts";
@@ -32,7 +32,7 @@ export const configText = async (
   if (!config.ok) {
     return { error: describeConfigError(config.error) };
   }
-  const file = config.value.file ?? STANDALONE_FILE;
+  const file = config.value.file ?? ROPES_FILE;
   return {
     file,
     prefix: config.value.prefix ?? "",

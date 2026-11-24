@@ -32,7 +32,7 @@ indent_style = "tab"
 test("the plan fills editor gaps only after explicit adoption", async () => {
   await withFixture(async ({ main }) => {
     await Bun.write(
-      path.join(main.root, "cinch.toml"),
+      path.join(main.root, "rope.toml"),
       `${CONFIG}
 [format]
 enabled = true
@@ -73,7 +73,7 @@ enabled = false
     expect(editors).not.toContain(".editorconfig");
 
     await Bun.write(
-      path.join(main.root, "cinch.toml"),
+      path.join(main.root, "rope.toml"),
       CONFIG.replace("check = true\n", "")
     );
     const disabled = await runEntry(
@@ -87,7 +87,7 @@ enabled = false
 
 test("editor findings name settings and preserve the worktree and index", async () => {
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     const dirty = path.join(main.root, "nested/[literal]/file.txt");
     await Bun.write(dirty, "\tbad ");
     await Bun.write(path.join(main.root, "Makefile"), "\tgood\n");
@@ -127,7 +127,7 @@ test("editor findings name settings and preserve the worktree and index", async 
 
 test("the built-in editor checker runs without an external executable", async () => {
   await withFixture(async ({ main, emptyPath }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(path.join(main.root, "a.txt"), "clean\n");
     await main.rope(["doctor", "--fix", "--json"]);
     const ran = await runEntry(

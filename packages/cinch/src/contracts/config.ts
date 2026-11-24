@@ -61,6 +61,11 @@ export interface CinchConfig {
 }
 
 export type ConfigError =
+  | {
+      readonly kind: "legacy";
+      readonly file: string;
+      readonly replacement: string;
+    }
   /** The file exists but could not be read. */
   | {
       readonly kind: "unreadable";

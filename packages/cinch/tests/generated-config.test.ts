@@ -137,7 +137,7 @@ const REPO = { ".git/HEAD": "" };
 const request = (root: string) => ({ cwd: root, json: true, paths: [] });
 
 test("explain names the layer of each file in the chain", async () => {
-  const files = { ...REPO, "cinch.toml": "pilot = 0\n" };
+  const files = { ...REPO, "rope.toml": "pilot = 0\n" };
   await inRoot(files, async (root) => {
     const { explain } = createCommands({ adapters: adaptersFor });
     const shown = await explain?.(request(root));
@@ -148,25 +148,25 @@ test("explain names the layer of each file in the chain", async () => {
         )
       : [];
     expect(layers).toEqual([
-      [PRESET_PATH, "preset"],
-      [GENERATED_PATH, "generated"],
+      [".ropes/configs/presets/rumdl.toml", "preset"],
+      [".ropes/configs/rumdl.toml", "generated"],
       [CONFIG_PATH, "root"],
     ]);
     const human = await explain?.({ ...request(root), json: false });
     expect(human?.output).toContain(
-      `${GENERATED_PATH}\n  layer: generated, generated from the Cinch config, and extends the preset`
+      `.ropes/configs/rumdl.toml\n  layer: generated, generated from the Cinch config, and extends the preset`
     );
   });
 });
 
 test("a table for a tool Cinch generates nothing for is an error", async () => {
-  const files = { ...REPO, "cinch.toml": "pilot = 0\n[tools.nope]\na = 1\n" };
+  const files = { ...REPO, "rope.toml": "pilot = 0\n[tools.nope]\na = 1\n" };
   await inRoot(files, async (root) => {
     const { check } = createCommands({ adapters: adaptersFor });
     const ran = await check?.(request(root));
     expect(ran?.exitCode).toBe(2);
     expect(ran?.error).toContain(
-      'cinch.toml: tools.nope: Cinch generates no config for "nope". It does for: rumdl.'
+      'rope.toml: tools.nope: Cinch generates no config for "nope". It does for: rumdl.'
     );
   });
 });
@@ -174,7 +174,7 @@ test("a table for a tool Cinch generates nothing for is an error", async () => {
 test("a table nothing reads because its preset is off is an error", async () => {
   const config =
     "pilot = 0\n[markdown]\npreset = false\n[tools.rumdl.MD007]\nindent = 4\n";
-  await inRoot({ ...REPO, "cinch.toml": config }, async (root) => {
+  await inRoot({ ...REPO, "rope.toml": config }, async (root) => {
     const { check } = createCommands({ adapters: adaptersFor });
     const ran = await check?.(request(root));
     expect(ran?.exitCode).toBe(2);
@@ -193,7 +193,7 @@ test("an adapter says which table it copies, and a plain one says none", () => {
   expect(plain.descriptor.layers).toBeUndefined();
 });
 
-const ORIGIN = { file: "cinch.toml", prefix: "" };
+const ORIGIN = { file: "rope.toml", prefix: "" };
 
 test("a table under tools is kept as the file states it", () => {
   const stated = Bun.TOML.parse(

@@ -33,13 +33,13 @@ const withTree = async <T>(
 
 test("from the repo root, the root is the directory with the config", async () => {
   await withTree(
-    { "repo/.git/": "", "repo/cinch.toml": CONFIG },
+    { "repo/.git/": "", "repo/rope.toml": CONFIG },
     async (base) => {
       const repo = path.join(base, "repo");
       expect(await discoverRoot(repo)).toEqual({
         ok: true,
         value: {
-          configFile: "cinch.toml",
+          configFile: "rope.toml",
           root: repo,
           startedIn: "",
           vcs: "git",
@@ -54,14 +54,14 @@ test("from a nested package, discovery walks up to the same root", async () => {
   await withTree(
     {
       "repo/.git/": "",
-      "repo/cinch.toml": CONFIG,
       "repo/packages/app/src/": "",
+      "repo/rope.toml": CONFIG,
     },
     async (base) => {
       const repo = path.join(base, "repo");
       const found = await discoverRoot(path.join(repo, "packages/app/src"));
       expect(found.ok && found.value).toMatchObject({
-        configFile: "cinch.toml",
+        configFile: "rope.toml",
         root: repo,
         startedIn: "packages/app/src",
       });
@@ -73,13 +73,14 @@ test("a nested outfitter.toml without a [cinch] table does not hide the root con
   await withTree(
     {
       "repo/.git/": "",
-      "repo/outfitter.toml": "[cinch]\npilot = 0\n",
+      "repo/outfitter.toml": '[other]\nname = "root"\n',
       "repo/packages/app/outfitter.toml": '[other]\nname = "x"\n',
+      "repo/rope.toml": CONFIG,
     },
     async (base) => {
       const found = await discoverRoot(path.join(base, "repo/packages/app"));
       expect(found.ok && found.value).toMatchObject({
-        configFile: "outfitter.toml",
+        configFile: "rope.toml",
         root: path.join(base, "repo"),
       });
     }
@@ -90,8 +91,8 @@ test("the nearest config sets the root, below the version-control boundary", asy
   await withTree(
     {
       "repo/.git/": "",
-      "repo/cinch.toml": CONFIG,
-      "repo/packages/app/cinch.toml": CONFIG,
+      "repo/packages/app/rope.toml": CONFIG,
+      "repo/rope.toml": CONFIG,
     },
     async (base) => {
       const repo = path.join(base, "repo");
@@ -117,7 +118,7 @@ test("with no config, the version-control boundary is the root", async () => {
 });
 
 test("a config above the version-control boundary is not read", async () => {
-  await withTree({ "cinch.toml": CONFIG, "repo/.git/": "" }, async (base) => {
+  await withTree({ "repo/.git/": "", "rope.toml": CONFIG }, async (base) => {
     const found = await discoverRoot(path.join(base, "repo"));
     expect(found.ok && found.value).toMatchObject({
       configFile: null,
@@ -130,10 +131,10 @@ test("a linked git worktree, where .git is a file, is its own root", async () =>
   await withTree(
     {
       "repo/.git/": "",
-      "repo/cinch.toml": CONFIG,
+      "repo/rope.toml": CONFIG,
       "repo/worktrees/feature/.git": "gitdir: ../../.git/worktrees/feature\n",
-      "repo/worktrees/feature/cinch.toml": CONFIG,
       "repo/worktrees/feature/docs/": "",
+      "repo/worktrees/feature/rope.toml": CONFIG,
     },
     async (base) => {
       const tree = path.join(base, "repo/worktrees/feature");
@@ -152,7 +153,7 @@ test("a jj workspace is a root, colocated with git or not", async () => {
     {
       "colocated/.git/": "",
       "colocated/.jj/": "",
-      "colocated/cinch.toml": CONFIG,
+      "colocated/rope.toml": CONFIG,
       "plain/.jj/": "",
       "plain/src/": "",
     },

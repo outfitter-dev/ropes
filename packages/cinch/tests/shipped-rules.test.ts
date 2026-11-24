@@ -132,9 +132,9 @@ test("on the real engine a compiler config that builds on nothing is a finding",
     );
     // The kept preset extends nothing. The rule skips both managed directories.
     const base = '{ "compilerOptions": {} }\n';
-    expect(
-      await check(".outfitter/configs/presets/tsconfig.json", base)
-    ).toEqual(["passed"]);
+    expect(await check(".ropes/configs/presets/tsconfig.json", base)).toEqual([
+      "passed",
+    ]);
     expect(await check(".ropes/configs/presets/tsconfig.json", base)).toEqual([
       "passed",
     ]);

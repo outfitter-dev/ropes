@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { adaptersFor } from "../src/adapters/registry.ts";
+import { markdownPaths } from "../src/adapters/rumdl/paths.ts";
 import {
   CONFIG_PATH,
   GENERATED_PATH,
@@ -12,6 +13,7 @@ import {
 import { createCommands } from "../src/commands/registry.ts";
 import { DoctorReportSchema } from "../src/contracts/doctor.ts";
 import { InitReportSchema } from "../src/contracts/init.ts";
+import { ROPES_MANAGED_DIR } from "../src/contracts/managed-config.ts";
 
 const OLD = ".markdownlint.json";
 const RUNNER = ".markdownlint-cli2.jsonc";
@@ -148,7 +150,8 @@ test("doctor --fix adds the line to a person's config and nothing else", async (
     const { doctor } = createCommands({ adapters: adaptersFor });
     await doctor?.({ cwd: root, fix: true, json: true, paths: [] });
     const text = await Bun.file(path.join(root, CONFIG_PATH)).text();
-    expect(text).toBe(`extends = ${JSON.stringify(GENERATED_PATH)}\n\n${mine}`);
+    const { generated } = markdownPaths(ROPES_MANAGED_DIR);
+    expect(text).toBe(`extends = ${JSON.stringify(generated)}\n\n${mine}`);
     expect(await Bun.file(path.join(root, OLD)).text()).toBe(RULES);
   });
 });
@@ -185,7 +188,7 @@ withEngine(
   async () => {
     const files = {
       [OLD]: RULES,
-      "cinch.toml": `pilot = 0\nexclude = [${JSON.stringify(CONFIG_PATH)}]\n`,
+      "rope.toml": `pilot = 0\nexclude = [${JSON.stringify(CONFIG_PATH)}]\n`,
     };
     await inRoot(files, async (root) => {
       const commands = createCommands({ adapters: adaptersFor });

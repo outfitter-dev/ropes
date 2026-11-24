@@ -31,7 +31,7 @@ const inputFor = (result: Result): RepairInput => ({
   edit: { baseFiles: {}, baseRevision: "fixture", patch: "" },
   event: { host: "claude-code", id: "event", session: "session" },
   original: result,
-  policy: { file: "cinch.toml", hash: "policy-version" },
+  policy: { file: "rope.toml", hash: "policy-version" },
   repository: "fixture",
   result,
   tools: [],
@@ -110,7 +110,7 @@ test("repair storage rejects aliases and the entire checkout before creating dir
     await withFixture(async ({ main }) => {
       const nested = path.join(main.root, "nested");
       await Bun.write(
-        path.join(nested, "cinch.toml"),
+        path.join(nested, "rope.toml"),
         "pilot = 0\n[markdown]\nenabled = false\npreset = false\n[toml]\nenabled = false\n"
       );
       const checked = await check({ cwd: nested, paths: [] });

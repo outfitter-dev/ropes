@@ -21,7 +21,7 @@ test("selected Markdown validates cross-package local files and headings offline
     return;
   }
   await withFixture(async ({ main, emptyPath }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(
       path.join(main.root, "packages/guide/package.json"),
       '{"name":"guide"}\n'
@@ -88,7 +88,7 @@ test("selected Markdown validates cross-package local files and headings offline
     );
     expect(noEngine.exitCode).toBe(2);
     await Bun.write(
-      path.join(main.root, "cinch.toml"),
+      path.join(main.root, "rope.toml"),
       `${CONFIG}\n[[overrides]]\npaths = ["index.md"]\n[overrides.markdown]\nenabled = false\nlinks = false\n`
     );
     const disabled = await runEntry(
@@ -118,7 +118,7 @@ test("local link checking never requests an external URL", async () => {
   });
   try {
     await withFixture(async ({ main }) => {
-      await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+      await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
       await Bun.write(
         path.join(main.root, "external.md"),
         `# External\n\n[External](${server.url.href})\n`
@@ -144,7 +144,7 @@ test("link previews retain ignored target headings without changing the checkout
     return;
   }
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(path.join(main.root, ".gitignore"), "generated/\n");
     await Bun.write(
       path.join(main.root, "generated/guide.md"),

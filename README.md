@@ -19,13 +19,13 @@ bun add --dev --exact @ropes/cli@VERSION
 ./node_modules/.bin/rope check README.md
 ```
 
-`init` previews `rope.toml` and its managed setup. `init --yes` applies the preview. When the setup needs repair, run `rope doctor --fix --dry-run` to preview the changes and `rope doctor --fix` to apply them. Repositories with Cinch config can preview the conversion with `rope migrate`.
+`init` previews `rope.toml` and its managed setup. `init --yes` applies the preview. When the setup needs repair, run `rope doctor --fix --dry-run` to preview the changes and `rope doctor --fix` to apply them. For a repository with retired policy files, follow the [manual migration guide](docs/config-migration.md).
 
 The npm-installed `rope` launcher delegates to the checkout's explicitly pinned `@ropes/cli` dependency, and `rope --version` reports the selected version and entry path. The standalone executable runs its embedded version, pinned through mise, and reports `rope <version> (binary)`. See [installation selection](docs/launcher.md) for both routes and their failure handling.
 
 `rope explain` and `rope check` can compare an immutable cleanup candidate with its parent under an approved migration policy. See [staged cleanup](docs/cleanup.md) for the supported rule, scope and Git inputs.
 
-This repository checks and fixes itself through `rope`. Ropes reads `rope.toml` and keeps its managed files under `.ropes/configs/`. During the pilot it also reads legacy `cinch.toml` or `[cinch]` in `outfitter.toml`, with managed files under `.outfitter/configs/`. The [cutover inventory](docs/cutover.md) records the compatibility choices.
+This repository checks and fixes itself through `rope`. Ropes reads `rope.toml` and keeps its managed files under `.ropes/configs/`. Legacy policy files stop repository checks with a message naming the replacement. The [cutover inventory](docs/cutover.md) records the compatibility choices.
 
 `rope rules` lists the shipped packs and their state in this repository. Use `rope rules adopt [pack...]` to preview an adoption and add `--yes` to write it. The active policy file is the only file adoption changes.
 

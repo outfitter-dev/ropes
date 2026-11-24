@@ -88,10 +88,10 @@ withEngine("TOML that does not parse is a finding at its place", async () => {
 
 withEngine("a config the schema refuses is a schema finding", async () => {
   const files = {
-    ".taplo.toml": `[[rule]]\ninclude = ["cinch.toml"]\n\n[rule.schema]\npath = ${JSON.stringify(SCHEMA)}\n`,
-    "cinch.toml": "pilot = 0\nnope = 1\n",
+    ".taplo.toml": `[[rule]]\ninclude = ["rope.toml"]\n\n[rule.schema]\npath = ${JSON.stringify(SCHEMA)}\n`,
+    "rope.toml": "pilot = 0\nnope = 1\n",
   };
-  const outcome = await checked(files, "cinch.toml");
+  const outcome = await checked(files, "rope.toml");
   expect(outcome.status).toBe("findings");
   expect(new Set(outcome.findings.map((finding) => finding.rule))).toEqual(
     new Set(["schema"])

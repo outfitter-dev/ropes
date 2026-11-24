@@ -5,6 +5,7 @@ import { parseConfigTable } from "../config/parse.ts";
 import { discoverRoot } from "../config/root.ts";
 import type { CinchConfig } from "../contracts/config.ts";
 import type { Operation, ReadRequest } from "./command.ts";
+import { describeRootError } from "./errors.ts";
 import { prepare } from "./prepare.ts";
 import type { CommandDeps, Prepared } from "./prepare.ts";
 import { configText } from "./relocate.ts";
@@ -60,7 +61,7 @@ export const prepareAdoption = async (
   const located = await discoverRoot(request.cwd);
   if (!located.ok) {
     return {
-      error: "Could not locate the repository for rule adoption.",
+      error: describeRootError(located.error),
       ok: false,
     };
   }

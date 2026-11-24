@@ -14,7 +14,7 @@ const config = (
   rules: string,
   packs = 'packs = ["config"]\n'
 ): Promise<number> =>
-  put("cinch.toml", `pilot = 0\n\n[rules]\n${packs}${rules}`);
+  put("rope.toml", `pilot = 0\n\n[rules]\n${packs}${rules}`);
 
 const run = async (request: Partial<CommandRequest> = {}) => {
   const response = await commands.rules?.({
@@ -79,17 +79,17 @@ test("a name the config turns off is off, pack or rule", async () => {
 });
 
 test("with rules not switched on, the packs are still listed", async () => {
-  await put("cinch.toml", 'pilot = 0\n\n[rules]\npacks = ["config"]\n');
+  await put("rope.toml", 'pilot = 0\n\n[rules]\npacks = ["config"]\n');
   await put("tsconfig.json", "{}\n");
   const listed = await report();
   expect(listed.enabled).toBe(false);
   expect(await state()).toBe("not-enabled");
   const shown = await run({ json: false });
   expect(shown.output).toStartWith(
-    "Rules are not switched on here, so none of these run. Set `enabled = true` under `[rules]` in cinch.toml to run them."
+    "Rules are not switched on here, so none of these run. Set `enabled = true` under `[rules]` in rope.toml to run them."
   );
   expect(shown.output).toContain(
-    "config  would run, since tsconfig.json is here (cinch.toml: rules.packs)"
+    "config  would run, since tsconfig.json is here (rope.toml: rules.packs)"
   );
 });
 
@@ -108,7 +108,7 @@ test("a pack name nothing has is refused", async () => {
   const refused = await run();
   expect(refused.exitCode).toBe(2);
   expect(refused.error).toBe(
-    'cinch: cinch.toml: rules.packs: Cinch ships no rule pack named "nope".'
+    'cinch: rope.toml: rules.packs: Cinch ships no rule pack named "nope".'
   );
 });
 
@@ -128,22 +128,20 @@ test("the text names the local rule folders", async () => {
   const shown = await run({ json: false });
   expect(shown.exitCode).toBe(0);
   expect(shown.output).toContain(
-    "Local rules\n  rules  (cinch.toml: rules.local)"
+    "Local rules\n  rules  (rope.toml: rules.local)"
   );
 });
 
-test("a shared config is told its own table, and local folders show before rules are on", async () => {
-  await put(
-    "outfitter.toml",
-    '[cinch]\npilot = 0\n\n[cinch.rules]\nlocal = ["rules"]\n'
-  );
+test("local folders show before rules are on alongside unrelated shared tables", async () => {
+  await put("rope.toml", 'pilot = 0\n[rules]\nlocal = ["rules"]\n');
+  await put("outfitter.toml", '[other]\nname = "sample"\n');
   await put("tsconfig.json", "{}\n");
   const shown = await run({ json: false });
   expect(shown.output).toStartWith(
-    "Rules are not switched on here, so none of these run. Set `enabled = true` under `[cinch.rules]` in outfitter.toml to run them."
+    "Rules are not switched on here, so none of these run. Set `enabled = true` under `[rules]` in rope.toml to run them."
   );
   expect(shown.output).toContain(
-    "Local rules\n  rules  (outfitter.toml: cinch.rules.local)"
+    "Local rules\n  rules  (rope.toml: rules.local)"
   );
 });
 
@@ -160,15 +158,15 @@ test("a named pack whose files the config leaves out is noted", async () => {
   await put("tsconfig.json", "{}\n");
   await config("enabled = true\n");
   const note =
-    'config will not run yet: cinch.toml leaves out the files it reads, such as tsconfig.json. Add "**/tsconfig.json" to `include` to run it.';
+    'config will not run yet: rope.toml leaves out the files it reads, such as tsconfig.json. Add "**/tsconfig.json" to `include` to run it.';
   expect(await report().then((one) => one.notes)).toEqual([note]);
   const shown = await run({ json: false });
   expect(shown.output).toEndWith(`\n\n${note}`);
   await put(
-    "cinch.toml",
+    "rope.toml",
     'pilot = 0\ninclude = ["**/*.json"]\n\n[rules]\nenabled = true\npacks = ["config"]\n'
   );
   expect(await report().then((one) => one.notes)).toEqual([]);
-  await put("cinch.toml", "pilot = 0\n\n[rules]\nenabled = true\n");
+  await put("rope.toml", "pilot = 0\n\n[rules]\nenabled = true\n");
   expect(await report().then((one) => one.notes)).toEqual([]);
 });

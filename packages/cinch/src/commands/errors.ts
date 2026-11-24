@@ -1,23 +1,11 @@
 import type { ConfigError } from "../contracts/config.ts";
 import type { RootError } from "../contracts/root.ts";
 
-/** One line a person can act on. Every kind is spelled out, none falls through. */
-export const describeRootError = (error: RootError): string => {
-  switch (error.kind) {
-    case "no-repo": {
-      return `${error.from} is not inside a git or jj repository.`;
-    }
-    case "outside-root": {
-      return `${error.path} is outside the root ${error.root}.`;
-    }
-    default: {
-      return error satisfies never;
-    }
-  }
-};
-
 export const describeConfigError = (error: ConfigError): string => {
   switch (error.kind) {
+    case "legacy": {
+      return `${error.file} uses retired Cinch configuration. ${error.replacement}`;
+    }
     case "unreadable": {
       return `${error.file} could not be read: ${error.message}`;
     }
@@ -35,6 +23,24 @@ export const describeConfigError = (error: ConfigError): string => {
     }
     case "conflict": {
       return `${error.files.join(" and ")} configure the same run. Keep one.`;
+    }
+    default: {
+      return error satisfies never;
+    }
+  }
+};
+
+/** One line a person can act on. Every kind is spelled out, none falls through. */
+export const describeRootError = (error: RootError): string => {
+  switch (error.kind) {
+    case "configuration": {
+      return describeConfigError(error.error);
+    }
+    case "no-repo": {
+      return `${error.from} is not inside a git or jj repository.`;
+    }
+    case "outside-root": {
+      return `${error.path} is outside the root ${error.root}.`;
     }
     default: {
       return error satisfies never;

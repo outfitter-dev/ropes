@@ -12,7 +12,7 @@ import { checkoutAt, fixtureGit } from "./acceptance-repo.ts";
 const ON =
   "pilot = 0\n[markdown]\npreset = false\n[lint]\npreset = true\n[format]\npreset = true\n[typescript]\npreset = true\n";
 const ROOTS = ["oxlint.config.ts", "oxfmt.config.ts", "tsconfig.json"];
-const TS_PRESET = "./.outfitter/configs/presets/tsconfig.json";
+const TS_PRESET = "./.ropes/configs/presets/tsconfig.json";
 
 const commands = createCommands({ adapters: adaptersFor });
 
@@ -20,7 +20,7 @@ let root = "";
 beforeEach(async () => {
   root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-roots-")));
   await mkdir(path.join(root, ".git"));
-  await Bun.write(path.join(root, "cinch.toml"), ON);
+  await Bun.write(path.join(root, "rope.toml"), ON);
   await Bun.write(
     path.join(root, "node_modules/ultracite/package.json"),
     JSON.stringify({ name: "ultracite", version: "8.1.1" })
@@ -105,7 +105,7 @@ test("an import in a comment, or of a type only, does not count", async () => {
   await doctor({ fix: true });
   await put(
     "oxlint.config.ts",
-    '// import preset from "./.outfitter/configs/presets/oxlint.ts";\nimport type preset from "./.outfitter/configs/presets/oxlint.ts";\nexport default {};\n'
+    '// import preset from "./.ropes/configs/presets/oxlint.ts";\nimport type preset from "./.ropes/configs/presets/oxlint.ts";\nexport default {};\n'
   );
   expect(await about("oxlint.config.ts")).toHaveLength(1);
 });
@@ -114,7 +114,7 @@ test("a bare module specifier cannot import the local preset", async () => {
   await doctor({ fix: true });
   await put(
     "oxlint.config.ts",
-    'import preset from ".outfitter/configs/presets/oxlint.ts";\nexport default preset;\n'
+    'import preset from ".ropes/configs/presets/oxlint.ts";\nexport default preset;\n'
   );
   expect(await about("oxlint.config.ts")).toHaveLength(1);
 });
@@ -234,7 +234,7 @@ test("a tsconfig.json that cannot be read is a finding, not a rewrite", async ()
 });
 
 test("with the presets off, no root config is checked or written", async () => {
-  await put("cinch.toml", "pilot = 0\n");
+  await put("rope.toml", "pilot = 0\n");
   await doctor({ fix: true });
   const here = await Promise.all(
     ROOTS.map((file) => Bun.file(path.join(root, file)).exists())

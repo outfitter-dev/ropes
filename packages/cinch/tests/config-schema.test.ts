@@ -7,7 +7,7 @@ import { parseConfigTable } from "../src/config/parse.ts";
 import { configJsonSchema } from "../src/config/schema.ts";
 
 const PUBLISHED = path.resolve(import.meta.dir, "../schemas/cinch.schema.json");
-const ORIGIN = { file: "cinch.toml", prefix: "" };
+const ORIGIN = { file: "rope.toml", prefix: "" };
 
 test("the published schema is the one the loader's definition gives", async () => {
   const published: unknown = await Bun.file(PUBLISHED).json();
@@ -28,7 +28,7 @@ test("the schema refuses a key the loader refuses", () => {
 const lint = async (text: string): Promise<{ code: number; said: string }> => {
   const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-tp-")));
   try {
-    await Bun.write(path.join(root, "cinch.toml"), text);
+    await Bun.write(path.join(root, "rope.toml"), text);
     const child = Bun.spawn(
       [
         "taplo",
@@ -38,7 +38,7 @@ const lint = async (text: string): Promise<{ code: number; said: string }> => {
         "--no-auto-config",
         "--schema",
         Bun.pathToFileURL(PUBLISHED).href,
-        "cinch.toml",
+        "rope.toml",
       ],
       { cwd: root, stderr: "pipe", stdin: "ignore", stdout: "ignore" }
     );

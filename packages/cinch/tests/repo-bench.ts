@@ -16,8 +16,8 @@ export const CONFIG = 'pilot = 0\nexclude = ["vendor/**"]\n';
 export const BASE: Tree = {
   ".git/": "",
   "a.md": "# A\n",
-  "cinch.toml": CONFIG,
   "docs/b.md": "# B\n",
+  "rope.toml": CONFIG,
   "src/index.ts": "export {};\n",
   "vendor/c.md": "# C\n",
 };

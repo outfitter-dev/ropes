@@ -42,7 +42,7 @@ test("explicit rule policy changes the verdict while preserving native diagnosti
   await withFixture(async ({ main }) => {
     const join = (file: string) => path.join(main.root, file);
     await Promise.all(PATHS.map((file) => Bun.write(join(file), "{}\n")));
-    await Bun.write(join("cinch.toml"), BASE);
+    await Bun.write(join("rope.toml"), BASE);
     const baseline = await runEntry(
       ROPE,
       ["check", ...PATHS, "--json"],
@@ -58,7 +58,7 @@ test("explicit rule policy changes the verdict while preserving native diagnosti
     });
     expect(original[0]?.enforcement).toBeUndefined();
 
-    await Bun.write(join("cinch.toml"), TRY_RULE);
+    await Bun.write(join("rope.toml"), TRY_RULE);
     const before = await main.files();
     const advisory = await runEntry(
       ROPE,
@@ -78,7 +78,7 @@ test("explicit rule policy changes the verdict while preserving native diagnosti
     expect(matches[0]?.enforcement).toEqual({
       level: "advisory",
       source: {
-        file: "cinch.toml",
+        file: "rope.toml",
         key: `rules.enforcement.${RULE}`,
         kind: "file",
       },
@@ -95,7 +95,7 @@ test("explicit rule policy changes the verdict while preserving native diagnosti
       ok: false,
     });
 
-    await Bun.write(join("cinch.toml"), MIXED);
+    await Bun.write(join("rope.toml"), MIXED);
     const mixed = await runEntry(
       ROPE,
       ["check", ...PATHS, "--json"],
@@ -113,7 +113,7 @@ test("explicit rule policy changes the verdict while preserving native diagnosti
     ).toEqual({
       level: "blocking",
       source: {
-        file: "cinch.toml",
+        file: "rope.toml",
         key: `overrides.0.rules.enforcement.${RULE}`,
         kind: "file",
       },
@@ -133,7 +133,7 @@ test("explicit rule policy changes the verdict while preserving native diagnosti
     ).toContainEqual({
       key: `rules.enforcement.${RULE}`,
       source: {
-        file: "cinch.toml",
+        file: "rope.toml",
         key: `overrides.0.rules.enforcement.${RULE}`,
         kind: "file",
       },
@@ -152,7 +152,7 @@ test("explicit rule policy changes the verdict while preserving native diagnosti
     await symlink(engine, path.join(onlyEngine, "ast-grep"));
     await Bun.write(join("data.toml"), "answer = 42\n");
     await Bun.write(
-      join("cinch.toml"),
+      join("rope.toml"),
       MIXED.replace(
         'include = ["**/tsconfig.json"]',
         'include = ["**/tsconfig.json", "*.toml"]'
@@ -173,7 +173,7 @@ test("explicit rule policy changes the verdict while preserving native diagnosti
     );
 
     await Bun.write(
-      join("cinch.toml"),
+      join("rope.toml"),
       `${MIXED}
 [[overrides]]
 paths = ["packages/blocking/**"]
@@ -201,7 +201,7 @@ paths = ["packages/blocking/**"]
     );
     await chmod(unused, 0o755);
     await Bun.write(
-      join("cinch.toml"),
+      join("rope.toml"),
       TRY_RULE.replace('packs = ["config"]', "packs = []")
     );
     const unadopted = await runEntry(
@@ -215,7 +215,7 @@ paths = ["packages/blocking/**"]
     expect(await Bun.file(marker).exists()).toBe(false);
 
     await Bun.write(
-      join("cinch.toml"),
+      join("rope.toml"),
       TRY_RULE.replace(RULE, "config/misspelled")
     );
     const typo = await runEntry(ROPE, ["check", ...PATHS, "--json"], main.root);

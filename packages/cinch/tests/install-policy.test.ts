@@ -42,7 +42,7 @@ test("doctor preserves equivalent authored files and mixed native settings", asy
     {
       "bunfig.toml":
         '# Authored.\n[install]\nlinker = "isolated"\nminimumReleaseAge = 604800\n',
-      "cinch.toml": CONFIG,
+      "rope.toml": CONFIG,
     },
     async (root) => {
       const request = { cwd: root, json: true, paths: [] };
@@ -123,8 +123,8 @@ test("doctor reports authored Renovate release-age drift without writing it", as
   await fixture(
     {
       "bunfig.toml": render(SETTINGS),
-      "cinch.toml": CONFIG,
       "renovate.json": original,
+      "rope.toml": CONFIG,
     },
     async (root) => {
       const request = { cwd: root, json: true, paths: [] };
@@ -168,13 +168,13 @@ test("init carries install facts into a first config while preserving the author
     const request = { cwd: root, json: true, paths: [] };
     const preview = await commands.init?.(request);
     expect(preview?.exitCode).toBe(0);
-    expect(await Bun.file(path.join(root, "cinch.toml")).exists()).toBe(false);
+    expect(await Bun.file(path.join(root, "rope.toml")).exists()).toBe(false);
     expect(await Bun.file(path.join(root, "bunfig.toml")).text()).toBe(
       original
     );
     const applied = await commands.init?.({ ...request, yes: true });
     expect(applied?.exitCode).toBe(0);
-    expect(await Bun.file(path.join(root, "cinch.toml")).text()).toContain(
+    expect(await Bun.file(path.join(root, "rope.toml")).text()).toContain(
       "[install]"
     );
     const generated = await commands.doctor?.({ ...request, fix: true });

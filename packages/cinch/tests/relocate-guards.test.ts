@@ -16,7 +16,7 @@ import {
   repo,
 } from "./relocate-repo.ts";
 
-const PRESET = ".outfitter/configs/presets/rumdl.toml";
+const PRESET = ".ropes/configs/presets/rumdl.toml";
 const TABLE = `${CONFIG}\n[tools.rumdl.MD007]\nindent = 4\n`;
 const extra: string[] = [];
 
@@ -116,7 +116,7 @@ test("a Cinch config linked from outside the repository is not written", async (
   const failed = await move(root, "adopt", { yes: true })
     .then(() => "")
     .catch(String);
-  expect(failed).toContain("cinch.toml leads outside the repository");
+  expect(failed).toContain("rope.toml leads outside the repository");
   expect(await Bun.file(target).text()).toBe(CONFIG);
   expect(await read(root, ROOT)).toBe(own);
 });

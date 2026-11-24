@@ -61,7 +61,7 @@ test("explain shows policy, origin, steps and the root without running a step", 
     expect(response.exitCode).toBe(0);
     expect(response.output).toBe(
       [
-        `Root: ${root}\nConfig: cinch.toml`,
+        `Root: ${root}\nConfig: rope.toml`,
         "a.md\n  package: the workspace\n  policy\n    markdown.enabled = true  (default)\n    toml.enabled = true  (default)\n  steps\n    fake  fake-tool *  checks and fixes",
         "Tools\n  fake-tool  available, needs *",
         "1 file, 1 step planned in 1 batch. Nothing was run.",
@@ -87,12 +87,12 @@ test("explain still shows the whole plan when the tool is missing", async () => 
 test("an override shows up in explain with the key that set it", async () => {
   const tree = {
     ...BASE,
-    "cinch.toml": `${CONFIG}\n[[overrides]]\npaths = ["docs/**"]\n[overrides.markdown]\nenabled = false\n`,
+    "rope.toml": `${CONFIG}\n[[overrides]]\npaths = ["docs/**"]\n[overrides.markdown]\nenabled = false\n`,
   };
   await withRepo(tree, {}, async ({ adapter, run }) => {
     const explained = await run("explain", ["docs/b.md"]);
     expect(explained.output).toContain(
-      "markdown.enabled = false  (cinch.toml: overrides.0.markdown.enabled)"
+      "markdown.enabled = false  (rope.toml: overrides.0.markdown.enabled)"
     );
     expect(explained.output).toContain("no step applies to this file");
     await run("check", ["docs/b.md"]);
@@ -107,8 +107,8 @@ test("a kept file joins the workspace before it exists, and only the workspace",
     expect(planPaths(all)).toEqual([
       ".kept.toml",
       "a.md",
-      "cinch.toml",
       "docs/b.md",
+      "rope.toml",
     ]);
     const named = await run("explain", ["a.md"], { json: true });
     expect(planPaths(named)).toEqual(["a.md"]);

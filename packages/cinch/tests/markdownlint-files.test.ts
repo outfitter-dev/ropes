@@ -154,7 +154,7 @@ test("the starter config states carried choices once and loads", async () => {
   expect(text).toContain(
     `# From ${RUNNER}: "/abs" in \`ignores\` was not carried over.`
   );
-  await Bun.write(path.join(root, "cinch.toml"), text);
+  await Bun.write(path.join(root, "rope.toml"), text);
   const loaded = await loadConfig(root);
   expect(loaded).toMatchObject({
     ok: true,

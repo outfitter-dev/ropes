@@ -33,7 +33,7 @@ packs = ["config", "typescript-api"]
 
 test("policy preview compares the clock and package target without running engines or writing", async () => {
   await withFixture(async ({ main, emptyPath }) => {
-    const config = path.join(main.root, "cinch.toml");
+    const config = path.join(main.root, "rope.toml");
     const manifest = path.join(main.root, "packages/app/package.json");
     await Promise.all([
       Bun.write(config, POLICY),
@@ -141,7 +141,7 @@ test("policy preview compares the clock and package target without running engin
 
 test("policy preview distinguishes pack adoption, unrelated edits and missing coverage", async () => {
   await withFixture(async ({ main, emptyPath }) => {
-    const config = path.join(main.root, "cinch.toml");
+    const config = path.join(main.root, "rope.toml");
     const manifest = path.join(main.root, "packages/app/package.json");
     const markdown = path.join(main.root, "new-notes.md");
     await Promise.all([

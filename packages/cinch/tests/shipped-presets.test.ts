@@ -9,7 +9,7 @@ import { createCommands } from "../src/commands/registry.ts";
 import { parseConfigTable } from "../src/config/parse.ts";
 import { PresetReportSchema } from "../src/contracts/preset.ts";
 
-const PRESETS = ".outfitter/configs/presets";
+const PRESETS = ".ropes/configs/presets";
 const SHIPPED = path.join(import.meta.dir, "..", "presets");
 const FILES = ["oxfmt.ts", "oxlint.ts", "tsconfig.json"];
 const ON =
@@ -35,7 +35,7 @@ const run = (verb: string, request: Partial<CommandRequest> = {}) => {
 };
 
 const config = (text: string): Promise<number> =>
-  Bun.write(path.join(root, "cinch.toml"), `pilot = 0\n${text}`);
+  Bun.write(path.join(root, "rope.toml"), `pilot = 0\n${text}`);
 
 /** Puts a package at one version where the repository would import it. */
 const install = (name: string, version: string): Promise<number> =>
@@ -143,7 +143,7 @@ test("a hand edit to a kept preset is a finding that doctor repairs", async () =
 });
 
 test("the preset tables take no key they do not know", () => {
-  const origin = { file: "cinch.toml", prefix: "" };
+  const origin = { file: "rope.toml", prefix: "" };
   const stated = parseConfigTable(
     { lint: { preset: true }, pilot: 0, typescript: { preset: false } },
     origin

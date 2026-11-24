@@ -130,15 +130,17 @@ export const smoke = async (
   await rm(config);
   await rm(managed, { recursive: true });
   await rm(path.join(consumer, ".rumdl.toml"));
-  await Bun.write(path.join(consumer, "cinch.toml"), "pilot = 0\n");
+  const legacyConfig = path.join(consumer, "cinch.toml");
+  await Bun.write(legacyConfig, "pilot = 0\n");
+  await run([executable, "preset", "--json"], consumer, { exitCode: 2 });
+  assert.equal(await Bun.file(legacyConfig).text(), "pilot = 0\n");
+  assert.deepEqual(await index.bytes(), before);
+  await rm(legacyConfig);
+  await Bun.write(config, "pilot = 0\n");
   const presets = await run([executable, "preset", "--json"], consumer, {
     exitCode: 1,
   });
-  if (!presets.includes(".outfitter/configs/presets/rumdl.toml")) {
-    throw new Error(
-      "The packed preset command did not preserve legacy managed paths"
-    );
-  }
+  assert.ok(presets.includes(".ropes/configs/presets/rumdl.toml"));
   await Bun.write(
     path.join(consumer, "explain.ts"),
     `
@@ -200,11 +202,11 @@ console.log(JSON.stringify(parsed.value));
   );
   const adoption = RulesAdoptReportSchema.parse(JSON.parse(rulesPreview));
   assert.deepEqual(adoption.adopted, ["config"]);
-  assert.deepEqual(adoption.changed, ["cinch.toml"]);
+  assert.deepEqual(adoption.changed, ["rope.toml"]);
   assert.ok(adoption.diff.includes('+packs = ["config"]'));
   assert.equal(adoption.written, false);
   assert.equal(
-    await Bun.file(path.join(consumer, "cinch.toml")).text(),
+    await Bun.file(path.join(consumer, "rope.toml")).text(),
     "pilot = 0\n"
   );
   await proveConsumer(consumer);

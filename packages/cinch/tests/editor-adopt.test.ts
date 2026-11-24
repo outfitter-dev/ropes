@@ -56,28 +56,28 @@ const move = async (
 };
 
 test("adopt shows the table and the generated file, and writes neither", async () => {
-  await put("cinch.toml", QUIET);
+  await put("rope.toml", QUIET);
   await put(EDITOR_PATH, BY_HAND);
 
   const { exitCode, report } = await move("adopt");
 
   expect(exitCode).toBe(0);
   expect(report.written).toBe(false);
-  expect(report.changed).toEqual(["cinch.toml", EDITOR_PATH]);
+  expect(report.changed).toEqual(["rope.toml", EDITOR_PATH]);
   expect(report.diff).toContain("+[editor]");
-  expect(await text("cinch.toml")).toBe(QUIET);
+  expect(await text("rope.toml")).toBe(QUIET);
   expect(await text(EDITOR_PATH)).toBe(BY_HAND);
 });
 
 test("adopt --yes writes both, and the setup is then clean", async () => {
-  await put("cinch.toml", QUIET);
+  await put("rope.toml", QUIET);
   await put(EDITOR_PATH, BY_HAND);
 
   const { exitCode, report } = await move("adopt", { yes: true });
 
   expect(exitCode).toBe(0);
   expect(report.written).toBe(true);
-  const config = await text("cinch.toml");
+  const config = await text("rope.toml");
   expect(config).toStartWith(QUIET);
   expect(config).toContain('[editor]\nindent_size = 2\nindent_style = "space"');
   expect(await text(EDITOR_PATH)).toStartWith(HEAD);
@@ -88,31 +88,35 @@ test("adopt --yes writes both, and the setup is then clean", async () => {
   expect(again.report.changed).toEqual([]);
 });
 
-test("adopt nests the table in the shared config", async () => {
-  await put("outfitter.toml", `[cinch]\n${QUIET.replaceAll("[", "[cinch.")}`);
-  await put(EDITOR_PATH, `${BY_HAND}\n[Makefile]\nindent_style = tab\n`);
-
-  const { exitCode } = await move("adopt", { yes: true });
-
-  expect(exitCode).toBe(0);
-  const config = await text("outfitter.toml");
-  expect(config).toContain("[cinch.editor]\n");
-  expect(config).toContain('[[cinch.editor.overrides]]\nfiles = ["Makefile"]');
+test("adopt refuses retired shared policy while preserving the editor config", async () => {
+  const shared = `[cinch]\n${QUIET.replaceAll("[", "[cinch.")}`;
+  const authored = `${BY_HAND}\n[Makefile]\nindent_style = tab\n`;
+  await put("outfitter.toml", shared);
+  await put(EDITOR_PATH, authored);
+  const response = await run("preset", {
+    action: "adopt",
+    paths: ["editor"],
+    yes: true,
+  });
+  expect(response.exitCode).toBe(2);
+  expect(response.error).toContain("[cinch]");
+  expect(await text("outfitter.toml")).toBe(shared);
+  expect(await text(EDITOR_PATH)).toBe(authored);
 });
 
 test("adopt stops at a setting the table cannot hold", async () => {
-  await put("cinch.toml", QUIET);
+  await put("rope.toml", QUIET);
   await put(EDITOR_PATH, `${BY_HAND}tab_width = 8\n`);
 
   const { exitCode, report } = await move("adopt", { yes: true });
 
   expect(exitCode).toBe(1);
   expect(report.stopped?.join("\n")).toContain("tab_width = 8");
-  expect(await text("cinch.toml")).toBe(QUIET);
+  expect(await text("rope.toml")).toBe(QUIET);
 });
 
 test("adopt carries a commented file and says the comments are lost", async () => {
-  await put("cinch.toml", QUIET);
+  await put("rope.toml", QUIET);
   await put(EDITOR_PATH, `# ours\n${BY_HAND}`);
 
   const { exitCode, report } = await move("adopt", { yes: true });
@@ -123,7 +127,7 @@ test("adopt carries a commented file and says the comments are lost", async () =
 
 test("adopt takes over a file that states what the table states", async () => {
   await put(
-    "cinch.toml",
+    "rope.toml",
     `${QUIET}[editor]\nindent_style = "space"\nindent_size = 2\n`
   );
   await put(EDITOR_PATH, BY_HAND);
@@ -135,7 +139,7 @@ test("adopt takes over a file that states what the table states", async () => {
 });
 
 test("adopt stops when the table states something else", async () => {
-  await put("cinch.toml", `${QUIET}[editor]\nindent_style = "tab"\n`);
+  await put("rope.toml", `${QUIET}[editor]\nindent_style = "tab"\n`);
   await put(EDITOR_PATH, BY_HAND);
 
   const { exitCode, report } = await move("adopt", { yes: true });
@@ -146,9 +150,9 @@ test("adopt stops when the table states something else", async () => {
 });
 
 test("adopt with no file, and eject, say why nothing moves", async () => {
-  await put("cinch.toml", QUIET);
+  await put("rope.toml", QUIET);
   const none = await run("preset", { action: "adopt", paths: ["editor"] });
-  await put("cinch.toml", `${QUIET}[editor]\nindent_size = 2\n`);
+  await put("rope.toml", `${QUIET}[editor]\nindent_size = 2\n`);
   const out = await move("eject");
 
   expect(none.exitCode).toBe(2);
@@ -160,7 +164,7 @@ test("adopt with no file, and eject, say why nothing moves", async () => {
 });
 
 test("the editor settings are no preset to list or add", async () => {
-  await put("cinch.toml", QUIET);
+  await put("rope.toml", QUIET);
 
   const list = await run("preset", { action: "list" });
   const add = await run("preset", { action: "add", paths: ["editor"] });
@@ -174,7 +178,7 @@ test("the editor settings are no preset to list or add", async () => {
 
 test("adopt writes nothing when the config leaves the file out", async () => {
   const config = `pilot = 0\nexclude = ["${EDITOR_PATH}"]\n${QUIET.slice("pilot = 0\n".length)}`;
-  await put("cinch.toml", config);
+  await put("rope.toml", config);
   await put(EDITOR_PATH, BY_HAND);
 
   const response = await run("preset", {
@@ -185,19 +189,19 @@ test("adopt writes nothing when the config leaves the file out", async () => {
 
   expect(response.exitCode).toBe(2);
   expect(response.error).toContain(`leaves ${EDITOR_PATH} out`);
-  expect(await text("cinch.toml")).toBe(config);
+  expect(await text("rope.toml")).toBe(config);
   expect(await text(EDITOR_PATH)).toBe(BY_HAND);
 });
 
 test("adopt stops at a file that takes settings from a folder above", async () => {
   const inheriting = "[*]\nindent_size = 2\n";
-  await put("cinch.toml", QUIET);
+  await put("rope.toml", QUIET);
   await put(EDITOR_PATH, inheriting);
 
   const { exitCode, report } = await move("adopt", { yes: true });
 
   expect(exitCode).toBe(1);
   expect(report.stopped?.join("\n")).toContain("root = true");
-  expect(await text("cinch.toml")).toBe(QUIET);
+  expect(await text("rope.toml")).toBe(QUIET);
   expect(await text(EDITOR_PATH)).toBe(inheriting);
 });

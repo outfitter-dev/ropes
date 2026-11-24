@@ -1,6 +1,9 @@
 import { afterAll, expect, test } from "bun:test";
 
-import { POINTER } from "../src/adapters/rumdl/preset.ts";
+import { markdownPaths } from "../src/adapters/rumdl/paths.ts";
+import { pointerFor } from "../src/adapters/rumdl/root-config.ts";
+import { commands } from "../src/commands/registry.ts";
+import { ROPES_MANAGED_DIR } from "../src/contracts/managed-config.ts";
 import {
   CINCH,
   CONFIG,
@@ -13,6 +16,8 @@ import {
   read,
   repo,
 } from "./relocate-repo.ts";
+
+const POINTER = pointerFor(markdownPaths(ROPES_MANAGED_DIR));
 
 afterAll(cleanUp);
 
@@ -129,7 +134,7 @@ test("a setting the Cinch config states differently stops the move", async () =>
   expect(exitCode).toBe(1);
   expect(report.changed).toEqual([]);
   expect(report.stopped).toEqual([
-    "`MD007.indent` is set in .rumdl.toml and in `[tools.rumdl]` in cinch.toml, to different values. Remove one of the two, then run this again.",
+    "`MD007.indent` is set in .rumdl.toml and in `[tools.rumdl]` in rope.toml, to different values. Remove one of the two, then run this again.",
   ]);
   expect(await read(root, ROOT)).toBe(OWN);
   expect(await read(root, CINCH)).toBe(config);
@@ -140,7 +145,7 @@ test("a table the Cinch config already has stops the move, with the keys to move
   const root = await repo({ [CINCH]: config, [ROOT]: OWN });
   const { report } = await move(root, "adopt", { yes: true });
   expect(report.stopped).toEqual([
-    "cinch.toml already has a `MD007` table under `[tools.rumdl]`. Move `indent` from `[MD007]` in .rumdl.toml into it by hand, then run this again.",
+    "rope.toml already has a `MD007` table under `[tools.rumdl]`. Move `indent` from `[MD007]` in .rumdl.toml into it by hand, then run this again.",
   ]);
 });
 
@@ -151,12 +156,18 @@ test("a root config that does not extend the generated one is sent to doctor", a
   expect(report.stopped?.[0]).toContain("Run `rope doctor --fix` first.");
 });
 
-test("in the shared file the tables go under `cinch`", async () => {
+test("adoption refuses retired shared policy without rewriting authored files", async () => {
   const shared = "[cinch]\npilot = 0\n\n[cinch.markdown]\nenabled = true\n";
   const root = await repo({ [ROOT]: OWN, [SHARED]: shared });
-  const { report } = await move(root, "adopt", { yes: true });
-  expect(report.changed[0]).toBe(SHARED);
-  expect(await read(root, SHARED)).toContain(
-    "[cinch.tools.rumdl.MD007]\nindent = 4\n"
-  );
+  const response = await commands.preset?.({
+    action: "adopt",
+    cwd: root,
+    json: true,
+    paths: ["markdown"],
+    yes: true,
+  });
+  expect(response?.exitCode).toBe(2);
+  expect(response?.error).toContain("[cinch]");
+  expect(await read(root, SHARED)).toBe(shared);
+  expect(await read(root, ROOT)).toBe(OWN);
 });

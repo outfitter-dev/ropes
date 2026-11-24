@@ -14,7 +14,7 @@ const CLI = new URL("../../cli/src/cli.ts", import.meta.url).pathname;
 const ENGINE = "ast-grep";
 const PROJECT = "sgconfig.yml";
 const STATED: Provenance = {
-  file: "cinch.toml",
+  file: "rope.toml",
   key: "rules.local",
   kind: "file",
 };
@@ -36,7 +36,7 @@ const CONFIG =
 
 const config: CinchConfig = {
   ...DEFAULT_CONFIG,
-  file: "cinch.toml",
+  file: "rope.toml",
   include: { source: { kind: "default" }, value: ["**/*"] },
   rulesLocal: { source: STATED, value: ["rules"] },
   settings: [
@@ -89,7 +89,7 @@ let root = "";
 beforeEach(async () => {
   root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-project-")));
   await mkdir(path.join(root, ".git"));
-  await Bun.write(path.join(root, "cinch.toml"), CONFIG);
+  await Bun.write(path.join(root, "rope.toml"), CONFIG);
   await Bun.write(path.join(root, "a.ts"), "console.log(1);\n");
 });
 afterEach(() => rm(root, { force: true, recursive: true }));
@@ -168,12 +168,12 @@ test("a folder both files name, spelled two ways, is listed once", async () => {
   await write(PROJECT, "ruleDirs:\n  - rules\n");
   await write("rules/no-log.yml", NO_LOG);
   await write(
-    "cinch.toml",
+    "rope.toml",
     CONFIG.replace("enabled = true", 'enabled = true\nlocal = ["./rules/"]')
   );
   const shown = await cinch("explain");
   expect(shown.stdout).toContain(
-    "Local rules\n  rules  (cinch.toml: rules.local)\n\n"
+    "Local rules\n  rules  (rope.toml: rules.local)\n\n"
   );
 });
 
@@ -184,10 +184,7 @@ test("a project config that cannot be read stops a run that asks for rules, and 
     `${PROJECT}: ruleDirs must be a list of folders`
   );
   expect(stopped.exitCode).toBe(2);
-  await write(
-    "cinch.toml",
-    CONFIG.replace("enabled = true", "enabled = false")
-  );
+  await write("rope.toml", CONFIG.replace("enabled = true", "enabled = false"));
   const ran = await cinch("explain");
   expect(ran.exitCode).toBe(0);
 });

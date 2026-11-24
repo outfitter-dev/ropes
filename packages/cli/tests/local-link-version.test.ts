@@ -9,7 +9,7 @@ const ROPE = new URL("../src/cli.ts", import.meta.url);
 
 test("a preview never extracts links with an incompatible engine", async () => {
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(path.join(main.root, "index.md"), "# Index\n\nText.\n");
     const tools = path.join(main.root, "tools");
     const marker = path.join(main.root, "extracted");
@@ -39,7 +39,7 @@ test("preview snapshots use the plan's accepted newer version and strictness", a
     return;
   }
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(
       path.join(main.root, "mise.toml"),
       '[tools]\nlychee = "0.24.1"\n'
@@ -88,7 +88,7 @@ test("preview snapshots use the plan's accepted newer version and strictness", a
 
 test("an absent preview engine remains incomplete without attempting extraction", async () => {
   await withFixture(async ({ main, emptyPath }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(path.join(main.root, "index.md"), "# Index\n\nText.\n");
     const ran = await runEntry(
       ROPE,

@@ -25,7 +25,9 @@ rule:
 `;
 
 export const FILES: Readonly<Record<string, string>> = {
-  "cinch.toml": `pilot = 0
+  "excluded/old.ts": PRIVATE,
+  "legacy/old.ts": PRIVATE,
+  "rope.toml": `pilot = 0
 include = ["**/*.ts"]
 exclude = ["excluded/**"]
 [markdown]
@@ -41,8 +43,6 @@ paths = ["legacy/**"]
 [overrides.rules]
 enabled = false
 `,
-  "excluded/old.ts": PRIVATE,
-  "legacy/old.ts": PRIVATE,
   "rules/private-import.yml": RULE,
   "src/a file.ts": PRIVATE,
   "src/clean.ts": PUBLIC,

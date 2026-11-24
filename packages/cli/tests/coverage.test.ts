@@ -50,7 +50,7 @@ if (args[0] === "--version") {
     );
     await chmod(engine, 0o755);
     await Bun.write(
-      path.join(main.root, "cinch.toml"),
+      path.join(main.root, "rope.toml"),
       'pilot = 0\ninclude = ["**/*.md", "**/*.toml"]\nexclude = ["excluded/**"]\n[markdown]\nenabled = true\npreset = false\n[toml]\nenabled = true\n'
     );
     await Promise.all(
@@ -98,7 +98,7 @@ if (args[0] === "--version") {
     ).toMatchObject({
       skipped: {
         reason: "excluded",
-        source: { file: "cinch.toml", key: "exclude" },
+        source: { file: "rope.toml", key: "exclude" },
       },
       steps: [],
     });

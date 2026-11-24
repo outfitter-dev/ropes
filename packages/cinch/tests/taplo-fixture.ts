@@ -16,9 +16,9 @@ export const inRepo = async (
   try {
     await mkdir(bin);
     await Bun.write(path.join(root, "a.toml"), "a = 1\n");
-    await Bun.write(path.join(root, "cinch.toml"), "pilot = 0\n");
+    await Bun.write(path.join(root, "rope.toml"), "pilot = 0\n");
     await fixtureGit(root, "init", "--quiet");
-    await fixtureGit(root, "add", "a.toml", "cinch.toml");
+    await fixtureGit(root, "add", "a.toml", "rope.toml");
     await fixtureGit(root, "commit", "--quiet", "--message", "fixture");
     await body(root, bin);
   } finally {
