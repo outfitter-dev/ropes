@@ -8,7 +8,7 @@ const Position = z.object({
 });
 
 /**
- * One match of `scan --json`, as 0.51.3 prints it. Only the fields Cinch
+ * One match of `scan --json`, as 0.51.3 prints it. Only the fields Ropes
  * uses are named. Lines and columns are zero-based.
  */
 const MatchSchema = z.object({

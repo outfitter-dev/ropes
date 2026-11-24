@@ -40,7 +40,7 @@ export const RulesPackSchema = PackStateSchema.unwrap()
   .readonly();
 export type RulesPack = z.infer<typeof RulesPackSchema>;
 
-/** Provisional and unstable. The rule packs Cinch ships, as they stand here. */
+/** Provisional and unstable. The rule packs Ropes ships, as they stand here. */
 export const RulesReportSchema = z
   .object({
     /** Whether the repository has switched rules on. */
@@ -56,8 +56,8 @@ export const RulesReportSchema = z
 export type RulesReport = z.infer<typeof RulesReportSchema>;
 
 /**
- * Provisional and unstable. What `cinch rules adopt` did, or would do. It
- * only ever changes the Cinch config.
+ * Provisional and unstable. What `rope rules adopt` did, or would do. It
+ * only ever changes the Ropes config.
  */
 export const RulesAdoptReportSchema = z
   .object({

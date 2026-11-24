@@ -42,7 +42,7 @@ const inspect = async ({ adapters, plan }: Prepared): Promise<FixReport> => ({
   schemaVersion: plan.schemaVersion,
 });
 
-/** The tools the workspace's plan needs, less Cinch's own setup steps. */
+/** The tools the workspace's plan needs, less Ropes's own setup steps. */
 const workspaceStatus = async (
   root: string,
   deps: CommandDeps,
@@ -121,10 +121,10 @@ const workspaceStatus = async (
 };
 
 /**
- * `cinch doctor` checks the Cinch setup: the files Cinch keeps, and the
+ * `rope doctor` checks the Ropes setup: the files Ropes keeps, and the
  * tools the plan needs. It also names the rule packs that apply here and are
- * not adopted, which is a note and not a fault. `--fix` writes the files Cinch keeps, and makes the
- * one edit Cinch may make to a config a person wrote. It reads the same
+ * not adopted, which is a note and not a fault. `--fix` writes the files Ropes keeps, and makes the
+ * one edit Ropes may make to a config a person wrote. It reads the same
  * plan as the other verbs, so it writes nothing `explain` does not show.
  */
 const inspectDoctor = async (

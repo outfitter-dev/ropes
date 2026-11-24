@@ -4,13 +4,13 @@ import { SCHEMA_VERSION } from "./plan.ts";
 
 /**
  * `adopt` moves a tool's settings out of the config a person wrote for it
- * and into the Cinch config. `eject` moves them back out.
+ * and into the Ropes config. `eject` moves them back out.
  */
 export const RelocateActionSchema = z.enum(["adopt", "eject"]);
 export type RelocateAction = z.infer<typeof RelocateActionSchema>;
 
 /**
- * Provisional and unstable. What `cinch preset adopt` or `eject` did, or
+ * Provisional and unstable. What `rope preset adopt` or `eject` did, or
  * would do. Nothing is removed: a file is only ever rewritten.
  */
 export const RelocateReportSchema = z

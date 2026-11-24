@@ -18,7 +18,7 @@ export const FixReportSchema = z
     result: ResultSchema,
     schemaVersion: z.literal(SCHEMA_VERSION),
     /**
-     * Why nothing was fixed. Present when the Cinch setup has to be repaired
+     * Why nothing was fixed. Present when the Ropes setup has to be repaired
      * first. Then `result` holds the setup steps, and no file was written.
      */
     stopped: z.string().optional(),

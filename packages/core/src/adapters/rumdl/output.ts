@@ -5,7 +5,7 @@ import type { Finding } from "../../contracts/finding.ts";
 /**
  * One entry of `rumdl check --output-format json`, as rumdl 0.3.5 prints it.
  * One run prints one list for all the files it was given.
- * Only the fields Cinch uses are named. Lines and columns are one-based.
+ * Only the fields Ropes uses are named. Lines and columns are one-based.
  */
 const DiagnosticSchema = z.object({
   column: z.number().int().min(1),

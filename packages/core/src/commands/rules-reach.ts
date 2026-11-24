@@ -12,7 +12,7 @@ const quoted = (globs: readonly string[]): string =>
  * One line for each named pack that would not run on any file here, because
  * the config leaves out every file the pack reads. A pack runs only on a
  * file the plan covers, so naming it is not enough on its own. A pack whose
- * files could not be planned gets no line. A file Cinch keeps is setup, not
+ * files could not be planned gets no line. A file Ropes keeps is setup, not
  * one of the repository's own, so it does not count as a file a pack reads.
  */
 export const unreached = async (

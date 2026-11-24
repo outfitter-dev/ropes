@@ -84,9 +84,9 @@ const listing = (json: boolean): string =>
       ].join("\n");
 
 /**
- * `cinch schema <command>` prints the JSON Schema of what that command prints
+ * `rope schema <command>` prints the JSON Schema of what that command prints
  * with `--json`, so a jq filter can be written without running it first. With
- * no command it lists the names. `cinch schema config` prints the schema of
+ * no command it lists the names. `rope schema config` prints the schema of
  * the config file instead. It reads nothing and runs nothing.
  */
 export const schema: Command = (request) => {

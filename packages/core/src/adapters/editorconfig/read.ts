@@ -107,7 +107,7 @@ const walked = (text: string): Walk => {
  * becomes an override. Whatever the table cannot hold is listed and left out:
  * a key it does not know, a value it does not allow, a glob it cannot state,
  * a section for every file that comes after a narrower one, and comments.
- * The file Cinch writes always states `root = true`, so a file that does not
+ * The file Ropes writes always states `root = true`, so a file that does not
  * would lose whatever it takes from a folder above.
  */
 export const readFile = (text: string): ReadFile => {

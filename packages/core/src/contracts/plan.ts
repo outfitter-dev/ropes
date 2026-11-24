@@ -72,7 +72,7 @@ export const PlanStepSchema = z
     /** Conditional recovery declared before the primary engine runs. */
     recovery: RecoverySchema.optional(),
     /**
-     * True when what the step keeps is the Cinch setup. Then `doctor --fix`
+     * True when what the step keeps is the Ropes setup. Then `doctor --fix`
      * writes it, and `fix` only checks it.
      */
     setup: z.boolean().optional(),
@@ -119,8 +119,8 @@ export const PlanBatchSchema = PlanStepSchema.unwrap()
 export type PlanBatch = z.infer<typeof PlanBatchSchema>;
 
 /**
- * The part a kept file plays in a tool's config. `preset` is what Cinch
- * ships, `generated` is written from the Cinch config and extends it, and
+ * The part a kept file plays in a tool's config. `preset` is what Ropes
+ * ships, `generated` is written from the Ropes config and extends it, and
  * `root` is the file the tool finds first, which extends the generated one.
  */
 export const LayerSchema = z.enum(["preset", "generated", "root"]);
@@ -183,7 +183,7 @@ export type PackState = z.infer<typeof PackStateSchema>;
 
 /**
  * Folders of the repository's own rules, each with the setting that names
- * it: the Cinch config, or an engine's own project config.
+ * it: the Ropes config, or an engine's own project config.
  */
 export const LocalRulesSchema = z
   .array(
@@ -211,7 +211,7 @@ export const PlanSchema = z
       .optional(),
     /**
      * Present when a tool in the plan has settings of its own for facts the
-     * Cinch config can state. A run then compares them.
+     * Ropes config can state. A run then compares them.
      */
     facts: SharedFactsSchema.optional(),
     /** The folders of its own rules the repository names, when it does. */

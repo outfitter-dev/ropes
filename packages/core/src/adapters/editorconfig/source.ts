@@ -50,5 +50,5 @@ const inherits = async (root: string): Promise<Inherited | null> => {
       };
 };
 
-/** A hand-written file, read into the table a first Cinch config states. */
+/** A hand-written file, read into the table a first Ropes config states. */
 export const handWritten: MigrationSource = { id: "editor-file", inherits };

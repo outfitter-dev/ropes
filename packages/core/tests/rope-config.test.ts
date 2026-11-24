@@ -8,7 +8,7 @@ import { pointerFor, POINTER } from "../src/adapters/rumdl/root-config.ts";
 import { configFileIn, loadConfig } from "../src/config/load.ts";
 import { discoverRoot } from "../src/config/root.ts";
 import {
-  CINCH_MANAGED_DIR,
+  LEGACY_MANAGED_DIR,
   ROPES_MANAGED_DIR,
 } from "../src/contracts/managed-config.ts";
 
@@ -184,7 +184,7 @@ test("rope.toml above a linked checkout is outside its boundary", async () => {
 });
 
 test("generated Markdown pointers name the active setup command", () => {
-  expect(pointerFor(markdownPaths(CINCH_MANAGED_DIR))).toBe(POINTER);
+  expect(pointerFor(markdownPaths(LEGACY_MANAGED_DIR))).toBe(POINTER);
   expect(POINTER).toContain("cinch doctor --fix");
   const ropes = pointerFor(markdownPaths(ROPES_MANAGED_DIR));
   expect(ropes).toContain("rope doctor --fix");

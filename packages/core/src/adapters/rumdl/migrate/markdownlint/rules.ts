@@ -125,7 +125,7 @@ type Failed = Exclude<Wanted, { readonly ok: true }>;
 
 /**
  * Reads the config for the old Markdown linter and translates its rules.
- * Null when the repository has none. `table` is what the Cinch config states
+ * Null when the repository has none. `table` is what the Ropes config states
  * for the engine, which the new config inherits beside the preset.
  */
 export const gathered = async (

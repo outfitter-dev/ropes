@@ -33,7 +33,7 @@ const byHand = (current: string, settings: EditorSettings): Wanted => {
 };
 
 /**
- * A file Cinch generated is rewritten freely. One a person wrote is
+ * A file Ropes generated is rewritten freely. One a person wrote is
  * overwritten only when the table states exactly what it states. Otherwise
  * it holds settings the table does not, and they would be lost.
  */
@@ -48,8 +48,8 @@ const want = (current: string | null, settings: EditorSettings): Wanted => {
 
 /**
  * Keeps the root file editors read, written whole from the `[editor]` table
- * of the Cinch config. Without a table it keeps nothing, and only offers a
- * hand-written file to a first Cinch config.
+ * of the Ropes config. Without a table it keeps nothing, and only offers a
+ * hand-written file to a first Ropes config.
  */
 export const editorFileAdapter = (settings?: EditorSettings): Adapter =>
   managedAdapter({

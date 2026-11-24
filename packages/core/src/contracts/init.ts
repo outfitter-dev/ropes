@@ -3,14 +3,14 @@ import { z } from "zod";
 import { FixReportSchema } from "./fix.ts";
 
 /**
- * The config files of a tool that Cinch has taken over from. `init` removes
+ * The config files of a tool that Ropes has taken over from. `init` removes
  * them only when everything they say reached the new config.
  */
 export const RetiredSchema = z
   .object({
     /** Root-relative. Empty when the repository has none. */
     files: z.array(z.string().min(1)).readonly(),
-    /** Other traces of the old tool. Cinch names them and removes none. */
+    /** Other traces of the old tool. Ropes names them and removes none. */
     leftovers: z.array(z.string().min(1)).readonly(),
     /** Why the files were left in place, one line each. */
     reasons: z.array(z.string().min(1)).readonly(),

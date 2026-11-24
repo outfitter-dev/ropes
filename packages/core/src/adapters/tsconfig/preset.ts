@@ -1,4 +1,4 @@
-import { CINCH_MANAGED_DIR } from "../../contracts/managed-config.ts";
+import { LEGACY_MANAGED_DIR } from "../../contracts/managed-config.ts";
 import type { ManagedDir } from "../../contracts/managed-config.ts";
 import type { Adapter } from "../adapter.ts";
 import { shippedPreset } from "../shipped.ts";
@@ -11,7 +11,7 @@ export { PRESET_PATH, ROOT_PATH } from "./paths.ts";
  * `tsconfig.json` extends the copy and states its own `include`.
  */
 export const tsconfigPreset = (
-  managedDir: ManagedDir = CINCH_MANAGED_DIR
+  managedDir: ManagedDir = LEGACY_MANAGED_DIR
 ): Adapter => {
   const preset = `${managedDir}/presets/tsconfig.json`;
   return shippedPreset({

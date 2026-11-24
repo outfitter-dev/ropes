@@ -40,8 +40,8 @@ export interface BunFmtOptions {
  * Formatting through `bun fmt`, which reads the repository's formatter
  * config from the root. It runs once for the files of a batch. In `fix` it
  * writes, and it is registered last, so it formats what the other engines
- * left. Cinch does not install Bun: the binary must be on `PATH` at the
- * pinned version, or its steps are incomplete. It is off until the Cinch
+ * left. Ropes does not install Bun: the binary must be on `PATH` at the
+ * pinned version, or its steps are incomplete. It is off until the Ropes
  * config asks for it.
  */
 export const bunFmtAdapter = (options: BunFmtOptions = {}): Adapter => {

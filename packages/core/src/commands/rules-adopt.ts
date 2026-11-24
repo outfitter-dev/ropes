@@ -2,7 +2,7 @@ import path from "node:path";
 
 import type { Adapter } from "../adapters/adapter.ts";
 import { namePacks } from "../config/rules-table.ts";
-import type { CinchConfig } from "../contracts/config.ts";
+import type { RopesConfig } from "../contracts/config.ts";
 import type { PackState } from "../contracts/plan.ts";
 import { SCHEMA_VERSION } from "../contracts/plan.ts";
 import { EXIT_CODE } from "../contracts/result.ts";
@@ -54,7 +54,7 @@ const chosen = (
  * `doctor` reports them.
  */
 export const unadopted = (
-  config: CinchConfig,
+  config: RopesConfig,
   adapters: readonly Adapter[],
   present: readonly string[]
 ): string[] =>
@@ -78,7 +78,7 @@ export const readBy = (
     .flatMap((pack) => pack.relevant);
 
 /** Whether the config itself states that rules are off. */
-export const declined = (config: CinchConfig): boolean =>
+export const declined = (config: RopesConfig): boolean =>
   config.settings.some(
     ({ key, source, value }) =>
       key === "rules.enabled" && value === false && source.kind === "file"
@@ -98,10 +98,10 @@ const stop = (...stopped: string[]): Operation<RulesAdoptReport> =>
   respond({ ...nothing, notes: [], stopped });
 
 /**
- * `cinch rules adopt [pack...]` names rule packs in the Cinch config so they
+ * `rope rules adopt [pack...]` names rule packs in the Ropes config so they
  * run. With no name it takes every pack that applies to the repository and
  * is not named yet. It only shows the change, and writes it with `--yes`.
- * The Cinch config is the only file it writes.
+ * The Ropes config is the only file it writes.
  */
 export const adoptRules = async (
   request: RulesAdoptRequest,

@@ -13,7 +13,7 @@ export interface ShippedOptions {
   readonly enabledBy: string;
   /** Where the copy sits in a repository, root-relative. */
   readonly path: string;
-  /** The preset as this Cinch ships it. */
+  /** The preset as this Ropes ships it. */
   readonly source: URL;
   /** What starts a line comment in the file's format. */
   readonly comment: string;
@@ -38,7 +38,7 @@ export const shippedHeader = (comment: string): string =>
 /**
  * Adds a finding to the kept preset when the package
  * the preset imports is missing or is not a version the preset can count
- * on. A file that still differs says so first. Cinch installs no package,
+ * on. A file that still differs says so first. Ropes installs no package,
  * so the finding is never fixable.
  */
 const withPackage =
@@ -80,8 +80,8 @@ const withPackage =
   };
 
 /**
- * Keeps one copy of a preset this Cinch ships, and checks that the tool's
- * own config builds on the copy. The preset is off until the Cinch config asks for it,
+ * Keeps one copy of a preset this Ropes ships, and checks that the tool's
+ * own config builds on the copy. The preset is off until the Ropes config asks for it,
  * since not every repository uses the tool.
  */
 export const shippedPreset = (options: ShippedOptions): Adapter => {

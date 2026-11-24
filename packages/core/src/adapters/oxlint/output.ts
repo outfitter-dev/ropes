@@ -6,7 +6,7 @@ const ID = "oxlint";
 
 /**
  * One diagnostic of `oxlint --format json`, as 1.93.0 prints it. Only the
- * fields Cinch uses are named. Lines and columns are one-based. A problem
+ * fields Ropes uses are named. Lines and columns are one-based. A problem
  * the parser found, such as a syntax error, has no `code`.
  */
 const DiagnosticSchema = z.object({

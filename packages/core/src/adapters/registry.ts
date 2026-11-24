@@ -1,7 +1,7 @@
 import type { ToolTables } from "../contracts/config.ts";
 import type { EditorSettings } from "../contracts/editor.ts";
 import type { InstallSettings } from "../contracts/install.ts";
-import { CINCH_MANAGED_DIR } from "../contracts/managed-config.ts";
+import { LEGACY_MANAGED_DIR } from "../contracts/managed-config.ts";
 import type { ManagedDir } from "../contracts/managed-config.ts";
 import type { Adapter } from "./adapter.ts";
 import { rulesAdapter } from "./ast-grep/adapter.ts";
@@ -31,12 +31,12 @@ export { startTaploWorker as startBundledEngine } from "./taplo/wasm.ts";
  * `adapters/` and one line here. Order is the order steps run on a file. Each
  * adapter is handed the version the repository pins for its tool. An engine's
  * shared config preset is an adapter too, kept in the engine's own folder,
- * and it is handed the table the Cinch config states for that engine. The
+ * and it is handed the table the Ropes config states for that engine. The
  * editor settings file is kept only when the config states its facts, and
  * until then its adapter keeps nothing. The
  * presets for the lint, format and TypeScript configs are off until the
  * config asks for each, and so are the lint engine, the type check and the
- * formatter, and the rules Cinch ships. The rules adapter is also handed the
+ * formatter, and the rules Ropes ships. The rules adapter is also handed the
  * folders of rules the repository names as its own. The
  * formatter is last, so in a fix it formats what the others wrote.
  */
@@ -45,7 +45,7 @@ export const adaptersFor = (
   tables: ToolTables = {},
   editor?: EditorSettings,
   localRules?: readonly string[],
-  managedDir: ManagedDir = CINCH_MANAGED_DIR,
+  managedDir: ManagedDir = LEGACY_MANAGED_DIR,
   install?: InstallSettings
 ): readonly Adapter[] => [
   editorFileAdapter(editor),

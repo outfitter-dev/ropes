@@ -3,7 +3,7 @@ import path from "node:path";
 import type { ToolTable } from "../../../contracts/config.ts";
 import type { ConfigText, Relocation } from "../../relocation.ts";
 import { generated } from "../generated.ts";
-import { CINCH_PATHS, CONFIG_PATH } from "../paths.ts";
+import { LEGACY_PATHS, CONFIG_PATH } from "../paths.ts";
 import type { MarkdownPaths } from "../paths.ts";
 import { configuredElsewhere, isPointer } from "../root-config.ts";
 import { familyOf } from "./adopt.ts";
@@ -17,7 +17,7 @@ const stop = (...reasons: readonly string[]): Relocation => ({
 });
 
 /**
- * The Cinch config split by line: what is left once the engine's tables are
+ * The Ropes config split by line: what is left once the engine's tables are
  * taken out, and those tables as a config of the engine's own.
  */
 const split = (
@@ -56,7 +56,7 @@ const split = (
 };
 
 /**
- * Moves the engine's table out of the Cinch config into a root config the
+ * Moves the engine's table out of the Ropes config into a root config the
  * repository owns, which keeps its `extends` line. The settings go up one
  * layer, above the same layers as before, so the engine resolves the same.
  */
@@ -64,7 +64,7 @@ export const eject = async (
   root: string,
   config: ConfigText,
   table: ToolTable = {},
-  paths: MarkdownPaths = CINCH_PATHS
+  paths: MarkdownPaths = LEGACY_PATHS
 ): Promise<Relocation> => {
   if (Object.keys(table).length === 0) {
     return { files: [], notes: [], ok: true };
@@ -83,7 +83,7 @@ export const eject = async (
     );
   }
   // The table as a root config must be valid as the generated one first:
-  // that is where a key Cinch writes itself, such as `extends`, is refused.
+  // that is where a key Ropes writes itself, such as `extends`, is refused.
   const allowed = await generated(table);
   if (!allowed.ok) {
     return stop(allowed.message);

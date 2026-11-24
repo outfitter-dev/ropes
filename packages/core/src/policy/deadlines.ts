@@ -1,5 +1,5 @@
 import type { AdapterDescriptor } from "../adapters/adapter.ts";
-import type { CinchConfig } from "../contracts/config.ts";
+import type { RopesConfig } from "../contracts/config.ts";
 import { ENFORCEMENT_PREFIX } from "../contracts/enforcement.ts";
 import type {
   Evaluation,
@@ -42,7 +42,7 @@ const activeRules = (
 
 /** Keep the configured source and effective level together in the file policy. */
 export const resolveDeadlines = (
-  config: CinchConfig,
+  config: RopesConfig,
   clock: Evaluation | undefined,
   paths: readonly PlannedPath[],
   batches: readonly PlanBatch[],

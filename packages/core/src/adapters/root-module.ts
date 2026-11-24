@@ -14,7 +14,7 @@ export interface ModuleRoot {
   readonly fresh: string;
   /** How the config uses the import, as the end of a sentence. */
   readonly use: string;
-  /** The Cinch config table whose `preset` key switches this off. */
+  /** The Ropes config table whose `preset` key switches this off. */
   readonly table: string;
 }
 
@@ -52,7 +52,7 @@ const fresh = async (root: string, options: ModuleRoot): Promise<Wanted> => {
 /**
  * The root config must import the preset. A missing file is written whole.
  * Any other file is the repository's own and a module a person wrote, so
- * Cinch says what to add and writes nothing.
+ * Ropes says what to add and writes nothing.
  */
 export const moduleRoot = (options: ModuleRoot): ManagedFile => ({
   beside: options.siblings,

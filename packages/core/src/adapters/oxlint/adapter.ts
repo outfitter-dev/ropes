@@ -13,7 +13,7 @@ import { fixBatch, locate, runBatch } from "./run.ts";
 const ID = "oxlint";
 
 /**
- * What applies when the repository does not pin the linter where Cinch
+ * What applies when the repository does not pin the linter where Ropes
  * reads pins. The report mapping was checked against 1.93.0.
  */
 export const SUPPORTED_RANGE = ">=1.93.0 <2.0.0";
@@ -30,9 +30,9 @@ const VERSION = /\d+\.\d+\.\d+/u;
 /**
  * Lint for TypeScript and JavaScript through Oxlint. It runs from the
  * repository root, once for the files of a batch, and reads its own config
- * there, type-aware rules included. Cinch does not install it: the package
+ * there, type-aware rules included. Ropes does not install it: the package
  * must be installed in the repository, or the binary be on `PATH`, or its
- * steps are incomplete. It is off until the Cinch config asks for it.
+ * steps are incomplete. It is off until the Ropes config asks for it.
  */
 export const oxlintAdapter = (options: OxlintOptions = {}): Adapter => {
   const command = options.command ?? ID;

@@ -19,13 +19,13 @@ export const WASM_VERSION = "0.9.0";
 const RECOVERED = `Checked with Taplo WebAssembly ${WASM_VERSION} after native Taplo panicked`;
 
 // The macOS standalone build can invoke itself as this engine.
-declare const CINCH_TAPLO_WORKER: boolean | undefined;
+declare const ROPES_TAPLO_WORKER: boolean | undefined;
 export const startTaploWorker = (
   argv: string[]
 ): Promise<unknown> | undefined => {
   if (
-    typeof CINCH_TAPLO_WORKER !== "boolean" ||
-    !CINCH_TAPLO_WORKER ||
+    typeof ROPES_TAPLO_WORKER !== "boolean" ||
+    !ROPES_TAPLO_WORKER ||
     argv[2] !== WASM_WORKER
   ) {
     return undefined;

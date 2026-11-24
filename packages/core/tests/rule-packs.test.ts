@@ -7,7 +7,7 @@ import { Glob } from "bun";
 
 import { shippedPacks } from "../src/adapters/ast-grep/rules.ts";
 import { parseConfigTable } from "../src/config/parse.ts";
-import type { CinchConfig } from "../src/contracts/config.ts";
+import type { RopesConfig } from "../src/contracts/config.ts";
 import { DEFAULT_CONFIG } from "../src/contracts/config.ts";
 import { parsePlan } from "../src/contracts/parse.ts";
 import type { Provenance } from "../src/contracts/plan.ts";
@@ -52,7 +52,7 @@ const rules = describeFake({
 const asked = (
   off?: readonly string[],
   packs: readonly string[] = BOTH
-): CinchConfig => ({
+): RopesConfig => ({
   ...DEFAULT_CONFIG,
   file: "rope.toml",
   include: { source: { kind: "default" }, value: ["**/*"] },
@@ -63,7 +63,7 @@ const asked = (
   ],
 });
 
-const resolve = (config: CinchConfig, present: readonly string[]) =>
+const resolve = (config: RopesConfig, present: readonly string[]) =>
   resolvePlan({
     config,
     descriptors: [rules],

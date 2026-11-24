@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { DEFAULT_CONFIG, PILOT_VERSION } from "../contracts/config.ts";
 import type {
-  CinchConfig,
+  RopesConfig,
   ConfigOverride,
   ConfigResult,
   Sourced,
@@ -147,7 +147,7 @@ const enforcementSettings = (
 const build = (
   table: z.infer<typeof ConfigFileSchema>,
   origin: TableOrigin
-): CinchConfig => {
+): RopesConfig => {
   const { enforcement, local, off, packs, ...rules } = table.rules ?? {};
   const base = [
     ...settingsOf({ ...table, rules }, origin, ""),

@@ -12,7 +12,7 @@ import { probeAdapter, threw, versionProblem } from "./ready.ts";
 import type { Readiness } from "./ready.ts";
 
 /**
- * `fix` writes the repository's own files and `doctor` writes the Cinch
+ * `fix` writes the repository's own files and `doctor` writes the Ropes
  * setup. Each only checks what the other writes. `init` writes what
  * `doctor` does, and is the one run in which an adapter may migrate.
  */

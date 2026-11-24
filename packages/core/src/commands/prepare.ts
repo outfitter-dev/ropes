@@ -6,7 +6,7 @@ import type { Pins, PinsResult } from "../adapters/pins.ts";
 import { loadConfig } from "../config/load.ts";
 import { managedDirFor } from "../config/managed.ts";
 import { discoverRoot, toRootRelative } from "../config/root.ts";
-import type { CinchConfig, ToolTables } from "../contracts/config.ts";
+import type { RopesConfig, ToolTables } from "../contracts/config.ts";
 import type { EditorSettings } from "../contracts/editor.ts";
 import type { InstallSettings } from "../contracts/install.ts";
 import type { ManagedDir } from "../contracts/managed-config.ts";
@@ -40,7 +40,7 @@ export interface CommandDeps {
 
 export interface Prepared {
   readonly adapters: readonly Adapter[];
-  readonly config: CinchConfig;
+  readonly config: RopesConfig;
   readonly plan: Plan;
   /** Every root-relative file the repository has, as rule packs see it. */
   readonly present: readonly string[];
@@ -72,7 +72,7 @@ export const prepare = async (
   request: ReadRequest,
   deps: CommandDeps,
   includeSkipped = false,
-  starter?: CinchConfig
+  starter?: RopesConfig
 ): Promise<PrepareResult> => {
   const evaluation = evaluationAt(request.at);
   if (!evaluation.ok) {

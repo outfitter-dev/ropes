@@ -89,7 +89,7 @@ proof(
       json(await main.rope(["doctor", "--fix", "--json"]))
     );
     expect(repaired.changed).toEqual([KEPT]);
-    // Cinch and the engine run by hand now agree, with no other file edited.
+    // Ropes and the engine run by hand now agree, with no other file edited.
     expect(await exit("check", "README.md")).toBe(0);
     expect(await rumdl(main.root, "README.md")).toBe(0);
   }

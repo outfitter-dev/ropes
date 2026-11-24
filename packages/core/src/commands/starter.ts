@@ -18,7 +18,7 @@ const PROFILE = [
 ];
 
 /**
- * What a repository with no Cinch config and nothing to carry over starts
+ * What a repository with no Ropes config and nothing to carry over starts
  * with. It states the defaults, so the plan is the same before and after the
  * file is written.
  */
@@ -81,7 +81,7 @@ const rules = (packs: readonly string[]): string[] =>
       ];
 
 /**
- * The first Cinch config for a repository. The file choices of a config that
+ * The first Ropes config for a repository. The file choices of a config that
  * an adapter takes over from go in, so the first check covers the files the
  * old tool covered and no others. The rule packs that apply to the
  * repository are named and the files they read are included, so a new setup
@@ -153,7 +153,7 @@ const spared = (one: Inherited, kept: readonly string[]): Inherited => ({
 });
 
 /**
- * Drops each carried `exclude` that would leave out a file Cinch keeps, and
+ * Drops each carried `exclude` that would leave out a file Ropes keeps, and
  * says so. The old list was written for the old tool's files. Carried as it
  * is, it could stop `init` writing a preset that another kept file points at.
  */

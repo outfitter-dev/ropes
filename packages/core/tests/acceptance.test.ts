@@ -11,7 +11,7 @@ import type { Ran } from "./acceptance-repo.ts";
 
 /**
  * The proofs the Forge pilot asks for, rehearsed on a fixture
- * repository. Every run goes through the `cinch` executable in a child
+ * repository. Every run goes through the `rope` executable in a child
  * process, and every Markdown step runs the real engine.
  */
 

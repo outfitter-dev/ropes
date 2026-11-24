@@ -24,7 +24,7 @@ const textAt = async (root: string, file: string): Promise<string | null> => {
   return (await handle.exists()) ? await handle.text() : null;
 };
 
-/** The Cinch config as it is on disk, or the one a new repository gets. */
+/** The Ropes config as it is on disk, or the one a new repository gets. */
 export const configText = async (
   root: string
 ): Promise<ConfigText | { readonly error: string }> => {
@@ -59,7 +59,7 @@ const planned = async (
     (adapter) => adapter.descriptor.id === preset.adapter
   );
   // A file the adapter does not keep yet has no step to be missing. It can
-  // still be excluded, and the move would then leave a file Cinch cannot keep.
+  // still be excluded, and the move would then leave a file Ropes cannot keep.
   const owned = new Set(keeper?.descriptor.owns);
   const gaps = gapsOf([preset], prepared.value.plan).filter(
     (gap) =>
@@ -80,7 +80,7 @@ const planned = async (
 };
 
 /**
- * Whether the files Cinch keeps for the preset are as they should be. A
+ * Whether the files Ropes keeps for the preset are as they should be. A
  * check that did not run for every file is incomplete, not a finding.
  */
 const settled = async (
@@ -125,8 +125,8 @@ const respond = (
 });
 
 /**
- * `cinch preset adopt <name>` moves the settings in a tool's own config
- * into the Cinch config, and `eject` moves them back out. Both only show
+ * `rope preset adopt <name>` moves the settings in a tool's own config
+ * into the Ropes config, and `eject` moves them back out. Both only show
  * the change, and write it with `--yes`. Every file is settled before any
  * is written.
  */

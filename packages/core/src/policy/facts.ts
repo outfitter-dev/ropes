@@ -1,10 +1,10 @@
 import type { AdapterDescriptor } from "../adapters/adapter.ts";
-import type { CinchConfig } from "../contracts/config.ts";
+import type { RopesConfig } from "../contracts/config.ts";
 import type { Fact, SharedFacts } from "../contracts/facts.ts";
 import type { PlanBatch } from "../contracts/plan.ts";
 
 /** The facts the `[editor]` table states for every file. */
-const statedIn = (config: CinchConfig): Fact[] => {
+const statedIn = (config: RopesConfig): Fact[] => {
   const { editor, file, prefix = "" } = config;
   if (editor === undefined || file === null) {
     return [];
@@ -24,7 +24,7 @@ const statedIn = (config: CinchConfig): Fact[] => {
  * facts. Undefined when no such adapter runs, and then nothing is compared.
  */
 export const sharedFacts = (
-  config: CinchConfig,
+  config: RopesConfig,
   descriptors: readonly AdapterDescriptor[],
   batches: readonly PlanBatch[]
 ): SharedFacts | undefined => {

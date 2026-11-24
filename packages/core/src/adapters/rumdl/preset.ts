@@ -1,5 +1,5 @@
 import type { ToolTable } from "../../contracts/config.ts";
-import { CINCH_MANAGED_DIR } from "../../contracts/managed-config.ts";
+import { LEGACY_MANAGED_DIR } from "../../contracts/managed-config.ts";
 import type { ManagedDir } from "../../contracts/managed-config.ts";
 import type { Adapter } from "../adapter.ts";
 import { managedAdapter } from "../managed.ts";
@@ -21,20 +21,20 @@ export { POINTER } from "./root-config.ts";
 
 /**
  * Keeps the Markdown config in a repository as three files the engine
- * reads through `extends`, and never merges them: the preset this Cinch
- * ships, the config generated from the Cinch config, and the root config
+ * reads through `extends`, and never merges them: the preset this Ropes
+ * ships, the config generated from the Ropes config, and the root config
  * that extends the generated one.
  */
 export const rumdlPresetAdapter = (
   options: {
     /** The engine's executable. */
     readonly command?: string;
-    /** What the Cinch config states for the engine. */
+    /** What the Ropes config states for the engine. */
     readonly table?: ToolTable | undefined;
     readonly managedDir?: ManagedDir;
   } = {}
 ): Adapter => {
-  const paths = markdownPaths(options.managedDir ?? CINCH_MANAGED_DIR);
+  const paths = markdownPaths(options.managedDir ?? LEGACY_MANAGED_DIR);
   return managedAdapter({
     enabledBy: "markdown.preset",
     files: [

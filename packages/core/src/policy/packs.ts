@@ -1,12 +1,12 @@
 import type { AdapterDescriptor } from "../adapters/adapter.ts";
-import type { CinchConfig } from "../contracts/config.ts";
+import type { RopesConfig } from "../contracts/config.ts";
 import type { PackState, Plan, Provenance } from "../contracts/plan.ts";
 import { compileGlobs } from "./glob.ts";
 
 /** Whether policy asks for the adapter on any file at all. */
 export const isWanted = (
   { enabledBy, optIn }: AdapterDescriptor,
-  config: CinchConfig
+  config: RopesConfig
 ): boolean => {
   const says = (to: boolean, settings = config.settings): boolean =>
     settings.some(({ key, value }) => key === enabledBy && value === to);
@@ -17,7 +17,7 @@ export const isWanted = (
 };
 
 /**
- * The files Cinch writes whole. A root config is kept too, and is still the
+ * The files Ropes writes whole. A root config is kept too, and is still the
  * repository's own file, so it is not among them.
  */
 export const keptWhole = (
@@ -31,10 +31,10 @@ export const keptWhole = (
 
 /**
  * Each pack of the adapters given, as it would stand if policy asked for
- * all of them. `cinch rules` shows these where rules are not switched on.
+ * all of them. `rope rules` shows these where rules are not switched on.
  */
 export const shippedStates = (
-  config: CinchConfig,
+  config: RopesConfig,
   descriptors: readonly AdapterDescriptor[],
   present: readonly string[]
 ): PackState[] => {
@@ -83,11 +83,11 @@ export const shippedStates = (
  * Each pack of each adapter policy asks for, and whether it runs: it does
  * where the config names it and a file of the repository matches what makes
  * it relevant, unless the config also names it as off. `present` is every root-relative file there is.
- * A file an adapter keeps is part of the Cinch setup and makes no pack
+ * A file an adapter keeps is part of the Ropes setup and makes no pack
  * relevant.
  */
 export const packStates = (
-  config: CinchConfig,
+  config: RopesConfig,
   descriptors: readonly AdapterDescriptor[],
   present: readonly string[]
 ): PackState[] => {
@@ -120,7 +120,7 @@ export const rulesOn = (
 
 /** The names the config turns off that no shipped pack or rule has. */
 export const unknownOff = (
-  config: CinchConfig,
+  config: RopesConfig,
   descriptors: readonly AdapterDescriptor[]
 ): string[] => {
   const known = new Set(
@@ -133,7 +133,7 @@ export const unknownOff = (
 
 /** The names the config asks for that no shipped pack has. */
 export const unknownPacks = (
-  config: CinchConfig,
+  config: RopesConfig,
   descriptors: readonly AdapterDescriptor[]
 ): string[] => {
   const known = new Set(
@@ -145,12 +145,12 @@ export const unknownPacks = (
 };
 
 /**
- * The folders of its own rules the repository names, in its Cinch config
+ * The folders of its own rules the repository names, in its Ropes config
  * or in an engine's project config, as they would stand if policy asked for
- * every adapter given. A folder both name is the Cinch config's.
+ * every adapter given. A folder both name is the Ropes config's.
  */
 export const namedLocalRules = (
-  config: CinchConfig,
+  config: RopesConfig,
   descriptors: readonly AdapterDescriptor[]
 ): Plan["localRules"] => {
   const stated = config.rulesLocal?.source;
@@ -182,7 +182,7 @@ export const namedLocalRules = (
 
 /** The folders of its own rules the repository names, when an adapter runs them. */
 export const localRules = (
-  config: CinchConfig,
+  config: RopesConfig,
   descriptors: readonly AdapterDescriptor[]
 ): Plan["localRules"] =>
   namedLocalRules(

@@ -30,7 +30,7 @@ const VERSION = /\d+\.\d+\.\d+/u;
 
 /**
  * Markdown lint through rumdl. rumdl runs from the repository root, once for
- * the files of a batch, and reads its own config there. Cinch does not install it: the binary must be on
+ * the files of a batch, and reads its own config there. Ropes does not install it: the binary must be on
  * `PATH` at the pinned version, or its steps are incomplete.
  */
 export const rumdlAdapter = (options: RumdlOptions = {}): Adapter => {

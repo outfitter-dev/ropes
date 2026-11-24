@@ -4,7 +4,7 @@ import { exec } from "./exec.ts";
 const VERSION = /\d+\.\d+\.\d+/u;
 
 /**
- * Whether a tool Cinch does not install is on `PATH`, and the version it
+ * Whether a tool Ropes does not install is on `PATH`, and the version it
  * answers `--version` with.
  */
 export const probeOnPath = async (command: string): Promise<ProbeResult> => {

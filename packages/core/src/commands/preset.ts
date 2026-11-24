@@ -87,10 +87,10 @@ const write = async (
 };
 
 /**
- * `cinch preset` lists the shared configs Cinch keeps in a repository.
+ * `rope preset` lists the shared configs Ropes keeps in a repository.
  * `add <name>` and `update [name]` write them. Both go through the same
  * plan as `doctor --fix`, with the preset's own files as the selection.
- * `adopt <name>` and `eject <name>` move a tool's settings into the Cinch
+ * `adopt <name>` and `eject <name>` move a tool's settings into the Ropes
  * config and back out.
  */
 export const runPreset = async (

@@ -55,7 +55,7 @@ export interface AdapterDescriptor {
    */
   readonly owns?: readonly string[];
   /**
-   * True when what this adapter writes is the Cinch setup, not the
+   * True when what this adapter writes is the Ropes setup, not the
    * repository's own content. `fix` then only checks its files, and
    * `doctor --fix` is the one verb that writes them.
    */
@@ -75,7 +75,7 @@ export interface AdapterDescriptor {
     readonly files: readonly string[];
   };
   /**
-   * The table under `tools` in the Cinch config that this adapter copies
+   * The table under `tools` in the Ropes config that this adapter copies
    * into a file it keeps. Adapters that generate no config leave it out.
    */
   readonly table?: string;

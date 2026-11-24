@@ -1,5 +1,5 @@
 import type { AdapterDescriptor } from "../adapters/adapter.ts";
-import type { CinchConfig } from "../contracts/config.ts";
+import type { RopesConfig } from "../contracts/config.ts";
 import type { PlannedPath, PlanStep, PolicyValue } from "../contracts/plan.ts";
 import type { PackageTarget } from "../contracts/targets.ts";
 import { inRunOrder, packageOf, toStep } from "./batches.ts";
@@ -7,7 +7,7 @@ import type { Matcher } from "./glob.ts";
 import { targetSteps } from "./targets.ts";
 
 export interface PathPlanInput {
-  readonly config: CinchConfig;
+  readonly config: RopesConfig;
   /** In execution order. */
   readonly descriptors: readonly AdapterDescriptor[];
   /**
@@ -42,7 +42,7 @@ const extensionOf = (path: string): string => {
  */
 const policyFor = (
   path: string,
-  config: CinchConfig,
+  config: RopesConfig,
   scope: Scope
 ): PolicyValue[] => {
   const byKey = new Map<string, PolicyValue>();
@@ -95,7 +95,7 @@ const stepsFor = (
 };
 
 /**
- * The steps of one path. A file Cinch writes whole, such as a preset, is
+ * The steps of one path. A file Ropes writes whole, such as a preset, is
  * part of the setup, and only `doctor --fix` writes the setup. So a step of
  * another adapter may read such a file and never write it. A root config is
  * a person's file, and stays theirs to fix.

@@ -37,7 +37,7 @@ export type FactReporter = z.infer<typeof FactReporterSchema>;
 
 /**
  * Provisional and unstable. What a run compares besides checking files: the
- * facts the Cinch config states, and the adapters asked what their tools
+ * facts the Ropes config states, and the adapters asked what their tools
  * resolve for the same facts.
  */
 export const SharedFactsSchema = z

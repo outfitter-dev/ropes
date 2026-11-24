@@ -1,5 +1,5 @@
 import type { AdapterDescriptor } from "../adapters/adapter.ts";
-import type { CinchConfig } from "../contracts/config.ts";
+import type { RopesConfig } from "../contracts/config.ts";
 import {
   ENFORCEMENT_PREFIX,
   EnforcementLevelSchema,
@@ -104,7 +104,7 @@ const decision = (
 /** Explain shipped rule coverage from the same resolved plan checks execute. */
 export const policySnapshot = (input: {
   readonly artifactVersion: string;
-  readonly config: CinchConfig;
+  readonly config: RopesConfig;
   readonly descriptors: readonly AdapterDescriptor[];
   readonly plan: Plan;
   readonly present: readonly string[];

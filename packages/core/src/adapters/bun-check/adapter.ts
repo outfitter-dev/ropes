@@ -22,9 +22,9 @@ export interface BunCheckOptions {
 
 /**
  * The type check, through `bun check`. It runs once for the files of a
- * batch and never writes, so `fix` only checks. Cinch does not install Bun:
+ * batch and never writes, so `fix` only checks. Ropes does not install Bun:
  * the binary must be on `PATH` at the pinned version, or its steps are
- * incomplete. It is off until the Cinch config asks for it.
+ * incomplete. It is off until the Ropes config asks for it.
  */
 export const bunCheckAdapter = (options: BunCheckOptions = {}): Adapter => {
   const command = options.command ?? TOOL;
