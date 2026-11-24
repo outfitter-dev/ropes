@@ -122,6 +122,11 @@ test("rope preset lists, updates, adopts and ejects without changing effective s
     expect(await resolved(root)).toBe(effective);
     const ejected = await run("preset", "eject", "markdown", "--yes", "--json");
     expect(ejected.exitCode).toBe(0);
+    const ejectedReport = RelocateReportSchema.parse(
+      JSON.parse(ejected.stdout)
+    );
+    expect(ejectedReport).toMatchObject({ action: "eject", written: true });
+    expect(ejectedReport.changed).toContain("rope.toml");
     expect(await resolved(root)).toBe(effective);
     expect(await index.bytes()).toEqual(indexed);
     await rm(path.join(root, "rope.toml"));
