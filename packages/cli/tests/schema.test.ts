@@ -3,6 +3,13 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { FixReportSchema } from "../../cinch/src/contracts/fix.ts";
+import { PresetReportSchema } from "../../cinch/src/contracts/preset.ts";
+import { RelocateReportSchema } from "../../cinch/src/contracts/relocate.ts";
+import {
+  RulesAdoptReportSchema,
+  RulesReportSchema,
+} from "../../cinch/src/contracts/rules-report.ts";
 import { fixtureGit, runEntry } from "../../cinch/tests/acceptance-repo.ts";
 
 const cli = new URL("../src/cli.ts", import.meta.url);
@@ -31,6 +38,15 @@ test("rope lists public schemas and describes real versioned output", async () =
         "failure",
         "fix",
         "init",
+        "preset",
+        "preset add",
+        "preset adopt",
+        "preset eject",
+        "preset list",
+        "preset update",
+        "rules",
+        "rules adopt",
+        "rules list",
       ],
       files: ["config"],
       schemaVersion: 3,
@@ -48,6 +64,25 @@ test("rope lists public schemas and describes real versioned output", async () =
       });
       expect(JSON.parse(report.stdout)).toMatchObject({ schemaVersion: 3 });
     }
+
+    const publicSchemas = {
+      preset: PresetReportSchema,
+      "preset add": FixReportSchema,
+      "preset adopt": RelocateReportSchema,
+      "preset eject": RelocateReportSchema,
+      "preset list": PresetReportSchema,
+      "preset update": FixReportSchema,
+      rules: RulesReportSchema,
+      "rules adopt": RulesAdoptReportSchema,
+      "rules list": RulesReportSchema,
+    };
+    await Promise.all(
+      Object.entries(publicSchemas).map(async ([name, contract]) => {
+        const result = await run("schema", ...name.split(" "));
+        expect(result.exitCode).toBe(0);
+        expect(JSON.parse(result.stdout)).toEqual(contract.toJSONSchema());
+      })
+    );
 
     const config = await run("schema", "config");
     expect(config.exitCode).toBe(0);
