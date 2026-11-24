@@ -137,7 +137,7 @@ indent = 4
 
 A repository that already states its rules in `.rumdl.toml` can move them into this table with `rope preset adopt markdown`, and back with `rope preset eject markdown`. See [Presets](presets.md).
 
-Settings shared by several tools, such as indent and line width, belong in the `[editor]` table. [Shared facts](shared-facts.md) describes how conflicting authored values are reported.
+The `[editor]` table authors shared editor facts and generates `.editorconfig`. It does not change rumdl options such as `MD007.indent` or `global.line-length`. State those options under `[tools.rumdl]`. [Shared facts](shared-facts.md) describes which conflicting authored values Ropes can report.
 
 ## Testing a rule migration
 

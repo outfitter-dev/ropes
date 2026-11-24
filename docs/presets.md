@@ -20,7 +20,7 @@ rope init --yes
 
 This writes the change. Running it again changes nothing.
 
-When starting from another tool's config, `init` carries supported settings and file choices into its preview. It preserves the source config files, dependencies, scripts, and hooks. Review the generated setup before removing an old tool by hand. The JSON output is a fix report with `changed`, `diff`, `dryRun`, and `result`. See [the Markdown migration](markdown-standard.md#moving-from-markdownlint).
+Public `rope init` carries compatible markdownlint settings and supported file choices into its setup preview. Applying that setup preserves the old source config files, dependencies, scripts, and hooks. Review the generated setup before removing an old tool by hand. The JSON output is a fix report with `changed`, `diff`, `dryRun`, and `result`. See [the Markdown migration](markdown-standard.md#moving-from-markdownlint).
 
 | Flag | What it does |
 | --- | --- |
@@ -93,7 +93,7 @@ The settings move one layer up or down under the same layers as before, so the t
 - Neither command writes a file that is a link to somewhere outside the repository. That exits 2.
 - When the files were written and Ropes could not check them afterwards, the command exits 2. When it checked them and they are not clean, it exits 1.
 
-Markdown settings can move between `.rumdl.toml` and `[tools.rumdl]`. The `editor` and `install` names expose separate moves for `.editorconfig` and `bunfig.toml`. See [editor settings](editor-settings.md#adopting-a-file-later) and [install policy](install-policy.md).
+Markdown settings can move between `.rumdl.toml` and `[tools.rumdl]`. The `editor` and `install` names support adoption from `.editorconfig` and `bunfig.toml`. Ejecting either is manual. Even with `--yes`, `rope preset eject editor` and `rope preset eject install` return guidance without changing files. See [editor settings](editor-settings.md#adopting-a-file-later) and [install policy](install-policy.md).
 
 ## How this fits the plan
 
