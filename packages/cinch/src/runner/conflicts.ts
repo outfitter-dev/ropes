@@ -138,6 +138,12 @@ const again = async (
         package: earlier.batch.package,
         paths,
         root,
+        ...(earlier.batch.rules === undefined
+          ? {}
+          : { rules: earlier.batch.rules }),
+        ...(earlier.batch.target === undefined
+          ? {}
+          : { target: earlier.batch.target }),
       })) ?? [];
   } catch (error) {
     return unchecked(threw(earlier.batch.tool, error));
@@ -158,7 +164,12 @@ const again = async (
         from: range.start.line,
         to: range.end?.line ?? range.start.line,
       });
-    const conflicts = fresh(first?.findings ?? [], now.findings, diffOf).map(
+    // A rule-pack batch can report other rules while writing only eligible ones.
+    const findings =
+      earlier.batch.rules === undefined
+        ? now.findings
+        : now.findings.filter((finding) => finding.fixable);
+    const conflicts = fresh(first?.findings ?? [], findings, diffOf).map(
       ({ diff, finding }): Conflict => ({
         diff,
         finding,

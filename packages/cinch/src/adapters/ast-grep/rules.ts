@@ -115,3 +115,11 @@ export const shippedRules = (
 
 /** Every id a shipped rule has, on or off. */
 export const shippedIds: ReadonlySet<string> = new Set(shipped.texts.keys());
+
+/** Only shipped rules explicitly selected in the plan may write. */
+export const shippedRewrites = (ids: readonly string[] = []): string[] =>
+  shippedPacks.flatMap((pack) =>
+    (pack.fixable ?? [])
+      .map((rule) => `${pack.name}/${rule}`)
+      .filter((id) => ids.includes(id))
+  );

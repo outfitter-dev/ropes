@@ -16,6 +16,7 @@ const MatchSchema = z.object({
   file: z.string().min(1),
   message: z.string(),
   range: z.object({ end: Position, start: Position }),
+  replacement: z.string().optional(),
   ruleId: z.string().min(1),
   severity: z.string(),
 });
@@ -36,7 +37,8 @@ const oneBased = (position: z.infer<typeof Position>) => ({
 export const parseOutput = (
   stdout: string,
   source: string,
-  local: ReadonlySet<string> = new Set()
+  local: ReadonlySet<string> = new Set(),
+  fixable: ReadonlySet<string> = new Set()
 ): Parsed => {
   let json: unknown = null;
   try {
@@ -51,8 +53,10 @@ export const parseOutput = (
   const files = new Map<string, Finding[]>();
   for (const match of parsed.data) {
     const finding: Finding = {
-      // A rule's rewrite is not applied, so nothing here is fixable yet.
-      fixable: false,
+      fixable:
+        match.replacement !== undefined &&
+        fixable.has(match.ruleId) &&
+        !local.has(match.ruleId),
       message: match.message,
       path: match.file,
       range: {

@@ -1,0 +1,33 @@
+id: config-spelling/tsconfig-module-esnext
+language: json
+severity: error
+message: Spell the compiler module option ESNext.
+metadata:
+  rationale: TypeScript treats both spellings equally; this optional pack consistently uses ESNext.
+files:
+  - "**/tsconfig.json"
+ignores:
+  - "**/.outfitter/**"
+  - "**/.ropes/**"
+rule:
+  kind: string
+  regex: '^"esnext"$'
+  inside:
+    kind: pair
+    field: value
+    has:
+      field: key
+      regex: '^"module"$'
+    inside:
+      kind: object
+      inside:
+        kind: pair
+        field: value
+        has:
+          field: key
+          regex: '^"compilerOptions"$'
+        inside:
+          kind: object
+          inside:
+            kind: document
+fix: '"ESNext"'

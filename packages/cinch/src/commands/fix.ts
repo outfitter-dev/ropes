@@ -56,6 +56,7 @@ const apply = async (
   const ran = await runPlan({ ...plan, root }, adapters, {
     changeAt,
     mode: run.mode,
+    ...(run.dryRun ? { sourceRoot: plan.root } : {}),
   });
   const after = await snapshot(root, plan, run.mode);
   const diffs = plan.paths.map((entry, index) =>

@@ -5,6 +5,7 @@ import { probeOnPath } from "../on-path.ts";
 import { heldTo } from "../pins.ts";
 import { describeRules } from "./definitions.ts";
 import { readProject, tidy } from "./project.ts";
+import { rewriteBatch } from "./rewrite.ts";
 import {
   shippedDigests,
   shippedIdentities,
@@ -61,7 +62,8 @@ const CONFIG_KEY = "rules.local";
  * The rules Cinch ships, and the ones a repository names as its own, run
  * through ast-grep: small structural checks that no linter has a rule for.
  * It also runs the rules in the folders a root `sgconfig.yml` names. It runs
- * once for the files of a batch and never writes, so `fix` only checks. Cinch does not install the engine: the
+ * once for the files of a check batch. Fix may apply eligible shipped rules
+ * selected by the plan. Cinch does not install the engine: the
  * binary must be on `PATH` at the pinned version, or its steps are
  * incomplete. It is off until the Cinch config asks for it.
  */
@@ -97,18 +99,18 @@ export const rulesAdapter = (options: RulesOptions = {}): Adapter => {
     ...heldTo(options.version, SUPPORTED_RANGE),
     writes: false,
   };
-  const run = (input: StepInput) => {
+  const run = (input: StepInput, execute = scanBatch) => {
     const binary = Bun.which(command);
     return binary === null
       ? Promise.resolve(allIncomplete(input, `${command} is not on PATH`))
-      : scanBatch(binary, ID, input, folders);
+      : execute(binary, ID, input, folders);
   };
   return {
-    check: run,
+    check: (input) => run(input),
     describeCheck: (input) => describeScan(command, input, folders),
     describeRules: (root) => describeRules(root, folders),
     descriptor,
-    fix: run,
+    fix: (input) => run(input, rewriteBatch),
     probe: () => probeOnPath(command),
     settled: async (root) => {
       const project = await readProject(root);

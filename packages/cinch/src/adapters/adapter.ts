@@ -30,6 +30,8 @@ export interface StepOutcome {
  */
 export interface StepInput {
   readonly root: string;
+  /** Original checkout when a writing batch runs against a preview copy. */
+  readonly sourceRoot?: string;
   /** The root-relative package directory. `.` is the workspace itself. */
   readonly package: string;
   /** Root-relative files, all in that package. Never empty. */

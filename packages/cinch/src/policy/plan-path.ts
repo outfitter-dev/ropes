@@ -17,6 +17,7 @@ export interface PathPlanInput {
   readonly packages: readonly string[];
   /** Actual files, when the command boundary collected them. */
   readonly presentFiles?: ReadonlySet<string>;
+  readonly ruleWriters?: ReadonlyMap<string, Matcher>;
   /** Declared support evidence collected at the command boundary. */
   readonly targets?: readonly PackageTarget[];
 }
@@ -170,6 +171,10 @@ export const planPath = (
           input.presentFiles === undefined ||
           input.presentFiles.has(path)
       )
+    ).map((step) =>
+      input.ruleWriters?.get(step.adapter)?.(path) === true
+        ? { ...step, writes: true }
+        : step
     ),
     input.descriptors
   );
