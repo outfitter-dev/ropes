@@ -23,7 +23,7 @@ A `fix` step that repairs some problems and leaves others reports `findings`, no
 
 A step with advisory matches also retains `findings` as its native status. Its diagnostics keep their severity, location, and fixability. The resolved enforcement determines whether those matches block the overall run. Findings with no explicit enforcement retain the blocking default. [Rule enforcement](enforcement.md) records the pilot policy and precedence.
 
-Exit code 2 also covers problems that stop a run before any step: an unknown command, a config file that does not parse, or an unknown schema or config version.
+Exit code 2 also covers problems that stop a run before any step, including an unknown command, malformed policy, retired policy files, and unsupported schema or config versions.
 
 ## One function decides
 
@@ -31,7 +31,7 @@ Exit code 2 also covers problems that stop a run before any step: an unknown com
 
 ## Empty selections
 
-Running with no paths checks the configured workspace. An explicitly empty selection is different: it means zero files, and Cinch does not widen it to the workspace. A hook runner that forwards an empty file list gets a clean result and exit code 0, and the output says that nothing ran.
+Running with no paths checks the configured workspace. An explicitly empty selection is different: it means zero files, and Ropes does not widen it to the workspace. A hook runner that forwards an empty file list gets a clean result and exit code 0, and the output says that nothing ran.
 
 A run where files were selected but no step applied to them is also clean. The output states how many steps ran and how many files the config left out, so "0 steps ran" is visible and is never mistaken for a full check.
 

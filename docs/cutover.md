@@ -1,8 +1,32 @@
-# Cinch to Ropes cutover
+# Ropes cutover
 
-This inventory covers the Ropes quality tool and its known callers. The separate Outfitter application owns application initialization, cross-tool migration, and the unscoped `outfitter` npm cutover. See [ROPE-77](https://linear.app/outfitter/issue/ROPE-77) for the decision and [ROPE-79](https://linear.app/outfitter/issue/ROPE-79) for the preview.
+Ropes uses the `rope` executable, `rope.toml`, and managed files under `.ropes/configs/`. The public implementation lives in `packages/core/`, and the config schema is `packages/core/schemas/rope.schema.json`. The broader Outfitter application owns its own CLI initialization and unscoped npm cutover.
 
-## Pilot config decisions
+## Ropes checks its own repository
+
+This repository uses `rope.toml` and `.ropes/configs/` for its own checks. `bun run check` runs workflow validation, the public `rope check` command and the test suite. Lefthook runs `rope fix` before committing and uses the same full check before pushing.
+
+To roll back the repository's setup cutover, revert its commit as a unit. The previous revision supplies both the earlier policy and matching tool references. Run the version associated with that revision when verifying a historical rollback.
+
+## Command retirement
+
+Use `rope` for `explain`, `check`, `fix`, `doctor`, `init`, `preset`, `rules`, and `schema`. The public CLI supports the documented flags, including `--at` for `explain` and `check`, `--strict`, and the preview and confirmation options for the actions that write. Preset operations take one preset name at a time. `rope init` uses the fix report shape and preserves existing tool files. `rope schema` lists the schemas for preset and rule reports. The repository builds the standalone executable with `bun run build:rope`.
+
+## Legacy policy retirement
+
+Following the [hard-cutover decision](https://linear.app/outfitter/issue/ROPE-109), Ropes accepts `rope.toml` and keeps generated files under `.ropes/configs/`. Repository operations stop with exit 2 when they encounter the retired standalone file, a retired shared table, or the retired managed directory. Use the [manual migration guide](config-migration.md) to move policy and review the generated setup.
+
+## Current output and marker contracts
+
+Plans and results use shared output version 4. Ropes-owned findings use the `ropes/` namespace. Current parsers reject earlier plan and result versions, while the offline repair reader preserves archived v2 and v3 observations with their original IDs. See [output contracts](output.md).
+
+The Markdown fragment marker is `<!-- ropes-disable-next-line code-block-parse -->`. A retired `cinch-` marker produces migration guidance. See [the Markdown standard](markdown-standard.md).
+
+## Historical cutover record · November 20, 2026
+
+The following decisions and inventory describe the pilot before command, config, finding, marker, and source-layout retirement. They preserve the original paths and observations. Current behavior is described above and in the [manual migration guide](config-migration.md).
+
+### Pilot config decisions
 
 Matt approved these choices on November 20, 2026.
 
@@ -11,7 +35,7 @@ Matt approved these choices on November 20, 2026.
 - When multiple supported config sources would govern the same root, report the conflict before writing. Preserve the behavior of a single legacy config.
 - Start with a read-only preview. Show the proposed policy, managed files, and root tool references. The source files stay available for any later conversion. A future apply path must define how to recover the old config and pointers from the pre-migration revision before removing anything.
 
-## Ropes references
+### Observed source inventory
 
 The [Cinch baseline](https://github.com/outfitter-dev/ropes/tree/64d311fd54a5dde1448047073abfca3a425ea057) has one private package at `packages/cinch`, historically named `@outfitter/cinch@0.0.0`. The repo is its own first consumer.
 
@@ -25,21 +49,7 @@ The [Cinch baseline](https://github.com/outfitter-dev/ropes/tree/64d311fd54a5dde
 | Standalone binary | `packages/cinch/scripts/build-binary.ts` builds `cinch`. Its Bun stand-in uses the user's `cinch/stand-in` cache directory. | Ropes. Binary distribution remains in ROPE-47. |
 | Names and rollout | README, AGENTS, `docs/rollout.md`, the Linear plan, and the decision register describe different points in the transition. | Ropes. ROPE-82 updates repository ownership. ROPE-83 updates planning references and uses the repository split to hand off Outfitter work. Treat the rollout document's trial counts as historical. |
 
-## Ropes checks its own repository
-
-This repository uses `rope.toml` and `.ropes/configs/` for its own checks. `bun run check` runs workflow validation, the public `rope check` command and the test suite. Lefthook runs `rope fix` before committing and uses the same full check before pushing.
-
-To roll back the repository's setup cutover, revert its commit as a unit. The previous revision supplies both the legacy policy and the matching tool references. A partial rollback can leave competing root configs or stale preset pointers.
-
-## Command retirement
-
-Use `rope` for `explain`, `check`, `fix`, `doctor`, `init`, `preset`, `rules`, and `schema`. The public CLI supports the documented flags, including `--at` for `explain` and `check`, `--strict`, and the preview and confirmation options for the actions that write. Preset operations take one preset name at a time. `rope init` uses the fix report shape and preserves existing tool files. `rope schema` lists the schemas for preset and rule reports. The repository builds the standalone executable with `bun run build:rope`.
-
-## Legacy policy retirement
-
-Following the [hard-cutover decision](https://linear.app/outfitter/issue/ROPE-109), Ropes accepts `rope.toml` and keeps generated files under `.ropes/configs/`. Repository operations stop with exit 2 when they encounter the retired standalone file, a retired shared table, or the retired managed directory. Use the [manual migration guide](config-migration.md) to move policy and review the generated setup.
-
-## Consumers and repository links
+### Consumer inventory and repository links
 
 On November 20, 2026, a tracked-file search across the 17 mounted Outfitter sibling checkouts found no active Cinch or Ropes package caller outside Ropes. A hosted GitHub code search for `@outfitter/cinch`, `@ropes/core`, `@ropes/cli`, `cinch check`, `cinch fix`, and `cinch.toml` found no indexed consumer outside Ropes. Record a consumer's exact pin and owner when it appears. The searches do not cover private local scripts, unindexed branches, global installs, or registry consumers.
 

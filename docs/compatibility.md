@@ -14,7 +14,7 @@ packs = ["typescript-api"]
 
 Each package declares its supported TypeScript API range in its worktree `package.json` under `peerDependencies.typescript`. A range wholly below stable `5.0.0` makes the rule inapplicable. A range wholly at or above that version makes it applicable. A range spanning the boundary cannot establish one effective API target and yields an incomplete check. Explicit prerelease targets are unsupported by this stable-release proof and are incomplete.
 
-The pilot requires selection by name, either in `rules.packs` or with `cinch rules adopt typescript-api --yes`. Initialization and unnamed bulk adoption leave this pack off. Discovery still shows it with `explicitOnly = true`.
+The pilot requires selection by name, either in `rules.packs` or with `rope rules adopt typescript-api --yes`. Initialization and unnamed bulk adoption leave this pack off. Discovery still shows it with `explicitOnly = true`.
 
 ```json
 {
@@ -26,7 +26,7 @@ The pilot requires selection by name, either in `rules.packs` or with `cinch rul
 
 A package can explicitly inherit the workspace's peer target by adding `"ropes": { "inheritTargets": ["typescript"] }` to its manifest. Declaring and inheriting the same target is ambiguous. A valid manifest without a peer target establishes known absence of this declared support policy. An absent or unreadable required manifest is unresolved. Unsupported values such as `catalog:` and `workspace:*` are incomplete. This pilot reads this manifest source only. It does not derive a resolved dependency from a lockfile or infer a support target from an executable.
 
-`rope explain --json` records the support range, package scope, source file and key, source content digest, explicit inheritance source, condition, and applicability decision beside each selected path. `rope check` executes that same plan. Named excluded paths retain the exclusion reason. A disabled, unadopted, or known-inapplicable check requires neither the API dependency nor its engine. A required unresolved decision yields exit 2, including alongside blocking findings.
+`rope explain --json` records the support range, package scope, source file and key, source content digest, explicit inheritance source, condition, and applicability decision beside each selected path. These fields are part of the v4 plan contract; consumers must validate that version before interpreting the applicability decision. `rope check` executes that same plan. Named excluded paths retain the exclusion reason. A disabled, unadopted, or known-inapplicable check requires neither the API dependency nor its engine. A required unresolved decision yields exit 2, including alongside blocking findings.
 
 The installed Bun checker is independently held to its tool pin. Before checking, the adapter resolves the installed `typescript` API package from each selected source directory and requires its version to satisfy the source package's declared support range. A nearer dependency installation is checked on its own. Missing or mismatched API declarations are incomplete. A newer `tsc` executable on PATH changes neither the target nor the decision.
 

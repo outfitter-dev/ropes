@@ -32,7 +32,7 @@ The same missing-extends diagnostic remains an error from the engine at both lev
 
 Run `rope rules` or `rope rules list` to inspect each shipped pack's state and the repository's local rules. The report shows where a pack is relevant, whether the policy adopts it, and whether rules are enabled. An adopted pack whose files fall outside selection carries a note naming the policy and the selection to review.
 
-`rope rules adopt config` previews the policy edit. Add `--yes` to apply it, or combine `--yes --dry-run` to retain the preview. A repeat adoption produces no change. An existing rollout enabled only through path overrides keeps that scope when packs are adopted. If the active policy changes during planning, adoption stops so the saved edit can be reviewed before retrying. Adoption writes the active `rope.toml` or supported legacy policy file and leaves the Git index untouched. A repository without a policy config is directed to `rope init` first.
+`rope rules adopt config` previews the policy edit. Add `--yes` to apply it, or combine `--yes --dry-run` to retain the preview. A repeat adoption produces no change. An existing rollout enabled only through path overrides keeps that scope when packs are adopted. If the active policy changes during planning, adoption stops so the saved edit can be reviewed before retrying. Adoption writes the active `rope.toml` and leaves the Git index untouched. A repository without a policy config is directed to `rope init` first.
 
 ## Preview a shipped rewrite
 
@@ -67,4 +67,4 @@ The automatic-enable assumption in ROPE-61 was superseded by explicit pack adopt
 
 The provisional plan and result contract uses version 4. A completed result can be clean while retaining native findings when they are all advisory. Consumers must check the version before interpreting a verdict, then use the evaluation data to identify simulations and expired observations. The offline repair reader can also display records that embedded version 3 or version 2 observations, preserving their original finding IDs. These archived records are read-only evidence; current qualification requires version 4 results.
 
-`cinch schema check` and the generated config schema describe these fields. The [level proof](../packages/cli/tests/enforcement.test.ts) and [UTC boundary proof](../packages/cli/tests/deadline.test.ts) exercise the shipped rule using the real engine.
+`rope schema check` and the generated config schema describe these fields. The [level proof](../packages/cli/tests/enforcement.test.ts) and [UTC boundary proof](../packages/cli/tests/deadline.test.ts) exercise the shipped rule using the real engine.
