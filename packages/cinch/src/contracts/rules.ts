@@ -5,6 +5,8 @@ export const PackManifestSchema = z.strictObject({
   about: z.string().min(1),
   /** Requires adoption by name, including during initialization. */
   explicitOnly: z.boolean().optional(),
+  /** Pack-local names of shipped rules with an approved rewrite. */
+  fixable: z.array(z.string().min(1)).optional(),
   name: z.string().min(1),
   /** Root-relative globs. The pack applies where a file matches one. */
   relevant: z.array(z.string().min(1)).min(1),
