@@ -168,6 +168,14 @@ export interface Adapter {
    */
   readonly relocates?: Relocates;
   /**
+   * Reads only the authored root config to verify it consumes this adapter's
+   * generated settings. Never starts an engine, writes, or repairs a file.
+   */
+  readonly readsGeneratedConfig?: (
+    root: string,
+    file: string
+  ) => Promise<boolean>;
+  /**
    * The adapter as it stands once it has read what the repository says to
    * its engine in the engine's own files. It reads, and never writes.
    */

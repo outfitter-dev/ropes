@@ -39,13 +39,13 @@ export type RepairInput = z.infer<typeof RepairInputSchema>;
 
 // Historical observations retain their original finding IDs. Only the offline
 // reader accepts them; new repairs and qualification require current results.
-const ArchivedV3V4ResultSchema = z
+const ArchivedV3ToV5ResultSchema = z
   .object({
     ...ResultSchema.unwrap().shape,
     plan: PlanSchema.unwrap()
-      .extend({ schemaVersion: z.literal([3, 4]) })
+      .extend({ schemaVersion: z.literal([3, 4, 5]) })
       .readonly(),
-    schemaVersion: z.literal([3, 4]),
+    schemaVersion: z.literal([3, 4, 5]),
   })
   .refine((result) => result.schemaVersion === result.plan.schemaVersion, {
     message: "result and plan schema versions must match",
@@ -70,7 +70,7 @@ const ArchivedV2ResultSchema = z
 
 const ObservedResultSchema = z.union([
   ResultSchema,
-  ArchivedV3V4ResultSchema,
+  ArchivedV3ToV5ResultSchema,
   ArchivedV2ResultSchema,
 ]);
 

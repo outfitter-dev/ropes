@@ -16,6 +16,7 @@ import type { CommandDeps } from "./prepare.ts";
 import { describeGap, gapsOf } from "./preset-gaps.ts";
 import type { PresetRequest } from "./preset-operation.ts";
 import type { Preset } from "./presets.ts";
+import { protectedWriteAt } from "./protected-config.ts";
 import { STARTER_CONFIG } from "./starter.ts";
 
 const textAt = async (root: string, file: string): Promise<string | null> => {
@@ -166,6 +167,18 @@ export const runRelocate = async (
       error: `${beyond} leads outside the repository, so Ropes will not write it.`,
       ok: false,
     };
+  }
+  const current = await loadConfig(root);
+  if (!current.ok) {
+    return { error: describeConfigError(current.error), ok: false };
+  }
+  const protectedFile = await protectedWriteAt(
+    root,
+    current.value,
+    moved.files.map((file) => file.path)
+  );
+  if (protectedFile !== undefined) {
+    return { error: protectedFile, ok: false };
   }
   const before = await Promise.all(
     moved.files.map((file) => textAt(root, file.path))

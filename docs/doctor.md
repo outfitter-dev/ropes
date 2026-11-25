@@ -59,7 +59,7 @@ Doctor has no way of its own to write a file. The files Ropes keeps are steps in
 
 `rope doctor` also lists each rule pack that applies to the repository and that the config neither names nor turns off, under `Rule packs not adopted`. That is a note: it does not change the exit code, and `--fix` does not adopt a pack, because which rules run is the repository's choice. `rope rules adopt` shows the change and `--yes` writes it. A config that states `enabled = false` under `[rules]` gets no such note. In `--json` the names are in `notAdopted`.
 
-`rope doctor --json` prints one report. It is provisional and carries `schemaVersion: 5`.
+`rope doctor --json` prints one report. It is provisional and carries `schemaVersion: 6`.
 
 | Field | Meaning |
 | --- | --- |

@@ -7,6 +7,12 @@ export type Gap =
   | {
       readonly file: string;
       readonly preset: Preset;
+      readonly why: "protected";
+      readonly owner: NonNullable<Plan["paths"][number]["protected"]>[number];
+    }
+  | {
+      readonly file: string;
+      readonly preset: Preset;
       readonly skipped: Skipped | undefined;
       readonly why: "left-out";
     };
@@ -22,6 +28,10 @@ export type Gap =
  */
 export const gapOf = (preset: Preset, file: string, plan: Plan): Gap | null => {
   const entry = plan.paths.find((planned) => planned.path === file);
+  const [owner] = entry?.protected ?? [];
+  if (owner !== undefined) {
+    return { file, owner, preset, why: "protected" };
+  }
   const states = (value: boolean): boolean =>
     entry?.policy.some(
       (setting) => setting.key === preset.enabledBy && setting.value === value
@@ -59,7 +69,11 @@ const describeOff = (preset: Preset): string => {
 };
 
 /** What a person reads when a preset file cannot be kept. */
-export const describeGap = (gap: Gap): string =>
-  gap.why === "off"
+export const describeGap = (gap: Gap): string => {
+  if (gap.why === "protected") {
+    return `${gap.file} is protected for ${gap.owner.tool} by ${gap.owner.source.file}: ${gap.owner.source.key}. Remove it from that config list before asking Ropes to manage it.`;
+  }
+  return gap.why === "off"
     ? describeOff(gap.preset)
     : `the Ropes config leaves ${gap.file} out (${settingOf(gap.skipped)}), so the ${gap.preset.name} preset cannot be kept there. Take the file out of that setting, then run this again.`;
+};

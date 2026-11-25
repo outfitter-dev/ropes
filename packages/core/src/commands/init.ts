@@ -70,7 +70,7 @@ export const init =
         : starterConfig(carried, packs, readBy(adapters, packs));
     // The old config is judged now: once the new files are written, an
     // adapter can no longer tell what they were made from.
-    const old = await oldConfigs(adapters, plan, root);
+    const old = await oldConfigs(adapters, plan, root, config);
     if (starter !== null && apply) {
       await Bun.write(path.join(root, ROPES_FILE), starter);
     }

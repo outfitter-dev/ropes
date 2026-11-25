@@ -1,12 +1,15 @@
 import type { AdapterDescriptor } from "../adapters/adapter.ts";
 import type { RopesConfig } from "../contracts/config.ts";
+import type { Delegated, Protected } from "../contracts/delegation.ts";
 import type { PlannedPath, PlanStep, PolicyValue } from "../contracts/plan.ts";
 import type { PackageTarget } from "../contracts/targets.ts";
 import { inRunOrder, packageOf, toStep } from "./batches.ts";
+import { delegatedAdapter, protectedAt } from "./delegates.ts";
 import type { Matcher } from "./glob.ts";
 import { targetSteps } from "./targets.ts";
 
 export interface PathPlanInput {
+  readonly protectedPaths?: ReadonlyMap<string, readonly Protected[]>;
   readonly config: RopesConfig;
   /** In execution order. */
   readonly descriptors: readonly AdapterDescriptor[];
@@ -23,6 +26,7 @@ export interface PathPlanInput {
 }
 
 export interface Scope {
+  readonly delegated: (path: string) => readonly Delegated[];
   readonly included: Matcher;
   readonly excluded: Matcher;
   /** One matcher per override, in file order. */
@@ -135,6 +139,9 @@ export const planPath = (
 ): PlannedPath => {
   const inPackage = packageOf(path, input.packages);
   const policy = policyFor(path, input.config, scope);
+  const delegated = scope.delegated(path);
+  const protectedBy =
+    input.protectedPaths?.get(path) ?? protectedAt(input.config, path);
   if (scope.excluded(path)) {
     // The policy is still stated, so a reader can tell a kept file that is
     // excluded while its adapter is on from one whose adapter is off.
@@ -142,13 +149,16 @@ export const planPath = (
       package: inPackage,
       path,
       policy,
+      ...(protectedBy.length === 0 ? {} : { protected: protectedBy }),
       skipped: { reason: "excluded", source: input.config.exclude.source },
       steps: [],
     };
   }
   // A kept file needs no `include` entry. When policy switches its adapter
   // off, the path is treated like any other.
-  if (!isKept(path, policy, input.descriptors) && !scope.included(path)) {
+  const included =
+    isKept(path, policy, input.descriptors) || scope.included(path);
+  if (delegated.length === 0 && protectedBy.length === 0 && !included) {
     return {
       package: inPackage,
       path,
@@ -164,15 +174,19 @@ export const planPath = (
       policy,
       input.descriptors.filter(
         (descriptor) =>
-          descriptor.target === undefined ||
-          input.presentFiles === undefined ||
-          input.presentFiles.has(path)
+          included &&
+          !delegatedAdapter(descriptor, delegated) &&
+          !(protectedBy.length > 0 && descriptor.setup === true) &&
+          (descriptor.target === undefined ||
+            input.presentFiles === undefined ||
+            input.presentFiles.has(path))
       )
-    ).map((step) =>
-      input.ruleWriters?.get(step.adapter)?.(path) === true
-        ? { ...step, writes: true }
-        : step
-    ),
+    ).map((step) => ({
+      ...step,
+      writes:
+        protectedBy.length === 0 &&
+        (step.writes || input.ruleWriters?.get(step.adapter)?.(path) === true),
+    })),
     input.descriptors
   );
   const { steps, targets } = targetSteps(
@@ -188,6 +202,8 @@ export const planPath = (
   )?.layers?.[path];
   return {
     ...(layer === undefined ? {} : { layer }),
+    ...(delegated.length === 0 ? {} : { delegated }),
+    ...(protectedBy.length === 0 ? {} : { protected: protectedBy }),
     package: inPackage,
     path,
     policy,

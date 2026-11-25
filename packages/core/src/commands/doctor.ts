@@ -60,8 +60,9 @@ const workspaceStatus = async (
     return workspace.error;
   }
   const { adapters, plan } = workspace.value;
+  const { facts: _facts, ...withoutSettings } = plan;
   const engines = {
-    ...plan,
+    ...(includeSettings ? plan : withoutSettings),
     paths: plan.paths.map((entry) => ({
       ...entry,
       steps: entry.steps.filter((step) => step.setup !== true),
@@ -83,8 +84,11 @@ const workspaceStatus = async (
               (status) =>
                 status.tool === adapter.descriptor.tool &&
                 status.versionRange ===
-                  plan.batches.find((batch) => batch.adapter === id)
-                    ?.versionRange &&
+                  (plan.batches.find((batch) => batch.adapter === id)
+                    ?.versionRange ??
+                    plan.facts?.reporters.find(
+                      (reporter) => reporter.adapter === id
+                    )?.versionRange) &&
                 status.problem === undefined
             )
         )
@@ -148,7 +152,7 @@ const inspectDoctor = async (
   // A new config carries over an older tool's settings, so a dry run's
   // copy must hold that tool's files even when git ignores them.
   const old = fixing
-    ? await oldConfigs(setup.adapters, setup.plan, root)
+    ? await oldConfigs(setup.adapters, setup.plan, root, setup.config)
     : null;
   const ran: FixRun = fixing
     ? await writePlan(setup, {

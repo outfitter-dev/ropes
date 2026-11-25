@@ -2,6 +2,7 @@ import { SCHEMA_VERSION } from "../contracts/plan.ts";
 import type { Evaluation, Plan, Selection } from "../contracts/plan.ts";
 import { batchesFor, guardedProjectPaths } from "./batches.ts";
 import { resolveDeadlines } from "./deadlines.ts";
+import { delegatedScope } from "./delegates.ts";
 import { sharedFacts } from "./facts.ts";
 import { compileGlobs } from "./glob.ts";
 import type { Matcher } from "./glob.ts";
@@ -61,6 +62,7 @@ export const resolvePlan = (given: ResolveInput): Plan => {
     input.descriptors.flatMap(({ id, packs }) => (packs ? [id] : []))
   );
   const scope: Scope = {
+    delegated: delegatedScope(input.config),
     excluded: compileGlobs(input.config.exclude.value),
     included: compileGlobs(input.config.include.value),
     overrides: input.config.overrides.map((override) =>
@@ -80,7 +82,7 @@ export const resolvePlan = (given: ResolveInput): Plan => {
       ? { ...batch, rules: rulesOn(rules, batch.adapter) }
       : batch
   );
-  const facts = sharedFacts(input.config, input.descriptors, batches);
+  const facts = sharedFacts(input.config, input.descriptors, batches, planned);
   const local = localRules(input.config, input.descriptors);
   const deadlines = resolveDeadlines(
     given.config,

@@ -121,6 +121,7 @@ export const writePlan = async (
       ...plan.paths.map((entry) => entry.path),
       ...also,
       ...beside,
+      ...(prepared.protectedPaths?.keys() ?? []),
     ];
     const inputs = await collectPreviewInputs(prepared);
     const uniqueInputs = [

@@ -37,6 +37,14 @@ export const pathBlocks = (result: Result): string[] => {
   const add = (path: string, line: string) => {
     byPath.set(path, [...(byPath.get(path) ?? []), line]);
   };
+  for (const entry of result.plan.paths) {
+    for (const delegate of entry.delegated ?? []) {
+      add(
+        entry.path,
+        `  delegated to ${delegate.tool}, not run by Ropes (${delegate.domains.join(", ")}; ${delegate.source.file}: ${delegate.source.key})`
+      );
+    }
+  }
   for (const step of result.steps) {
     for (const finding of step.findings) {
       add(finding.path, findingLine(finding));
@@ -71,6 +79,9 @@ const summary = (result: Result): string => {
     return "No files selected, so nothing ran.";
   }
   const skipped = paths.filter((path) => path.skipped !== undefined).length;
+  const delegated = paths.filter(
+    (path) => (path.delegated?.length ?? 0) > 0
+  ).length;
   const counts = [
     `${plural(paths.length, "file")} selected`,
     `${plural(ran, "step")} ran`,
@@ -92,6 +103,11 @@ const summary = (result: Result): string => {
   }
   if (count("incomplete") > 0) {
     counts.push(`${plural(count("incomplete"), "step")} incomplete`);
+  }
+  if (delegated > 0) {
+    counts.push(
+      `${plural(delegated, "selected path")} delegated to external tools`
+    );
   }
   if (skipped > 0) {
     counts.push(`${plural(skipped, "file")} left out by config`);

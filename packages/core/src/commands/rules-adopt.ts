@@ -17,6 +17,7 @@ import type {
   ReadRequest,
 } from "./command.ts";
 import type { CommandDeps } from "./prepare.ts";
+import { protectedWriteAt } from "./protected-config.ts";
 import { outside } from "./relocate.ts";
 import { unreached } from "./rules-reach.ts";
 import { prepareAdoption, policyStillCurrent } from "./rules-snapshot.ts";
@@ -114,6 +115,10 @@ export const adoptRules = async (
   }
   const { adapters, config, present, root } = prepared.value.prepared;
   const { text } = prepared.value;
+  const protectedFile = await protectedWriteAt(root.root, config, [text.file]);
+  if (protectedFile !== undefined) {
+    return unusable(protectedFile);
+  }
   const states = shippedStates(
     config,
     adapters.map(({ descriptor }) => descriptor),

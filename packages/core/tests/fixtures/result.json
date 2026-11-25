@@ -40,7 +40,7 @@
       }
     ],
     "root": "/repo",
-    "schemaVersion": 5,
+    "schemaVersion": 6,
     "selection": {
       "kind": "paths",
       "paths": ["docs/guide.md"]
@@ -64,7 +64,7 @@
       }
     ]
   },
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "steps": [
     {
       "adapter": "rumdl",
