@@ -3,16 +3,18 @@ import { mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { ropesSchema } from "../src/commands/schema.ts";
 import { parseConfigTable } from "../src/config/parse.ts";
 import { configJsonSchema } from "../src/config/schema.ts";
 
-const PUBLISHED = path.resolve(import.meta.dir, "../schemas/cinch.schema.json");
+const PUBLISHED = path.resolve(import.meta.dir, "../schemas/rope.schema.json");
 const ORIGIN = { file: "rope.toml", prefix: "" };
 
 test("the published schema is the one the loader's definition gives", async () => {
   const published: unknown = await Bun.file(PUBLISHED).json();
-  // The fixture uses the original config title until the schema rename.
   expect(published).toEqual(configJsonSchema());
+  expect(published).toEqual(ropesSchema("config"));
+  expect(published).toMatchObject({ title: "rope.toml" });
 });
 
 test("the schema refuses a key the loader refuses", () => {
@@ -26,18 +28,25 @@ test("the schema refuses a key the loader refuses", () => {
 });
 
 const lint = async (text: string): Promise<{ code: number; said: string }> => {
-  const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-tp-")));
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-tp-")));
   try {
     await Bun.write(path.join(root, "rope.toml"), text);
+    await Bun.write(
+      path.join(root, ".taplo.toml"),
+      await Bun.file(new URL("../../../.taplo.toml", import.meta.url)).text()
+    );
+    await Bun.write(
+      path.join(root, "packages/core/schemas/rope.schema.json"),
+      await Bun.file(PUBLISHED).text()
+    );
     const child = Bun.spawn(
       [
         "taplo",
         "lint",
         "--colors",
         "never",
-        "--no-auto-config",
-        "--schema",
-        Bun.pathToFileURL(PUBLISHED).href,
+        "--config",
+        ".taplo.toml",
         "rope.toml",
       ],
       { cwd: root, stderr: "pipe", stdin: "ignore", stdout: "ignore" }
@@ -52,7 +61,7 @@ const lint = async (text: string): Promise<{ code: number; said: string }> => {
   }
 };
 
-test("Taplo flags an unknown key against the published schema", async () => {
+test("Taplo resolves the repository schema binding and flags an unknown key", async () => {
   if (Bun.which("taplo") === null) {
     console.warn("skipped: taplo is not on PATH, so the schema was not tried");
     return;

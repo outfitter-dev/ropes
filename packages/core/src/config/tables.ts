@@ -22,7 +22,7 @@ export const ProfileSchema = z.strictObject({
     .boolean()
     .optional()
     .describe(
-      "Whether Cinch keeps the shared Markdown standard in the repository."
+      "Whether Ropes keeps the shared Markdown standard in the repository."
     ),
 });
 export const TomlSchema = z.strictObject({
@@ -38,7 +38,7 @@ const optInPreset = (what: string) =>
       .boolean()
       .optional()
       .describe(
-        `Whether Cinch keeps the shared ${what} in the repository. Off unless set to true.`
+        `Whether Ropes keeps the shared ${what} in the repository. Off unless set to true.`
       ),
   });
 /** The switch for an engine that is off until the repository asks for it. */
@@ -84,7 +84,7 @@ export const OPT_IN = {
       .array(z.string().min(1))
       .optional()
       .describe(
-        "Shipped rule packs, by name, that are run. `cinch rules adopt` writes this."
+        "Shipped rule packs, by name, that are run. `rope rules adopt` writes this."
       ),
   }),
   typescript: optInPreset("TypeScript compiler options").extend(

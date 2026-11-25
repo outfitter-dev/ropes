@@ -83,7 +83,7 @@ try {
       "src/render/index.ts",
       "presets/rumdl.toml",
       "rules/config/pack.toml",
-      "schemas/cinch.schema.json",
+      "schemas/rope.schema.json",
     ]
   );
   await checkFiles(

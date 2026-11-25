@@ -1,7 +1,7 @@
-# Taplo validates Ropes and legacy Cinch configuration against the pilot schema.
+# Taplo validates Ropes policy against the pilot schema.
 # `rope check` runs it on every selected TOML file. Formatting stays with `bun fmt`.
 [[rule]]
-include = ["cinch.toml", "rope.toml"]
+include = ["rope.toml"]
 
 [rule.schema]
-path = "packages/core/schemas/cinch.schema.json"
+path = "packages/core/schemas/rope.schema.json"

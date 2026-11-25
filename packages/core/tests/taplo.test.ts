@@ -10,8 +10,7 @@ import {
 } from "../src/adapters/taplo/adapter.ts";
 import { checkOne, fixOne } from "./one-file.ts";
 
-const SCHEMA = new URL("../schemas/cinch.schema.json", import.meta.url)
-  .pathname;
+const SCHEMA = new URL("../schemas/rope.schema.json", import.meta.url).pathname;
 
 const installed = Bun.which("taplo") !== null;
 /** A real-engine test. It says so when the engine is not there to run it. */
@@ -30,7 +29,7 @@ const inRepo = async <T>(
   body: (root: string) => Promise<T>
 ): Promise<T> => {
   const root = await realpath(
-    await mkdtemp(path.join(tmpdir(), "cinch-taplo-"))
+    await mkdtemp(path.join(tmpdir(), "ropes-taplo-"))
   );
   try {
     await Promise.all(
