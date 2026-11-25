@@ -4,16 +4,16 @@ import { PARSE_RULE } from "./fences.ts";
 
 /**
  * The comment that says a fenced block is a fragment on purpose. The engine
- * has no way to leave one block unformatted, so this one is Cinch's. It is
+ * has no way to leave one block unformatted, so Ropes provides the marker. It is
  * written the way the engine writes its own, to read the same and to be
  * swapped for a native form when there is one.
  */
-export const MARKER = `<!-- cinch-disable-next-line ${PARSE_RULE} -->`;
+export const MARKER = `<!-- ropes-disable-next-line ${PARSE_RULE} -->`;
 
 export const UNUSED_RULE = "ropes/unused-disable";
 export const UNKNOWN_RULE = "ropes/unknown-disable";
 
-const COMMENT = /^<!--\s*(?<body>cinch-\S*(?:\s+\S+)*?)\s*-->$/u;
+const COMMENT = /^<!--\s*(?<body>(?:ropes|cinch)-\S*(?:\s+\S+)*?)\s*-->$/u;
 const WORDS = MARKER.slice(4, -3).trim();
 
 interface Marker {
@@ -29,7 +29,7 @@ interface Marker {
 }
 
 /**
- * The Cinch comments of a Markdown file. A comment inside a fenced block is
+ * The disable comments of a Markdown file. A comment inside a fenced block is
  * that block's text, so a document can show the marker without using it.
  */
 const markersIn = (text: string): Marker[] => {
@@ -88,7 +88,7 @@ export const withMarkers = (
         own(
           marker.line,
           UNKNOWN_RULE,
-          `Cinch does not know the comment \`${marker.body}\`. The one it reads is \`${MARKER}\`.`
+          `Ropes does not recognize the comment \`${marker.body}\`. The one it reads is \`${MARKER}\`.`
         ),
       ];
     }

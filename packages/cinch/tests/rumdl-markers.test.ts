@@ -24,6 +24,7 @@ const at = (line: number, rule: string): Finding => ({
   source: "rumdl",
 });
 const PARSE = "code-block-parse";
+const LEGACY = "<!-- cinch-disable-next-line code-block-parse -->";
 const FRAGMENT = "```ts\nfoo: 1,\n```\n";
 const read = (text: string, findings: readonly Finding[]) =>
   withMarkers(text, findings, CONTEXT).map(
@@ -31,7 +32,7 @@ const read = (text: string, findings: readonly Finding[]) =>
   );
 
 test("the marker is written the way the engine writes its own", () => {
-  expect(MARKER).toBe("<!-- cinch-disable-next-line code-block-parse -->");
+  expect(MARKER).toBe("<!-- ropes-disable-next-line code-block-parse -->");
 });
 
 test("a file with no marker keeps its findings", () => {
@@ -55,7 +56,7 @@ test("a marker in a list or a quote is read where it is", () => {
   expect(read(`> ${MARKER}\n> \`\`\`ts\n> a;\n> \`\`\`\n`, [])).toEqual([
     `1 ${UNUSED_RULE}`,
   ]);
-  expect(read("> <!-- cinch-typo -->\n", [])).toEqual([`1 ${UNKNOWN_RULE}`]);
+  expect(read("> <!-- ropes-typo -->\n", [])).toEqual([`1 ${UNKNOWN_RULE}`]);
 });
 
 test("a blank line between the marker and the fence is fine, text is not", () => {
@@ -106,38 +107,44 @@ test("a marker that is not right above a fence is a finding, and excuses nothing
 });
 
 test("a misspelled marker is a finding that names the right one, and excuses nothing", () => {
-  const text = `<!-- cinch-disable-next-line code-block-pars -->\n${FRAGMENT}\n<!--cinch-ignore-->\n${FRAGMENT}`;
+  const text = `<!-- ropes-disable-next-line code-block-pars -->\n${FRAGMENT}\n<!--ropes-ignore-->\n${FRAGMENT}`;
   const found = withMarkers(text, [at(2, PARSE), at(7, PARSE)], CONTEXT);
   expect(found.map(({ range, rule }) => `${range.start.line} ${rule}`)).toEqual(
     [`1 ${UNKNOWN_RULE}`, `2 ${PARSE}`, `6 ${UNKNOWN_RULE}`, `7 ${PARSE}`]
   );
   expect(found[0]?.message).toBe(
-    `Cinch does not know the comment \`cinch-disable-next-line code-block-pars\`. The one it reads is \`${MARKER}\`.`
+    `Ropes does not recognize the comment \`ropes-disable-next-line code-block-pars\`. The one it reads is \`${MARKER}\`.`
   );
 });
 
+test("the retired marker reports the replacement and does not excuse a fragment", () => {
+  const found = withMarkers(`${LEGACY}\n${FRAGMENT}`, [at(2, PARSE)], CONTEXT);
+  expect(found.map(({ rule }) => rule)).toEqual([UNKNOWN_RULE, PARSE]);
+  expect(found[0]?.message).toContain(MARKER);
+});
+
 test("extra spaces in the marker are fine", () => {
-  const text = `<!--   cinch-disable-next-line   code-block-parse   -->\n${FRAGMENT}`;
+  const text = `<!--   ropes-disable-next-line   code-block-parse   -->\n${FRAGMENT}`;
   expect(read(text, [at(2, PARSE)])).toEqual([]);
 });
 
 test("a marker shown inside a fenced block is text, not a marker", () => {
-  const text = `\`\`\`\`md\n${MARKER}\n\`\`\`ts\nfoo: 1,\n\`\`\`\n\`\`\`\`\n\n~~~md\n<!-- cinch-typo -->\n~~~\n`;
+  const text = `\`\`\`\`md\n${MARKER}\n\`\`\`ts\nfoo: 1,\n\`\`\`\n\`\`\`\`\n\n~~~md\n<!-- ropes-typo -->\n~~~\n`;
   expect(read(text, [])).toEqual([]);
 });
 
 test("only a fence in the block's own container closes it", () => {
-  const indented = "```md\n        ```\n<!-- cinch-typo -->\n```\n";
+  const indented = "```md\n        ```\n<!-- ropes-typo -->\n```\n";
   expect(read(indented, [])).toEqual([]);
-  const quoted = "```md\n> ```\n<!-- cinch-typo -->\n```\n";
+  const quoted = "```md\n> ```\n<!-- ropes-typo -->\n```\n";
   expect(read(quoted, [])).toEqual([]);
-  const inList = `- \`\`\`md\n      \`\`\`\n  <!-- cinch-typo -->\n  \`\`\`\n\n${MARKER}\n${FRAGMENT}`;
+  const inList = `- \`\`\`md\n      \`\`\`\n  <!-- ropes-typo -->\n  \`\`\`\n\n${MARKER}\n${FRAGMENT}`;
   expect(read(inList, [at(7, PARSE)])).toEqual([]);
 });
 
-test("another tool's comment is not Cinch's to judge", () => {
+test("other tools' comments stay out of marker findings", () => {
   expect(
-    read("<!-- rumdl-disable-next-line MD001 -->\n<!-- a cinch- note -->\n", [])
+    read("<!-- rumdl-disable-next-line MD001 -->\n<!-- a ropes- note -->\n", [])
   ).toEqual([]);
 });
 
@@ -165,6 +172,10 @@ test("on the real engine a fragment passes with the marker and fails without it"
     };
     expect(await check(`# A\n\n${FRAGMENT}`)).toEqual([`3 ${PARSE}`]);
     expect(await check(`# A\n\n${MARKER}\n${FRAGMENT}`)).toEqual([]);
+    expect(await check(`# A\n\n${LEGACY}\n${FRAGMENT}`)).toEqual([
+      `3 ${UNKNOWN_RULE}`,
+      `4 ${PARSE}`,
+    ]);
     expect(await check(`# A\n\n${MARKER}\n\n${FRAGMENT}`)).toEqual([]);
     expect(
       await check(`# A\n\n${MARKER}\n\`\`\`ts\nconst a = 1;\n\`\`\`\n`)
