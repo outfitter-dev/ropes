@@ -1,8 +1,8 @@
 import path from "node:path";
 
-import { adaptersFor } from "../../cinch/src/adapters/registry.ts";
-import { gitText } from "../../cinch/src/commands/cleanup/git.ts";
-import { fixtureGit } from "../../cinch/tests/acceptance-repo.ts";
+import { adaptersFor } from "../../core/src/adapters/registry.ts";
+import { gitText } from "../../core/src/commands/cleanup/git.ts";
+import { fixtureGit } from "../../core/tests/acceptance-repo.ts";
 
 export const RULE = "config/tsconfig-extends";
 export const CONFIG = `pilot = 0

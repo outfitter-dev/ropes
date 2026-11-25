@@ -7,7 +7,7 @@ import {
   json,
   proof,
   runEntry,
-} from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
 import manifest from "../package.json" with { type: "json" };
 
 const ROPE = new URL(manifest.bin.rope, new URL("../", import.meta.url));

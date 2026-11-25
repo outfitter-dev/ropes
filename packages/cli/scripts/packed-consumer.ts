@@ -3,7 +3,7 @@ import { mkdir, symlink } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import core from "../../cinch/package.json" with { type: "json" };
+import core from "../../core/package.json" with { type: "json" };
 import fixture from "../tests/fixtures/outfitter/package.json" with { type: "json" };
 import { run } from "./packed-run.ts";
 

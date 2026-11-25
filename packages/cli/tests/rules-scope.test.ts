@@ -6,8 +6,8 @@ import path from "node:path";
 import {
   RulesAdoptReportSchema,
   RulesReportSchema,
-} from "../../cinch/src/contracts/rules-report.ts";
-import { fixtureGit, runEntry } from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/src/contracts/rules-report.ts";
+import { fixtureGit, runEntry } from "../../core/tests/acceptance-repo.ts";
 
 const cli = new URL("../src/cli.ts", import.meta.url);
 const base = `pilot = 0

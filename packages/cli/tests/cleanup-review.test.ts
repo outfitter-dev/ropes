@@ -8,7 +8,7 @@ import {
   json,
   runEntry,
   withFixture,
-} from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
 import { accepted, args, commit, CONFIG, fixed } from "./cleanup-fixture.ts";
 
 const ROPE = new URL("../src/cli.ts", import.meta.url);

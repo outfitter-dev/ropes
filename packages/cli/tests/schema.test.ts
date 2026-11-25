@@ -3,14 +3,14 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { FixReportSchema } from "../../cinch/src/contracts/fix.ts";
-import { PresetReportSchema } from "../../cinch/src/contracts/preset.ts";
-import { RelocateReportSchema } from "../../cinch/src/contracts/relocate.ts";
+import { FixReportSchema } from "../../core/src/contracts/fix.ts";
+import { PresetReportSchema } from "../../core/src/contracts/preset.ts";
+import { RelocateReportSchema } from "../../core/src/contracts/relocate.ts";
 import {
   RulesAdoptReportSchema,
   RulesReportSchema,
-} from "../../cinch/src/contracts/rules-report.ts";
-import { fixtureGit, runEntry } from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/src/contracts/rules-report.ts";
+import { fixtureGit, runEntry } from "../../core/tests/acceptance-repo.ts";
 
 const cli = new URL("../src/cli.ts", import.meta.url);
 test("rope lists public schemas and describes real versioned output", async () => {

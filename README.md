@@ -6,7 +6,7 @@ The broader [`outfitter` CLI](https://github.com/outfitter-dev/outfitter) lives 
 
 ## Status
 
-The `@ropes/core` package holds the existing Cinch implementation under `packages/cinch/`. `@ropes/cli` supplies `rope init`, `rope explain`, `rope check`, `rope fix`, and `rope doctor` for setup inspection and repair. `fix --dry-run` previews content repairs. The Markdown fixture verifies matching plans, versioned results, and exits through the public core API and `rope`.
+The `@ropes/core` package holds the existing Cinch implementation under `packages/core/`. `@ropes/cli` supplies `rope init`, `rope explain`, `rope check`, `rope fix`, and `rope doctor` for setup inspection and repair. `fix --dry-run` previews content repairs. The Markdown fixture verifies matching plans, versioned results, and exits through the public core API and `rope`.
 
 ## Quickstart
 
@@ -62,7 +62,7 @@ The first profile is Markdown. TOML is the second: every TOML file must parse, a
 
 ## The JSON shapes are unstable
 
-The plan, result and finding that `--json` prints are provisional. They carry `schemaVersion: 4` and will change without notice until they are ratified. `parsePlan` and `parseResult` reject a document whose schema version they do not know, and a consumer should do the same. Golden examples live in `packages/cinch/tests/fixtures/`.
+The plan, result and finding that `--json` prints are provisional. They carry `schemaVersion: 4` and will change without notice until they are ratified. `parsePlan` and `parseResult` reject a document whose schema version they do not know, and a consumer should do the same. Golden examples live in `packages/core/tests/fixtures/`.
 
 ## Configuration is a pilot
 
@@ -111,7 +111,7 @@ This repository uses `rope.toml` and tracks its generated configuration under `.
 ## Layout
 
 ```text
-packages/cinch/src/
+packages/core/src/
   contracts/   Plan, result and finding schemas and parsers. No I/O.
   config/      Pilot config loader.
   policy/      The resolver. Pure: config and selection in, plan out.

@@ -7,7 +7,7 @@ import {
   json,
   runEntry,
   withFixture,
-} from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
 
 const ROPE = new URL("../src/cli.ts", import.meta.url);
 const CONFIG = `pilot = 0

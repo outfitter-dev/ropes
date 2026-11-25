@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { nativeCommand } from "../../cinch/src/adapters/taplo/wasm.ts";
-import { fixtureGit, runEntry } from "../../cinch/tests/acceptance-repo.ts";
+import { nativeCommand } from "../../core/src/adapters/taplo/wasm.ts";
+import { fixtureGit, runEntry } from "../../core/tests/acceptance-repo.ts";
 
 const CLI = new URL("../src/cli.ts", import.meta.url);
 const BUILD = new URL("../scripts/build-binary.ts", import.meta.url);

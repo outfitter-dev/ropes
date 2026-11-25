@@ -3,12 +3,12 @@ import path from "node:path";
 
 import { parsePlan, parseResult } from "@ropes/core";
 
-import { FixReportSchema } from "../../cinch/src/contracts/fix.ts";
+import { FixReportSchema } from "../../core/src/contracts/fix.ts";
 import {
   json,
   runEntry,
   withFixture,
-} from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
 import { CONFIG } from "./local-links-fixture.ts";
 
 const ROPE = new URL("../src/cli.ts", import.meta.url);

@@ -2,9 +2,9 @@ import { expect, test } from "bun:test";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 
-import { runCleanup } from "../../cinch/src/commands/cleanup.ts";
-import { withFixture } from "../../cinch/tests/acceptance-repo.ts";
-import { fakeAdapter, PASSED } from "../../cinch/tests/fake-adapter.ts";
+import { runCleanup } from "../../core/src/commands/cleanup.ts";
+import { withFixture } from "../../core/tests/acceptance-repo.ts";
+import { fakeAdapter, PASSED } from "../../core/tests/fake-adapter.ts";
 import { accepted, commit, fixed, RULE } from "./cleanup-fixture.ts";
 
 test("cleanup releases earlier snapshot directories before checking the next one", async () => {

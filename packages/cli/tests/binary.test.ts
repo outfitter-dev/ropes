@@ -2,16 +2,16 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 
-import { DoctorReportSchema } from "../../cinch/src/contracts/doctor.ts";
-import { FixReportSchema } from "../../cinch/src/contracts/fix.ts";
+import { DoctorReportSchema } from "../../core/src/contracts/doctor.ts";
+import { FixReportSchema } from "../../core/src/contracts/fix.ts";
 import {
   checkoutAt,
   fixtureGit,
   runEntry,
-} from "../../cinch/tests/acceptance-repo.ts";
-import { qualifyStandaloneCache } from "../../cinch/tests/binary-cache.ts";
-import { qualifyMiseInstall } from "../../cinch/tests/binary-install.ts";
-import { qualifyStandaloneTaplo } from "../../cinch/tests/binary-taplo.ts";
+} from "../../core/tests/acceptance-repo.ts";
+import { qualifyStandaloneCache } from "../../core/tests/binary-cache.ts";
+import { qualifyMiseInstall } from "../../core/tests/binary-install.ts";
+import { qualifyStandaloneTaplo } from "../../core/tests/binary-taplo.ts";
 import manifest from "../package.json" with { type: "json" };
 import { standaloneFixture } from "./binary-fixture.ts";
 
@@ -76,7 +76,7 @@ test("standalone rope previews and initializes a fresh repository without Bun", 
   expect(
     kept.endsWith(
       await Bun.file(
-        new URL("../../cinch/presets/rumdl.toml", import.meta.url)
+        new URL("../../core/presets/rumdl.toml", import.meta.url)
       ).text()
     )
   ).toBe(true);
@@ -195,7 +195,7 @@ test("rope keeps its shipped preset when the external engine is unavailable", as
   expect(
     kept.endsWith(
       await Bun.file(
-        new URL("../../cinch/presets/rumdl.toml", import.meta.url)
+        new URL("../../core/presets/rumdl.toml", import.meta.url)
       ).text()
     )
   ).toBe(true);

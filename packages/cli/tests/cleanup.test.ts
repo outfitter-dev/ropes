@@ -4,15 +4,15 @@ import path from "node:path";
 
 import { parseCleanup } from "@ropes/core";
 
-import { gitText } from "../../cinch/src/commands/cleanup/git.ts";
-import { CleanupReportSchema } from "../../cinch/src/contracts/cleanup.ts";
-import { compareCleanup } from "../../cinch/src/policy/cleanup.ts";
+import { gitText } from "../../core/src/commands/cleanup/git.ts";
+import { CleanupReportSchema } from "../../core/src/contracts/cleanup.ts";
+import { compareCleanup } from "../../core/src/policy/cleanup.ts";
 import {
   fixtureGit,
   json,
   runEntry,
   withFixture,
-} from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
 import { accepted, args, commit, fixed } from "./cleanup-fixture.ts";
 
 const ROPE = new URL("../src/cli.ts", import.meta.url);

@@ -2,8 +2,8 @@ import { expect, test } from "bun:test";
 
 import { parseCleanup } from "@ropes/core";
 
-import { gitText } from "../../cinch/src/commands/cleanup/git.ts";
-import { json, withFixture } from "../../cinch/tests/acceptance-repo.ts";
+import { gitText } from "../../core/src/commands/cleanup/git.ts";
+import { json, withFixture } from "../../core/tests/acceptance-repo.ts";
 import { campaign, command, migration } from "./cleanup-stack-fixture.ts";
 
 /** A consumer supplies these identities from its target, outside the candidate report. */

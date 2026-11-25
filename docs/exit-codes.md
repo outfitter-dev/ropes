@@ -27,7 +27,7 @@ Exit code 2 also covers problems that stop a run before any step: an unknown com
 
 ## One function decides
 
-`outcomeOf` and `exitCodeOf` in `packages/cinch/src/contracts/result.ts` are the only place a result becomes an outcome or an exit code. Commands call them and never apply a rule of their own. `exitCodeOf` reads the steps, not the `outcome` field, so a result built or edited by hand cannot exit with a code its steps do not support.
+`outcomeOf` and `exitCodeOf` in `packages/core/src/contracts/result.ts` are the only place a result becomes an outcome or an exit code. Commands call them and never apply a rule of their own. `exitCodeOf` reads the steps, not the `outcome` field, so a result built or edited by hand cannot exit with a code its steps do not support.
 
 ## Empty selections
 

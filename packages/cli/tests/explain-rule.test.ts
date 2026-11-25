@@ -4,12 +4,12 @@ import path from "node:path";
 
 import { explainRule, parseResult } from "@ropes/core";
 
-import type { PolicyValue } from "../../cinch/src/contracts/plan.ts";
+import type { PolicyValue } from "../../core/src/contracts/plan.ts";
 import {
   json,
   runEntry,
   withFixture,
-} from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
 import { BASE as ENFORCEMENT } from "./enforcement-fixture.ts";
 import { FILES, PATHS, RATIONALE } from "./trace-fixture.ts";
 

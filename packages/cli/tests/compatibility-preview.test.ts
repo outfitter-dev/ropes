@@ -2,14 +2,14 @@ import { expect, test } from "bun:test";
 import { realpath, symlink } from "node:fs/promises";
 import path from "node:path";
 
-import { apiPreviewInputs } from "../../cinch/src/adapters/bun-check/api-package.ts";
-import { CopyError, withCopy } from "../../cinch/src/commands/scratch.ts";
-import { FixReportSchema } from "../../cinch/src/contracts/fix.ts";
+import { apiPreviewInputs } from "../../core/src/adapters/bun-check/api-package.ts";
+import { CopyError, withCopy } from "../../core/src/commands/scratch.ts";
+import { FixReportSchema } from "../../core/src/contracts/fix.ts";
 import {
   json,
   runEntry,
   withFixture,
-} from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
 import {
   apiPackage,
   BEFORE,

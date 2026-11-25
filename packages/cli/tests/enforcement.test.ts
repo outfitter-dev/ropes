@@ -4,13 +4,13 @@ import path from "node:path";
 
 import { parsePlan, parseResult } from "@ropes/core";
 
-import { SCHEMA_VERSION } from "../../cinch/src/contracts/plan.ts";
+import { SCHEMA_VERSION } from "../../core/src/contracts/plan.ts";
 import {
   json,
   runEntry,
   withFixture,
-} from "../../cinch/tests/acceptance-repo.ts";
-import type { Ran } from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
+import type { Ran } from "../../core/tests/acceptance-repo.ts";
 import {
   ADVISORY,
   BASE,

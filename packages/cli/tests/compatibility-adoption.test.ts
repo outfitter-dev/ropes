@@ -5,13 +5,13 @@ import path from "node:path";
 
 import { parsePlan } from "@ropes/core";
 
-import { loadConfig } from "../../cinch/src/config/load.ts";
-import { RulesAdoptReportSchema } from "../../cinch/src/contracts/rules-report.ts";
+import { loadConfig } from "../../core/src/config/load.ts";
+import { RulesAdoptReportSchema } from "../../core/src/contracts/rules-report.ts";
 import {
   json,
   runEntry,
   withFixture,
-} from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
 import { BEFORE, CONFIG, packageAt } from "./compatibility-fixture.ts";
 
 const ROPE = new URL("../src/cli.ts", import.meta.url);

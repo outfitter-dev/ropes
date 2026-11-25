@@ -3,12 +3,12 @@ import path from "node:path";
 
 import { explain, parseCleanup } from "@ropes/core";
 
-import { gitText } from "../../cinch/src/commands/cleanup/git.ts";
+import { gitText } from "../../core/src/commands/cleanup/git.ts";
 import {
   fixtureGit,
   json,
   runEntry,
-} from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
 import { CONFIG, RULE } from "./cleanup-fixture.ts";
 
 const ROPE = new URL("../src/cli.ts", import.meta.url);

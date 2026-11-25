@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { explainRule } from "@ropes/core";
 
-import { runEntry, withFixture } from "../../cinch/tests/acceptance-repo.ts";
+import { runEntry, withFixture } from "../../core/tests/acceptance-repo.ts";
 import { FILES, RATIONALE } from "./trace-fixture.ts";
 
 const CLI = new URL("../src/cli.ts", import.meta.url);

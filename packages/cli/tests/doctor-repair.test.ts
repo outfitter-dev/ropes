@@ -3,13 +3,13 @@ import { mkdtemp, readFile, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { DoctorReportSchema } from "../../cinch/src/contracts/doctor.ts";
-import { FixReportSchema } from "../../cinch/src/contracts/fix.ts";
+import { DoctorReportSchema } from "../../core/src/contracts/doctor.ts";
+import { FixReportSchema } from "../../core/src/contracts/fix.ts";
 import {
   checkoutAt,
   fixtureGit,
   runEntry,
-} from "../../cinch/tests/acceptance-repo.ts";
+} from "../../core/tests/acceptance-repo.ts";
 
 const cli = new URL("../src/cli.ts", import.meta.url);
 
