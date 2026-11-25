@@ -27,19 +27,21 @@ BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 ./node_modules/.bin/rope check README.md --j
 
 ## npm release
 
-The published pilot is `0.1.0-pilot.0`. The first opt-in `canary` release is `0.1.0-canary.0`. The proposed stable pair is `0.1.0` under `latest`, after the canary has a clean install and consumer checks. Use a new prerelease number for each canary candidate. Keep each published version immutable and both packages on the same version and channel.
+The channel history began with `0.1.0-pilot.0` under `pilot` and `0.1.0-canary.0` under `canary`. A stable candidate uses `latest` after clean-install and consumer qualification. Verify live tags and obtain release approval for the exact candidate before publication. Use a new prerelease number for each canary candidate. Keep each published version immutable and both packages on the same version and channel.
 
 Dispatch the **npm release** workflow on `main` with `prepare` to run the gates and retain the two verified tarballs. Confirm the source commit, version, and channel. The run summary records the SHA-256 of each archive.
 
-Each npm package trusts `outfitter-dev/ropes` and `npm-release.yml`. To enable this workflow, turn on **Allow npm publish** once for each trusted publisher. The internal source repository publishes via OIDC with npm provenance disabled.
+Each npm package trusts `outfitter-dev/ropes` and `npm-release.yml`. To enable this workflow, turn on **Allow npm publish** once for each trusted publisher. The workflow publishes via OIDC with npm provenance disabled.
 
 When the pair is ready to release, dispatch `publish` on `main` with the candidate artifact ID, `core_sha256`, and `cli_sha256`. The workflow verifies the artifact’s origin, both hashes, and the matching package version and channel. It publishes core and verifies its public tarball and tag before publishing and verifying CLI. The workflow waits up to 15 minutes per package for npm metadata, the dist-tag, and the public tarball to become available. A timeout identifies the pending stage. If a release stops after npm acknowledges publication, wait until that exact version appears in registry metadata before dispatching `publish` again with the same inputs. A version already in the registry must have the expected tag and identical archive bytes before the workflow proceeds.
 
-After the workflow succeeds, install the exact CLI version in a clean Git checkout with an initial commit and check the launcher.
+After the workflow succeeds, replace `VERSION` below with the published candidate. Install it in a clean Git checkout with an initial commit, record the exact pin and lockfile, and check the launcher.
 
 ```sh
-bun add --dev --exact @ropes/cli@0.1.0-canary.4
+bun add --dev --exact @ropes/cli@VERSION
+git add package.json bun.lock
+git commit -m "chore: pin verified Ropes release"
 ./node_modules/.bin/rope --version
 ```
 
-Test the canary in a disposable consumer checkout before proposing a Forge pin change. Forge keeps its qualified exact pin until the replacement passes its checks. Keep `pilot` available during the move. If a release needs recovery, consumers can restore the previous exact pins. Any registry tag rollback uses the recorded previous targets and needs approval. [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) · [npm staged publishing](https://docs.npmjs.com/staged-publishing/)
+Test the canary in a disposable consumer checkout before changing a production pin. Each consumer keeps its qualified exact pin until the replacement passes its checks. Keep `pilot` available during the move. If a release needs recovery, consumers can restore the previous exact pins. Any registry tag rollback uses the recorded previous targets and needs approval. [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) · [npm staged publishing](https://docs.npmjs.com/staged-publishing/)
