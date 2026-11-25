@@ -151,3 +151,28 @@ test("a kept file makes its project batch read-only as a whole", async () => {
   await runPlan(plan, adapters, { mode: "fix" });
   expect(fake.calls).toEqual(["probe", "check"]);
 });
+
+test("a project diagnostic must be attributed to the file it describes", async () => {
+  const adapter = {
+    ...fakeAdapter({ descriptor: workspace }),
+    check: () =>
+      Promise.resolve([
+        {
+          ...FINDINGS,
+          findings: FINDINGS.findings.map((finding) => ({
+            ...finding,
+            path: lastFile,
+          })),
+          path: rootFile,
+        },
+      ]),
+  };
+  const result = await runPlan(resolve([workspace]), [adapter], {
+    mode: "check",
+  });
+  expect(result.outcome).toBe("incomplete");
+  expect(result.steps[0]?.reason).toContain(
+    `gave a diagnostic for "${lastFile}" in the answer for "${rootFile}"`
+  );
+  expect(result.steps.flatMap(({ findings }) => findings)).toEqual([]);
+});

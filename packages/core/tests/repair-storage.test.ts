@@ -37,7 +37,7 @@ const inputFor = (result: Result): RepairInput => ({
   tools: [],
 });
 
-test.each([2, 3])(
+test.each([2, 3, 4])(
   "the offline reader preserves version %i observations verbatim",
   async (version) => {
     const directory = await mkdtemp(path.join(tmpdir(), "ropes-archive-"));

@@ -50,6 +50,8 @@ const company = (
   const batch = batches.find(
     (candidate) =>
       candidate.adapter === step.adapter &&
+      (candidate.unit === "workspace" ||
+        candidate.package === planned.package) &&
       candidate.paths.includes(planned.path)
   );
   if (batch?.unit !== undefined) {

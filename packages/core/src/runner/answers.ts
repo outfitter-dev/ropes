@@ -14,19 +14,22 @@ export const answered = (
 ): FileOutcome[] => {
   const planned = new Set(batch.paths);
   const byPath = new Map<string, FileOutcome>();
-  let unplanned: string | undefined;
+  let invalid: string | undefined;
   for (const outcome of outcomes) {
     const { path } = outcome;
     if (!planned.has(path)) {
-      unplanned ??= path;
+      invalid ??= `gave an answer for unplanned file ${JSON.stringify(path)}`;
       continue;
     }
     let { findings } = outcome;
     if (batch.unit !== undefined) {
-      const outside = findings.find((finding) => !planned.has(finding.path));
-      if (outside !== undefined) {
-        unplanned ??= outside.path;
-        findings = findings.filter((finding) => planned.has(finding.path));
+      const misplaced = findings.find((finding) => finding.path !== path);
+      if (misplaced !== undefined) {
+        const wrong = JSON.stringify(misplaced.path);
+        invalid ??= planned.has(misplaced.path)
+          ? `gave a diagnostic for ${wrong} in the answer for ${JSON.stringify(path)}`
+          : `gave a diagnostic for unplanned file ${wrong}`;
+        findings = findings.filter((finding) => finding.path === path);
       }
     }
     byPath.set(
@@ -41,10 +44,10 @@ export const answered = (
         : { ...outcome, findings }
     );
   }
-  if (unplanned !== undefined) {
-    // An answer that belongs to no planned file invalidates the batch,
-    // while findings from uniquely answered planned files remain visible.
-    const reason = `${batch.tool} gave an answer for unplanned file ${JSON.stringify(unplanned)}`;
+  if (invalid !== undefined) {
+    // Malformed evidence invalidates the batch. Correctly attributed
+    // findings from uniquely answered planned files remain visible.
+    const reason = `${batch.tool} ${invalid}`;
     return batch.paths.map((path) => ({
       findings: byPath.get(path)?.findings ?? [],
       path,

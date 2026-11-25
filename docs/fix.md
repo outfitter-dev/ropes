@@ -69,7 +69,7 @@ The copy holds what git would let you commit: tracked files and untracked files 
 
 ## JSON
 
-`rope fix --json` prints one report. It is provisional and carries `schemaVersion: 4`.
+`rope fix --json` prints one report. It is provisional and carries `schemaVersion: 5`.
 
 | Field | Meaning |
 | --- | --- |
@@ -78,7 +78,7 @@ The copy holds what git would let you commit: tracked files and untracked files 
 | `dryRun` | `true` when the steps ran on a copy |
 | `result` | The same result `check --json` prints, with remaining findings in its steps |
 | `result.conflicts` | Only when steps undid each other. One record for each, apart from its finding in `result.steps` |
-| `schemaVersion` | `4` |
+| `schemaVersion` | `5` |
 | `stopped` | Only when nothing was fixed because the setup needs repair: the reason |
 
 A real run and a dry run of the same tree produce the same edits under the same effective policy. With scheduled enforcement, each invocation records its own evaluation time. A deadline that arrives between the two runs can change the verdict.

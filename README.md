@@ -64,7 +64,7 @@ The first profile is Markdown. TOML is the second: every TOML file must parse, a
 
 ## The JSON shapes are unstable
 
-The plan and result that `--json` prints are provisional and carry `schemaVersion: 4`. Findings are versioned by the containing result. These provisional shapes can change before ratification. `parsePlan` and `parseResult` reject a document whose schema version they do not know, and a consumer should do the same. Golden examples live in `packages/core/tests/fixtures/`.
+The plan and result that `--json` prints are provisional and carry `schemaVersion: 5`. Findings are versioned by the containing result. These provisional shapes can change before ratification. `parsePlan` and `parseResult` reject a document whose schema version they do not know, and a consumer should do the same. Golden examples live in `packages/core/tests/fixtures/`.
 
 ## Configuration is a pilot
 

@@ -18,7 +18,7 @@ Following the [hard-cutover decision](https://linear.app/outfitter/issue/ROPE-10
 
 ## Current output and marker contracts
 
-Plans and results use shared output version 4. Ropes-owned findings use the `ropes/` namespace. Current parsers reject earlier plan and result versions, while the offline repair reader preserves archived v2 and v3 observations with their original IDs. See [output contracts](output.md).
+The naming cutover introduced shared output version 4. Current plans and results use version 5. Ropes-owned findings use the `ropes/` namespace. Current parsers reject earlier plan and result versions, while the offline repair reader preserves archived v2, v3 and v4 observations with their original IDs. See [output contracts](output.md).
 
 The Markdown fragment marker is `<!-- ropes-disable-next-line code-block-parse -->`. A retired `cinch-` marker produces migration guidance. See [the Markdown standard](markdown-standard.md).
 

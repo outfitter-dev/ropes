@@ -67,7 +67,7 @@ test("an unknown schema version is an error, never a guess", () => {
   }
 });
 
-test.each([2, 3])(
+test.each([2, 3, 4])(
   "qualification rejects archived version %i plans and results",
   (version) => {
     for (const parsed of [
@@ -152,7 +152,7 @@ test("cleanup retains its envelope version but rejects archived nested evidence"
     zero: null,
   };
   expect(parseCleanup(report).ok).toBe(true);
-  for (const version of [2, 3]) {
+  for (const version of [2, 3, 4]) {
     expect(
       parseCleanup({
         ...report,
