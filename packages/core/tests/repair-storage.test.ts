@@ -3,6 +3,7 @@ import { mkdtemp, realpath, rm, stat, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { RepairRecordSchema } from "../src/contracts/repair.ts";
 import { check, parseResult, readRepairs, saveRepair } from "../src/index.ts";
 import type { RepairInput, Result } from "../src/index.ts";
 import { withFixture } from "./acceptance-repo.ts";
@@ -101,6 +102,28 @@ test.each([2, 3, 4])(
     }
   }
 );
+
+test("the offline reader rejects an archived result with a different plan version", () => {
+  const parsed = parseResult(resultFixture);
+  if (!parsed.ok) {
+    throw new Error(JSON.stringify(parsed.error));
+  }
+  const current = parsed.value;
+  const archived = {
+    ...current,
+    plan: { ...current.plan, schemaVersion: 3 },
+    schemaVersion: 4,
+  };
+  const record = {
+    ...inputFor(current),
+    capturedAt: "2026-11-20T23:00:00.000Z",
+    evidence: "observed",
+    id: "0".repeat(64),
+    original: archived,
+    schemaVersion: 1,
+  };
+  expect(RepairRecordSchema.safeParse(record).success).toBe(false);
+});
 
 test("repair storage rejects aliases and the entire checkout before creating directories", async () => {
   const history = await realpath(

@@ -47,6 +47,10 @@ const ArchivedV3V4ResultSchema = z
       .readonly(),
     schemaVersion: z.literal([3, 4]),
   })
+  .refine((result) => result.schemaVersion === result.plan.schemaVersion, {
+    message: "result and plan schema versions must match",
+    path: ["plan", "schemaVersion"],
+  })
   .refine((result) => result.outcome === outcomeOf(result.steps))
   .readonly();
 
