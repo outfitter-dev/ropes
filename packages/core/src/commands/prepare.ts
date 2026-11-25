@@ -205,15 +205,20 @@ export const prepare = async (
   );
   const selectedPaths = candidates.filter((_, index) => inside[index] === true);
   const initialPlan = resolve(selectedPaths);
+  const workspaceAdapters = new Set(
+    initialPlan.batches
+      .filter(({ unit }) => unit === "workspace")
+      .map(({ adapter }) => adapter)
+  );
   const targetRequests = new Map(
     initialPlan.paths.flatMap((entry) =>
-      (entry.targets ?? []).map(
-        ({ condition }) =>
-          [
-            `${entry.package}\0${condition.dependency}`,
-            { dependency: condition.dependency, package: entry.package },
-          ] as const
-      )
+      (entry.targets ?? []).map(({ adapter, condition }) => {
+        const directory = workspaceAdapters.has(adapter) ? "." : entry.package;
+        return [
+          `${directory}\0${condition.dependency}`,
+          { dependency: condition.dependency, package: directory },
+        ] as const;
+      })
     )
   );
   const plan =

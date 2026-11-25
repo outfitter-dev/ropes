@@ -23,7 +23,7 @@ The descriptor is plain data. It is all the resolver sees.
 | `versionRange` | A semver range the installed tool must satisfy. `*` accepts any version. |
 | `writes` | Whether the adapter may change files. When it is `false`, every verb runs `check`. |
 | `setup` | Optional. `true` when what the adapter writes is the Ropes setup, not the repository's content. Setup operations such as `doctor --fix`, `init`, and preset updates call its `fix`. A content `rope fix` checks setup instead. |
-| `unit` | What one step works on: `file`, `package` or `workspace`. Only `file` steps are planned today, so an adapter with another unit gets no steps yet. |
+| `unit` | The engine scope. `file` evaluates files independently, `package` needs the enclosing package, and `workspace` needs the whole repository. |
 | `platforms` | Where the tool can run, from `darwin`, `linux` and `win32`. |
 | `extensions` | The file extensions, with the dot, that get a step from this adapter. |
 | `enabledBy` | The policy key that switches the adapter. A path whose policy sets it to `false` gets no step. |
@@ -41,7 +41,7 @@ An engine's preset lives in the engine's own folder and is listed in the registr
 
 `adapters/shipped.ts` builds the simplest kind: one kept file that is a copy of a file the package ships under `presets/`, behind a comment that says Ropes manages it, and off until the config asks for it. It also takes the check of the tool's own root config, which must build on the copy. That check is required, so a preset cannot ship without one, and `tests/preset-roots.test.ts` fails for any preset in the registry with no root config. `adapters/root-module.ts` is the check for a root config that is a TypeScript module. The lint, formatter and compiler presets of [the TypeScript standard](typescript-standard.md) are three of these. A preset that imports a package names it and the version it was written for (`adapters/built-on.ts`). Once the kept file is right, the adapter adds a finding when that package is missing, older, or another major version. Ropes installs no package, so that finding is never fixable.
 
-Another adapter may still get a step on a managed file, as the linter does on a preset that is a `.ts` file. Ropes treats files it writes whole as setup. The plan limits other adapters to checking those files, including during a content `rope fix`, and groups them in a separate batch. Authored root configs retain their own content. Setup repair makes only the supported pointer or `extends` edit described by the preset.
+Another adapter may still get a step on a managed file, as the linter does on a preset that is a `.ts` file. Ropes treats files it writes whole as setup. The plan limits other adapters to checking those files, including during a content `rope fix`, and groups them in a separate batch for a file adapter. A package or workspace batch becomes read-only when it covers a protected file. Authored root configs retain their own content. Setup repair makes only the supported pointer or `extends` edit described by the preset.
 
 ## The operations
 
@@ -66,7 +66,9 @@ A source lives in its own folder under the adapter: `adapters/<engine>/migrate/<
 
 ## Batches
 
-The input is a batch: a root, a package and the selected files of that package. An engine starts once for all of them, which is what makes a large repository quick. A package is a directory above a selected file that holds a `package.json`, `pyproject.toml`, `Cargo.toml` or `go.mod`. A file with none above it belongs to the workspace, written `.`. The plan lists the batches in the order they run, and `rope explain` shows each file's package and how many other files its step runs with.
+Each batch supplies the repository root, the package directory and the selected paths. The nearest directory containing `package.json`, `pyproject.toml`, `Cargo.toml` or `go.mod` determines a file's package. A file with no such directory belongs to the root scope, written `.`.
+
+A file adapter can batch independent files in the same package. A package adapter starts once for each package that contains selected paths it covers. A workspace adapter starts once at `.` for the paths it covers across all selected packages. Project adapters may read their enclosing scope but can only edit and return evidence for their supplied paths. `rope explain` shows the full coverage of each package and workspace batch.
 
 `adapters/batch.ts` has two helpers. `eachFile` is for an engine that judges one file at a time: it calls a function for each file in order. `allIncomplete` gives every file of the batch the same reason, for a start that could not run.
 

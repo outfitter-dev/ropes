@@ -25,8 +25,8 @@ export interface StepOutcome {
 }
 
 /**
- * What one step works on: the selected files of one package, so an engine
- * starts once for all of them.
+ * What one start of an engine must answer for. For package and workspace
+ * adapters, the engine may inspect its project while reporting only on the selected paths.
  */
 export interface StepInput {
   readonly root: string;
@@ -34,7 +34,7 @@ export interface StepInput {
   readonly sourceRoot?: string;
   /** The root-relative package directory. `.` is the workspace itself. */
   readonly package: string;
-  /** Root-relative files, all in that package. Never empty. */
+  /** Root-relative files in this batch, and the only files it may edit. */
   readonly paths: readonly string[];
   /**
    * True only while `init` takes a repository over from an older setup. It

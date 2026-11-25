@@ -76,9 +76,6 @@ const stepsFor = (
   const on = keysSet(true);
   const selected = inRunOrder(descriptors).filter(
     (descriptor) =>
-      // A step is one file. A package or workspace adapter gets none until
-      // the plan can describe a step of that size.
-      descriptor.unit === "file" &&
       (descriptor.extensions.includes("*") ||
         descriptor.extensions.includes(extension) ||
         descriptor.owns?.includes(path) === true) &&

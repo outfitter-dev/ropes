@@ -6,11 +6,9 @@ import type { FoundRules } from "./found.ts";
 export type Platform = "darwin" | "linux" | "win32";
 
 /**
- * What an engine needs to see to judge one file. A `file` adapter can answer
- * for any subset of a package, so it is handed only the files selected.
- * `package` and `workspace` are named now so an engine that needs more does
- * not have to pretend otherwise. The resolver gives such an adapter no steps
- * yet.
+ * What an engine needs to see to judge a file. A `file` adapter can work
+ * independently on each selected file. A `package` or `workspace` adapter
+ * can inspect its enclosing project, and answers for its selected files.
  */
 export type Unit = "file" | "package" | "workspace";
 

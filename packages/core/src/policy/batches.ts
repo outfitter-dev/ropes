@@ -38,38 +38,86 @@ export const inRunOrder = (
 ];
 
 /**
- * Groups the steps into batches, in the order they run: one for each
- * adapter and package, and two where some of its files may be written and
- * others only read.
+ * A package or workspace engine starts once for its scope. File engines
+ * can start separately for writable and read-only paths in each package.
  */
 export const batchesFor = (
   planned: readonly PlannedPath[],
   descriptors: readonly AdapterDescriptor[]
 ): PlanBatch[] => {
   const packages = [...new Set(planned.map((entry) => entry.package))];
-  return inRunOrder(descriptors).flatMap(({ id }) =>
-    packages.toSorted().flatMap((inPackage) => {
-      const steps = planned
-        .filter((entry) => entry.package === inPackage)
-        .flatMap((entry) =>
-          entry.steps
-            .filter((step) => step.adapter === id)
-            .map((step) => ({ path: entry.path, step }))
-        );
-      return [true, false].flatMap((writes) => {
-        const [first, ...rest] = steps.filter(
-          ({ step }) => step.writes === writes
-        );
-        return first === undefined
-          ? []
-          : [
-              {
-                ...first.step,
-                package: inPackage,
-                paths: [first, ...rest].map(({ path }) => path),
-              },
-            ];
-      });
-    })
+  return inRunOrder(descriptors).flatMap(({ id, unit }) =>
+    (unit === "workspace" ? [WORKSPACE] : packages.toSorted()).flatMap(
+      (inPackage) => {
+        const steps = planned
+          .filter(
+            (entry) => unit === "workspace" || entry.package === inPackage
+          )
+          .flatMap((entry) =>
+            entry.steps
+              .filter((step) => step.adapter === id)
+              .map((step) => ({ path: entry.path, step }))
+          );
+        if (unit !== "file") {
+          const [first] = steps;
+          return first === undefined
+            ? []
+            : [
+                {
+                  ...first.step,
+                  package: inPackage,
+                  paths: steps.map(({ path }) => path),
+                  unit,
+                  // The engine cannot fix one half of its project while checking the other.
+                  writes: steps.every(({ step }) => step.writes),
+                },
+              ];
+        }
+        return [true, false].flatMap((writes) => {
+          const [first, ...rest] = steps.filter(
+            ({ step }) => step.writes === writes
+          );
+          return first === undefined
+            ? []
+            : [
+                {
+                  ...first.step,
+                  package: inPackage,
+                  paths: [first, ...rest].map(({ path }) => path),
+                },
+              ];
+        });
+      }
+    )
   );
+};
+
+/** A project batch is read-only for every covered path if any must be protected. */
+export const guardedProjectPaths = (
+  paths: readonly PlannedPath[],
+  batches: readonly PlanBatch[]
+): PlannedPath[] => {
+  const readOnly = new Map<string, Set<string>>();
+  for (const batch of batches) {
+    if (batch.unit !== undefined && !batch.writes) {
+      for (const path of batch.paths) {
+        const adapters = readOnly.get(path) ?? new Set<string>();
+        adapters.add(batch.adapter);
+        readOnly.set(path, adapters);
+      }
+    }
+  }
+  return paths.map((entry) => {
+    const adapters = readOnly.get(entry.path);
+    return adapters === undefined
+      ? entry
+      : {
+          ...entry,
+          steps: entry.steps.map((step) =>
+            step.writes && adapters.has(step.adapter)
+              ? { ...step, writes: false }
+              : step
+          ),
+        };
+  });
 };

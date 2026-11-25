@@ -6,6 +6,7 @@ import type { ChangeAt, Conflict } from "../contracts/conflict.ts";
 import type { Finding } from "../contracts/finding.ts";
 import type { PlanBatch } from "../contracts/plan.ts";
 import type { StepResult } from "../contracts/result.ts";
+import { answered } from "./answers.ts";
 import { threw } from "./ready.ts";
 
 /** A batch that may have written, and what it said about each file. */
@@ -148,8 +149,12 @@ const again = async (
   } catch (error) {
     return unchecked(threw(earlier.batch.tool, error));
   }
+  const checked =
+    earlier.batch.unit === undefined
+      ? second
+      : answered({ ...earlier.batch, paths }, second);
   const found = paths.map((file): Found => {
-    const now = second.find((outcome) => outcome.path === file);
+    const now = checked.find((outcome) => outcome.path === file);
     if (now === undefined || now.status === "incomplete") {
       return {
         conflicts: [],

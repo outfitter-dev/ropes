@@ -50,9 +50,11 @@ const company = (
   const batch = batches.find(
     (candidate) =>
       candidate.adapter === step.adapter &&
-      candidate.package === planned.package &&
       candidate.paths.includes(planned.path)
   );
+  if (batch?.unit !== undefined) {
+    return `  (${batch.unit} step)`;
+  }
   const others = (batch?.paths.length ?? 1) - 1;
   if (others === 0) {
     return "";
@@ -115,6 +117,21 @@ const pathBlock =
     ].join("\n");
   };
 
+const scopedSteps = (batches: readonly PlanBatch[]): string[] =>
+  batches.flatMap((batch) => {
+    if (batch.unit === undefined) {
+      return [];
+    }
+    const scope =
+      batch.unit === "workspace" ? "Workspace" : `Package ${batch.package}`;
+    return [
+      [
+        `${scope} step for ${batch.adapter} covers`,
+        ...batch.paths.map((path) => `  ${path}`),
+      ].join("\n"),
+    ];
+  });
+
 export const toolLine = (status: ToolStatus): string => {
   if (status.problem !== undefined) {
     return `  ${status.tool}  unavailable: ${status.problem}`;
@@ -142,6 +159,7 @@ export const renderPlan = (plan: Plan, context: PlanContext): string =>
     ].join("\n"),
     ...evaluationLines(plan.evaluation),
     ...plan.paths.map(pathBlock(plan.batches)),
+    ...scopedSteps(plan.batches),
     ...(plan.facts === undefined ? [] : [factsBlock(plan.facts)]),
     ...(plan.rules === undefined ? [] : [rulesBlock(plan.rules, true, "rope")]),
     ...(plan.localRules === undefined

@@ -3,6 +3,7 @@ import { minVersion, subset, validRange } from "semver";
 import type { AdapterDescriptor } from "../adapters/adapter.ts";
 import type { PlanStep } from "../contracts/plan.ts";
 import type { PackageTarget, TargetDecision } from "../contracts/targets.ts";
+import { WORKSPACE } from "./batches.ts";
 
 /** A range must sit wholly on one side of the API transition. */
 export const targetDecision = (
@@ -86,7 +87,8 @@ export const targetSteps = (
       candidates.some((step) => step.adapter === descriptor.id)
     )
     .flatMap((descriptor) => {
-      const decision = targetDecision(descriptor, directory, facts);
+      const scope = descriptor.unit === "workspace" ? WORKSPACE : directory;
+      const decision = targetDecision(descriptor, scope, facts);
       return decision === undefined ? [] : [decision];
     });
   const steps = candidates.flatMap((step) => {
