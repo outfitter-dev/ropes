@@ -1,6 +1,11 @@
 import { expect, test } from "bun:test";
 
+import { BUILT_ON_RULE } from "../src/adapters/built-on.ts";
+import { MANAGED_RULE } from "../src/adapters/managed.ts";
+import { UNKNOWN_RULE, UNUSED_RULE } from "../src/adapters/rumdl/markers.ts";
+import { CONFLICT_RULE } from "../src/contracts/conflict.ts";
 import {
+  parseCleanup,
   parseFinding,
   parsePlan,
   parseResult,
@@ -24,6 +29,22 @@ const [finding, plan, result] = await Promise.all([
   fixture("result"),
 ]);
 
+test("Ropes-owned findings use the v4 namespace", () => {
+  expect([
+    MANAGED_RULE,
+    BUILT_ON_RULE,
+    CONFLICT_RULE,
+    UNUSED_RULE,
+    UNKNOWN_RULE,
+  ]).toEqual([
+    "ropes/managed-file",
+    "ropes/preset-dependency",
+    "ropes/fix-conflict",
+    "ropes/unused-disable",
+    "ropes/unknown-disable",
+  ]);
+});
+
 test("the golden fixtures parse and come back unchanged", () => {
   const parsed: unknown[] = [
     parseFinding(finding),
@@ -45,6 +66,21 @@ test("an unknown schema version is an error, never a guess", () => {
     });
   }
 });
+
+test.each([2, 3])(
+  "qualification rejects archived version %i plans and results",
+  (version) => {
+    for (const parsed of [
+      parsePlan({ ...plan, schemaVersion: version }),
+      parseResult({ ...result, schemaVersion: version }),
+    ]) {
+      expect(parsed).toEqual({
+        error: { found: version, kind: "unknown-version" },
+        ok: false,
+      });
+    }
+  }
+);
 
 test("a missing schema version is invalid", () => {
   const parsed = parsePlan({ paths: [], root: "/repo" });
@@ -86,4 +122,49 @@ test("incomplete beats findings, and findings beat clean", () => {
   expect(outcomeOf([step("passed"), step("fixed")])).toBe("clean");
   expect(outcomeOf([step("passed"), step("findings")])).toBe("findings");
   expect(outcomeOf([step("findings"), step("incomplete")])).toBe("incomplete");
+});
+
+test("cleanup retains its envelope version but rejects archived nested evidence", () => {
+  const commit = "0".repeat(40);
+  const scan = { commit, configFile: null, plan, result, tree: commit };
+  const report = {
+    at: "2026-11-20T23:00:00.000Z",
+    evidence: "observed",
+    history: [],
+    inherited: [],
+    introduced: [],
+    outcome: "incomplete",
+    policy: {
+      anchor: commit,
+      commit,
+      file: "migration.json",
+      rule: "local/example",
+      ruleSha256: "0".repeat(64),
+      schemaVersion: 1,
+      scope: ["**/*.md"],
+      sha256: "0".repeat(64),
+    },
+    reintroduced: [],
+    removed: [],
+    scans: { anchor: scan, candidate: scan, parent: scan },
+    schemaVersion: 1,
+    uncertainty: [],
+    zero: null,
+  };
+  expect(parseCleanup(report).ok).toBe(true);
+  for (const version of [2, 3]) {
+    expect(
+      parseCleanup({
+        ...report,
+        scans: {
+          ...report.scans,
+          candidate: {
+            ...scan,
+            plan: { ...plan, schemaVersion: version },
+            result: { ...result, schemaVersion: version },
+          },
+        },
+      })
+    ).toMatchObject({ error: { kind: "invalid" }, ok: false });
+  }
 });

@@ -54,8 +54,8 @@ The comment is Cinch's, not rumdl's. rumdl 0.3.5 has no way to leave one block o
 
 Cinch checks that the comment is used correctly:
 
-- Above a block that parses, or anywhere but right above a fence, it does nothing. That is a finding under `cinch/unused-disable`, on the comment's line.
-- A comment that starts with `cinch-` and is spelled any other way is a finding under `cinch/unknown-disable`, which names the right spelling. It excuses nothing.
+- Above a block that parses, or anywhere but right above a fence, it does nothing. That is a finding under `ropes/unused-disable`, on the comment's line.
+- A comment that starts with `cinch-` and is spelled any other way is a finding under `ropes/unknown-disable`, which names the right spelling. It excuses nothing.
 - A comment inside a fenced block is that block's text, as in the example above.
 
 The comment covers `code-block-parse` only. For a rumdl rule, use rumdl's own comments.

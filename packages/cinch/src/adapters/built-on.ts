@@ -10,7 +10,7 @@ export interface BuiltOn {
 }
 
 /** The rule a finding about a preset's package is reported under. */
-export const BUILT_ON_RULE = "cinch/preset-dependency";
+export const BUILT_ON_RULE = "ropes/preset-dependency";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);

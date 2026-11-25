@@ -3,7 +3,7 @@ import { z } from "zod";
 import { FindingSchema } from "./finding.ts";
 
 /** The rule id of the finding a conflict is reported as. */
-export const CONFLICT_RULE = "cinch/fix-conflict";
+export const CONFLICT_RULE = "ropes/fix-conflict";
 
 /**
  * Provisional and unstable. Two steps of one `fix` run that undo each

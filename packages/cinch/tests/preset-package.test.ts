@@ -100,7 +100,7 @@ test("a kept preset whose package is missing is a finding doctor cannot fix", as
 
 test("a missing preset file is reported before its package is", async () => {
   expect(await found()).toEqual([
-    { fixable: true, rule: "cinch/managed-file" },
+    { fixable: true, rule: "ropes/managed-file" },
   ]);
 });
 

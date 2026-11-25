@@ -137,7 +137,7 @@ test("a hand edit to a kept preset is a finding that doctor repairs", async () =
   await Bun.write(file, "{}\n");
   const checked = await run("check");
   expect(checked.exitCode).toBe(1);
-  expect(checked.output).toContain("cinch/managed-file");
+  expect(checked.output).toContain("ropes/managed-file");
   await run("doctor", { fix: true });
   expect(await Bun.file(file).text()).toContain('"strict": true');
 });

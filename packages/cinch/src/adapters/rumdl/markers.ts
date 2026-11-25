@@ -10,8 +10,8 @@ import { PARSE_RULE } from "./fences.ts";
  */
 export const MARKER = `<!-- cinch-disable-next-line ${PARSE_RULE} -->`;
 
-export const UNUSED_RULE = "cinch/unused-disable";
-export const UNKNOWN_RULE = "cinch/unknown-disable";
+export const UNUSED_RULE = "ropes/unused-disable";
+export const UNKNOWN_RULE = "ropes/unknown-disable";
 
 const COMMENT = /^<!--\s*(?<body>cinch-\S*(?:\s+\S+)*?)\s*-->$/u;
 const WORDS = MARKER.slice(4, -3).trim();

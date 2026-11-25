@@ -20,7 +20,7 @@ A preset the config switches off is no part of the setup, whether or not `exclud
 
 ```text
 .outfitter/configs/rumdl.toml
-  1:1  error  cinch/managed-file  This file differs from what cinch keeps here. Run `rope doctor --fix`.  [rumdl-preset]  (fixable)
+  1:1  error  ropes/managed-file  This file differs from what cinch keeps here. Run `rope doctor --fix`.  [rumdl-preset]  (fixable)
 
 Tools
   taplo 0.10.0  available, needs 0.10.0
@@ -61,7 +61,7 @@ Doctor has no way of its own to write a file. The files Cinch keeps are steps in
 
 `rope doctor` also lists each rule pack that applies to the repository and that the config neither names nor turns off, under `Rule packs not adopted`. That is a note: it does not change the exit code, and `--fix` does not adopt a pack, because which rules run is the repository's choice. `rope rules adopt` shows the change and `--yes` writes it. A config that states `enabled = false` under `[rules]` gets no such note. In `--json` the names are in `notAdopted`.
 
-`rope doctor --json` prints one report. It is provisional and carries `schemaVersion: 3`.
+`rope doctor --json` prints one report. It is provisional and carries `schemaVersion: 4`.
 
 | Field | Meaning |
 | --- | --- |
@@ -71,7 +71,7 @@ Doctor has no way of its own to write a file. The files Cinch keeps are steps in
 | `fix` | `true` when the run was asked to repair |
 | `notAdopted` | The names of the rule packs that apply here and that the config neither names nor turns off |
 | `result` | The setup steps and their findings, in the shape `check --json` prints |
-| `schemaVersion` | `3` |
+| `schemaVersion` | `4` |
 | `tools` | One entry per tool: `tool`, `versionRange`, the installed `version` when known, and `problem` when it cannot run |
 
 A tool with a `problem` makes the exit code 2 even when `result.outcome` is `clean`.

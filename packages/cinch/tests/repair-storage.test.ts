@@ -37,42 +37,70 @@ const inputFor = (result: Result): RepairInput => ({
   tools: [],
 });
 
-test("the offline reader can still display version 2 observations", async () => {
-  const directory = await mkdtemp(path.join(tmpdir(), "ropes-archive-"));
-  try {
-    const parsed = parseResult(resultFixture);
-    if (!parsed.ok) {
-      throw new Error(JSON.stringify(parsed.error));
-    }
-    const current = parsed.value;
-    const archived = {
-      ...current,
-      plan: { ...current.plan, schemaVersion: 2 },
-      schemaVersion: 2,
-    };
-    const id = "0".repeat(64);
-    await Bun.write(
-      path.join(directory, `${id}.json`),
-      JSON.stringify({
+test.each([2, 3])(
+  "the offline reader preserves version %i observations verbatim",
+  async (version) => {
+    const directory = await mkdtemp(path.join(tmpdir(), "ropes-archive-"));
+    try {
+      const parsed = parseResult(resultFixture);
+      if (!parsed.ok) {
+        throw new Error(JSON.stringify(parsed.error));
+      }
+      const current = parsed.value;
+      const archived = {
+        ...current,
+        plan: { ...current.plan, schemaVersion: version },
+        schemaVersion: version,
+        steps: current.steps.map((step) => ({
+          ...step,
+          findings: step.findings.map((finding) => ({
+            ...finding,
+            rule: "cinch/managed-file",
+          })),
+        })),
+      };
+      expect(parseResult(archived)).toEqual({
+        error: { found: version, kind: "unknown-version" },
+        ok: false,
+      });
+      const input = {
         ...inputFor(current),
-        capturedAt: "2026-11-20T23:00:00.000Z",
-        evidence: "observed",
-        id,
         original: archived,
         result: archived,
-        schemaVersion: 1,
-      })
-    );
-    expect(await readRepairs(directory)).toMatchObject({
-      ok: true,
-      value: [
-        { id, original: { schemaVersion: 2 }, result: { schemaVersion: 2 } },
-      ],
-    });
-  } finally {
-    await rm(directory, { force: true, recursive: true });
+      };
+      expect(
+        await saveRepair(path.join(directory, "new"), input)
+      ).toMatchObject({ ok: false });
+      expect(await missing(path.join(directory, "new"))).toBe(true);
+      const id = "0".repeat(64);
+      await Bun.write(
+        path.join(directory, `${id}.json`),
+        JSON.stringify({
+          ...input,
+          capturedAt: "2026-11-20T23:00:00.000Z",
+          evidence: "observed",
+          id,
+          schemaVersion: 1,
+        })
+      );
+      const observed: unknown = await readRepairs(directory);
+      expect(observed).toEqual({
+        ok: true,
+        value: [
+          {
+            ...input,
+            capturedAt: "2026-11-20T23:00:00.000Z",
+            evidence: "observed",
+            id,
+            schemaVersion: 1,
+          },
+        ],
+      });
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
   }
-});
+);
 
 test("repair storage rejects aliases and the entire checkout before creating directories", async () => {
   const history = await realpath(

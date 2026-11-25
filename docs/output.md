@@ -4,6 +4,10 @@ Run `rope schema` to list the available schemas. `rope schema explain`, `rope sc
 
 Every Cinch command prints plain text for a person, or one JSON document with `--json`. Neither depends on a terminal, so both can be piped.
 
+The current shared output version is 4. Ropes-owned finding IDs are `ropes/managed-file`, `ropes/preset-dependency`, `ropes/fix-conflict`, `ropes/unused-disable`, and `ropes/unknown-disable`.
+
+`parsePlan` and `parseResult` reject older versions, including version 3 results with `cinch/` finding IDs. Rerun the command to produce current qualification evidence. The offline repair reader preserves version 3 and version 2 observations and their original IDs verbatim. New repair submissions require current results. Repair records and policy snapshots retain their own version 1 envelopes. Cleanup reports use envelope version 1 and require the current output version for nested plans and results. Rerun cleanup to replace an older report before qualification.
+
 ## Text
 
 The default. It has no color, no cursor movement and no prompt, so it reads the same in a terminal, a pipe and a log. Its wording may change in any release. Scripts should read the JSON.
@@ -27,7 +31,7 @@ A command that could not run at all prints nothing on stdout. Its reason goes to
 ```json
 {
   "error": { "message": "no-such-file.md does not exist." },
-  "schemaVersion": 3
+  "schemaVersion": 4
 }
 ```
 

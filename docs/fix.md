@@ -28,7 +28,7 @@ Before it writes anything, `fix` checks the Cinch setup: every file Cinch keeps 
 Nothing was fixed: the Cinch setup needs repair first. Run `rope doctor --fix`, then run this again.
 
 .outfitter/configs/rumdl.toml
-  1:1  error  cinch/managed-file  This file is missing. Run `rope doctor --fix`.  [rumdl-preset]  (fixable)
+  1:1  error  ropes/managed-file  This file is missing. Run `rope doctor --fix`.  [rumdl-preset]  (fixable)
 ```
 
 With `--json` the report has `stopped`, holding that first line, and `result` holds the setup steps.
@@ -45,7 +45,7 @@ After a step rewrites a file, `fix` checks that file again with each earlier ste
 a.ts
   fixed  oxlint
   fixed  bun-fmt
-  1:23  error  cinch/fix-conflict  bun rewrote this code, and oxlint then reported unicorn(number-literal-case): Unexpected hexadecimal digits in lowercase. The two disagree, so a fix by one is undone by the other. Change the rule or the setting behind the rewrite.  [oxlint]
+  1:23  error  ropes/fix-conflict  bun rewrote this code, and oxlint then reported unicorn(number-literal-case): Unexpected hexadecimal digits in lowercase. The two disagree, so a fix by one is undone by the other. Change the rule or the setting behind the rewrite.  [oxlint]
 
 Conflict in a.ts: bun-fmt rewrote what unicorn(number-literal-case) [oxlint] then reported.
 --- a/a.ts
@@ -55,7 +55,7 @@ Conflict in a.ts: bun-fmt rewrote what unicorn(number-literal-case) [oxlint] the
 +export const mask = 0xabcdef;
 ```
 
-- A conflict is a finding with the rule `cinch/fix-conflict`, so the run exits 1. It names the tool's own rule and shows the later step's change to those lines.
+- A conflict is a finding with the rule `ropes/fix-conflict`, so the run exits 1. It names the tool's own rule and shows the later step's change to those lines.
 - Nothing is fixed a second time. Running the two tools in a loop would hide the disagreement, and the next run would start it again.
 - The way out is a decision: switch the rule off, or change the setting behind the rewrite.
 - When the earlier step cannot check the file again, that step is incomplete and the run exits 2.
@@ -69,7 +69,7 @@ The copy holds what git would let you commit: tracked files and untracked files 
 
 ## JSON
 
-`rope fix --json` prints one report. It is provisional and carries `schemaVersion: 3`.
+`rope fix --json` prints one report. It is provisional and carries `schemaVersion: 4`.
 
 | Field | Meaning |
 | --- | --- |
@@ -78,7 +78,7 @@ The copy holds what git would let you commit: tracked files and untracked files 
 | `dryRun` | `true` when the steps ran on a copy |
 | `result` | The same result `check --json` prints, with remaining findings in its steps |
 | `result.conflicts` | Only when steps undid each other. One record for each, apart from its finding in `result.steps` |
-| `schemaVersion` | `3` |
+| `schemaVersion` | `4` |
 | `stopped` | Only when nothing was fixed because the setup needs repair: the reason |
 
 A real run and a dry run of the same tree produce the same edits under the same effective policy. With scheduled enforcement, each invocation records its own evaluation time. A deadline that arrives between the two runs can change the verdict.

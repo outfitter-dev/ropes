@@ -65,6 +65,6 @@ The automatic-enable assumption in ROPE-61 was superseded by explicit pack adopt
 
 ## Versioned result contract
 
-The provisional plan and result contract uses version 3. A completed result can be clean while retaining native findings when they are all advisory. Consumers must check the version before interpreting a verdict, then use the evaluation data to identify simulations and expired observations. The offline repair reader can also display records that embedded version 2 observations.
+The provisional plan and result contract uses version 4. A completed result can be clean while retaining native findings when they are all advisory. Consumers must check the version before interpreting a verdict, then use the evaluation data to identify simulations and expired observations. The offline repair reader can also display records that embedded version 3 or version 2 observations, preserving their original finding IDs. These archived records are read-only evidence; current qualification requires version 4 results.
 
 `cinch schema check` and the generated config schema describe these fields. The [level proof](../packages/cli/tests/enforcement.test.ts) and [UTC boundary proof](../packages/cli/tests/deadline.test.ts) exercise the shipped rule using the real engine.
