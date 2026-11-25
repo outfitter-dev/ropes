@@ -11,7 +11,6 @@ import {
 } from "../../cinch/tests/acceptance-repo.ts";
 
 const cli = new URL("../src/cli.ts", import.meta.url);
-const cinch = new URL("../../cinch/src/cli.ts", import.meta.url);
 
 const inRepo = async (run: (root: string) => Promise<void>) => {
   const root = await realpath(await mkdtemp(path.join(tmpdir(), "rope-init-")));
@@ -42,7 +41,7 @@ test("rejected initialization keeps implicit Cinch setup in place", async () => 
     return;
   }
   await inRepo(async (root) => {
-    const old = await runEntry(cinch, ["doctor", "--fix", "--json"], root);
+    const old = await runEntry(cli, ["doctor", "--fix", "--json"], root);
     expect(old.exitCode).toBe(0);
     const checkout = checkoutAt(root);
     const before = await checkout.files();

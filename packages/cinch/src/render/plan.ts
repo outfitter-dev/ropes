@@ -143,7 +143,7 @@ export const renderPlan = (plan: Plan, context: PlanContext): string =>
     ...evaluationLines(plan.evaluation),
     ...plan.paths.map(pathBlock(plan.batches)),
     ...(plan.facts === undefined ? [] : [factsBlock(plan.facts)]),
-    ...(plan.rules === undefined ? [] : [rulesBlock(plan.rules)]),
+    ...(plan.rules === undefined ? [] : [rulesBlock(plan.rules, true, "rope")]),
     ...(plan.localRules === undefined
       ? []
       : [localRulesBlock(plan.localRules)]),

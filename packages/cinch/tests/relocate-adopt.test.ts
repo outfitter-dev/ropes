@@ -148,7 +148,7 @@ test("a root config that does not extend the generated one is sent to doctor", a
   const root = await repo({});
   await Bun.write(`${root}/${ROOT}`, "[MD007]\nindent = 4\n");
   const { report } = await move(root, "adopt", { yes: true });
-  expect(report.stopped?.[0]).toContain("Run `cinch doctor --fix` first.");
+  expect(report.stopped?.[0]).toContain("Run `rope doctor --fix` first.");
 });
 
 test("in the shared file the tables go under `cinch`", async () => {

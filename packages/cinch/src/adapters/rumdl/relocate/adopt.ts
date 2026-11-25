@@ -79,7 +79,7 @@ const blocked = (
   }
   return own.extends === generatedPath
     ? null
-    : `${CONFIG_PATH} does not extend ${generatedPath}, so moving its settings there would change what applies. Run \`cinch doctor --fix\` first.`;
+    : `${CONFIG_PATH} does not extend ${generatedPath}, so moving its settings there would change what applies. Run \`rope doctor --fix\` first.`;
 };
 
 /**
@@ -95,7 +95,7 @@ const stale = async (
   const shipped = await preset();
   return shipped.ok && installed === shipped.text
     ? null
-    : `${presetPath} is not the preset this Cinch ships, so what the settings sit above is not what Cinch would compare them with. Run \`cinch doctor --fix\` first.`;
+    : `${presetPath} is not the preset this Cinch ships, so what the settings sit above is not what Cinch would compare them with. Run \`rope doctor --fix\` first.`;
 };
 
 /**

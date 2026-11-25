@@ -9,28 +9,28 @@ import { FILES, json, proof } from "./acceptance-repo.ts";
 const KEPT = ".outfitter/configs/rumdl.toml";
 
 proof(
-  "proof 6: fix leaves the Cinch setup alone, and doctor --fix repairs it",
+  "proof 6: fix leaves the managed setup alone, and doctor --fix repairs it",
   async ({ main }) => {
     const exit = async (...args: string[]): Promise<number> => {
-      const ran = await main.cinch(args);
+      const ran = await main.rope(args);
       return ran.exitCode;
     };
-    // A repository Cinch was never set up in: `fix` writes nothing at all.
-    const stopped = await main.cinch(["fix", "--json"]);
+    // A repository without managed setup: `fix` writes nothing at all.
+    const stopped = await main.rope(["fix", "--json"]);
     const report = FixReportSchema.parse(json(stopped));
     expect(stopped.exitCode).toBe(1);
     expect(report.changed).toEqual([]);
-    expect(report.stopped).toContain("cinch doctor --fix");
+    expect(report.stopped).toContain("rope doctor --fix");
     expect(await main.files()).toEqual({ ...FILES });
     expect(await exit("check")).toBe(1);
 
-    const looked = await main.cinch(["doctor"]);
+    const looked = await main.rope(["doctor"]);
     expect(looked.exitCode).toBe(1);
-    expect(looked.stdout).toContain("Run `cinch doctor --fix`");
+    expect(looked.stdout).toContain("rope doctor --fix");
     expect(await main.files()).toEqual({ ...FILES });
 
     const repaired = DoctorReportSchema.parse(
-      json(await main.cinch(["doctor", "--fix", "--json"]))
+      json(await main.rope(["doctor", "--fix", "--json"]))
     );
     expect(repaired.changed).toEqual([
       ".outfitter/configs/presets/rumdl.toml",
@@ -44,12 +44,12 @@ proof(
     expect(after["README.md"]).toBe(FILES["README.md"]);
 
     await rm(path.join(main.root, KEPT));
-    const again = await main.cinch(["fix"]);
+    const again = await main.rope(["fix"]);
     expect(again.exitCode).toBe(1);
     expect(again.stdout).toContain("Nothing was fixed");
     const untouched = await main.files();
     expect(untouched["README.md"]).toBe(FILES["README.md"]);
-    await main.cinch(["doctor", "--fix"]);
+    await main.rope(["doctor", "--fix"]);
     const restored = await main.files();
     expect(restored[KEPT]).toBe(after[KEPT]);
     expect(await exit("fix")).toBe(0);
@@ -69,24 +69,24 @@ proof(
   "proof 7: a rule set in cinch.toml reaches the engine through doctor --fix",
   async ({ main }) => {
     const exit = async (...args: string[]): Promise<number> => {
-      const ran = await main.cinch(args);
+      const ran = await main.rope(args);
       return ran.exitCode;
     };
-    await main.cinch(["doctor", "--fix"]);
-    const before = await main.cinch(["check", "README.md"]);
+    await main.rope(["doctor", "--fix"]);
+    const before = await main.rope(["check", "README.md"]);
     expect(before.stdout).toContain("MD025");
     expect(await rumdl(main.root, "README.md")).toBe(1);
 
     const stated = `${FILES["cinch.toml"]}\n[tools.rumdl.global]\nextend-disable = ["MD025", "MD082"]\n`;
     await Bun.write(path.join(main.root, "cinch.toml"), stated);
     // Until the setup is repaired, the stale generated config is reported.
-    const stale = await main.cinch(["check", "README.md", KEPT]);
+    const stale = await main.rope(["check", "README.md", KEPT]);
     expect(stale.exitCode).toBe(1);
-    expect(stale.stdout).toContain("cinch doctor --fix");
+    expect(stale.stdout).toContain("rope doctor --fix");
     expect(await exit("fix")).toBe(1);
 
     const repaired = DoctorReportSchema.parse(
-      json(await main.cinch(["doctor", "--fix", "--json"]))
+      json(await main.rope(["doctor", "--fix", "--json"]))
     );
     expect(repaired.changed).toEqual([KEPT]);
     // Cinch and the engine run by hand now agree, with no other file edited.

@@ -174,7 +174,7 @@ test("after init, doctor --fix writes the generated file", async () => {
   await run("init", { yes: true });
   await quiet();
   expect(await messages()).toEqual([
-    "This file was written by hand and states what `[editor]` in the Cinch config states. Run `cinch doctor --fix` to have Cinch write it from the table.",
+    "This file was written by hand and states what `[editor]` in the Cinch config states. Run `rope doctor --fix` to have Cinch write it from the table.",
   ]);
   const fixed = await run("doctor", { fix: true });
   expect(fixed.exitCode).toBe(0);

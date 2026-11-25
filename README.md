@@ -6,7 +6,7 @@ The broader [`outfitter` CLI](https://github.com/outfitter-dev/outfitter) lives 
 
 ## Status
 
-The `@ropes/core` package holds the existing Cinch implementation under `packages/cinch/`. `@ropes/cli` supplies `rope init`, `rope explain`, `rope check`, `rope fix`, and `rope doctor` for setup inspection and repair. `fix --dry-run` previews content repairs. The Markdown fixture verifies matching plans, versioned results, and exits through Cinch, core, and `rope`.
+The `@ropes/core` package holds the existing Cinch implementation under `packages/cinch/`. `@ropes/cli` supplies `rope init`, `rope explain`, `rope check`, `rope fix`, and `rope doctor` for setup inspection and repair. `fix --dry-run` previews content repairs. The Markdown fixture verifies matching plans, versioned results, and exits through the public core API and `rope`.
 
 ## Quickstart
 
@@ -25,26 +25,26 @@ The npm-installed `rope` launcher delegates to the checkout's explicitly pinned 
 
 `rope explain` and `rope check` can compare an immutable cleanup candidate with its parent under an approved migration policy. See [staged cleanup](docs/cleanup.md) for the supported rule, scope and Git inputs.
 
-This repository checks and fixes itself through `rope`. The legacy `cinch` entry point remains available for compatibility. Ropes reads `rope.toml` and keeps its managed files under `.ropes/configs/`. During the pilot it also reads legacy `cinch.toml` or `[cinch]` in `outfitter.toml`, with managed files under `.outfitter/configs/`. The [cutover inventory](docs/cutover.md) records the compatibility choices.
+This repository checks and fixes itself through `rope`. Ropes reads `rope.toml` and keeps its managed files under `.ropes/configs/`. During the pilot it also reads legacy `cinch.toml` or `[cinch]` in `outfitter.toml`, with managed files under `.outfitter/configs/`. The [cutover inventory](docs/cutover.md) records the compatibility choices.
 
 `rope rules` lists the shipped packs and their state in this repository. Use `rope rules adopt [pack...]` to preview an adoption and add `--yes` to write it. The active policy file is the only file adoption changes.
 
 Capture two resolved rule policies with `rope policy snapshot` and compare them with `rope policy compare`. See [policy previews](docs/policy-preview.md).
 
-## Current Cinch commands
+## Ropes commands
 
 Given a path, Cinch resolves one plan: which policy applies, where each value came from, and which tools will run. Four verbs read that same plan, and each may write only its own files.
 
 | Command | What it will do |
 | --- | --- |
-| `cinch explain [path...]` | Show the plan without running anything |
-| `cinch check [path...]` | Run the plan read-only and report findings |
-| `cinch fix [path...]` | Fix the repository's own files. `--dry-run` previews without touching the checkout. It never writes a file Cinch keeps, and it stops when the setup needs repair. See [docs/fix.md](docs/fix.md) |
-| `cinch doctor` | Check the Cinch setup: the files Cinch keeps, and the pinned tools. `--fix` repairs it, and `--fix --dry-run` previews that. See [docs/doctor.md](docs/doctor.md) |
-| `cinch init` | First-time setup. Set up the config and presets a repository needs. It only shows the change. `--yes` writes it. See [docs/presets.md](docs/presets.md) |
-| `cinch preset` | List the shared configs Cinch keeps in the repository and whether each is current. `preset add <name>` and `preset update [name]` write them. `preset adopt <name>` and `preset eject <name>` move a tool's settings between its own config and the Cinch config |
-| `cinch rules` | List the rule packs Cinch ships and how each stands in the repository: on, off, not relevant, not adopted, or waiting for rules to be switched on. `rules adopt [pack]` names the packs that apply in the Cinch config so they run. It only shows the change. `--yes` writes it |
-| `cinch schema [command]` | Print the JSON Schema of a command's `--json` output, to write a jq filter against. `cinch schema config` prints the schema of the config file |
+| `rope explain [path...]` | Show the plan without running anything |
+| `rope check [path...]` | Run the plan read-only and report findings |
+| `rope fix [path...]` | Fix the repository's own files. `--dry-run` previews without touching the checkout. It never writes a file Ropes manages, and it stops when the setup needs repair. See [docs/fix.md](docs/fix.md) |
+| `rope doctor` | Check managed setup files and pinned tools. `--fix` repairs it, and `--fix --dry-run` previews that. See [docs/doctor.md](docs/doctor.md) |
+| `rope init` | First-time setup. Set up the config and presets a repository needs. It only shows the change. `--yes` writes it. See [docs/presets.md](docs/presets.md) |
+| `rope preset` | List the shared configs Ropes manages in the repository and whether each is current. `preset add <name>` and `preset update [name]` write them. `preset adopt <name>` and `preset eject <name>` move a tool's settings between its own config and the Ropes config |
+| `rope rules` | List the rule packs Ropes ships and how each stands in the repository: on, off, not relevant, not adopted, or waiting for rules to be switched on. `rules adopt [pack]` names the packs that apply in the Ropes config so they run. It only shows the change. `--yes` writes it |
+| `rope schema [command]` | Print the JSON Schema of a command's `--json` output, to write a jq filter against. `rope schema config` prints the schema of the config file |
 
 Every command prints plain text that can be piped, or one JSON document with `--json`. [Output](docs/output.md) has the contract and jq examples. Exit codes are 0 for clean, 1 when findings remain, and 2 when the run is incomplete or unusable. A check that could not run never counts as a pass.
 
@@ -102,7 +102,7 @@ enabled = false
 
 Overrides apply in file order. When more than one matches a path, the later one wins for each setting it states, and the plan names the override each value came from. A path that `exclude` matches, or that `include` does not, stays in the plan marked as skipped, with the setting that decided it.
 
-A table under `tools` is copied into the config Cinch generates for that tool, at `.outfitter/configs/<tool>.<ext>`. That file extends the preset Cinch ships, and the tool's root config extends that file, so a rule is stated once, in the Cinch config, and plain `rumdl` or an editor sees it too. `cinch doctor --fix` rewrites the generated file after the table changes. [The Markdown standard](docs/markdown-standard.md) has the details. Markdown is the first tool with a table.
+A table under `tools` is copied into the config Cinch generates for that tool, at `.outfitter/configs/<tool>.<ext>`. That file extends the preset Cinch ships, and the tool's root config extends that file, so a rule is stated once, in the Cinch config, and plain `rumdl` or an editor sees it too. `rope doctor --fix` rewrites the generated file after the table changes. [The Markdown standard](docs/markdown-standard.md) has the details. Markdown is the first tool with a table.
 
 The `[editor]` table holds the facts editors and formatters share: indent, line endings, charset, line width. Cinch writes the whole root `.editorconfig` from it, and never overwrites one a person wrote. With `[editor] check = true`, the built-in text checker validates selected files that have no active formatter. See [editor settings](docs/editor-settings.md). A tool's own config that states one of these facts differently is a finding: see [shared facts](docs/shared-facts.md).
 
@@ -120,7 +120,6 @@ packages/cinch/src/
   render/      Turns a result into text or JSON. Pure, and takes only a result.
   commands/    explain, check and fix as functions that take and return data.
   index.ts     Public @ropes/core operations and versioned contract parsers.
-  cli.ts       Existing cinch argument handling and output.
 packages/cli/src/
   cli.ts       rope argument handling, rendering and exit mapping.
 ```

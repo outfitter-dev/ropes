@@ -3,7 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-import manifest from "../package.json" with { type: "json" };
+import manifest from "../../cli/package.json" with { type: "json" };
 
 /** Install a real host binary through mise, with every cache kept in the fixture. */
 export const qualifyMiseInstall = async (input: {
@@ -83,10 +83,10 @@ export const qualifyMiseInstall = async (input: {
     Bun.write(
       config,
       [
-        '[tools."http:cinch"]',
+        '[tools."http:rope"]',
         `version = ${JSON.stringify(version)}`,
         `url = ${JSON.stringify(pathToFileURL(binary).href)}`,
-        'bin = "cinch"',
+        'bin = "rope"',
         `checksum = "sha256:${checksum}"`,
         "",
       ].join("\n")
@@ -115,7 +115,7 @@ export const qualifyMiseInstall = async (input: {
   const rejected = await run(["install"]);
   expect(rejected.exitCode).not.toBe(0);
   expect(rejected.stderr).toMatch(/checksum|sha256/iu);
-  const unavailable = await run(["where", "http:cinch"]);
+  const unavailable = await run(["where", "http:rope"]);
   expect(unavailable.exitCode).not.toBe(0);
 
   await pin(digest);
@@ -124,9 +124,9 @@ export const qualifyMiseInstall = async (input: {
     throw new Error(`mise install failed: ${installed.stderr}`);
   }
   const keptConfig = await Bun.file(config).text();
-  const version = await run(["exec", "--", "cinch", "--version"]);
+  const version = await run(["exec", "--", "rope", "--version"]);
   expect(version.exitCode).toBe(0);
-  expect(version.stdout).toBe(`${manifest.version} (binary)\n`);
+  expect(version.stdout).toBe(`rope ${manifest.version} (binary)\n`);
   const again = await run(["install"]);
   expect(again.exitCode).toBe(0);
   expect(await Bun.file(config).text()).toBe(keptConfig);
@@ -134,12 +134,12 @@ export const qualifyMiseInstall = async (input: {
   await pin("0".repeat(64));
   // mise identifies an installed tool by backend and version. Ordinary install
   // reuses it even if the config's URL/checksum changed under the same version.
-  const cached = await run(["install", "http:cinch"]);
+  const cached = await run(["install", "http:rope"]);
   expect(cached.exitCode).toBe(0);
-  const cachedVersion = await run(["exec", "--", "cinch", "--version"]);
+  const cachedVersion = await run(["exec", "--", "rope", "--version"]);
   expect(cachedVersion.exitCode).toBe(0);
-  expect(cachedVersion.stdout).toBe(`${manifest.version} (binary)\n`);
-  const forced = await run(["install", "--force", "http:cinch"]);
+  expect(cachedVersion.stdout).toBe(`rope ${manifest.version} (binary)\n`);
+  const forced = await run(["install", "--force", "http:rope"]);
   expect(forced.exitCode).not.toBe(0);
   expect(forced.stderr).toMatch(/checksum|sha256/iu);
 
@@ -147,24 +147,24 @@ export const qualifyMiseInstall = async (input: {
   // exercises the installer without creating another release of the binary.
   const repinnedVersion = `${manifest.version}-install-proof`;
   await pin("0".repeat(64), repinnedVersion);
-  const repinRejected = await run(["install", "http:cinch"]);
+  const repinRejected = await run(["install", "http:rope"]);
   expect(repinRejected.exitCode).not.toBe(0);
   expect(repinRejected.stderr).toMatch(/checksum|sha256/iu);
   await pin(digest, repinnedVersion);
-  const repinned = await run(["install", "http:cinch"]);
+  const repinned = await run(["install", "http:rope"]);
   expect(repinned.exitCode).toBe(0);
-  const location = await run(["where", "http:cinch"]);
+  const location = await run(["where", "http:rope"]);
   expect(location.exitCode).toBe(0);
   expect(location.stdout).toContain(repinnedVersion);
   const selectedDigest = new Bun.CryptoHasher("sha256")
-    .update(await Bun.file(path.join(location.stdout.trim(), "cinch")).bytes())
+    .update(await Bun.file(path.join(location.stdout.trim(), "rope")).bytes())
     .digest("hex");
   expect(selectedDigest).toBe(digest);
 
   await pin(digest);
-  const restored = await run(["install", "--force", "http:cinch"]);
+  const restored = await run(["install", "--force", "http:rope"]);
   expect(restored.exitCode).toBe(0);
-  const setup = await run(["exec", "--", "cinch", "init", "--yes"]);
+  const setup = await run(["exec", "--", "rope", "init", "--yes"]);
   expect(setup.exitCode).toBe(0);
   const direct = Bun.spawn([binary, "check", "README.md", "--json"], {
     cwd: root,
@@ -180,7 +180,7 @@ export const qualifyMiseInstall = async (input: {
   const selected = await run([
     "exec",
     "--",
-    "cinch",
+    "rope",
     "check",
     "README.md",
     "--json",

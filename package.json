@@ -9,10 +9,8 @@
   "type": "module",
   "scripts": {
     "bootstrap": "bash scripts/bootstrap.sh",
-    "build:binary": "bun packages/cinch/scripts/build-binary.ts",
     "build:rope": "bun packages/cli/scripts/build-binary.ts",
     "check": "bun run check:workflows && bun run rope check && bun run test",
-    "cinch": "bun packages/cinch/src/cli.ts",
     "fix": "bun run rope fix",
     "rope": "bun packages/cli/src/cli.ts",
     "test": "bun test",

@@ -120,7 +120,7 @@ test("changing a fact and running doctor --fix changes the file", async () => {
   );
   await put("cinch.toml", EDITOR.replace("indent_size = 2", "indent_size = 4"));
   expect(await messages()).toEqual([
-    "This file differs from `[editor]` in the Cinch config. Make the change there, then run `cinch doctor --fix`.",
+    "This file differs from `[editor]` in the Cinch config. Make the change there, then run `rope doctor --fix`.",
   ]);
   await run("doctor", { fix: true });
   expect(await kept()).toContain("indent_size = 4");

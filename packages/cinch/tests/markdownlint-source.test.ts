@@ -89,14 +89,14 @@ test("the runner's own settings are named, with the Cinch key for paths", async 
   expect(found).toMatchObject({
     notes: [
       "`customRules` in .markdownlint-cli2.jsonc is a markdownlint-cli2 setting with no equivalent here.",
-      "`globs` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `cinch init` writes it as `include` in a new Cinch config. Add it by hand to one that is already there.",
-      "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `cinch init` writes it as `exclude` in a new Cinch config. Add it by hand to one that is already there.",
+      "`globs` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `rope init` writes it as `include` in a new Cinch config. Add it by hand to one that is already there.",
+      "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `rope init` writes it as `exclude` in a new Cinch config. Add it by hand to one that is already there.",
     ],
     rules: RULES,
     // The file choices are the Cinch config's to carry.
     settled: [
-      "`globs` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `cinch init` writes it as `include` in a new Cinch config. Add it by hand to one that is already there.",
-      "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `cinch init` writes it as `exclude` in a new Cinch config. Add it by hand to one that is already there.",
+      "`globs` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `rope init` writes it as `include` in a new Cinch config. Add it by hand to one that is already there.",
+      "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `rope init` writes it as `exclude` in a new Cinch config. Add it by hand to one that is already there.",
     ],
   });
 });
@@ -127,7 +127,7 @@ test("a runner with no rules of its own leaves them to the rules file", async ()
   expect(found).toMatchObject({
     file: ".markdownlint.json",
     notes: [
-      "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `cinch init` writes it as `exclude` in a new Cinch config. Add it by hand to one that is already there.",
+      "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `rope init` writes it as `exclude` in a new Cinch config. Add it by hand to one that is already there.",
     ],
     rules: RULES,
   });

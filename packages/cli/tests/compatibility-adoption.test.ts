@@ -14,14 +14,13 @@ import {
 } from "../../cinch/tests/acceptance-repo.ts";
 import { BEFORE, CONFIG, packageAt } from "./compatibility-fixture.ts";
 
-const CINCH = new URL("../../cinch/src/cli.ts", import.meta.url);
 const ROPE = new URL("../src/cli.ts", import.meta.url);
 
 test("the compatibility pilot requires adoption by name through init and bulk adoption", async () => {
   await withFixture(async ({ main }) => {
     await rm(path.join(main.root, "cinch.toml"));
     await Bun.write(path.join(main.root, "example.ts"), "export {};\n");
-    await runEntry(CINCH, ["init", "--yes", "--json"], main.root);
+    await runEntry(ROPE, ["init", "--yes", "--json"], main.root);
     const starter = await loadConfig(main.root);
     expect(starter.ok).toBe(true);
     if (starter.ok) {
@@ -31,14 +30,14 @@ test("the compatibility pilot requires adoption by name through init and bulk ad
     }
     const bulk = RulesAdoptReportSchema.parse(
       json(
-        await runEntry(CINCH, ["rules", "adopt", "--yes", "--json"], main.root)
+        await runEntry(ROPE, ["rules", "adopt", "--yes", "--json"], main.root)
       )
     );
     expect(bulk.adopted).not.toContain("typescript-api");
     const named = RulesAdoptReportSchema.parse(
       json(
         await runEntry(
-          CINCH,
+          ROPE,
           ["rules", "adopt", "typescript-api", "--yes", "--json"],
           main.root
         )

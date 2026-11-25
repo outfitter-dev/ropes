@@ -129,7 +129,7 @@ test("the built-in editor checker runs without an external executable", async ()
   await withFixture(async ({ main, emptyPath }) => {
     await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
     await Bun.write(path.join(main.root, "a.txt"), "clean\n");
-    await main.cinch(["doctor", "--fix", "--json"]);
+    await main.rope(["doctor", "--fix", "--json"]);
     const ran = await runEntry(
       ROPE,
       ["check", "a.txt", "--json"],

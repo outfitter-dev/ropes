@@ -23,7 +23,7 @@ const stated = (config: ConfigText): unknown => {
   return at;
 };
 
-const WRITTEN = `Cinch now writes ${EDITOR_PATH} from the table. Change the table, then run \`cinch doctor --fix\`.`;
+const WRITTEN = `Cinch now writes ${EDITOR_PATH} from the table. Change the table, then run \`rope doctor --fix\`.`;
 
 /**
  * Reads the file a person wrote into the `[editor]` table and hands back
@@ -76,7 +76,7 @@ const adopt = async (root: string, config: ConfigText): Promise<Relocation> => {
     ? { files: [generated], notes, ok: true }
     : stop(
         `\`[editor]\` in ${config.file} already states other settings than ${EDITOR_PATH} does.`,
-        `Make the table state what you want and delete ${EDITOR_PATH}, then run \`cinch doctor --fix\`.`
+        `Make the table state what you want and delete ${EDITOR_PATH}, then run \`rope doctor --fix\`.`
       );
 };
 

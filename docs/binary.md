@@ -1,6 +1,6 @@
 # The standalone binary
 
-The standalone `rope` and `cinch` executables embed Bun's runtime. A repository without a Bun installation, such as a Python repository, can run them with Git and its pinned external engines on `PATH`.
+The standalone `rope` executable embeds Bun's runtime. A repository without a Bun installation, such as a Python repository, can run it with Git and its pinned external engines on `PATH`.
 
 This page covers building the executable and qualifying an installation from a local artifact. See [Prepare a standalone release](standalone-candidate.md) for the native archive workflow and the `http:rope` mise recipe.
 
@@ -17,13 +17,6 @@ bun run build:rope dist/rope-linux-arm64 bun-linux-arm64
 ```
 
 The executable includes Bun's runtime, so the consuming repository needs Git and its pinned external engines on `PATH`. It can run in a repository with no `package.json`. `rope --version` reports `rope <version> (binary)`. It uses the same public commands and JSON contracts as the npm CLI, and `rope doctor` inspects the setup and active settings without writing to the repository. The native acceptance suite compares the compiled executable with the package and checks fenced-code repairs with Bun absent from `PATH`.
-
-The existing Cinch interface has its own build entry:
-
-```sh
-bun run build:binary dist/cinch
-bun run build:binary dist/cinch-linux-arm64 bun-linux-arm64
-```
 
 The first argument is the file to write. The second is `bun-darwin-arm64`, `bun-linux-arm64` or `bun-linux-x64`, and without it the build is for the machine it runs on. Building for another platform downloads that platform's Bun runtime.
 
@@ -57,17 +50,17 @@ mise exec -- rope check --strict --json
 
 Review the config through the repository's normal mise trust process before installation. Commit the exact artifact location and expected checksum with the policy change. A `file://` URL depends on that absolute path existing on each consumer host. For a multi-platform repository, put the URL and checksum under `[tools."http:rope".platforms]` with `macos-arm64`, `linux-x64`, and `linux-arm64` entries for the corresponding builds. An authenticated artifact download can populate those local paths after release approval. [mise HTTP backend](https://mise.jdx.dev/dev-tools/backends/http.html)
 
-The automatic mise fixture tests a raw `cinch` executable with isolated data, config, and cache directories. It covers digest rejection, forced reinstall, and same-version caching. For a release candidate, use the separate [standalone archive qualification](standalone-candidate.md#verify-a-clean-install) to install the `rope` archive through mise and compare the results with the package CLI with Bun absent from `PATH`.
+The automatic mise fixture tests a raw `rope` executable with isolated data, config, and cache directories. It covers digest rejection, forced reinstall, and same-version caching. For a release candidate, use the separate [standalone archive qualification](standalone-candidate.md#verify-a-clean-install) to install the `rope` archive through mise and compare the results with the package CLI with Bun absent from `PATH`.
 
 ## What is inside
 
-- The `cinch` command, with every verb.
-- The presets, as text. A Cinch version is a preset version, so the binary writes the same `.outfitter/configs/presets/` files as the package of the same version.
-- The rules Cinch ships, as text, for the same reason. The binary still needs `ast-grep` on `PATH` to run them.
+- The public `rope` command and its supported verbs.
+- The presets, as text. The binary writes the same `.ropes/configs/presets/` files as the package of the same version.
+- The rules Ropes ships, as text. The binary still needs `ast-grep` on `PATH` to run them.
 
-A repository still pins and installs rumdl, native Taplo and the other primary engines itself. `cinch doctor` reports a missing primary engine. The macOS binary carries the same Taplo WebAssembly recovery tool as the npm package.
+A repository still pins and installs rumdl, native Taplo and the other primary engines itself. `rope doctor` reports a missing primary engine. The macOS binary carries the same Taplo WebAssembly recovery tool as the npm package.
 
-`cinch --version` prints the version followed by `(binary)` when the binary is running, and the bare version from the package.
+The standalone version output is `rope <version> (binary)`. The package version output includes the path to the selected entry point.
 
 ## What works with no Bun
 
@@ -83,7 +76,7 @@ On Linux x64 with Bun 1.4.4, on 2026-11-20:
 
 - Size: 109 MB. Almost all of it is the Bun runtime.
 - Build: under a second for the host platform.
-- Cold start: about 60 ms for `cinch --version`.
+- The historical Cinch build started in about 60 ms for `cinch --version`.
 
 ## Still open
 

@@ -31,6 +31,10 @@ This repository uses `rope.toml` and `.ropes/configs/` for its own checks. `bun 
 
 To roll back the repository's setup cutover, revert its commit as a unit. The previous revision supplies both the legacy policy and the matching tool references. A partial rollback can leave competing root configs or stale preset pointers.
 
+## Command retirement
+
+Use `rope` for `explain`, `check`, `fix`, `doctor`, `init`, `preset`, `rules`, and `schema`. The public CLI supports the documented flags, including `--at` for `explain` and `check`, `--strict`, and the preview and confirmation options for the actions that write. Preset operations take one preset name at a time. `rope init` uses the fix report shape and preserves existing tool files. `rope schema` lists the schemas for preset and rule reports. The repository builds the standalone executable with `bun run build:rope`.
+
 ## Consumers and repository links
 
 On November 20, 2026, a tracked-file search across the 17 mounted Outfitter sibling checkouts found no active Cinch or Ropes package caller outside Ropes. A hosted GitHub code search for `@outfitter/cinch`, `@ropes/core`, `@ropes/cli`, `cinch check`, `cinch fix`, and `cinch.toml` found no indexed consumer outside Ropes. Record a consumer's exact pin and owner when it appears. The searches do not cover private local scripts, unindexed branches, global installs, or registry consumers.

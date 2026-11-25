@@ -2,6 +2,8 @@ import { expect } from "bun:test";
 import { link, mkdir, readdir, stat, symlink } from "node:fs/promises";
 import path from "node:path";
 
+import { fixtureGit } from "./acceptance-repo.ts";
+
 type Run = (
   command: readonly string[],
   cwd: string,
@@ -58,6 +60,8 @@ export const qualifyStandaloneCache = async (input: {
   await mkdir(nestedDocs, { recursive: true });
   await run(["git", "init", "-q", "--separate-git-dir", nestedGit], nested);
   await Bun.write(path.join(nestedDocs, "overview.md"), contents);
+  await fixtureGit(nested, "add", ".");
+  await fixtureGit(nested, "commit", "--quiet", "--message", "fixture");
   await run([binary, "init", "--yes"], nested);
   await run(["git", "add", "-A"], nested);
   const index = Bun.file(path.join(root, ".git", "index"));

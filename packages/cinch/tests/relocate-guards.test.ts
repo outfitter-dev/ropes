@@ -67,7 +67,7 @@ test("adopt stops while the installed preset is not the one Cinch ships", async 
   );
   const { exitCode, report } = await move(root, "adopt", { yes: true });
   expect(exitCode).toBe(1);
-  expect(report.stopped?.[0]).toContain("cinch doctor --fix");
+  expect(report.stopped?.[0]).toContain("rope doctor --fix");
   expect(await read(root, ROOT)).toBe(own);
 });
 

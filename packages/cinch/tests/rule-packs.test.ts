@@ -16,7 +16,7 @@ import { resolvePlan } from "../src/policy/resolve.ts";
 import { rulesBlock } from "../src/render/rules.ts";
 import { describeFake } from "./fake-adapter.ts";
 
-const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
+const CLI = new URL("../../cli/src/cli.ts", import.meta.url).pathname;
 const RULES = path.join(import.meta.dir, "..", "rules");
 const ORIGIN = { file: "cinch.toml", prefix: "" };
 const OFF: Provenance = { file: "cinch.toml", key: "rules.off", kind: "file" };
@@ -132,8 +132,8 @@ test("a pack the config does not name does not run, and the plan says so", () =>
     "a.ts",
   ]);
   expect(plan.batches[0]?.rules).toEqual(["typescript/c"]);
-  expect(rulesBlock(plan.rules ?? [])).toContain(
-    "config  not adopted, and tsconfig.json is here. Run `cinch rules adopt config` to run it"
+  expect(rulesBlock(plan.rules ?? [], true, "rope")).toContain(
+    "config  not adopted, and tsconfig.json is here. Run `rope rules adopt config` to run it"
   );
 });
 

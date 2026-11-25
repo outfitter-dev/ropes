@@ -136,7 +136,7 @@ test("a dry run sees a config git ignores, as the real run does", async () => {
   await put(".gitignore", ".oxlintrc.json\nnode_modules\n");
   await put(".oxlintrc.json", "{}\n");
   await fixtureGit(root, "check-ignore", "--quiet", ".oxlintrc.json");
-  const preview = await checkoutAt(root).cinch([
+  const preview = await checkoutAt(root).rope([
     "doctor",
     "--fix",
     "--dry-run",
@@ -201,7 +201,7 @@ test("an existing extensionless config takes precedence over the preset", async 
   await fixtureGit(root, "check-ignore", "--quiet", exact);
   const [finding = ""] = await about("tsconfig.json");
   expect(finding).toContain("not the preset Cinch keeps");
-  const preview = await checkoutAt(root).cinch([
+  const preview = await checkoutAt(root).rope([
     "doctor",
     "--fix",
     "--dry-run",

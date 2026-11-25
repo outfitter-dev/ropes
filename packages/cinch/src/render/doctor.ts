@@ -46,14 +46,17 @@ const written = (report: DoctorReport): string[] => {
     : [["Changed:", ...changed.map((path) => `  ${path}`)].join("\n")];
 };
 
-const packs = ({ notAdopted }: DoctorReport): string[] =>
+const packs = (
+  { notAdopted }: DoctorReport,
+  command: "cinch" | "rope"
+): string[] =>
   notAdopted.length === 0
     ? []
     : [
         [
           "Rule packs not adopted",
           ...notAdopted.map((name) => `  ${name}`),
-          "Run `cinch rules adopt` to see the change, and add `--yes` to write it.",
+          `Run \`${command} rules adopt\` to see the change, and add \`--yes\` to write it.`,
         ].join("\n"),
       ];
 
@@ -74,7 +77,7 @@ export const renderDoctor = (
     ...(report.tools.length === 0
       ? []
       : [["Tools", ...report.tools.map(toolLine)].join("\n")]),
-    ...packs(report),
+    ...packs(report, command),
     `${verdict(report, command)} Exit code ${EXIT_CODE[doctorOutcome(report)]}.`,
   ].join("\n\n");
 

@@ -113,7 +113,7 @@ const want = async (
     : {
         ok: true,
         text: added,
-        why: `${OWN} It does not extend the preset Cinch keeps. Add \`${line}\`, or run \`cinch doctor --fix\`, which adds it and changes nothing else.`,
+        why: `${OWN} It does not extend the preset Cinch keeps. Add \`${line}\`, or run \`rope doctor --fix\`, which adds it and changes nothing else.`,
       };
 };
 

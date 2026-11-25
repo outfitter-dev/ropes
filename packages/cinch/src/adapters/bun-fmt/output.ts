@@ -37,7 +37,7 @@ export interface Printed {
 
 const unformatted = (file: string, source: string): Finding => ({
   fixable: true,
-  message: "The file is not formatted. `cinch fix` formats it.",
+  message: "The file is not formatted. `rope fix` formats it.",
   path: file,
   range: { start: { column: 1, line: 1 } },
   rule: UNFORMATTED_RULE,

@@ -9,7 +9,7 @@ import { Glob } from "bun";
  * presets and the rules go in as text, since a Cinch version is a preset
  * version and a rules version.
  *
- *   bun packages/cinch/scripts/build-binary.ts <outfile> [target]
+ *   bun run build:rope <outfile> [target]
  *
  * Without a target, the build is for the machine it runs on. This writes a file and publishes nothing.
  */
@@ -29,7 +29,7 @@ export const buildBinary = async (entrypoint: string): Promise<void> => {
   const target = TARGETS.find((name) => name === wanted);
   if (outfile === undefined || (wanted !== undefined && target === undefined)) {
     process.stderr.write(
-      `usage: build-binary.ts <outfile> [${TARGETS.join(" | ")}]\n`
+      `usage: bun run build:rope <outfile> [${TARGETS.join(" | ")}]\n`
     );
     process.exit(2);
   }

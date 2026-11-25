@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -7,8 +7,9 @@ import manifest from "../package.json" with { type: "json" };
 import { FailureSchema } from "../src/contracts/failure.ts";
 import { FixReportSchema } from "../src/contracts/fix.ts";
 import { SCHEMA_VERSION } from "../src/contracts/plan.ts";
+import { fixtureGit, runEntry } from "./acceptance-repo.ts";
 
-const CLI = new URL("../src/cli.ts", import.meta.url).pathname;
+const CLI = new URL("../../cli/src/cli.ts", import.meta.url).pathname;
 /** The repository root, so a relative path means the same from any start. */
 const REPO = new URL("../../../", import.meta.url).pathname;
 
@@ -28,7 +29,7 @@ const run = async (...args: string[]) => {
 
 test("--version prints the package version", async () => {
   const result = await run("--version");
-  expect(result.stdout.trim()).toBe(manifest.version);
+  expect(result.stdout.trim()).toContain(`rope ${manifest.version}`);
   expect(result.exitCode).toBe(0);
 });
 
@@ -79,32 +80,23 @@ test("an unknown command exits 2, including names Object.prototype has", async (
 });
 
 test("init shows the change and writes nothing", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-init-"));
-  await mkdir(path.join(root, ".git"));
-  const child = Bun.spawn(["bun", CLI, "init"], {
-    cwd: root,
-    stderr: "pipe",
-    stdin: "ignore",
-    stdout: "pipe",
-  });
-  const [stdout] = await Promise.all([
-    new Response(child.stdout).text(),
-    child.exited,
-  ]);
-  expect(stdout).toContain("Run `cinch init --yes` to write this.");
-  expect(await Bun.file(path.join(root, "cinch.toml")).exists()).toBe(false);
-  const json = Bun.spawn(["bun", CLI, "init", "--json"], {
-    cwd: root,
-    stderr: "pipe",
-    stdin: "ignore",
-    stdout: "pipe",
-  });
-  const [report] = await Promise.all([
-    new Response(json.stdout).text(),
-    json.exited,
-  ]);
-  expect(FixReportSchema.parse(JSON.parse(report)).dryRun).toBe(true);
-  await rm(root, { force: true, recursive: true });
+  const root = await mkdtemp(path.join(tmpdir(), "rope-cli-init-"));
+  try {
+    await fixtureGit(root, "init", "--quiet");
+    await Bun.write(path.join(root, "README.md"), "# Fixture\n");
+    await fixtureGit(root, "add", "README.md");
+    await fixtureGit(root, "commit", "--quiet", "--message", "fixture");
+    const cli = new URL("../../cli/src/cli.ts", import.meta.url);
+    const preview = await runEntry(cli, ["init"], root);
+    expect(preview.exitCode).toBe(0);
+    expect(preview.stdout).toContain("rope init --yes");
+    const report = await runEntry(cli, ["init", "--json"], root);
+    expect(report.exitCode).toBe(0);
+    expect(FixReportSchema.parse(JSON.parse(report.stdout)).dryRun).toBe(true);
+    expect(await Bun.file(path.join(root, "rope.toml")).exists()).toBe(false);
+  } finally {
+    await rm(root, { force: true, recursive: true });
+  }
 });
 
 test("schema prints the JSON Schema of a command's --json output", async () => {
@@ -140,7 +132,7 @@ test("schema prints the JSON Schema of a command's --json output", async () => {
   });
   const text = await run("schema");
   expect(text.stdout).toContain("  preset update\n");
-  expect(text.stdout).toContain("`cinch schema config`");
+  expect(text.stdout).toContain("`rope schema config`");
 });
 
 test("with --json a failure is one JSON document on stderr", async () => {
@@ -156,5 +148,5 @@ test("with --json a failure is one JSON document on stderr", async () => {
     expect(failure.error.message).not.toStartWith("cinch: ");
   }
   const plain = await run("schema", "nope");
-  expect(plain.stderr).toStartWith("cinch: no schema");
+  expect(plain.stderr).toContain("No schema for");
 });

@@ -52,7 +52,7 @@ proof(
       path.join(main.root, "node_modules/ultracite/package.json"),
       '{"name":"ultracite","version":"8.1.1"}'
     );
-    const setup = await main.cinch(["doctor", "--fix"]);
+    const setup = await main.rope(["doctor", "--fix"]);
     expect(setup.exitCode).toBe(0);
     const references = [
       [".rumdl.toml", "rumdl.toml"],
@@ -79,7 +79,7 @@ proof(
     );
     await Bun.write(join("cinch.toml"), legacyConfig);
     await Bun.write(join("ignored/notes.md"), "# Ignored\n\nText.\n");
-    const setup = await main.cinch(["doctor", "--fix"]);
+    const setup = await main.rope(["doctor", "--fix"]);
     expect(setup.exitCode).toBe(0);
     const before = await main.files();
 
@@ -131,7 +131,7 @@ proof(
         { path: "legacy/old.md", steps: [] },
       ],
     });
-    const doctor = await main.cinch(["doctor"]);
+    const doctor = await main.rope(["doctor"]);
     expect(doctor.exitCode).toBe(0);
   }
 );

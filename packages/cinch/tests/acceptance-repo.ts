@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { snapshot } from "./repo-bench.ts";
 
-const CLI = new URL("../src/cli.ts", import.meta.url);
+const CLI = new URL("../../cli/src/cli.ts", import.meta.url);
 
 /** The file every proof reads its override from. */
 export const CONFIG = [
@@ -41,8 +41,8 @@ export interface Ran {
 
 export interface Checkout {
   readonly root: string;
-  /** Runs the `cinch` executable in a child process, from `cwd` under the root. */
-  readonly cinch: (
+  /** Runs the `rope` executable in a child process, from `cwd` under the root. */
+  readonly rope: (
     args: readonly string[],
     options?: { cwd?: string; path?: string }
   ) => Promise<Ran>;
@@ -126,12 +126,12 @@ export const runEntry = (
   spawn([process.execPath, fileURLToPath(entry), ...args], cwd, searchPath);
 
 export const checkoutAt = (root: string): Checkout => ({
-  cinch: (args, { cwd = "", path: searchPath } = {}) =>
-    runEntry(CLI, args, path.join(root, cwd), searchPath),
   // Git may create or remove maintenance locks while the checkout is open.
   files: () =>
     snapshot(root, (name) => name !== ".git" && !name.startsWith(".git/")),
   root,
+  rope: (args, { cwd = "", path: searchPath } = {}) =>
+    runEntry(CLI, args, path.join(root, cwd), searchPath),
 });
 
 export interface Fixture {
