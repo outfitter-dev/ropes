@@ -49,7 +49,7 @@ test("rope lists public schemas and describes real versioned output", async () =
         "rules list",
       ],
       files: ["config"],
-      schemaVersion: 4,
+      schemaVersion: 5,
     });
     for (const command of ["explain", "check", "fix", "init"]) {
       // eslint-disable-next-line no-await-in-loop -- verify schema and report for each command
@@ -60,9 +60,9 @@ test("rope lists public schemas and describes real versioned output", async () =
       expect(schema.exitCode).toBe(0);
       expect(report.exitCode).toBe(0);
       expect(JSON.parse(schema.stdout)).toMatchObject({
-        properties: { schemaVersion: { const: 4 } },
+        properties: { schemaVersion: { const: 5 } },
       });
-      expect(JSON.parse(report.stdout)).toMatchObject({ schemaVersion: 4 });
+      expect(JSON.parse(report.stdout)).toMatchObject({ schemaVersion: 5 });
     }
 
     const publicSchemas = {

@@ -1,8 +1,9 @@
-import type { Adapter, FileOutcome, StepOutcome } from "../adapters/adapter.ts";
+import type { Adapter, FileOutcome } from "../adapters/adapter.ts";
 import type { ChangeAt, Conflict } from "../contracts/conflict.ts";
 import type { Plan, PlanBatch } from "../contracts/plan.ts";
 import { outcomeOf } from "../contracts/result.ts";
 import type { Result, StepResult } from "../contracts/result.ts";
+import { answered, incomplete } from "./answers.ts";
 import { conflictsAfter, textsOf } from "./conflicts.ts";
 import type { Settled } from "./conflicts.ts";
 import { enforce } from "./enforcement.ts";
@@ -39,12 +40,6 @@ export interface RunOptions {
   readonly changeAt?: ChangeAt;
 }
 
-const incomplete = (reason: string): StepOutcome => ({
-  findings: [],
-  reason,
-  status: "incomplete",
-});
-
 /** Probes each adapter at most once per run, however many steps use it. */
 const readiness = (
   adapters: readonly Adapter[],
@@ -62,52 +57,6 @@ const readiness = (
     }
     return { adapter, probe: probes.get(id) };
   };
-};
-
-/** Only a single answer for a planned file can establish its coverage. */
-const answered = (
-  batch: PlanBatch,
-  outcomes: readonly FileOutcome[]
-): FileOutcome[] => {
-  const planned = new Set(batch.paths);
-  const byPath = new Map<string, FileOutcome>();
-  let unplanned: string | undefined;
-  for (const outcome of outcomes) {
-    const { path } = outcome;
-    if (!planned.has(path)) {
-      unplanned ??= path;
-      continue;
-    }
-    byPath.set(
-      path,
-      byPath.has(path)
-        ? {
-            ...incomplete(
-              `${batch.tool} gave more than one answer for this file`
-            ),
-            path,
-          }
-        : outcome
-    );
-  }
-  if (unplanned !== undefined) {
-    // An answer that belongs to no planned file invalidates the batch,
-    // while findings from uniquely answered planned files remain visible.
-    const reason = `${batch.tool} gave an answer for unplanned file ${JSON.stringify(unplanned)}`;
-    return batch.paths.map((path) => ({
-      findings: byPath.get(path)?.findings ?? [],
-      path,
-      reason,
-      status: "incomplete",
-    }));
-  }
-  return batch.paths.map(
-    (path) =>
-      byPath.get(path) ?? {
-        ...incomplete(`${batch.tool} gave no answer for this file`),
-        path,
-      }
-  );
 };
 
 const runBatch = async (

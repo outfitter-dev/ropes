@@ -8,7 +8,7 @@ import { PackageTargetSchema, TargetDecisionSchema } from "./targets.ts";
  * and the finding together until the shapes are ratified. A consumer that
  * meets a version it does not know must stop, never guess.
  */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 /** Where a policy value came from. */
 export const ProvenanceSchema = z.discriminatedUnion("kind", [
@@ -103,8 +103,8 @@ export const SkippedSchema = z
 export type Skipped = z.infer<typeof SkippedSchema>;
 
 /**
- * One start of an engine: a step on the selected files of one package. The
- * batches are what `check` and `fix` run, in this order.
+ * One start of an engine for a set of selected files. The batches are
+ * what `check` and `fix` run, in this order.
  */
 export const PlanBatchSchema = PlanStepSchema.unwrap()
   .extend({
@@ -114,6 +114,8 @@ export const PlanBatchSchema = PlanStepSchema.unwrap()
     paths: z.array(z.string().min(1)).min(1).readonly(),
     /** The rules the start runs, for an adapter that ships rule packs. */
     rules: z.array(z.string().min(1)).readonly().optional(),
+    /** Project scope. Absent for adapters that operate on independent files. */
+    unit: z.enum(["package", "workspace"]).optional(),
   })
   .readonly();
 export type PlanBatch = z.infer<typeof PlanBatchSchema>;

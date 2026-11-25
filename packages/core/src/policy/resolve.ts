@@ -1,6 +1,6 @@
 import { SCHEMA_VERSION } from "../contracts/plan.ts";
 import type { Evaluation, Plan, Selection } from "../contracts/plan.ts";
-import { batchesFor } from "./batches.ts";
+import { batchesFor, guardedProjectPaths } from "./batches.ts";
 import { resolveDeadlines } from "./deadlines.ts";
 import { sharedFacts } from "./facts.ts";
 import { compileGlobs } from "./glob.ts";
@@ -85,7 +85,7 @@ export const resolvePlan = (given: ResolveInput): Plan => {
   const deadlines = resolveDeadlines(
     given.config,
     given.evaluation,
-    planned,
+    guardedProjectPaths(planned, batches),
     batches,
     input.descriptors
   );
