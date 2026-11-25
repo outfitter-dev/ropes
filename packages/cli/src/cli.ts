@@ -9,7 +9,7 @@ import {
   prepareRuntime,
   STANDALONE,
 } from "@ropes/core";
-import type { MigrationPreview, ReadRequest } from "@ropes/core";
+import type { ReadRequest } from "@ropes/core";
 import {
   doctorOutcome,
   renderDoctor,
@@ -32,41 +32,16 @@ import { presetCommand } from "./preset.ts";
 import { rulesCommand } from "./rules.ts";
 import { schema } from "./schema.ts";
 
-const renderMigration = (preview: MigrationPreview): string => {
-  const { source, target, managedFiles, rootReferences, recovery } = preview;
-  const table = source.table === undefined ? "" : ` [${source.table}]`;
-  return [
-    `Migration preview from ${source.path}${table} to ${target.path}. No files written.`,
-    "",
-    target.text.trimEnd(),
-    "",
-    ...managedFiles.map(({ from, to }) => `  ${from} -> ${to}`),
-    ...rootReferences.map(
-      ({ from, path, to }) =>
-        `  ${path}: change the reference from ${from} to ${to}`
-    ),
-    "",
-    recovery,
-  ].join("\n");
-};
-
 const migrate = async (
   cwd: string,
   paths: readonly string[],
   json: boolean
 ): Promise<number> => {
   if (paths.length > 0) {
-    return fail(
-      "migrate previews the whole configuration, so it takes no paths.",
-      json
-    );
+    return fail("migrate takes no paths.", json);
   }
   const ran = await previewMigration(cwd);
-  if (!ran.ok) {
-    return fail(ran.error, json);
-  }
-  print(json ? JSON.stringify(ran.value, null, 2) : renderMigration(ran.value));
-  return EXIT_CODE.clean;
+  return fail(ran.error, json);
 };
 
 const checkPaths = async (

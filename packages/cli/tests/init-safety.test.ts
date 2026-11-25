@@ -37,20 +37,19 @@ const hasRumdl = (): boolean => {
 };
 
 test("rejected initialization keeps implicit Cinch setup in place", async () => {
-  if (!hasRumdl()) {
-    return;
-  }
   await inRepo(async (root) => {
-    const old = await runEntry(cli, ["doctor", "--fix", "--json"], root);
-    expect(old.exitCode).toBe(0);
+    await Bun.write(
+      path.join(root, ".outfitter/configs/rumdl.toml"),
+      "# Retired managed setup\n"
+    );
     const checkout = checkoutAt(root);
     const before = await checkout.files();
     const index = await readFile(path.join(root, ".git/index"));
     const preview = await runEntry(cli, ["init", "--json"], root);
     const apply = await runEntry(cli, ["init", "--yes", "--json"], root);
-    expect(preview.exitCode).toBe(1);
+    expect(preview.exitCode).toBe(2);
     expect(apply).toEqual(preview);
-    expect(apply.stdout).toContain("legacy managed directory");
+    expect(apply.stderr).toContain(".outfitter/configs");
     expect(await checkout.files()).toEqual(before);
     expect(await readFile(path.join(root, ".git/index"))).toEqual(index);
   });

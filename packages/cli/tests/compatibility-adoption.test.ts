@@ -18,7 +18,7 @@ const ROPE = new URL("../src/cli.ts", import.meta.url);
 
 test("the compatibility pilot requires adoption by name through init and bulk adoption", async () => {
   await withFixture(async ({ main }) => {
-    await rm(path.join(main.root, "cinch.toml"));
+    await rm(path.join(main.root, "rope.toml"));
     await Bun.write(path.join(main.root, "example.ts"), "export {};\n");
     await runEntry(ROPE, ["init", "--yes", "--json"], main.root);
     const starter = await loadConfig(main.root);
@@ -53,7 +53,7 @@ test("the compatibility pilot requires adoption by name through init and bulk ad
 
 test("manifest evidence hashes its raw BOM bytes and unresolved explanations leave tools unprobed", async () => {
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     const directory = await packageAt(main.root, "current", "^5.0.0");
     await Bun.write(path.join(directory, "index.ts"), BEFORE);
     const manifest = path.join(directory, "package.json");

@@ -2,7 +2,7 @@
 
 This inventory covers the Ropes quality tool and its known callers. The separate Outfitter application owns application initialization, cross-tool migration, and the unscoped `outfitter` npm cutover. See [ROPE-77](https://linear.app/outfitter/issue/ROPE-77) for the decision and [ROPE-79](https://linear.app/outfitter/issue/ROPE-79) for the preview.
 
-## Config decisions
+## Pilot config decisions
 
 Matt approved these choices on November 20, 2026.
 
@@ -34,6 +34,10 @@ To roll back the repository's setup cutover, revert its commit as a unit. The pr
 ## Command retirement
 
 Use `rope` for `explain`, `check`, `fix`, `doctor`, `init`, `preset`, `rules`, and `schema`. The public CLI supports the documented flags, including `--at` for `explain` and `check`, `--strict`, and the preview and confirmation options for the actions that write. Preset operations take one preset name at a time. `rope init` uses the fix report shape and preserves existing tool files. `rope schema` lists the schemas for preset and rule reports. The repository builds the standalone executable with `bun run build:rope`.
+
+## Legacy policy retirement
+
+Following the [hard-cutover decision](https://linear.app/outfitter/issue/ROPE-109), Ropes accepts `rope.toml` and keeps generated files under `.ropes/configs/`. Repository operations stop with exit 2 when they encounter the retired standalone file, a retired shared table, or the retired managed directory. Use the [manual migration guide](config-migration.md) to move policy and review the generated setup.
 
 ## Consumers and repository links
 

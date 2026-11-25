@@ -31,7 +31,7 @@ test("compatibility cleanup passes on the old API before the final dependency up
     return;
   }
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(
       path.join(main.root, "mise.toml"),
       '[tools]\nbun = "1.4.4"\n'

@@ -22,7 +22,7 @@ const ROPE = new URL("../src/cli.ts", import.meta.url);
 
 test("fix previews preserve the exact ignored nested TypeScript installation", async () => {
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(path.join(main.root, ".gitignore"), "**/node_modules/\n");
     const directory = await packageAt(main.root, "current", "^5.0.0");
     const nested = path.join(directory, "nested");

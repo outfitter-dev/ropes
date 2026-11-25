@@ -44,7 +44,7 @@ const pinIn = async (
 
 /** Stops at the current checkout, including a linked Git worktree. */
 const selection = async (from: string, name: string) => {
-  const found = await discoverRoot(from);
+  const found = await discoverRoot(from, { inspectPolicy: false });
   if (!found.ok) {
     throw new Error(
       "Run rope inside a Git or jj checkout with a pinned @ropes/cli installation."

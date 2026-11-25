@@ -26,14 +26,14 @@ error: invalid TOML
 ERROR taplo:lint_files: invalid file error=syntax errors found path="/repo/mise.toml"
 `;
 
-const SCHEMA = ` INFO taplo:lint_files:collect_files: found files total=1 excluded=0 files=["/repo/cinch.toml"] cwd="/repo"
+const SCHEMA = ` INFO taplo:lint_files:collect_files: found files total=1 excluded=0 files=["/repo/rope.toml"] cwd="/repo"
 error: Additional properties are not allowed ('nope' was unexpected)
-  ┌─ /repo/cinch.toml:2:8
+  ┌─ /repo/rope.toml:2:8
   │
 2 │ nope = 1
   │        ^ Additional properties are not allowed ('nope' was unexpected)
 
-ERROR taplo:lint_files: invalid file error=schema validation failed path="/repo/cinch.toml"
+ERROR taplo:lint_files: invalid file error=schema validation failed path="/repo/rope.toml"
 ERROR operation failed error=some files were not valid
 `;
 
@@ -64,13 +64,13 @@ test("a document that does not parse gives one syntax finding per problem", () =
 });
 
 test("a value the schema refuses is a schema finding with the schema's words", () => {
-  expect(parseOutput(SCHEMA, { ...CONTEXT, path: "cinch.toml" })).toEqual({
+  expect(parseOutput(SCHEMA, { ...CONTEXT, path: "rope.toml" })).toEqual({
     findings: [
       {
         fixable: false,
         message:
           "Additional properties are not allowed ('nope' was unexpected)",
-        path: "cinch.toml",
+        path: "rope.toml",
         range: { start: { column: 8, line: 2 } },
         rule: "schema",
         severity: "error",

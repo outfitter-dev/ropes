@@ -12,7 +12,7 @@ test("a skipped artifact version still shows a newly introduced blocking rule", 
     const name = "tsconfig.json";
     await Bun.write(path.join(main.root, name), "{}\n");
     await Bun.write(
-      path.join(main.root, "cinch.toml"),
+      path.join(main.root, "rope.toml"),
       'pilot = 0\ninclude = ["tsconfig.json"]\n[rules]\nenabled = true\npacks = ["config"]\n'
     );
     const capture = {

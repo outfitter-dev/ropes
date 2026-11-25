@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { STANDALONE_FILE, configFileIn } from "../config/load.ts";
+import { ROPES_FILE, configFileIn } from "../config/load.ts";
 import type { FixReport } from "../contracts/fix.ts";
 import { EXIT_CODE } from "../contracts/result.ts";
 import { unifiedDiff } from "../render/diff.ts";
@@ -18,8 +18,8 @@ import { inheritedBy, sparing, starterConfig } from "./starter.ts";
 /** Puts the config file first in a report about the files Cinch keeps. */
 const withConfig = (report: FixReport, config: string): FixReport => ({
   ...report,
-  changed: [STANDALONE_FILE, ...report.changed],
-  diff: `${unifiedDiff(STANDALONE_FILE, "", config)}${report.diff}`,
+  changed: [ROPES_FILE, ...report.changed],
+  diff: `${unifiedDiff(ROPES_FILE, "", config)}${report.diff}`,
 });
 
 /**
@@ -72,7 +72,7 @@ export const init =
     // adapter can no longer tell what they were made from.
     const old = await oldConfigs(adapters, plan, root);
     if (starter !== null && apply) {
-      await Bun.write(path.join(root, STANDALONE_FILE), starter);
+      await Bun.write(path.join(root, ROPES_FILE), starter);
     }
     const ran = await runWrite(
       { cwd: root, dryRun: !apply, paths, strict },

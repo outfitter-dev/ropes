@@ -48,7 +48,7 @@ export const repair = (root: string, selected: readonly string[]) =>
   );
 
 export const campaign = async (root: string) => {
-  await Bun.write(path.join(root, "cinch.toml"), CONFIG);
+  await Bun.write(path.join(root, "rope.toml"), CONFIG);
   await Bun.write(
     path.join(root, "mise.toml"),
     '[tools]\n"ast-grep" = "0.51.3"\n'

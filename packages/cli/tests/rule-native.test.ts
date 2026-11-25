@@ -37,7 +37,7 @@ const needsEngine = (): boolean => {
 
 test("native glob objects and arbitrary metadata preserve local and unrelated rule lookups", async () => {
   await withFixture(async ({ main, emptyPath }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(
       path.join(main.root, "src/nested/example.ts"),
       "debugger;\n"
@@ -103,7 +103,7 @@ test("native wildcard scopes stay with the engine while lookup reports literal a
     return;
   }
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(
       path.join(main.root, "src/nested/example.ts"),
       "debugger;\n"
@@ -148,7 +148,7 @@ test("native wildcard scopes stay with the engine while lookup reports literal a
 test("missing kept paths stay visible without being marked as literal engine arguments", async () => {
   await withFixture(async ({ main }) => {
     await Bun.write(
-      path.join(main.root, "cinch.toml"),
+      path.join(main.root, "rope.toml"),
       `${CONFIG.replace('local = ["rules"]\n', "")}\npacks = ["config"]\n[typescript]\npreset = true\n`
     );
     await Bun.write(path.join(main.root, "packages/ui/tsconfig.json"), "{}\n");

@@ -21,7 +21,7 @@ test("nested sources, spaces, Unicode anchors and same-root target aliases resol
     return;
   }
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(
       path.join(main.root, "docs/nested/guide name.md"),
       "# Café\n\nText.\n"
@@ -68,7 +68,7 @@ test("local target reads stop at the policy root, including an escaping symlink"
     return;
   }
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     const outside = path.join(main.root, "..", "outside.md");
     await Bun.write(outside, "# Outside\n\nText.\n");
     await symlink(outside, path.join(main.root, "alias.md"));

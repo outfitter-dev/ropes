@@ -7,10 +7,10 @@ import { BASE, planPaths, withRepo } from "./repo-bench.ts";
 test("a directory brings in only what the config includes, and a named file is always shown", async () => {
   await withRepo(BASE, {}, async ({ run }) => {
     const workspace = await run("explain", [], { json: true });
-    expect(planPaths(workspace)).toEqual(["a.md", "cinch.toml", "docs/b.md"]);
+    expect(planPaths(workspace)).toEqual(["a.md", "docs/b.md", "rope.toml"]);
     const named = await run("explain", ["vendor/c.md", "src/index.ts"]);
     expect(named.output).toContain(
-      "vendor/c.md\n  left out: excluded (cinch.toml: exclude)"
+      "vendor/c.md\n  left out: excluded (rope.toml: exclude)"
     );
     expect(named.output).toContain(
       "src/index.ts\n  left out: not included (default)"
@@ -58,7 +58,7 @@ test("unusable input exits 2 with a reason and no output", async () => {
 
 test("a config that cannot be used exits 2", async () => {
   await withRepo(
-    { ...BASE, "cinch.toml": "pilot = 9\n" },
+    { ...BASE, "rope.toml": "pilot = 9\n" },
     {},
     async ({ run }) => {
       const response = await run("check");

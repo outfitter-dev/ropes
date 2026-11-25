@@ -14,7 +14,7 @@ const ROPE = new URL("../src/cli.ts", import.meta.url);
 
 test("compatibility rejects disabled semantic checks and referenced compiler projects", async () => {
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     const directory = await packageAt(main.root, "current", "^5.0.0");
     await Bun.write(path.join(directory, "index.ts"), BEFORE);
     const run = async (config: unknown, reason: string) => {
@@ -72,7 +72,7 @@ test("compatibility rejects disabled semantic checks and referenced compiler pro
 
 test("compatibility advertises only resolution modes the pinned checker accepts", async () => {
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Promise.all(
       [
         { exit: 1, mode: "bundler", module: "esnext" },
@@ -109,7 +109,7 @@ test("compatibility advertises only resolution modes the pinned checker accepts"
 
 test("compatibility requires semantic checks on selected declaration files", async () => {
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     const directory = await packageAt(main.root, "current", "^5.0.0");
     await Bun.write(path.join(directory, "index.d.ts"), BEFORE);
     const ran = await runEntry(

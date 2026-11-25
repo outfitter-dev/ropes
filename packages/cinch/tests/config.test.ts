@@ -54,18 +54,18 @@ test("no config file gives the defaults, each marked as a default", async () => 
   ]);
 });
 
-test("a valid cinch.toml is read with the file and key behind each value", async () => {
-  const loaded = await load({ "cinch.toml": VALID });
+test("a valid rope.toml is read with the file and key behind each value", async () => {
+  const loaded = await load({ "rope.toml": VALID });
   expect(loaded).toEqual({
     ok: true,
     value: {
       exclude: {
-        source: { file: "cinch.toml", key: "exclude", kind: "file" },
+        source: { file: "rope.toml", key: "exclude", kind: "file" },
         value: ["docs/vendor/**"],
       },
-      file: "cinch.toml",
+      file: "rope.toml",
       include: {
-        source: { file: "cinch.toml", key: "include", kind: "file" },
+        source: { file: "rope.toml", key: "include", kind: "file" },
         value: ["docs/**/*.md"],
       },
       overrides: [
@@ -75,7 +75,7 @@ test("a valid cinch.toml is read with the file and key behind each value", async
             {
               key: "markdown.enabled",
               source: {
-                file: "cinch.toml",
+                file: "rope.toml",
                 key: "overrides.0.markdown.enabled",
                 kind: "file",
               },
@@ -89,7 +89,7 @@ test("a valid cinch.toml is read with the file and key behind each value", async
             {
               key: "markdown.enabled",
               source: {
-                file: "cinch.toml",
+                file: "rope.toml",
                 key: "overrides.1.markdown.enabled",
                 kind: "file",
               },
@@ -102,7 +102,7 @@ test("a valid cinch.toml is read with the file and key behind each value", async
         { key: "toml.enabled", source: { kind: "default" }, value: true },
         {
           key: "markdown.enabled",
-          source: { file: "cinch.toml", key: "markdown.enabled", kind: "file" },
+          source: { file: "rope.toml", key: "markdown.enabled", kind: "file" },
           value: true,
         },
       ],
@@ -112,70 +112,54 @@ test("a valid cinch.toml is read with the file and key behind each value", async
 });
 
 test("a value the file leaves out keeps its default", async () => {
-  const loaded = await load({ "cinch.toml": "pilot = 0\n" });
+  const loaded = await load({ "rope.toml": "pilot = 0\n" });
   expect(loaded).toEqual({
     ok: true,
-    value: { ...DEFAULT_CONFIG, file: "cinch.toml" },
+    value: { ...DEFAULT_CONFIG, file: "rope.toml" },
   });
 });
 
-test("the [cinch] table in outfitter.toml is read, with keys under cinch", async () => {
+test("the retired [cinch] table is refused before its settings are applied", async () => {
   const loaded = await load({
     "outfitter.toml": "[cinch]\npilot = 0\n[cinch.markdown]\nenabled = false\n",
   });
-  expect(loaded.ok && loaded.value.file).toBe("outfitter.toml");
-  expect(loaded.ok && loaded.value.settings).toEqual([
-    { key: "toml.enabled", source: { kind: "default" }, value: true },
-    {
-      key: "markdown.enabled",
-      source: {
-        file: "outfitter.toml",
-        key: "cinch.markdown.enabled",
-        kind: "file",
-      },
-      value: false,
-    },
-  ]);
+  expect(loaded).toMatchObject({ error: { kind: "legacy" }, ok: false });
 });
 
-test("an outfitter.toml without a [cinch] table does not shadow cinch.toml", async () => {
+test("an outfitter.toml without a [cinch] table does not shadow rope.toml", async () => {
   const loaded = await load({
-    "cinch.toml": "pilot = 0\n",
     "outfitter.toml": '[other]\nname = "x"\n',
+    "rope.toml": "pilot = 0\n",
   });
-  expect(loaded.ok && loaded.value.file).toBe("cinch.toml");
+  expect(loaded.ok && loaded.value.file).toBe("rope.toml");
 });
 
-test("cinch.toml beside a [cinch] table is a conflict, never a second source", async () => {
-  expect(
-    await load({
-      "cinch.toml": "pilot = 0\n",
-      "outfitter.toml": "[cinch]\npilot = 0\n",
-    })
-  ).toEqual({
-    error: { files: ["outfitter.toml", "cinch.toml"], kind: "conflict" },
-    ok: false,
+test("retired shared policy is refused beside the supported config", async () => {
+  const loaded = await load({
+    "outfitter.toml": "[cinch]\npilot = 0\n",
+    "rope.toml": "pilot = 0\n",
   });
+  expect(loaded).toMatchObject({ error: { kind: "legacy" }, ok: false });
 });
 
 test("a missing version marker is an error", async () => {
-  expect(await load({ "cinch.toml": "[markdown]\nenabled = true\n" })).toEqual({
-    error: { file: "cinch.toml", kind: "missing-version" },
+  expect(await load({ "rope.toml": "[markdown]\nenabled = true\n" })).toEqual({
+    error: { file: "rope.toml", kind: "missing-version" },
     ok: false,
   });
 });
 
 test("an unknown version marker is an error, never a guess", async () => {
-  expect(await load({ "cinch.toml": "pilot = 1\n" })).toEqual({
-    error: { file: "cinch.toml", found: 1, kind: "unknown-version" },
+  expect(await load({ "rope.toml": "pilot = 1\n" })).toEqual({
+    error: { file: "rope.toml", found: 1, kind: "unknown-version" },
     ok: false,
   });
 });
 
 test("malformed TOML is reported with the file", async () => {
-  const loaded = await load({ "cinch.toml": "pilot = = 0\n" });
+  const loaded = await load({ "rope.toml": "pilot = = 0\n" });
   expect(loaded.ok ? {} : loaded.error).toMatchObject({
-    file: "cinch.toml",
+    file: "rope.toml",
     kind: "malformed",
   });
 });
@@ -186,22 +170,22 @@ test("a config file that cannot be read is an error, not a throw", async () => {
     return;
   }
   const loaded = await withFiles(
-    { "cinch.toml": "pilot = 0\n" },
+    { "rope.toml": "pilot = 0\n" },
     async (root) => {
-      await chmod(path.join(root, "cinch.toml"), 0o000);
+      await chmod(path.join(root, "rope.toml"), 0o000);
       return await loadConfig(root);
     }
   );
   expect(loaded.ok ? {} : loaded.error).toMatchObject({
-    file: "cinch.toml",
+    file: "rope.toml",
     kind: "unreadable",
   });
 });
 
 test("an unknown key is invalid and names the key", async () => {
-  const loaded = await load({ "cinch.toml": "pilot = 0\nmarkdwon = true\n" });
+  const loaded = await load({ "rope.toml": "pilot = 0\nmarkdwon = true\n" });
   expect(loaded.ok ? {} : loaded.error).toMatchObject({
-    file: "cinch.toml",
+    file: "rope.toml",
     kind: "invalid",
   });
   expect(JSON.stringify(loaded)).toContain("markdwon");
@@ -214,19 +198,19 @@ test("this repository's own rope.toml loads", async () => {
 
 test("the toml table is read at the top and in an override", async () => {
   const loaded = await load({
-    "cinch.toml":
+    "rope.toml":
       'pilot = 0\n[toml]\nenabled = false\n[[overrides]]\npaths = ["a/**"]\n[overrides.toml]\nenabled = true\n',
   });
   expect(loaded.ok && loaded.value.settings.at(-1)).toEqual({
     key: "toml.enabled",
-    source: { file: "cinch.toml", key: "toml.enabled", kind: "file" },
+    source: { file: "rope.toml", key: "toml.enabled", kind: "file" },
     value: false,
   });
   expect(loaded.ok && loaded.value.overrides[0]?.settings).toEqual([
     {
       key: "toml.enabled",
       source: {
-        file: "cinch.toml",
+        file: "rope.toml",
         key: "overrides.0.toml.enabled",
         kind: "file",
       },
@@ -237,14 +221,14 @@ test("the toml table is read at the top and in an override", async () => {
 
 test("the preset switch is read, and the defaults it does not state remain", async () => {
   const loaded = await load({
-    "cinch.toml": "pilot = 0\n[markdown]\npreset = false\n",
+    "rope.toml": "pilot = 0\n[markdown]\npreset = false\n",
   });
   expect(loaded.ok && loaded.value.settings).toEqual([
     { key: "markdown.enabled", source: { kind: "default" }, value: true },
     { key: "toml.enabled", source: { kind: "default" }, value: true },
     {
       key: "markdown.preset",
-      source: { file: "cinch.toml", key: "markdown.preset", kind: "file" },
+      source: { file: "rope.toml", key: "markdown.preset", kind: "file" },
       value: false,
     },
   ]);

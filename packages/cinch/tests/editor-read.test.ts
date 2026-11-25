@@ -102,7 +102,7 @@ test("the table written for a config states the facts the file stated", () => {
     },
   ]);
   const parsed = parseConfigTable(Bun.TOML.parse(config), {
-    file: "cinch.toml",
+    file: "rope.toml",
     prefix: "",
   });
   if (!parsed.ok || parsed.value.editor === undefined) {
@@ -136,9 +136,9 @@ const run = (verb: string, request: Partial<CommandRequest> = {}) => {
 
 /** Everything else off, so the checks after `init` need no engine. */
 const quiet = async (): Promise<void> => {
-  const config = await text("cinch.toml");
+  const config = await text("rope.toml");
   await put(
-    "cinch.toml",
+    "rope.toml",
     config
       .replace(
         "[markdown]\nenabled = true\npreset = true",
@@ -159,7 +159,7 @@ const messages = async (): Promise<string[]> => {
 test("init reads a hand-written file into the table and leaves the file", async () => {
   await put(EDITOR_PATH, HAND);
   await run("init", { yes: true });
-  const config = await text("cinch.toml");
+  const config = await text("rope.toml");
   expect(config).toContain(
     '[editor]\ncharset = "utf-8"\nend_of_line = "lf"\nfinal_newline = true\nindent_size = 2\n'
   );
@@ -187,7 +187,7 @@ test("a file with something the table cannot hold is listed and never overwritte
   const hand = `${HAND}[*.py]\ntab_width = 8\nindent_size = 4\n`;
   await put(EDITOR_PATH, hand);
   await run("init", { yes: true });
-  expect(await text("cinch.toml")).toContain(
+  expect(await text("rope.toml")).toContain(
     "# Not carried over: `tab_width = 8` in `[*.py]`."
   );
   await quiet();
@@ -204,13 +204,13 @@ test("a dry run shows the table and writes nothing", async () => {
   await put(EDITOR_PATH, HAND);
   const shown = await run("init");
   expect(shown.output).toContain("[editor]");
-  expect(await Bun.file(path.join(root, "cinch.toml")).exists()).toBe(false);
+  expect(await Bun.file(path.join(root, "rope.toml")).exists()).toBe(false);
 });
 
 test("a generated file is not read back into a new config", async () => {
   await put(EDITOR_PATH, render({ indent_size: 2 }));
   await run("init", { yes: true });
-  expect(await text("cinch.toml")).toBe(STARTER_CONFIG);
+  expect(await text("rope.toml")).toBe(STARTER_CONFIG);
 });
 
 test("a file that does not say it is the root keeps what it takes from above", async () => {
@@ -232,7 +232,7 @@ test("init does not carry an old exclude that leaves the editor file out", async
   await put(EDITOR_PATH, HAND);
   await put(".markdownlint-cli2.jsonc", `{"ignores":["${EDITOR_PATH}"]}`);
   await run("init", { yes: true });
-  const config = await text("cinch.toml");
+  const config = await text("rope.toml");
   expect(config).toContain("[editor]");
   expect(config).toContain(`which Cinch keeps`);
   await quiet();

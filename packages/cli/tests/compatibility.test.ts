@@ -31,7 +31,7 @@ const resultOf = (ran: Ran) => {
 
 test("compiler API compatibility follows declared package support and native symbol identity", async () => {
   await withFixture(async ({ main, emptyPath }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(
       path.join(main.root, "package.json"),
       JSON.stringify({ peerDependencies: { typescript: "^5.0.0" } })
@@ -62,7 +62,7 @@ test("compiler API compatibility follows declared package support and native sym
       "namespace ts { export interface Map<T> { value: T } }\nexport type Local = ts.Map<string>;\n"
     );
     await Bun.write(
-      path.join(main.root, "cinch.toml"),
+      path.join(main.root, "rope.toml"),
       `${CONFIG.replace("[rules]\nenabled = true", "[rules]\nenabled = false")}\n[typescript]\nenabled = true\n`
     );
     const native = resultOf(
@@ -87,7 +87,7 @@ test("compiler API compatibility follows declared package support and native sym
         rule: "TS2305",
       },
     ]);
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(path.join(main.root, ".gitignore"), "**/node_modules/\n");
     await fixtureGit(main.root, "add", "--all");
     await fixtureGit(

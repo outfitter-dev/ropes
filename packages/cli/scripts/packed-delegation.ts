@@ -79,7 +79,7 @@ export const proveDelegation = async (
       ],
       consumer
     );
-  await git("add", "package.json", "README.md", "cinch.toml");
+  await git("add", "package.json", "README.md", "rope.toml");
   await git("commit", "--quiet", "--message", "launcher fixture");
   const linked = path.join(folder, "linked");
   await git("worktree", "add", "--quiet", "-b", "launcher-proof", linked);

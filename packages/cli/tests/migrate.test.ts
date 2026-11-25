@@ -1,8 +1,7 @@
 import { expect } from "bun:test";
-import { mkdir, rename, rm } from "node:fs/promises";
+import { rm } from "node:fs/promises";
 import path from "node:path";
 
-import { SCHEMA_VERSION } from "../../cinch/src/contracts/plan.ts";
 import {
   CONFIG,
   json,
@@ -12,38 +11,53 @@ import {
 import manifest from "../package.json" with { type: "json" };
 
 const ROPE = new URL(manifest.bin.rope, new URL("../", import.meta.url));
-const SELECTION = ["README.md", "legacy/old.md", "ignored/notes.md"];
-const LEGACY = ".outfitter/configs";
 const NEXT = ".ropes/configs";
 
-for (const [key, policy] of [
-  ["exclude", 'exclude = [".ropes/**"]'],
-  [
-    "overrides.0.paths",
-    '[[overrides]]\npaths = [".outfitter/configs/**"]\n[overrides.toml]\nenabled = false',
-  ],
-] as const) {
+for (const source of ["cinch.toml", "outfitter.toml"]) {
   proof(
-    `flags ${key} when its coverage would change with the managed directory`,
+    `manual guidance preserves the retired ${source} and every authored file`,
     async ({ main }) => {
+      await rm(path.join(main.root, "rope.toml"));
+      const standalone =
+        'pilot = 0\nexclude = [".ropes/**"]\n[[overrides]]\npaths = [".outfitter/configs/**"]\n[overrides.toml]\nenabled = false\n';
+      const original =
+        source === "cinch.toml"
+          ? standalone
+          : `[another]\nkept = true\n[cinch]\n${standalone}`;
+      await Bun.write(path.join(main.root, source), original);
       await Bun.write(
-        path.join(main.root, "cinch.toml"),
-        `pilot = 0\n${policy}\n`
+        path.join(main.root, ".outfitter/configs/authored.toml"),
+        "# Original managed input\n"
       );
       const before = await main.files();
-      const ran = await runEntry(ROPE, ["migrate", "--json"], main.root);
-      expect(ran.exitCode).toBe(2);
-      expect(ran.stderr).toContain(key);
-      expect(ran.stderr).toContain(NEXT);
-      expect(await main.files()).toEqual(before);
+      const index = await Bun.file(path.join(main.root, ".git/index")).bytes();
+      for (const flags of [[], ["--dry-run"]]) {
+        // eslint-disable-next-line no-await-in-loop -- verify both accepted guidance invocations
+        const ran = await runEntry(
+          ROPE,
+          ["migrate", ...flags, "--json"],
+          main.root
+        );
+        expect(ran.exitCode).toBe(2);
+        expect(ran.stdout).toBe("");
+        expect(ran.stderr).toContain("Manual migration required");
+        expect(ran.stderr).toContain("docs/config-migration.md");
+        expect(ran.stderr).toContain(NEXT);
+        // eslint-disable-next-line no-await-in-loop -- preserve authored content after each guidance run
+        expect(await main.files()).toEqual(before);
+        // eslint-disable-next-line no-await-in-loop -- preserve staged changes as well as working files
+        const afterIndex = await Bun.file(
+          path.join(main.root, ".git/index")
+        ).bytes();
+        expect(afterIndex).toEqual(index);
+      }
     }
   );
 }
 
 proof(
-  "a new Ropes config places enabled presets and root references in the Ropes layout",
+  "a supported Ropes config places enabled presets and root references in the Ropes layout",
   async ({ main }) => {
-    await rm(path.join(main.root, "cinch.toml"));
     await Bun.write(
       path.join(main.root, "rope.toml"),
       "pilot = 0\n[lint]\npreset = true\n[format]\npreset = true\n[typescript]\npreset = true\n"
@@ -59,9 +73,9 @@ proof(
       ["oxlint.config.ts", "presets/oxlint.ts"],
       ["oxfmt.config.ts", "presets/oxfmt.ts"],
       ["tsconfig.json", "presets/tsconfig.json"],
-    ] as const;
+    ];
     await Promise.all(
-      references.map(async ([root, preset]) => {
+      references.map(async ([root = "", preset = ""]) => {
         const text = await Bun.file(path.join(main.root, root)).text();
         expect(text).toContain(`${NEXT}/${preset}`);
       })
@@ -70,61 +84,27 @@ proof(
 );
 
 proof(
-  "previews standalone config migration and resolves the same policy in both layouts",
+  "supported policy preserves inherited overridden and excluded path decisions after a manual conversion",
   async ({ main }) => {
-    const join = (file: string) => path.join(main.root, file);
-    const legacyConfig = CONFIG.replace(
+    const config = CONFIG.replace(
       "pilot = 0",
       'pilot = 0\nexclude = ["ignored/**"]'
     );
-    await Bun.write(join("cinch.toml"), legacyConfig);
-    await Bun.write(join("ignored/notes.md"), "# Ignored\n\nText.\n");
+    await Bun.write(path.join(main.root, "rope.toml"), config);
+    await Bun.write(
+      path.join(main.root, "ignored/notes.md"),
+      "# Ignored\n\nText.\n"
+    );
     const setup = await main.rope(["doctor", "--fix"]);
     expect(setup.exitCode).toBe(0);
     const before = await main.files();
-
-    const preview = await runEntry(
+    const planned = await runEntry(
       ROPE,
-      ["migrate", "--dry-run", "--json"],
+      ["explain", "README.md", "legacy/old.md", "ignored/notes.md", "--json"],
       main.root
     );
-    expect(preview.exitCode).toBe(0);
-    expect(json(preview)).toMatchObject({
-      managedFiles: [
-        {
-          from: `${LEGACY}/presets/rumdl.toml`,
-          to: `${NEXT}/presets/rumdl.toml`,
-        },
-        { from: `${LEGACY}/rumdl.toml`, to: `${NEXT}/rumdl.toml` },
-      ],
-      rootReferences: [
-        {
-          from: `${LEGACY}/rumdl.toml`,
-          path: ".rumdl.toml",
-          to: `${NEXT}/rumdl.toml`,
-        },
-      ],
-      schemaVersion: SCHEMA_VERSION,
-      source: { path: "cinch.toml" },
-      target: { path: "rope.toml", text: legacyConfig },
-    });
-    expect(await main.files()).toEqual(before);
-
-    const args = ["explain", ...SELECTION, "--json"];
-    const legacyPlan = await runEntry(ROPE, args, main.root);
-    expect(legacyPlan.exitCode).toBe(0);
-    await rename(join("cinch.toml"), join("rope.toml"));
-    await mkdir(join(".ropes"));
-    await rename(join(LEGACY), join(NEXT));
-    const root = await Bun.file(join(".rumdl.toml")).text();
-    await Bun.write(join(".rumdl.toml"), root.replaceAll(LEGACY, NEXT));
-    const newPlan = await runEntry(ROPE, args, main.root);
-    expect(newPlan.exitCode).toBe(0);
-    expect(newPlan.stdout).toContain('"file": "rope.toml"');
-    expect(
-      JSON.parse(newPlan.stdout.replaceAll("rope.toml", "cinch.toml"))
-    ).toEqual(json(legacyPlan));
-    expect(json(newPlan)).toMatchObject({
+    expect(planned.exitCode).toBe(0);
+    expect(json(planned)).toMatchObject({
       paths: [
         { path: "README.md", steps: [{ adapter: "rumdl" }] },
         { path: "ignored/notes.md", skipped: { reason: "excluded" } },
@@ -133,32 +113,25 @@ proof(
     });
     const doctor = await main.rope(["doctor"]);
     expect(doctor.exitCode).toBe(0);
+    expect(await main.files()).toEqual(before);
   }
 );
 
 proof(
-  "previews the shared table alone and reports a competing config without writes",
+  "shared retired policy is refused beside rope.toml without altering unrelated tables",
   async ({ main }) => {
-    await rm(path.join(main.root, "cinch.toml"));
-    await Bun.write(
-      path.join(main.root, "outfitter.toml"),
-      "[another]\nenabled = true\n\n[cinch]\npilot = 0\n"
-    );
+    const original = "[another]\nenabled = true\n\n[cinch]\npilot = 0\n";
+    await Bun.write(path.join(main.root, "outfitter.toml"), original);
     const before = await main.files();
-    const preview = await runEntry(ROPE, ["migrate", "--json"], main.root);
-    expect(preview.exitCode).toBe(0);
-    expect(json(preview)).toMatchObject({
-      source: { path: "outfitter.toml", table: "cinch" },
-      target: { path: "rope.toml", text: "pilot = 0\n" },
-    });
+    const checked = await runEntry(ROPE, ["check", "--json"], main.root);
+    expect(checked.exitCode).toBe(2);
+    expect(checked.stderr).toContain("[cinch]");
+    expect(checked.stderr).toContain("docs/config-migration.md");
+    expect(checked.stderr).toContain("rope.toml");
+    const migration = await runEntry(ROPE, ["migrate", "--json"], main.root);
+    expect(migration.exitCode).toBe(2);
+    expect(migration.stdout).toBe("");
+    expect(migration.stderr).toContain("Preserve unrelated tables");
     expect(await main.files()).toEqual(before);
-    await Bun.write(path.join(main.root, "rope.toml"), "pilot = 0\n");
-    const conflicted = await main.files();
-    const command = await runEntry(ROPE, ["migrate", "--json"], main.root);
-    expect(command.exitCode).toBe(2);
-    expect(command.stdout).toBe("");
-    expect(command.stderr).toContain("outfitter.toml");
-    expect(command.stderr).toContain("rope.toml");
-    expect(await main.files()).toEqual(conflicted);
   }
 );

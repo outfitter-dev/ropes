@@ -9,7 +9,7 @@ import { createCommands } from "../src/commands/registry.ts";
 import { ResultSchema } from "../src/contracts/result.ts";
 
 const PRINTED = `[global]
-disable = ["MD013"]     [from .outfitter/configs/presets/rumdl.toml]
+disable = ["MD013"]     [from .ropes/configs/presets/rumdl.toml]
 line_length = 120       [from .rumdl.toml]
 flavor = "standard"     [from default]
 
@@ -71,7 +71,7 @@ const CONFIG = "pilot = 0\n\n[editor]\nline_width = 100\n";
 const REPO = {
   ".git/HEAD": "",
   "README.md": "# A\n\nText.\n",
-  "cinch.toml": CONFIG,
+  "rope.toml": CONFIG,
 };
 
 const drift = async (authored: string | null): Promise<string[]> => {
@@ -105,9 +105,9 @@ test("an authored engine config with another line width is one finding", async (
     return;
   }
   const own =
-    'extends = ".outfitter/configs/rumdl.toml"\n\n[global]\nline-length = 120\n';
+    'extends = ".ropes/configs/rumdl.toml"\n\n[global]\nline-length = 120\n';
   expect(await drift(own)).toEqual([
-    ".rumdl.toml sets `global.line-length` to 120, but cinch.toml sets `editor.line_width` to 100. Both state line_width, so they have to agree. Change one of them.",
+    ".rumdl.toml sets `global.line-length` to 120, but rope.toml sets `editor.line_width` to 100. Both state line_width, so they have to agree. Change one of them.",
   ]);
   expect(await drift(null)).toEqual([]);
 });

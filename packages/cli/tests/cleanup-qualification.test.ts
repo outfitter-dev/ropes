@@ -130,7 +130,7 @@ test.skipIf(missingEngine)(
       expect(
         await compareMigration({ ...request, parent: policy.anchor })
       ).toMatchObject({ ok: false });
-      await Bun.write(path.join(main.root, "cinch.toml"), "pilot = 0\n");
+      await Bun.write(path.join(main.root, "rope.toml"), "pilot = 0\n");
       const changed = await commit(main.root);
       const invalid = await compareMigration({
         ...request,

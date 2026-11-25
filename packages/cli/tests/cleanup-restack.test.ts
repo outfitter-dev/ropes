@@ -151,7 +151,7 @@ test("squash landing and restack require qualification against the actual target
       migrationInput(stack.approved, "0".repeat(40), tip)
     );
     expect(missing.exitCode).toBe(2);
-    const configFile = path.join(main.root, "cinch.toml");
+    const configFile = path.join(main.root, "rope.toml");
     const adopted = await Bun.file(configFile).text();
     await Bun.write(configFile, `${adopted}\n# unreviewed context change\n`);
     const changedPolicy = await save(main.root, "unreviewed policy change");

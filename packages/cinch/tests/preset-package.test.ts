@@ -17,14 +17,14 @@ import { PresetReportSchema } from "../src/contracts/preset.ts";
 import { ResultSchema } from "../src/contracts/result.ts";
 
 const commands = createCommands({ adapters: adaptersFor });
-const KEPT = ".outfitter/configs/presets/oxlint.ts";
+const KEPT = ".ropes/configs/presets/oxlint.ts";
 
 let root = "";
 beforeEach(async () => {
   root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-package-")));
   await mkdir(path.join(root, ".git"));
   await Bun.write(
-    path.join(root, "cinch.toml"),
+    path.join(root, "rope.toml"),
     "pilot = 0\n[lint]\npreset = true\n[markdown]\npreset = false\n"
   );
 });
@@ -109,7 +109,7 @@ test.each([
   { state: "incompatible", version: "9.0.0" },
 ])("$state Ultracite only blocks the kept presets", async ({ version }) => {
   await Bun.write(
-    path.join(root, "cinch.toml"),
+    path.join(root, "rope.toml"),
     "pilot = 0\n[lint]\npreset = true\n[format]\npreset = true\n[markdown]\npreset = false\n"
   );
   if (version !== null) {
@@ -119,7 +119,7 @@ test.each([
   const { result } = DoctorReportSchema.parse(
     JSON.parse(fixed.output ?? "null")
   );
-  const kept = [".outfitter/configs/presets/oxfmt.ts", KEPT];
+  const kept = [".ropes/configs/presets/oxfmt.ts", KEPT];
   expect(fixed.exitCode).toBe(1);
   expect(
     result.steps
@@ -161,7 +161,7 @@ test("a preview finds a package installed above a nested root, as a real run doe
   const app = path.join(root, "packages", "app");
   await mkdir(app, { recursive: true });
   await Bun.write(
-    path.join(app, "cinch.toml"),
+    path.join(app, "rope.toml"),
     "pilot = 0\n[lint]\npreset = true\n[markdown]\npreset = false\n"
   );
   await install(PRESET_BASE.version);

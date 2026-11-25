@@ -77,7 +77,7 @@ proof(
               {
                 key: "markdown.enabled",
                 source: {
-                  file: "cinch.toml",
+                  file: "rope.toml",
                   key: "overrides.0.markdown.enabled",
                 },
                 value: false,

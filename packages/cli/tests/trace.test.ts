@@ -79,7 +79,7 @@ process.exit(await child.exited);
     expect(excluded).toMatchObject({
       skipped: {
         reason: "excluded",
-        source: { file: "cinch.toml", key: "exclude" },
+        source: { file: "rope.toml", key: "exclude" },
       },
       steps: [],
     });
@@ -90,7 +90,7 @@ process.exit(await child.exited);
     expect(overridden?.policy).toContainEqual({
       key: "rules.enabled",
       source: {
-        file: "cinch.toml",
+        file: "rope.toml",
         key: "overrides.0.rules.enabled",
         kind: "file",
       },
@@ -101,7 +101,7 @@ process.exit(await child.exited);
     );
     expect(inherited?.policy).toContainEqual({
       key: "rules.enabled",
-      source: { file: "cinch.toml", key: "rules.enabled", kind: "file" },
+      source: { file: "rope.toml", key: "rules.enabled", kind: "file" },
       value: true,
     });
     const checked = await runEntry(

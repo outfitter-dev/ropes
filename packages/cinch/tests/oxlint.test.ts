@@ -215,7 +215,7 @@ test("a TypeScript file gets a lint step only when the config switches lint on",
   const { explain } = createCommands({ adapters: adaptersFor });
   const stepsWith = (config: string) =>
     inRepo(
-      { "a.ts": "", "cinch.toml": `pilot = 0\n${config}` },
+      { "a.ts": "", "rope.toml": `pilot = 0\n${config}` },
       async (root) => {
         await mkdir(path.join(root, ".git"));
         const ran = await explain?.({ cwd: root, json: true, paths: ["a.ts"] });
@@ -306,7 +306,7 @@ test("a kept preset gets a lint step that only reads", async () => {
   const { explain } = createCommands({ adapters: adaptersFor });
   const config =
     'pilot = 0\ninclude = ["**/*.ts"]\n[lint]\nenabled = true\npreset = true\n';
-  await inRepo({ "a.ts": "", "cinch.toml": config }, async (root) => {
+  await inRepo({ "a.ts": "", "rope.toml": config }, async (root) => {
     await mkdir(path.join(root, ".git"));
     const ran = await explain?.({ cwd: root, json: true, paths: [] });
     const plan = PlanSchema.parse(JSON.parse(ran?.output ?? "null"));

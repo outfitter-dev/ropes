@@ -62,13 +62,13 @@ proof(
     expect(scoped.paths.map((entry) => entry.path)).toEqual([NOTES]);
 
     const linked = await worktree();
-    await Bun.write(path.join(linked.root, "cinch.toml"), "pilot = 0\n");
+    await Bun.write(path.join(linked.root, "rope.toml"), "pilot = 0\n");
     const inLinked = planOf(
       await linked.rope(["explain", "--json"], { cwd: "packages/app" })
     );
     expect(stepsOf(inLinked, LEGACY)).toEqual(["rumdl"]);
     expect(stepsOf(fromRoot, LEGACY)).toEqual([]);
-    expect(await Bun.file(path.join(main.root, "cinch.toml")).text()).toBe(
+    expect(await Bun.file(path.join(main.root, "rope.toml")).text()).toBe(
       CONFIG
     );
   }
@@ -84,7 +84,7 @@ proof(
       {
         key: "markdown.enabled",
         source: {
-          file: "cinch.toml",
+          file: "rope.toml",
           key: "overrides.0.markdown.enabled",
           kind: "file",
         },
@@ -104,7 +104,7 @@ proof(
     expect(rulesOf(result, "README.md")).toEqual(["MD025"]);
     expect(result.steps.some((step) => step.path === LEGACY)).toBe(false);
 
-    await Bun.write(path.join(main.root, "cinch.toml"), "pilot = 0\n");
+    await Bun.write(path.join(main.root, "rope.toml"), "pilot = 0\n");
     const without = resultOf(await main.rope(["check", "--json"]));
     expect(rulesOf(without, LEGACY)).toEqual(["MD025"]);
   }

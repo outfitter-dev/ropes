@@ -15,7 +15,7 @@
           {
             "key": "markdown.fences.typescript",
             "source": {
-              "file": "cinch.toml",
+              "file": "rope.toml",
               "key": "overrides.0.markdown.fences.typescript",
               "kind": "file"
             },

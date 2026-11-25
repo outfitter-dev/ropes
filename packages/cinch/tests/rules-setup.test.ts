@@ -15,7 +15,7 @@ let root = "";
 const put = (name: string, text: string): Promise<number> =>
   Bun.write(path.join(root, name), text);
 const config = (): Promise<string> =>
-  Bun.file(path.join(root, "cinch.toml")).text();
+  Bun.file(path.join(root, "rope.toml")).text();
 
 const run = async (verb: string, request: Partial<CommandRequest> = {}) => {
   const response = await commands[verb]?.({
@@ -72,9 +72,9 @@ test("init starts a new config with the packs that apply here", async () => {
   await put("tsconfig.json", "{}\n");
   const shown = await run("init", { json: false });
   expect(shown.output).toContain('+packs = ["config"]');
-  expect(await Bun.file(path.join(root, "cinch.toml")).exists()).toBe(false);
+  expect(await Bun.file(path.join(root, "rope.toml")).exists()).toBe(false);
   await run("init", { yes: true });
-  expect(await config()).toEndWith(RULES);
+  expect(await Bun.file(path.join(root, "rope.toml")).text()).toEndWith(RULES);
   expect(await notAdopted()).toEqual([]);
   const explained = await run("explain", { paths: ["tsconfig.json"] });
   const plan = parsePlan(JSON.parse(explained.output ?? "null"));
@@ -88,19 +88,21 @@ test("init starts a new config with the packs that apply here", async () => {
 
 test("init names no pack where none applies", async () => {
   await run("init", { yes: true });
-  expect(await config()).toBe(STARTER_CONFIG);
+  expect(await Bun.file(path.join(root, "rope.toml")).text()).toBe(
+    STARTER_CONFIG
+  );
 });
 
 test("init leaves a config that is already here as it is", async () => {
   await put("tsconfig.json", "{}\n");
-  await put("cinch.toml", "pilot = 0\n");
+  await put("rope.toml", "pilot = 0\n");
   await run("init", { yes: true });
   expect(await config()).toBe("pilot = 0\n");
 });
 
 test("doctor names a pack that applies and is not adopted, as a note", async () => {
   await put("tsconfig.json", "{}\n");
-  await put("cinch.toml", "pilot = 0\n\n[markdown]\npreset = false\n");
+  await put("rope.toml", "pilot = 0\n\n[markdown]\npreset = false\n");
   expect(await notAdopted()).toEqual(["config"]);
   const shown = await run("doctor", { json: false });
   expect(shown.exitCode).toBe(0);
@@ -111,8 +113,8 @@ test("doctor names a pack that applies and is not adopted, as a note", async () 
 
 test("doctor says nothing where the config turns rules or the pack off", async () => {
   await put("tsconfig.json", "{}\n");
-  await put("cinch.toml", "pilot = 0\n\n[rules]\nenabled = false\n");
+  await put("rope.toml", "pilot = 0\n\n[rules]\nenabled = false\n");
   expect(await notAdopted()).toEqual([]);
-  await put("cinch.toml", 'pilot = 0\n\n[rules]\noff = ["config"]\n');
+  await put("rope.toml", 'pilot = 0\n\n[rules]\noff = ["config"]\n');
   expect(await notAdopted()).toEqual([]);
 });

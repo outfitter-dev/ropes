@@ -7,10 +7,10 @@ import { commands } from "../src/commands/registry.ts";
 import { RelocateReportSchema } from "../src/contracts/relocate.ts";
 import type { RelocateReport } from "../src/contracts/relocate.ts";
 
-export const CINCH = "cinch.toml";
+export const CINCH = "rope.toml";
 export const SHARED = "outfitter.toml";
 export const ROOT = ".rumdl.toml";
-export const GENERATED = ".outfitter/configs/rumdl.toml";
+export const GENERATED = ".ropes/configs/rumdl.toml";
 export const EXTENDS = `extends = ${JSON.stringify(GENERATED)}\n`;
 export const CONFIG = "pilot = 0\n\n[markdown]\nenabled = true\n";
 

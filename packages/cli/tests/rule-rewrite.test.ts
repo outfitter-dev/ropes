@@ -39,7 +39,7 @@ test("only the adopted shipped rewrite can change a selected file", async () => 
     const { root } = main;
     const selected = Bun.file(path.join(root, "tsconfig.json"));
     const unselected = Bun.file(path.join(root, "nested/tsconfig.json"));
-    const policy = Bun.file(path.join(root, "cinch.toml"));
+    const policy = Bun.file(path.join(root, "rope.toml"));
     await Promise.all([
       Bun.write(policy, CONFIG),
       Bun.write(selected, BEFORE),

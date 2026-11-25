@@ -13,9 +13,9 @@ import { describeFake } from "./fake-adapter.ts";
 
 const CLI = new URL("../../cli/src/cli.ts", import.meta.url).pathname;
 const ENGINE = "ast-grep";
-const ORIGIN = { file: "cinch.toml", prefix: "" };
+const ORIGIN = { file: "rope.toml", prefix: "" };
 const LOCAL: Provenance = {
-  file: "cinch.toml",
+  file: "rope.toml",
   key: "rules.local",
   kind: "file",
 };
@@ -54,7 +54,7 @@ test("the config names folders of local rules, and only ones inside the reposito
 
 const config: CinchConfig = {
   ...DEFAULT_CONFIG,
-  file: "cinch.toml",
+  file: "rope.toml",
   include: { source: { kind: "default" }, value: ["**/*"] },
   rulesLocal: { source: LOCAL, value: ["rules"] },
   settings: [
@@ -96,7 +96,7 @@ test("an adapter with local rules has a step where no shipped pack is on", () =>
 
 test("explain lists local folders apart from the shipped packs", () => {
   expect(localRulesBlock([{ folder: "rules", source: LOCAL }])).toBe(
-    "Local rules\n  rules  (cinch.toml: rules.local)"
+    "Local rules\n  rules  (rope.toml: rules.local)"
   );
 });
 
@@ -114,7 +114,7 @@ beforeEach(async () => {
   root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-local-")));
   await mkdir(path.join(root, ".git"));
   await Bun.write(
-    path.join(root, "cinch.toml"),
+    path.join(root, "rope.toml"),
     'pilot = 0\ninclude = ["**/*.ts"]\n\n[rules]\nenabled = true\nlocal = ["rules"]\n\n[markdown]\nenabled = false\n\n[toml]\nenabled = false\n'
   );
   await Bun.write(path.join(root, "a.ts"), "console.log(1);\n");
@@ -151,7 +151,7 @@ test("explain shows the folder, and a folder that is not there is incomplete", a
   await rule("no-log.yml", NO_LOG);
   const shown = await cinch("explain");
   expect(shown.stdout).toContain(
-    "Local rules\n  rules  (cinch.toml: rules.local)"
+    "Local rules\n  rules  (rope.toml: rules.local)"
   );
   if (!hasEngine()) {
     return;

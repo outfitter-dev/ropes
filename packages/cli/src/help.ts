@@ -40,7 +40,7 @@ Usage: rope <explain|check|fix> [path...] [--json] [--strict]
   fix       Fix the selected files or preview changes with --dry-run
   preset    Inspect or manage the repository presets
   schema    Print a JSON Schema or list the available names
-  migrate   Preview a legacy Cinch config migration
+  migrate   Show manual guidance for retiring a Cinch setup
   rules     List rule packs or preview and apply adoption
   policy    Capture and compare resolved rule policy
 

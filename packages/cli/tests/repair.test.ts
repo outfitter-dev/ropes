@@ -58,8 +58,8 @@ test("a fresh offline reader recovers the failed attempt and verified repair", a
           Bun.write(path.join(main.root, file), text)
         )
       );
-      const config = `${FILES["cinch.toml"] ?? ""}\n[overrides.typescript]\nenabled = false\n[typescript]\nenabled = true\npreset = false\n`;
-      await Bun.write(path.join(main.root, "cinch.toml"), config);
+      const config = `${FILES["rope.toml"] ?? ""}\n[overrides.typescript]\nenabled = false\n[typescript]\nenabled = true\npreset = false\n`;
+      await Bun.write(path.join(main.root, "rope.toml"), config);
       await Bun.write(
         path.join(main.root, "src/private/types.ts"),
         "export interface PrivateType { value: string }\n"

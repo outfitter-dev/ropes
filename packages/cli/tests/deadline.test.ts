@@ -28,7 +28,7 @@ test("a scheduled rule changes verdict at midnight UTC on unchanged source", asy
     return;
   }
   await withFixture(async ({ main, emptyPath }) => {
-    const config = path.join(main.root, "cinch.toml");
+    const config = path.join(main.root, "rope.toml");
     await Promise.all([
       Bun.write(config, SCHEDULE),
       Bun.write(path.join(main.root, ADVISORY), "{}\n"),
@@ -53,7 +53,7 @@ test("a scheduled rule changes verdict at midnight UTC on unchanged source", asy
     expect(plan.paths[0]?.policy).toContainEqual({
       blockingAt: DEADLINE,
       key: KEY,
-      source: { file: "cinch.toml", key: KEY, kind: "file" },
+      source: { file: "rope.toml", key: KEY, kind: "file" },
       value: "advisory",
     });
     expect(plan.rules?.find(({ name }) => name === "config")).toMatchObject({
@@ -117,7 +117,7 @@ test("a scheduled rule changes verdict at midnight UTC on unchanged source", asy
 
 test("only the selected, applicable rule contributes a deadline", async () => {
   await withFixture(async ({ main }) => {
-    const config = path.join(main.root, "cinch.toml");
+    const config = path.join(main.root, "rope.toml");
     const managed = ".ropes/configs/tsconfig.json";
     const unrelated = "package.json";
     await Promise.all(
@@ -210,7 +210,7 @@ test("the setup report omits deadlines for content steps", async () => {
   await withFixture(async ({ main }) => {
     await Promise.all([
       Bun.write(
-        path.join(main.root, "cinch.toml"),
+        path.join(main.root, "rope.toml"),
         `${SCHEDULE}\n[typescript]\npreset = true\n`
       ),
       Bun.write(path.join(main.root, "tsconfig.json"), "{}\n"),

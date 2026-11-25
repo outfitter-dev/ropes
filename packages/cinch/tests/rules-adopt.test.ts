@@ -12,7 +12,7 @@ let root = "";
 const put = (name: string, text: string): Promise<number> =>
   Bun.write(path.join(root, name), text);
 const config = (): Promise<string> =>
-  Bun.file(path.join(root, "cinch.toml")).text();
+  Bun.file(path.join(root, "rope.toml")).text();
 
 const run = async (request: Partial<CommandRequest> = {}) => {
   const response = await commands.rules?.({
@@ -47,10 +47,10 @@ afterEach(async () => {
 
 test("the preview names the packs that apply and writes nothing", async () => {
   const before = "pilot = 0\n\n[rules]\nenabled = true\n";
-  await put("cinch.toml", before);
+  await put("rope.toml", before);
   expect(await report()).toMatchObject({
     adopted: ["config"],
-    changed: ["cinch.toml"],
+    changed: ["rope.toml"],
     written: false,
   });
   expect(await config()).toBe(before);
@@ -63,7 +63,7 @@ test("the preview names the packs that apply and writes nothing", async () => {
 });
 
 test("--yes names them, and the pack then runs", async () => {
-  await put("cinch.toml", "pilot = 0\n\n[rules]\nenabled = true\n");
+  await put("rope.toml", "pilot = 0\n\n[rules]\nenabled = true\n");
   expect(await report({ yes: true })).toMatchObject({
     adopted: ["config"],
     written: true,
@@ -80,7 +80,7 @@ test("--yes names them, and the pack then runs", async () => {
 
 test("a repository with no config gets one that switches rules on", async () => {
   await report({ yes: true });
-  expect(await config()).toEndWith(
+  expect(await Bun.file(path.join(root, "rope.toml")).text()).toEndWith(
     '\n\n[rules]\nenabled = true\npacks = ["config"]\n'
   );
   const listed = await commands.rules?.({ cwd: root, json: false, paths: [] });
@@ -89,7 +89,7 @@ test("a repository with no config gets one that switches rules on", async () => 
 
 test("a pack with nothing here is adopted only by name", async () => {
   await rm(path.join(root, "tsconfig.json"));
-  await put("cinch.toml", "pilot = 0\n");
+  await put("rope.toml", "pilot = 0\n");
   const none = await report();
   expect(none.adopted).toEqual([]);
   const named = await report({ paths: ["config"] });
@@ -97,7 +97,7 @@ test("a pack with nothing here is adopted only by name", async () => {
 });
 
 test("a name nothing has is refused, and a pack that is off is not adopted", async () => {
-  await put("cinch.toml", 'pilot = 0\n\n[rules]\noff = ["config"]\n');
+  await put("rope.toml", 'pilot = 0\n\n[rules]\noff = ["config"]\n');
   const unknown = await run({ paths: ["nope"] });
   expect(unknown.exitCode).toBe(2);
   expect(unknown.error).toBe('cinch: Cinch ships no rule pack named "nope".');
@@ -114,12 +114,12 @@ test("a name nothing has is refused, and a pack that is off is not adopted", asy
 
 test("rules a person switched off stay off, and the report says so", async () => {
   await put(
-    "cinch.toml",
+    "rope.toml",
     'pilot = 0\ninclude = ["**/*.json"]\n\n[rules]\nenabled = false\n'
   );
   const done = await report({ yes: true });
   expect(done.notes).toEqual([
-    "Rules are switched off in cinch.toml (`enabled = false`), so the packs it names do not run yet.",
+    "Rules are switched off in rope.toml (`enabled = false`), so the packs it names do not run yet.",
   ]);
   expect(await config()).toBe(
     'pilot = 0\ninclude = ["**/*.json"]\n\n[rules]\nenabled = false\npacks = ["config"]\n'
@@ -186,14 +186,14 @@ test("a config that leads out of the repository is not written", async () => {
     await mkdtemp(path.join(tmpdir(), "cinch-out-"))
   );
   try {
-    const real = path.join(elsewhere, "cinch.toml");
+    const real = path.join(elsewhere, "rope.toml");
     const before = "pilot = 0\n\n[rules]\nenabled = true\n";
     await Bun.write(real, before);
-    await symlink(real, path.join(root, "cinch.toml"));
+    await symlink(real, path.join(root, "rope.toml"));
     const response = await run({ yes: true });
     expect(response.exitCode).toBe(2);
     expect(response.error).toBe(
-      "cinch: cinch.toml leads outside the repository, so Cinch will not write it."
+      "cinch: rope.toml leads outside the repository, so Cinch will not write it."
     );
     expect(await Bun.file(real).text()).toBe(before);
   } finally {
@@ -222,44 +222,44 @@ test("rules written another way are left for a person", () => {
 });
 
 test("adopting a pack whose files the config leaves out says so", async () => {
-  await put("cinch.toml", "pilot = 0\n\n[rules]\nenabled = true\n");
+  await put("rope.toml", "pilot = 0\n\n[rules]\nenabled = true\n");
   expect(await report().then((one) => one.notes)).toEqual([
-    'config will not run yet: cinch.toml leaves out the files it reads, such as tsconfig.json. Add "**/tsconfig.json" to `include` to run it.',
+    'config will not run yet: rope.toml leaves out the files it reads, such as tsconfig.json. Add "**/tsconfig.json" to `include` to run it.',
   ]);
   await put(
-    "cinch.toml",
+    "rope.toml",
     'pilot = 0\ninclude = ["**/*.json"]\nexclude = ["tsconfig.json"]\n'
   );
   expect(await report().then((one) => one.notes)).toEqual([
-    "config will not run yet: cinch.toml leaves out the files it reads, such as tsconfig.json. Take them out of `exclude` to run it.",
+    "config will not run yet: rope.toml leaves out the files it reads, such as tsconfig.json. Take them out of `exclude` to run it.",
   ]);
 });
 
 test("a pack with one file the config covers gets no such note", async () => {
   await put("pkg/tsconfig.json", "{}\n");
-  await put("cinch.toml", 'pilot = 0\ninclude = ["pkg/**/*.json"]\n');
+  await put("rope.toml", 'pilot = 0\ninclude = ["pkg/**/*.json"]\n');
   expect(await report().then((one) => one.notes)).toEqual([]);
 });
 
 test("the same note is given from a directory under the root", async () => {
-  await put("cinch.toml", "pilot = 0\n\n[rules]\nenabled = true\n");
+  await put("rope.toml", "pilot = 0\n\n[rules]\nenabled = true\n");
   await mkdir(path.join(root, "docs"));
   const below = await report({ cwd: path.join(root, "docs") });
   expect(below.notes).toEqual([
-    'config will not run yet: cinch.toml leaves out the files it reads, such as tsconfig.json. Add "**/tsconfig.json" to `include` to run it.',
+    'config will not run yet: rope.toml leaves out the files it reads, such as tsconfig.json. Add "**/tsconfig.json" to `include` to run it.',
   ]);
 });
 
 test("a file Cinch keeps does not stand in for the repository's own", async () => {
   await put(
-    "cinch.toml",
+    "rope.toml",
     "pilot = 0\n\n[typescript]\npreset = true\n\n[rules]\nenabled = true\n"
   );
-  await put(".outfitter/configs/presets/tsconfig.json", "{}\n");
+  await put(".ropes/configs/presets/tsconfig.json", "{}\n");
   // The root config is kept with the preset, so the pack reaches that one.
   await rm(path.join(root, "tsconfig.json"));
   await put("pkg/tsconfig.json", "{}\n");
   expect(await report().then((one) => one.notes)).toEqual([
-    'config will not run yet: cinch.toml leaves out the files it reads, such as pkg/tsconfig.json. Add "**/tsconfig.json" to `include` to run it.',
+    'config will not run yet: rope.toml leaves out the files it reads, such as pkg/tsconfig.json. Add "**/tsconfig.json" to `include` to run it.',
   ]);
 });

@@ -18,10 +18,10 @@ import { describeFake } from "./fake-adapter.ts";
 
 const CLI = new URL("../../cli/src/cli.ts", import.meta.url).pathname;
 const RULES = path.join(import.meta.dir, "..", "rules");
-const ORIGIN = { file: "cinch.toml", prefix: "" };
-const OFF: Provenance = { file: "cinch.toml", key: "rules.off", kind: "file" };
+const ORIGIN = { file: "rope.toml", prefix: "" };
+const OFF: Provenance = { file: "rope.toml", key: "rules.off", kind: "file" };
 const NAMED: Provenance = {
-  file: "cinch.toml",
+  file: "rope.toml",
   key: "rules.packs",
   kind: "file",
 };
@@ -54,7 +54,7 @@ const asked = (
   packs: readonly string[] = BOTH
 ): CinchConfig => ({
   ...DEFAULT_CONFIG,
-  file: "cinch.toml",
+  file: "rope.toml",
   include: { source: { kind: "default" }, value: ["**/*"] },
   ...(off === undefined ? {} : { rulesOff: { source: OFF, value: off } }),
   rulesPacks: { source: NAMED, value: packs },
@@ -118,11 +118,11 @@ test("the config turns off one rule or a whole pack", () => {
   expect(pack.batches[0]?.rules).toEqual(["typescript/c"]);
   const text = rulesBlock(one.rules ?? []);
   expect(text).toContain(
-    "config  on, since tsconfig.json is here (cinch.toml: rules.packs)"
+    "config  on, since tsconfig.json is here (rope.toml: rules.packs)"
   );
-  expect(text).toContain("config/a  off (cinch.toml: rules.off)");
+  expect(text).toContain("config/a  off (rope.toml: rules.off)");
   expect(rulesBlock(pack.rules ?? [])).toContain(
-    "config  off (cinch.toml: rules.off)"
+    "config  off (rope.toml: rules.off)"
   );
 });
 
@@ -209,7 +209,7 @@ test("explain names the shipped packs, and refuses a name nothing has", async ()
   try {
     const config = (off: string) =>
       Bun.write(
-        path.join(root, "cinch.toml"),
+        path.join(root, "rope.toml"),
         `pilot = 0\ninclude = ["**/*.json"]\n\n[rules]\nenabled = true\npacks = ["config"]\noff = ["${off}"]\n`
       );
     await mkdir(path.join(root, ".git"));
@@ -217,16 +217,16 @@ test("explain names the shipped packs, and refuses a name nothing has", async ()
     await config("config/tsconfig-extends");
     const shown = await explain(root);
     expect(shown.stdout).toContain(
-      "config  on, since tsconfig.json is here (cinch.toml: rules.packs)"
+      "config  on, since tsconfig.json is here (rope.toml: rules.packs)"
     );
     expect(shown.stdout).toContain(
-      "config/tsconfig-extends  off (cinch.toml: rules.off)"
+      "config/tsconfig-extends  off (rope.toml: rules.off)"
     );
     expect(shown.stdout).toContain("no step applies to this file");
     await config("config/nope");
     const refused = await explain(root);
     expect(refused.stderr).toContain(
-      'cinch.toml: rules.off: Cinch ships no rule pack or rule named "config/nope".'
+      'rope.toml: rules.off: Cinch ships no rule pack or rule named "config/nope".'
     );
     expect(refused.exitCode).toBe(2);
   } finally {
@@ -242,12 +242,12 @@ test("a named file git ignores still makes its pack relevant", async () => {
     await Bun.write(path.join(root, ".gitignore"), "tsconfig.json\n");
     await Bun.write(path.join(root, "tsconfig.json"), "{}\n");
     await Bun.write(
-      path.join(root, "cinch.toml"),
+      path.join(root, "rope.toml"),
       'pilot = 0\ninclude = ["**/*.json"]\n\n[rules]\nenabled = true\npacks = ["config"]\n'
     );
     const shown = await explain(root, "tsconfig.json");
     expect(shown.stdout).toContain(
-      "config  on, since tsconfig.json is here (cinch.toml: rules.packs)"
+      "config  on, since tsconfig.json is here (rope.toml: rules.packs)"
     );
   } finally {
     await rm(root, { force: true, recursive: true });

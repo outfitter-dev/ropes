@@ -63,7 +63,9 @@ export const verifyInstalledFiles = async (
     );
   }
   const owners = await Promise.all(
-    installed.map((directory) => discoverRoot(directory))
+    installed.map((directory) =>
+      discoverRoot(directory, { inspectPolicy: false })
+    )
   );
   if (owners.some((owner) => !owner.ok || owner.value.vcsRoot !== root)) {
     throw new Error(

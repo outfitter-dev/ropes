@@ -27,10 +27,10 @@ export const CONFIG = [
  */
 export const FILES: Readonly<Record<string, string>> = {
   "README.md": "# Guide\n\n# Second title\n\nText.\n",
-  "cinch.toml": CONFIG,
   "legacy/old.md": "# Old\n\n# Old again\n\nText.\n",
   "packages/app/docs/notes.md": "# App\n\n\n\nToo many blanks above.\n",
   "packages/app/package.json": '{ "name": "app" }\n',
+  "rope.toml": CONFIG,
 };
 
 export interface Ran {

@@ -4,13 +4,13 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { adaptersFor } from "../src/adapters/registry.ts";
-import {
-  CONFIG_PATH,
-  GENERATED_PATH,
-  POINTER,
-} from "../src/adapters/rumdl/preset.ts";
-import { rootConfig } from "../src/adapters/rumdl/root-config.ts";
+import { markdownPaths } from "../src/adapters/rumdl/paths.ts";
+import { CONFIG_PATH, POINTER } from "../src/adapters/rumdl/preset.ts";
+import { pointerFor, rootConfig } from "../src/adapters/rumdl/root-config.ts";
 import { createCommands } from "../src/commands/registry.ts";
+import { ROPES_MANAGED_DIR } from "../src/contracts/managed-config.ts";
+
+const ROPES_PATHS = markdownPaths(ROPES_MANAGED_DIR);
 
 const OLD = ".markdownlint.json";
 const TABLE = "[tools.rumdl.MD007]\nindent = 4\n";
@@ -55,13 +55,13 @@ withEngine(
   async () => {
     const files = {
       [OLD]: JSON.stringify({ MD007: { indent: 2 } }),
-      "cinch.toml": `pilot = 0\n${TABLE}`,
+      "rope.toml": `pilot = 0\n${TABLE}`,
     };
     await inRoot(files, async (root) => {
       const request = { cwd: root, json: true, paths: [] };
       const done = await commands.init?.({ ...request, yes: true });
       expect(done?.exitCode).toBe(0);
-      expect(await read(root, GENERATED_PATH)).toContain("indent = 4");
+      expect(await read(root, ROPES_PATHS.generated)).toContain("indent = 4");
       expect(await read(root, CONFIG_PATH)).toContain("[MD007]\nindent = 2\n");
       expect(await commands.check?.(request)).toMatchObject({ exitCode: 0 });
     });
@@ -73,7 +73,7 @@ withEngine(
   async () => {
     const files = {
       [OLD]: JSON.stringify({ "ul-indent": { indent: 4 } }),
-      "cinch.toml": "pilot = 0\n[tools.rumdl.ul-indent]\nindent = 4\n",
+      "rope.toml": "pilot = 0\n[tools.rumdl.ul-indent]\nindent = 4\n",
     };
     await inRoot(files, async (root) => {
       const done = await commands.init?.({
@@ -83,7 +83,7 @@ withEngine(
         yes: true,
       });
       expect(done?.exitCode).toBe(0);
-      expect(await read(root, CONFIG_PATH)).toBe(POINTER);
+      expect(await read(root, CONFIG_PATH)).toBe(pointerFor(ROPES_PATHS));
     });
   }
 );
@@ -96,7 +96,7 @@ withEngine(
       const request = { cwd: root, json: true, paths: [] };
       const done = await commands.init?.({ ...request, yes: true });
       expect(done?.exitCode).toBe(0);
-      expect(await read(root, CONFIG_PATH)).toBe(POINTER);
+      expect(await read(root, CONFIG_PATH)).toBe(pointerFor(ROPES_PATHS));
       expect(await commands.check?.(request)).toMatchObject({ exitCode: 0 });
       expect(await commands.fix?.(request)).toMatchObject({ exitCode: 0 });
     });
@@ -106,8 +106,8 @@ withEngine(
 const OFF = `pilot = 0\n[markdown]\npreset = false\n${TABLE}`;
 
 test("a table is read when an override switches its preset back on", async () => {
-  const config = `${OFF}[[overrides]]\npaths = [".outfitter/configs/**", ${JSON.stringify(CONFIG_PATH)}]\n[overrides.markdown]\npreset = true\n`;
-  await inRoot({ "cinch.toml": config }, async (root) => {
+  const config = `${OFF}[[overrides]]\npaths = [".ropes/configs/**", ${JSON.stringify(CONFIG_PATH)}]\n[overrides.markdown]\npreset = true\n`;
+  await inRoot({ "rope.toml": config }, async (root) => {
     const ran = await commands.doctor?.({
       cwd: root,
       fix: true,
@@ -117,13 +117,13 @@ test("a table is read when an override switches its preset back on", async () =>
     });
     expect(ran?.error).toBeUndefined();
     expect(ran?.exitCode).toBe(0);
-    expect(await read(root, GENERATED_PATH)).toContain("indent = 4");
+    expect(await read(root, ROPES_PATHS.generated)).toContain("indent = 4");
   });
 });
 
 test("a table is unread when an override switches every reader off", async () => {
-  const config = `pilot = 0\n${TABLE}[[overrides]]\npaths = [".outfitter/configs/**", ${JSON.stringify(CONFIG_PATH)}]\n[overrides.markdown]\npreset = false\n`;
-  await inRoot({ "cinch.toml": config }, async (root) => {
+  const config = `pilot = 0\n${TABLE}[[overrides]]\npaths = [".ropes/configs/**", ${JSON.stringify(CONFIG_PATH)}]\n[overrides.markdown]\npreset = false\n`;
+  await inRoot({ "rope.toml": config }, async (root) => {
     const ran = await commands.check?.({ cwd: root, json: true, paths: [] });
     expect(ran?.exitCode).toBe(2);
     expect(ran?.error).toContain("tools.rumdl: nothing reads this table");

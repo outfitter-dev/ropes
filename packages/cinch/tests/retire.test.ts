@@ -9,7 +9,7 @@ import type { CommandRequest } from "../src/commands/command.ts";
 import { createCommands } from "../src/commands/registry.ts";
 import { InitReportSchema } from "../src/contracts/init.ts";
 
-const KEPT = ".outfitter/configs/notes.toml";
+const KEPT = ".ropes/configs/notes.toml";
 const NEED = "notes.toml";
 const OLD = "old-linter.json";
 const HAND = "Remove it by hand.";
@@ -154,7 +154,7 @@ test("a reason from the adapter keeps the old file, and is given", async () => {
 
 test("file choices a config that is already here did not get keep it", async () => {
   await put(OLD, "glob");
-  await put("cinch.toml", "pilot = 0\n");
+  await put("rope.toml", "pilot = 0\n");
   const retired = await init({ yes: true });
   expect(retired.removed).toBe(false);
   expect(retired.reasons).toEqual([
@@ -180,7 +180,7 @@ test("a setup that did not end clean removes nothing", async () => {
 
 test("a preset that is switched off is not asked", async () => {
   await put(OLD, "{}");
-  await put("cinch.toml", "pilot = 0\n\n[markdown]\npreset = false\n");
+  await put("rope.toml", "pilot = 0\n\n[markdown]\npreset = false\n");
   expect(await init({ yes: true })).toMatchObject({
     files: [],
     removed: false,
@@ -190,7 +190,7 @@ test("a preset that is switched off is not asked", async () => {
 
 test("leaving out the file that holds what was carried keeps the old one", async () => {
   await put(OLD, "{}");
-  await put("cinch.toml", `pilot = 0\nexclude = [${JSON.stringify(NEED)}]\n`);
+  await put("rope.toml", `pilot = 0\nexclude = [${JSON.stringify(NEED)}]\n`);
   expect(await init({ yes: true })).toEqual({
     files: [OLD],
     leftovers: [],

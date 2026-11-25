@@ -35,7 +35,7 @@ export const proveConsumer = async (consumer: string): Promise<void> => {
   );
   await Bun.write(path.join(consumer, ".gitignore"), "node_modules\n");
   await Bun.write(
-    path.join(consumer, "cinch.toml"),
+    path.join(consumer, "rope.toml"),
     `pilot = 0
 exclude = ["excluded/**"]
 [markdown]

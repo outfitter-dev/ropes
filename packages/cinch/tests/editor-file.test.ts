@@ -98,7 +98,7 @@ trim_trailing_whitespace = false
 });
 
 test("the config rejects a fact it does not know and a glob that breaks a header", () => {
-  const origin = { file: "cinch.toml", prefix: "" };
+  const origin = { file: "rope.toml", prefix: "" };
   const unknown = parseConfigTable(
     { editor: { tab_width: 4 }, pilot: 0 },
     origin
@@ -112,13 +112,13 @@ test("the config rejects a fact it does not know and a glob that breaks a header
 });
 
 test("changing a fact and running doctor --fix changes the file", async () => {
-  await put("cinch.toml", EDITOR);
+  await put("rope.toml", EDITOR);
   expect(await exit("doctor")).toBe(1);
   expect(await exit("doctor", { fix: true })).toBe(0);
   expect(await kept()).toBe(
     `${HEAD}\n[*]\nindent_style = space\nindent_size = 2\n`
   );
-  await put("cinch.toml", EDITOR.replace("indent_size = 2", "indent_size = 4"));
+  await put("rope.toml", EDITOR.replace("indent_size = 2", "indent_size = 4"));
   expect(await messages()).toEqual([
     "This file differs from `[editor]` in the Cinch config. Make the change there, then run `rope doctor --fix`.",
   ]);
@@ -127,7 +127,7 @@ test("changing a fact and running doctor --fix changes the file", async () => {
 });
 
 test("a hand edit is a finding that says where to make the change, and check sees it", async () => {
-  await put("cinch.toml", EDITOR);
+  await put("rope.toml", EDITOR);
   await run("doctor", { fix: true });
   await put(EDITOR_PATH, `${await kept()}\n[*.go]\nindent_style = tab\n`);
   expect(await first()).toContain("Make the change there");
@@ -138,7 +138,7 @@ test("a hand edit is a finding that says where to make the change, and check see
 
 test("a file a person wrote is never overwritten", async () => {
   const mine = "root = true\n\n[*]\nindent_style = tab\n";
-  await put("cinch.toml", EDITOR);
+  await put("rope.toml", EDITOR);
   await put(EDITOR_PATH, mine);
   expect(await exit("doctor", { fix: true })).toBe(1);
   expect(await kept()).toBe(mine);
@@ -147,7 +147,7 @@ test("a file a person wrote is never overwritten", async () => {
 
 test("without the table, the file is not Cinch's and is left alone", async () => {
   const mine = "root = true\n";
-  await put("cinch.toml", QUIET);
+  await put("rope.toml", QUIET);
   await put(EDITOR_PATH, mine);
   expect(await exit("doctor", { fix: true })).toBe(0);
   expect(await kept()).toBe(mine);
@@ -158,20 +158,20 @@ test("without the table, the file is not Cinch's and is left alone", async () =>
 
 test("an excluded editor file is an unusable setup, not a clean one", async () => {
   await put(
-    "cinch.toml",
+    "rope.toml",
     EDITOR.replace("pilot = 0", 'pilot = 0\nexclude = [".editorconfig"]')
   );
   const repaired = await run("doctor", { fix: true });
   expect(repaired.exitCode).toBe(2);
   expect(repaired.error).toContain(
-    "the Cinch config leaves .editorconfig out (`exclude` in cinch.toml), so Cinch cannot keep it."
+    "the Cinch config leaves .editorconfig out (`exclude` in rope.toml), so Cinch cannot keep it."
   );
   expect(await exit("fix")).toBe(2);
   expect(await Bun.file(path.join(root, EDITOR_PATH)).exists()).toBe(false);
 });
 
 test("init writes the editor file a config that is already there asks for", async () => {
-  await put("cinch.toml", EDITOR);
+  await put("rope.toml", EDITOR);
   expect(await exit("init", { yes: true })).toBe(0);
   expect(await kept()).toContain("indent_size = 2");
   expect(await exit("doctor")).toBe(0);

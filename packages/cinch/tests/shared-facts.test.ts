@@ -20,7 +20,7 @@ import { fakeAdapter } from "./fake-adapter.ts";
 const STATED: CinchConfig = {
   ...DEFAULT_CONFIG,
   editor: { indent_size: 2, line_width: 100, overrides: [] },
-  file: "cinch.toml",
+  file: "rope.toml",
 };
 
 const planFor = (adapters: readonly Adapter[], config = STATED) =>
@@ -58,13 +58,13 @@ test("the plan names the stated facts and the adapters asked about them", () => 
     reporters: [{ adapter: "one", reports: ["line_width"], tool: "one-tool" }],
     stated: [
       {
-        file: "cinch.toml",
+        file: "rope.toml",
         key: "editor.indent_size",
         name: "indent_size",
         value: 2,
       },
       {
-        file: "cinch.toml",
+        file: "rope.toml",
         key: "editor.line_width",
         name: "line_width",
         value: 100,
@@ -89,7 +89,7 @@ test("a value that differs from the config is one finding with both sources", as
     {
       fixable: false,
       message:
-        ".fake.toml sets `width` to 120, but cinch.toml sets `editor.line_width` to 100. Both state line_width, so they have to agree. Change one of them.",
+        ".fake.toml sets `width` to 120, but rope.toml sets `editor.line_width` to 100. Both state line_width, so they have to agree. Change one of them.",
       path: ".fake.toml",
       range: { start: { column: 1, line: 1 } },
       rule: "shared-fact/line_width",
@@ -220,15 +220,15 @@ test("explain shows what is compared, and says when an adapter cannot report", (
     descriptor: { id: "two", reports: [], tool: "two-tool" },
   });
   const shown = renderPlan(planFor([can, cannot]), {
-    configFile: "cinch.toml",
+    configFile: "rope.toml",
     tools: [],
   });
   expect(shown).toContain(
     [
       "Shared facts",
       "  stated",
-      "    indent_size = 2  (cinch.toml: editor.indent_size)",
-      "    line_width = 100  (cinch.toml: editor.line_width)",
+      "    indent_size = 2  (rope.toml: editor.indent_size)",
+      "    line_width = 100  (rope.toml: editor.line_width)",
       "  compared with",
       "    one  reports line_width",
       "    two  cannot report what two-tool resolves, so its settings are not compared",

@@ -72,13 +72,10 @@ test("rope.toml reads the pilot schema and names its source", async () => {
 });
 
 test.each([
-  {
-    files: { "cinch.toml": VALID, "rope.toml": VALID },
-    names: ["cinch.toml", "rope.toml"],
-  },
+  { files: { "cinch.toml": VALID, "rope.toml": VALID }, retired: "cinch.toml" },
   {
     files: { "outfitter.toml": "[cinch]\npilot = 0\n", "rope.toml": VALID },
-    names: ["outfitter.toml", "rope.toml"],
+    retired: "outfitter.toml",
   },
   {
     files: {
@@ -86,16 +83,19 @@ test.each([
       "outfitter.toml": "[cinch]\npilot = 0\n",
       "rope.toml": VALID,
     },
-    names: ["outfitter.toml", "cinch.toml", "rope.toml"],
+    retired: "cinch.toml",
   },
 ])(
-  "supported configs conflict with concrete filenames: $names",
-  async ({ files, names }) => {
+  "retired $retired is refused even beside rope.toml",
+  async ({ files, retired }) => {
     await withFiles(files, async (root) => {
-      expect(await loadConfig(root)).toEqual({
-        error: { files: names, kind: "conflict" },
+      expect(await loadConfig(root)).toMatchObject({
+        error: { file: path.join(root, retired), kind: "legacy" },
         ok: false,
       });
+      expect(await Bun.file(path.join(root, retired)).text()).toBe(
+        files[retired] ?? ""
+      );
     });
   }
 );
@@ -128,14 +128,17 @@ test("a shared file with no cinch table leaves rope.toml in charge", async () =>
   );
 });
 
-test.each(["cinch.toml", "outfitter.toml"])(
-  "a malformed legacy %s remains an error beside rope.toml",
-  async (file) => {
+test.each([
+  { file: "cinch.toml", kind: "legacy" },
+  { file: "outfitter.toml", kind: "unreadable" },
+])(
+  "malformed retired or shared $file remains an error beside rope.toml",
+  async ({ file, kind }) => {
     await withFiles(
       { [file]: "pilot = = 0\n", "rope.toml": VALID },
       async (root) => {
         expect(await loadConfig(root)).toMatchObject({
-          error: { file, kind: "malformed" },
+          error: { file: path.join(root, file), kind },
           ok: false,
         });
       }
@@ -145,7 +148,7 @@ test.each(["cinch.toml", "outfitter.toml"])(
 
 test("a nested rope.toml sets the root when started farther below it", async () => {
   await withFiles(
-    { "cinch.toml": VALID, "packages/app/rope.toml": VALID },
+    { "packages/app/rope.toml": VALID, "rope.toml": VALID },
     async (root) => {
       await mkdir(path.join(root, ".git"));
       await mkdir(path.join(root, "packages/app/src"));

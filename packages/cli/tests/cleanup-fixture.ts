@@ -36,7 +36,7 @@ export const accepted = async (
   deadline?: string,
   config = CONFIG
 ) => {
-  await Bun.write(path.join(root, "cinch.toml"), config);
+  await Bun.write(path.join(root, "rope.toml"), config);
   await Bun.write(
     path.join(root, "mise.toml"),
     '[tools]\n"ast-grep" = "0.51.3"\n'

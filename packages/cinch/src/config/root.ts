@@ -1,7 +1,9 @@
 import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
+import type { ConfigError } from "../contracts/config.ts";
 import type { PathResult, RootResult, VcsKind } from "../contracts/root.ts";
+import { legacyConfig } from "./legacy.ts";
 import { configFileIn } from "./load.ts";
 
 const kindOf = async (target: string): Promise<"dir" | "file" | null> => {
@@ -50,12 +52,15 @@ const toPosix = (relative: string): string =>
 
 /**
  * Finds the root for a run started in `from`. Walks up to the nearest
- * directory that configures Cinch and stops at the version-control boundary,
+ * directory that configures Ropes and stops at the version-control boundary,
  * which is the root when no config sits at or below it. A linked worktree and
  * a jj workspace are their own boundaries, so each reads its own config. A
  * start directory that does not exist has no repository above it.
  */
-export const discoverRoot = async (from: string): Promise<RootResult> => {
+export const discoverRoot = async (
+  from: string,
+  options: { readonly inspectPolicy?: boolean } = {}
+): Promise<RootResult> => {
   let start: string;
   try {
     start = await realpath(from);
@@ -64,15 +69,29 @@ export const discoverRoot = async (from: string): Promise<RootResult> => {
   }
   let dir = start;
   let configured: { dir: string; file: string } | null = null;
+  let configurationError: ConfigError | null = null;
   for (;;) {
-    if (configured === null) {
-      // eslint-disable-next-line no-await-in-loop -- the walk is sequential: each step depends on the last
-      const file = await configFileIn(dir);
-      configured = file === null ? null : { dir, file };
+    if (options.inspectPolicy !== false && configurationError === null) {
+      // Check through the VCS boundary, including ancestors of a nested policy.
+      // eslint-disable-next-line no-await-in-loop -- root discovery is sequential
+      configurationError = await legacyConfig(dir, {
+        ignoreSharedErrors: configured !== null,
+      });
+      if (configurationError === null && configured === null) {
+        // eslint-disable-next-line no-await-in-loop -- the walk is sequential: each step depends on the last
+        const file = await configFileIn(dir);
+        configured = file === null ? null : { dir, file };
+      }
     }
     // eslint-disable-next-line no-await-in-loop -- as above
     const vcs = await vcsAt(dir);
     if (vcs !== null) {
+      if (configurationError !== null) {
+        return {
+          error: { error: configurationError, kind: "configuration" },
+          ok: false,
+        };
+      }
       const root = configured?.dir ?? dir;
       return {
         ok: true,

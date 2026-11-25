@@ -49,7 +49,7 @@ test("rule lookup retains inherited, overridden and excluded scope without runni
     expect(result.value.paths[1]?.path.policy).toContainEqual({
       key: "rules.enabled",
       source: {
-        file: "cinch.toml",
+        file: "rope.toml",
         key: "overrides.0.rules.enabled",
         kind: "file",
       },
@@ -174,7 +174,7 @@ test("rule lookup agrees with check input and describes an unadopted shipped rul
 test("a shipped rule lookup retains its effective UTC deadline and policy source", async () => {
   await withFixture(async ({ main, emptyPath }) => {
     await Bun.write(
-      path.join(main.root, "cinch.toml"),
+      path.join(main.root, "rope.toml"),
       `${ENFORCEMENT}
 [rules.enforcement]
 "config/tsconfig-extends" = "2027-01-01"
@@ -202,7 +202,7 @@ test("a shipped rule lookup retains its effective UTC deadline and policy source
       blockingAt: "2027-01-01T00:00:00.000Z",
       key: "rules.enforcement.config/tsconfig-extends",
       source: {
-        file: "cinch.toml",
+        file: "rope.toml",
         key: "rules.enforcement.config/tsconfig-extends",
         kind: "file",
       },

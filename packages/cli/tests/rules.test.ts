@@ -117,10 +117,10 @@ test("rope previews and adopts packs in the active policy without changing the i
     expect(await Bun.file(path.join(root, "cinch.toml")).exists()).toBe(false);
     await Bun.write(path.join(root, "cinch.toml"), policy);
     const legacy = await run("rules", "adopt", "config", "--yes", "--json");
-    expect(legacy.exitCode).toBe(0);
-    expect(
-      RulesAdoptReportSchema.parse(JSON.parse(legacy.stdout)).changed
-    ).toEqual(["cinch.toml"]);
+    expect(legacy.exitCode).toBe(2);
+    expect(legacy.stdout).toBe("");
+    expect(legacy.stderr).toContain("uses retired Cinch configuration");
+    expect(await Bun.file(path.join(root, "cinch.toml")).text()).toBe(policy);
     expect(await Bun.file(path.join(root, "rope.toml")).exists()).toBe(false);
   } finally {
     await rm(root, { force: true, recursive: true });

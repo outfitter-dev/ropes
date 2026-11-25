@@ -71,23 +71,18 @@ test("the files an adapter keeps are planned before the files that read them", (
   const keeper = describeFake({
     extensions: [],
     id: "fake-keeper",
-    owns: [".tool.toml", ".outfitter/configs/tool.toml"],
+    owns: [".tool.toml", ".ropes/configs/tool.toml"],
   });
   const plan = resolvePlan({
     config: DEFAULT_CONFIG,
     descriptors: [markdown, keeper],
     packages: [],
-    paths: [
-      "z.md",
-      ".tool.toml",
-      ".github/a.md",
-      ".outfitter/configs/tool.toml",
-    ],
+    paths: ["z.md", ".tool.toml", ".github/a.md", ".ropes/configs/tool.toml"],
     root: "/repo",
     selection: { kind: "workspace" },
   });
   expect(plan.paths.map((entry) => entry.path)).toEqual([
-    ".outfitter/configs/tool.toml",
+    ".ropes/configs/tool.toml",
     ".tool.toml",
     ".github/a.md",
     "z.md",

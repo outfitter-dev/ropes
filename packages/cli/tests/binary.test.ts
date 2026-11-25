@@ -95,7 +95,7 @@ test("standalone rope previews and initializes a fresh repository without Bun", 
   await rm(path.join(root, "rope.toml"));
   const legacy = await proof.run(["init", "--yes", "--json"], root);
   expect(legacy.exitCode).toBe(2);
-  expect(legacy.stderr).toContain("rope migrate");
+  expect(legacy.stderr).toContain("Move its policy to rope.toml");
   expect(await Bun.file(path.join(root, "rope.toml")).exists()).toBe(false);
 });
 

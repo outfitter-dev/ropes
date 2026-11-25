@@ -16,7 +16,7 @@ const fence = describeFake({
 });
 
 const file = (key: string): Provenance => ({
-  file: "cinch.toml",
+  file: "rope.toml",
   key,
   kind: "file",
 });
@@ -28,7 +28,7 @@ const enabled = (value: boolean, key: string): PolicyValue => ({
 
 const config: CinchConfig = {
   exclude: { source: file("exclude"), value: ["vendor/**"] },
-  file: "cinch.toml",
+  file: "rope.toml",
   include: { source: file("include"), value: ["**/*.md"] },
   overrides: [
     {

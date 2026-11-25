@@ -164,7 +164,7 @@ test("a config that is not valid TOML is reported and left alone", async () => {
 });
 
 test("a dry run shows a kept file doctor would write, and doctor --fix writes it", async () => {
-  const files = { ".git/HEAD": "", "cinch.toml": "pilot = 0\n" };
+  const files = { ".git/HEAD": "", "rope.toml": "pilot = 0\n" };
   await inRoot(files, async (root) => {
     const { check, doctor } = createCommands({ adapters: () => [fixed] });
     const request = { cwd: root, json: false, paths: [] };

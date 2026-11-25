@@ -21,7 +21,7 @@ test("literal source paths containing glob syntax cannot be skipped", async () =
     return;
   }
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(path.join(main.root, "target.md"), "# Target\n");
     // Keep each named selection isolated so a skipped file cannot borrow another result.
     /* eslint-disable no-await-in-loop */
@@ -65,7 +65,7 @@ test("an unreadable fragment target is incomplete even with inherited logging di
     return;
   }
   await withFixture(async ({ main }) => {
-    await Bun.write(path.join(main.root, "cinch.toml"), CONFIG);
+    await Bun.write(path.join(main.root, "rope.toml"), CONFIG);
     await Bun.write(
       path.join(main.root, "index.md"),
       "# Index\n\n[Unreadable](bad.md#heading)\n"
@@ -109,7 +109,7 @@ test("existing Markdown consumers do not need or plan the opt-in link engine", a
   await withFixture(async ({ main, emptyPath }) => {
     await symlink(rumdl, path.join(emptyPath, "rumdl"));
     await Bun.write(
-      path.join(main.root, "cinch.toml"),
+      path.join(main.root, "rope.toml"),
       CONFIG.replace("links = true\n", "")
     );
     await Bun.write(path.join(main.root, "index.md"), "# Index\n\nText.\n");

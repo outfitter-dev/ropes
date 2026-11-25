@@ -13,7 +13,7 @@ import { FixReportSchema } from "../src/contracts/fix.ts";
 import { parsePlan } from "../src/contracts/parse.ts";
 import { FIXED, PASSED, fakeAdapter } from "./fake-adapter.ts";
 
-const KEPT = ".outfitter/configs/notes.toml";
+const KEPT = ".ropes/configs/notes.toml";
 const SHIPPED = "width = 80\n";
 
 const kept = managedAdapter({
@@ -40,7 +40,7 @@ let root = "";
 beforeEach(async () => {
   root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-doctor-")));
   await mkdir(path.join(root, ".git"));
-  await Bun.write(path.join(root, "cinch.toml"), "pilot = 0\n");
+  await Bun.write(path.join(root, "rope.toml"), "pilot = 0\n");
   await Bun.write(path.join(root, "a.md"), "TODO\n");
 });
 afterEach(async () => {
@@ -159,8 +159,8 @@ test("doctor refuses paths, and a kept file the config leaves out", async () => 
     exitCode: 2,
   });
   await Bun.write(
-    path.join(root, "cinch.toml"),
-    'pilot = 0\nexclude = [".outfitter/**"]\n'
+    path.join(root, "rope.toml"),
+    'pilot = 0\nexclude = [".ropes/**"]\n'
   );
   const response = await run("doctor", { fix: true });
   expect(response.exitCode).toBe(2);
@@ -170,7 +170,7 @@ test("doctor refuses paths, and a kept file the config leaves out", async () => 
 
 test("a preset that is switched off is no part of the setup", async () => {
   await Bun.write(
-    path.join(root, "cinch.toml"),
+    path.join(root, "rope.toml"),
     "pilot = 0\n\n[markdown]\npreset = false\n"
   );
   expect(await exit("doctor")).toBe(0);
@@ -178,8 +178,8 @@ test("a preset that is switched off is no part of the setup", async () => {
   expect(await exists(KEPT)).toBe(false);
   // Leaving the file out as well changes nothing: there is nothing to keep.
   await Bun.write(
-    path.join(root, "cinch.toml"),
-    'pilot = 0\nexclude = [".outfitter/**"]\n\n[markdown]\npreset = false\n'
+    path.join(root, "rope.toml"),
+    'pilot = 0\nexclude = [".ropes/**"]\n\n[markdown]\npreset = false\n'
   );
   expect(await exit("doctor")).toBe(0);
   expect(await exit("doctor", { fix: true })).toBe(0);
@@ -189,8 +189,8 @@ test("a preset that is switched off is no part of the setup", async () => {
 test("fix stops when the config leaves a kept file out", async () => {
   await Bun.write(path.join(root, KEPT), "width = 60\n");
   await Bun.write(
-    path.join(root, "cinch.toml"),
-    'pilot = 0\nexclude = [".outfitter/**"]\n'
+    path.join(root, "rope.toml"),
+    'pilot = 0\nexclude = [".ropes/**"]\n'
   );
   const response = await run("fix");
   expect(response.exitCode).toBe(2);
