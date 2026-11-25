@@ -41,24 +41,16 @@ export const OUTPUT_SCHEMAS: Readonly<Record<string, z.ZodType>> = {
   "rules list": RulesReportSchema,
 };
 
-const NAMES = Object.keys(OUTPUT_SCHEMAS).toSorted();
+const NAMES: readonly string[] = Object.keys(OUTPUT_SCHEMAS).toSorted();
+
+const outputSchema = (name: string) =>
+  Object.hasOwn(OUTPUT_SCHEMAS, name) ? OUTPUT_SCHEMAS[name] : undefined;
 
 /** The name that asks for the schema of the config file, not of an output. */
 export const CONFIG_NAME = "config";
 
-const ROPES_OUTPUTS: readonly string[] = [
-  "check",
-  "check migration",
-  "doctor",
-  "explain",
-  "explain migration",
-  "failure",
-  "fix",
-  "init",
-];
-
 export const listRopesSchemas = () => ({
-  commands: ROPES_OUTPUTS,
+  commands: NAMES,
   files: [CONFIG_NAME],
   schemaVersion: SCHEMA_VERSION,
 });
@@ -70,9 +62,7 @@ export const ropesSchema = (name: string) => {
   if (name === "init") {
     return z.toJSONSchema(FixReportSchema);
   }
-  const schema = ROPES_OUTPUTS.includes(name)
-    ? OUTPUT_SCHEMAS[name]
-    : undefined;
+  const schema = outputSchema(name);
   return schema === undefined ? undefined : z.toJSONSchema(schema);
 };
 
@@ -113,9 +103,7 @@ export const schema: Command = (request) => {
       output: print(configJsonSchema()),
     });
   }
-  const found = Object.hasOwn(OUTPUT_SCHEMAS, name)
-    ? OUTPUT_SCHEMAS[name]
-    : undefined;
+  const found = outputSchema(name);
   if (!found) {
     return Promise.resolve({
       error: `cinch: no schema for "${name}". Run \`cinch schema\` for the names.`,
