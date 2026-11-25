@@ -1,0 +1,86 @@
+{
+  "README.md": {
+    "lines": [
+      "Run `rope migrate` for manual guidance when converting retired Cinch policy and generated files. The [migration guide](docs/config-migration.md) covers the file changes, verification, and recovery.",
+      "Ropes reads `rope.toml`. It searches the current directory and its parents up to the checkout boundary, and the nearest policy sets the root. A linked Git worktree or jj workspace is its own checkout. With no policy, documented defaults apply. A policy file must state `pilot = 0`, and a missing or unknown marker stops the run. The format remains provisional. Retired `cinch.toml`, `[cinch]` tables, and `.outfitter/configs/` stop repository operations with exit 2 and manual migration guidance."
+    ],
+    "reason": "Manual migration guidance and the policy refusal contract."
+  },
+  "docs/binary.md": {
+    "lines": [
+      "The Markdown preset formats JavaScript and TypeScript fenced blocks by calling `bun`. The binary has Bun's runtime inside it, so it stands in: it keeps a small `bun` command in the user's cache folder (`$XDG_CACHE_HOME/ropes/stand-in/`, or `~/.cache/ropes/stand-in/`) that starts the binary as Bun, and puts that folder last on the `PATH` the engines get. A `bun` the machine already has is found first. New runs use the `ropes` directory. After switching to Ropes, you can delete the old `cinch/stand-in` cache directory. An empty, relative or checkout-local XDG cache falls back to the home cache. Ropes checks the helper directory against the outermost enclosing checkout, resolving aliases before writing, and uses it only when it is outside the checkout. If it cannot create a helper and the engine needs Bun, the check reports the affected file as incomplete. A test formats `ts` and `js` blocks with no Bun in reach and compares the result with the package's.",
+      "- The historical Cinch build started in about 60 ms for `cinch --version`."
+    ],
+    "reason": "Retired stand-in cache migration and the historical startup measurement."
+  },
+  "docs/cleanup.md": {
+    "lines": [
+      "The command scans intervening commits too, so removing an occurrence retires its allowance along that lineage. A later reintroduction remains blocking even when another commit carries it forward. It rejects repeated diagnostics that cannot have the pilot's one-occurrence identity. Every comparison freezes all root and nested `rope.toml`, `cinch.toml`, `outfitter.toml`, `mise.toml`, `sgconfig.yml`, `sgconfig.yaml`, `package.json` and `bun.lock` files at the approved revision. Every scanned revision, including the accepted anchor, must use supported policy and managed paths. Migrating only the current checkout does not repair an older anchor. After a configuration cutover, select a new accepted anchor at a supported revision and obtain approval for a new migration policy before comparing subsequent commits. A changed context, unknown rule digest, missing engine, unsupported snapshot or incomplete scope exits 2. A new or reintroduced occurrence exits 1. A fully evaluated compliant change exits 0."
+    ],
+    "reason": "Historical policy files remain part of migration evidence fingerprints."
+  },
+  "docs/config-migration.md": {
+    "lines": [
+      "Ropes reads repository policy from `rope.toml` and generates setup files under `.ropes/configs/`. Repository commands exit 2 when they find `cinch.toml`, a `[cinch]` table in `outfitter.toml`, or `.outfitter/configs/`. Run `rope migrate` for a short message with the manual steps. It exits 2 and writes no files. `--json` returns the same guidance in the v4 error envelope.",
+      "1. Preserve the working policy and tool pointers in a revision you can recover. Move settings from `cinch.toml` to `rope.toml`. For `outfitter.toml`, move only the `[cinch]` settings and keep unrelated tables in the shared file."
+    ],
+    "reason": "Manual steps identify the retired policy inputs to move."
+  },
+  "docs/cutover.md": {
+    "lines": [
+      "The Markdown fragment marker is `<!-- ropes-disable-next-line code-block-parse -->`. A retired `cinch-` marker produces migration guidance. See [the Markdown standard](markdown-standard.md).",
+      "- Read `cinch.toml`, `[cinch]` in `outfitter.toml`, and existing `.outfitter/configs/` paths through the pilot. Review retirement after that pilot.",
+      "The [Cinch baseline](https://github.com/outfitter-dev/ropes/tree/64d311fd54a5dde1448047073abfca3a425ea057) has one private package at `packages/cinch`, historically named `@outfitter/cinch@0.0.0`. The repo is its own first consumer.",
+      "| Package and local commands | `packages/cinch/package.json`, root `package.json`, and `bun.lock` | Ropes. ROPE-78 proves the private `@ropes/core` and `@ropes/cli` packages and keeps the existing `cinch` repo gate. ROPE-26 checks the matched local tarballs. |",
+      "| Hooks and CI | `lefthook.yml` uses `bun run cinch fix {staged_files}` and `bun run check`. `.github/workflows/ci.yml` installs the lockfile, runs the gate, and smokes `bun run cinch --version`. | Ropes. Preserve the gate through the packaging and migration proofs. Coordinate any command switch with the route that exercises the new configuration. |",
+      "| Discovery and authoring | `packages/cinch/src/config/load.ts` reads `cinch.toml` or `[cinch]` in `outfitter.toml`. `commands/starter.ts` writes the initial config. `.taplo.toml` binds `cinch.toml` to `packages/cinch/schemas/cinch.schema.json`. | Ropes. ROPE-79 proves new and legacy policy equivalence, the conflict path, and a preview that leaves the checkout unchanged. |",
+      "| Standalone binary | `packages/cinch/scripts/build-binary.ts` builds `cinch`. Its Bun stand-in uses the user's `cinch/stand-in` cache directory. | Ropes. Binary distribution remains in ROPE-47. |",
+      "On November 20, 2026, a tracked-file search across the 17 mounted Outfitter sibling checkouts found no active Cinch or Ropes package caller outside Ropes. A hosted GitHub code search for `@outfitter/cinch`, `@ropes/core`, `@ropes/cli`, `cinch check`, `cinch fix`, and `cinch.toml` found no indexed consumer outside Ropes. Record a consumer's exact pin and owner when it appears. The searches do not cover private local scripts, unindexed branches, global installs, or registry consumers.",
+      "| Ropes repository and history | Use [outfitter-dev/ropes](https://github.com/outfitter-dev/ropes) for the Ropes and Cinch code, commits, and PR links. ROPE-83 owns the Ropes planning corrections. |"
+    ],
+    "reason": "Retired marker migration guidance, historical inventory and cutover decisions."
+  },
+  "docs/editor-settings.md": {
+    "lines": [
+      "- Generated ownership is recognized by a `# Generated by Ropes from` header identifying the `[editor]` table. The older `# Generated by Cinch` prefix also establishes ownership. `rope doctor --fix` may rewrite files bearing either recognized prefix. A file without one is treated as authored and is replaced only when it states exactly what `[editor]` states and holds nothing else, so nothing is lost. Otherwise the finding asks for its settings to be moved into `[editor]` and the file to be deleted, and names what the table cannot hold. After that `rope doctor --fix` writes the generated one."
+    ],
+    "reason": "Documents the exact older ownership marker accepted for safe regeneration."
+  },
+  "docs/markdown-standard.md": {
+    "lines": [
+      "A repository using the former Cinch configuration must complete the [manual cutover](config-migration.md) before running Ropes. The retired `cinch.toml` and `.outfitter/configs/` layout causes exit 2 and a diagnostic naming the replacement paths.",
+      "- A misspelled `ropes-` comment or a retired `cinch-` comment raises `ropes/unknown-disable` with the supported spelling. The original finding remains visible."
+    ],
+    "reason": "Migration notes identify retired policies and markers."
+  },
+  "docs/output.md": {
+    "lines": [
+      "`parsePlan` and `parseResult` reject older versions, including version 3 results with `cinch/` finding IDs. Rerun the command to produce current qualification evidence. The offline repair reader preserves version 3 and version 2 observations and their original IDs verbatim. New repair submissions require current results. Repair records and policy snapshots retain their own version 1 envelopes. Cleanup reports use envelope version 1 and require the current output version for nested plans and results. Rerun cleanup to replace an older report before qualification."
+    ],
+    "reason": "Explains how qualification and the offline reader handle old finding IDs."
+  },
+  "docs/presets.md": {
+    "lines": [
+      "Use `rope preset` to inspect preset files in a configured repository, or `rope preset list <name>` to inspect one preset. `rope preset add <name>` writes a selected active preset, and `rope preset update [name]` refreshes stale or missing files. Each operation accepts at most one preset name, and `add`, `adopt`, and `eject` require one. Add `--dry-run` to preview these writes. `rope preset adopt <name>` and `rope preset eject <name>` preview moving authored settings into `rope.toml` or back into the tool’s root config. Apply either move with `--yes`. A repository with no policy starts with `rope init`. Legacy Cinch policy and managed paths stop the run with exit 2. Complete the manual cutover before using these commands. See [the cutover guide](config-migration.md)."
+    ],
+    "reason": "Explains the exit code for a retired policy."
+  },
+  "docs/rollout.md": {
+    "lines": [
+      "The following inventory records the Cinch pilot before the Ropes cutover. Its command names, source paths, counts, implementation notes, and proposed order describe that trial. Use the current steps above when adopting Ropes.",
+      "This repository is the first pilot. It has run `cinch check` in its own gate since the first day the command worked, and the first run selected 8 Markdown files and found nothing. This page lists the other repositories, what each one needs before Cinch can replace its current Markdown checks, and the order to do them in.",
+      "On 2026-11-19 each repository was cloned into a temporary directory, `cinch init --yes` was run in the clone, and then `cinch check --json`. Nothing was changed in the repositories themselves. Read the numbers with three limits in mind:",
+      "- The old `ignores` lists were not applied. When the trial ran, `cinch init` did not yet write them into `cinch.toml`. It does now, so a rerun will give lower numbers. Counts for `trails` and `skillset` include changelogs and generated files that those repositories ignore today.",
+      "| Repository | Markdown files checked | Checks Markdown today with | Trial findings | Incomplete steps | Before Cinch can take over |",
+      "| `dispatch` (clone from September) | 157 | nothing | 319 (MD022 162, MD032 81, MD025 27) | 0 | A way to install Cinch in a Python repository, and a decision on whether `.agents/goals` and `.agents/plans` (255 of the findings) are checked at all. |",
+      "| `trails` | 596 | markdownlint-cli2 `--fix` in pre-commit | 1,285 (MD080 718, MD082 334, formatting of fenced TypeScript 163) | 44 | The old ignores carried into `cinch.toml` (changelogs account for most of MD080 and MD082), then a mechanical fix. |",
+      "### What the trial found about Cinch",
+      "These are gaps in Cinch, not in the repositories. Each one blocks part of the rollout.",
+      "1. **Ignores were not carried over.** Closed: `cinch init` now writes a markdownlint-cli2 config's `ignores` and `globs` into the `cinch.toml` it creates. The old rules are also merged into a `.rumdl.toml` that is already there. `cinch init --yes` removes the old config files when everything in them was carried over. `init` also lists what is left of the old linter and does not remove: its ignore file, packages, scripts, hooks and CI steps.",
+      "2. **A fenced block that is not valid code made the whole file incomplete.** Documentation often shows a fragment: one object literal, a line with `...` in it, SQL inside a block labelled `typescript`. The formatter cannot parse these. At the time of the trial the step was incomplete and the run exited 2, so the only way to get green was to relabel the fence. `trails` had 44 such files and `actions` had 3. Cinch now reports such a block as a finding under `code-block-parse` and checks the rest of the file (see [the Markdown standard](markdown-standard.md)), so the blocks can be found and fixed one by one. The incomplete counts in the table are from before that change: rerun on the same clones, `trails` has 112 such blocks in 44 files and `actions` has 18 in 3.",
+      "4. **Cinch only installs through Bun.** `dispatch` is a Python repository run with uv. It needs Cinch as a pinned tool it can get without a `package.json`, which is the install question in [FIT-32](https://linear.app/outfitter/issue/FIT-32).",
+      "7. **`dispatch`.** Whenever Cinch can be installed without Bun."
+    ],
+    "reason": "Dated rollout trial and historical commands."
+  }
+}
