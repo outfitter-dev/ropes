@@ -93,7 +93,7 @@ test("the runner's own settings are named, with the Cinch key for paths", async 
       "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `rope init` writes it as `exclude` in a new Cinch config. Add it by hand to one that is already there.",
     ],
     rules: RULES,
-    // The file choices are the Cinch config's to carry.
+    // The file choices are the Ropes config's to carry.
     settled: [
       "`globs` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `rope init` writes it as `include` in a new Cinch config. Add it by hand to one that is already there.",
       "`ignores` in .markdownlint-cli2.jsonc chooses files, which is the Cinch config's job. `rope init` writes it as `exclude` in a new Cinch config. Add it by hand to one that is already there.",

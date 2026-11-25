@@ -1,10 +1,10 @@
 import type { AdapterDescriptor } from "../adapters/adapter.ts";
-import type { CinchConfig } from "../contracts/config.ts";
+import type { RopesConfig } from "../contracts/config.ts";
 import { ENFORCEMENT_PREFIX } from "../contracts/enforcement.ts";
 
 /** A typo cannot silently leave the intended rule at its blocking default. */
 export const unknownEnforcement = (
-  config: CinchConfig,
+  config: RopesConfig,
   descriptors: readonly AdapterDescriptor[]
 ): string | undefined => {
   const known = new Set(

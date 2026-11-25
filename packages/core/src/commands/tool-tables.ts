@@ -1,5 +1,5 @@
 import type { Adapter } from "../adapters/adapter.ts";
-import type { CinchConfig } from "../contracts/config.ts";
+import type { RopesConfig } from "../contracts/config.ts";
 import type { Plan, PlannedPath } from "../contracts/plan.ts";
 
 /** Whether policy leaves the adapter behind `key` on for a file it keeps. */
@@ -11,13 +11,13 @@ const isOn = (entry: PlannedPath, key: string): boolean =>
 
 /**
  * Why a table under `tools` would be read by nothing, or null when each one
- * has a reader. A table Cinch quietly ignored would look like a setting that
+ * has a reader. A table Ropes quietly ignored would look like a setting that
  * took effect. A reader is on when policy leaves it on for any file it
  * keeps, so an override that switches a preset back on counts. `planOf`
  * resolves the plan for those files.
  */
 export const unreadTable = (
-  config: CinchConfig,
+  config: RopesConfig,
   adapters: readonly Adapter[],
   planOf: (paths: readonly string[]) => Plan
 ): string | null => {

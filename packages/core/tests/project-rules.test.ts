@@ -5,7 +5,7 @@ import path from "node:path";
 
 import { readProject } from "../src/adapters/ast-grep/project.ts";
 import { DEFAULT_CONFIG } from "../src/contracts/config.ts";
-import type { CinchConfig } from "../src/contracts/config.ts";
+import type { RopesConfig } from "../src/contracts/config.ts";
 import type { Provenance } from "../src/contracts/plan.ts";
 import { resolvePlan } from "../src/policy/resolve.ts";
 import { describeFake } from "./fake-adapter.ts";
@@ -34,7 +34,7 @@ rule:
 const CONFIG =
   'pilot = 0\ninclude = ["**/*.ts"]\n\n[rules]\nenabled = true\n\n[markdown]\nenabled = false\n\n[toml]\nenabled = false\n';
 
-const config: CinchConfig = {
+const config: RopesConfig = {
   ...DEFAULT_CONFIG,
   file: "rope.toml",
   include: { source: { kind: "default" }, value: ["**/*"] },

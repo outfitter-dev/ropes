@@ -9,7 +9,7 @@ export type VcsKind =
   /** A `.jj` directory: a jj workspace, colocated with git or not. */
   | "jj";
 
-/** Where Cinch anchors its config and its root-relative paths, and why. */
+/** Where Ropes anchors its config and its root-relative paths, and why. */
 export interface RepoRoot {
   /** The config file that set the root, root-relative. Null when none did. */
   readonly configFile: string | null;

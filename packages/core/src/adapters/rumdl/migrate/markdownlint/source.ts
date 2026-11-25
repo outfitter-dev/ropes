@@ -71,7 +71,7 @@ const runnerNote = (file: string, key: string): string => {
 
 /**
  * Settings whose note asks nothing more of the rules: git's ignore list is
- * already honored, and the file choices are the Cinch config's to carry.
+ * already honored, and the file choices are the Ropes config's to carry.
  */
 const SETTLED = new Set(["gitignore", ...Object.keys(CHOOSES)]);
 

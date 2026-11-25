@@ -1,7 +1,7 @@
 import type { Plan } from "../contracts/plan.ts";
 
 /**
- * The part of a plan that is the Cinch setup: the files Cinch keeps, and
+ * The part of a plan that is the Ropes setup: the files Ropes keeps, and
  * only the steps that keep them. `doctor` runs this, and `fix` checks it
  * before it writes anything. Comparing shared facts is no part of it.
  */

@@ -76,7 +76,7 @@ const choseFiles = (one: Inherited): boolean =>
 
 /**
  * Why file choices keep the old config in place. `written` is what went into
- * a new Cinch config. With a config already there, nothing was carried.
+ * a new Ropes config. With a config already there, nothing was carried.
  */
 export const choiceReasons = (
   found: readonly Inherited[],

@@ -99,7 +99,7 @@ const hookFiles = async (root: string): Promise<string[]> => {
 /**
  * What is left of the old Markdown linter outside its config files: its
  * ignore list, its packages and scripts, and the hooks and workflows that
- * still call it. Cinch names these and changes none of them.
+ * still call it. Ropes names these and changes none of them.
  */
 export const leftovers = async (root: string): Promise<string[]> => {
   const at = (name: string): Promise<string | null> =>

@@ -21,7 +21,7 @@ const ERROR = /^error: (?<text>.+)$/mu;
 const CONFIG = /^error: Cannot load the configuration file/mu;
 
 /**
- * The rule a block that does not parse is reported under. It is Cinch's own
+ * The rule a block that does not parse is reported under. It is Ropes's own
  * name: rumdl prints a warning for such a block and gives it no rule.
  */
 export const PARSE_RULE = "code-block-parse";

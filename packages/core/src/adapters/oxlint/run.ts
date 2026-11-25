@@ -10,7 +10,7 @@ const ID = "oxlint";
 
 /**
  * The executable a run starts: the repository's own install first, then the
- * one Cinch itself can see. The probe asks here too, so the version it
+ * one Ropes itself can see. The probe asks here too, so the version it
  * reports is the version of what runs.
  */
 export const locate = (command: string, root?: string): string | null =>

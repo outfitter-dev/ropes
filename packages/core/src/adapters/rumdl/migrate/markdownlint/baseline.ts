@@ -4,7 +4,7 @@ import type { Sections } from "./translate.ts";
 
 /**
  * What the new config inherits: the standard, with what the repository
- * states in the Cinch config over it. An old value is only left out of the
+ * states in the Ropes config over it. An old value is only left out of the
  * new config when this already says the same, so a setting the repository
  * changed is not taken for one the standard still provides.
  */

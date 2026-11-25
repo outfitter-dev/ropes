@@ -10,7 +10,7 @@ import type {
 import { eachFile } from "./batch.ts";
 import type { FileInput } from "./batch.ts";
 
-/** What a kept file should hold, or why Cinch will not decide that itself. */
+/** What a kept file should hold, or why Ropes will not decide that itself. */
 export type Wanted =
   | {
       readonly ok: true;
@@ -25,7 +25,7 @@ export type Wanted =
       readonly ok: false;
       readonly message: string;
       /**
-       * True when Cinch could not work out what the file should hold, which
+       * True when Ropes could not work out what the file should hold, which
        * leaves the step incomplete. Otherwise the file itself is the problem.
        */
       readonly unknown?: true;
@@ -79,10 +79,10 @@ const read = async (file: string): Promise<string | null> => {
 };
 
 /**
- * An adapter for files Cinch keeps in a repository, such as a shared config
- * preset. `check` reports a file that is missing or differs from what Cinch
+ * An adapter for files Ropes keeps in a repository, such as a shared config
+ * preset. `check` reports a file that is missing or differs from what Ropes
  * ships, and `fix` writes it. The runner calls `fix` only for `doctor --fix`,
- * because these files are the Cinch setup. The engine is Cinch itself, so
+ * because these files are the Ropes setup. The engine is Ropes itself, so
  * there is nothing to install.
  */
 export const managedAdapter = (options: ManagedOptions): Adapter => {

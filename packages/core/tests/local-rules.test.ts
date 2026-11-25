@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { parseConfigTable } from "../src/config/parse.ts";
-import type { CinchConfig } from "../src/contracts/config.ts";
+import type { RopesConfig } from "../src/contracts/config.ts";
 import { DEFAULT_CONFIG } from "../src/contracts/config.ts";
 import type { Provenance } from "../src/contracts/plan.ts";
 import { resolvePlan } from "../src/policy/resolve.ts";
@@ -52,7 +52,7 @@ test("the config names folders of local rules, and only ones inside the reposito
   }
 });
 
-const config: CinchConfig = {
+const config: RopesConfig = {
   ...DEFAULT_CONFIG,
   file: "rope.toml",
   include: { source: { kind: "default" }, value: ["**/*"] },

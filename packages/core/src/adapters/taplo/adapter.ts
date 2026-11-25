@@ -165,7 +165,7 @@ const check = async (
  * TOML lint through Taplo: whether a file parses, and whether it fits the
  * schema Taplo's own config gives it. Taplo runs from the repository root and
  * reads its config there. It only checks. Formatting TOML is the formatter's
- * job, so this adapter never writes. Cinch does not install Taplo: the binary
+ * job, so this adapter never writes. Ropes does not install Taplo: the binary
  * must be on `PATH` at the pinned version, or its steps are incomplete.
  */
 export const taploAdapter = (options: TaploOptions = {}): Adapter => {

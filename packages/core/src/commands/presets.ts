@@ -5,7 +5,7 @@ import type { RepoRoot } from "../contracts/root.ts";
 import { describeRootError } from "./errors.ts";
 import type { CommandDeps } from "./prepare.ts";
 
-/** A shared config Cinch ships, and the adapter that keeps its files. */
+/** A shared config Ropes ships, and the adapter that keeps its files. */
 export interface Preset {
   readonly name: string;
   readonly adapter: string;
@@ -65,7 +65,7 @@ export type Located =
     }
   | { readonly ok: false; readonly error: string };
 
-/** The root above `cwd`, and the presets this Cinch ships. */
+/** The root above `cwd`, and the presets this Ropes ships. */
 export const locate = async (
   cwd: string,
   deps: CommandDeps

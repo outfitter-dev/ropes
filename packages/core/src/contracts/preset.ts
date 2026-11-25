@@ -6,8 +6,8 @@ import type { RelocateReport } from "./relocate.ts";
 import type { ExitCode } from "./result.ts";
 
 /**
- * `current` matches what Cinch ships. `stale` differs and `missing` is not
- * there: `cinch preset update` writes both. `blocked` needs a person, and
+ * `current` matches what Ropes ships. `stale` differs and `missing` is not
+ * there: `rope preset update` writes both. `blocked` needs a person, and
  * `off` means the config switches the preset off. `unknown` could not be read.
  */
 export const PresetStateSchema = z.enum([
@@ -31,7 +31,7 @@ export const PresetFileSchema = z
   .readonly();
 export type PresetFile = z.infer<typeof PresetFileSchema>;
 
-/** Provisional and unstable. The shared configs Cinch keeps in a repository. */
+/** Provisional and unstable. The shared configs Ropes keeps in a repository. */
 export const PresetReportSchema = z
   .object({
     presets: z

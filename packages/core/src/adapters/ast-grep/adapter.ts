@@ -59,13 +59,13 @@ export interface RulesOptions {
 const CONFIG_KEY = "rules.local";
 
 /**
- * The rules Cinch ships, and the ones a repository names as its own, run
+ * The rules Ropes ships, and the ones a repository names as its own, run
  * through ast-grep: small structural checks that no linter has a rule for.
  * It also runs the rules in the folders a root `sgconfig.yml` names. It runs
  * once for the files of a check batch. Fix may apply eligible shipped rules
- * selected by the plan. Cinch does not install the engine: the
+ * selected by the plan. Ropes does not install the engine: the
  * binary must be on `PATH` at the pinned version, or its steps are
- * incomplete. It is off until the Cinch config asks for it.
+ * incomplete. It is off until the Ropes config asks for it.
  */
 export const rulesAdapter = (options: RulesOptions = {}): Adapter => {
   const command = options.command ?? ID;

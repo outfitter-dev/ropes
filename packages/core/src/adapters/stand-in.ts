@@ -8,7 +8,7 @@ import { STANDALONE } from "./shipped-text.ts";
  * The standalone executable has Bun's runtime inside it and no `bun` beside
  * it, and an engine may call `bun` by name. This is a `bun` that starts the
  * executable as Bun. It is kept in the user's cache folder, never in the
- * repository, under a name made from the executable's path, so two Cinch
+ * repository, under a name made from the executable's path, so two Ropes
  * binaries do not share one.
  */
 const script = (executable: string): string =>
@@ -101,7 +101,7 @@ export const configureStandIn = (outsideCheckout: OutsideCheckout): void => {
 
 /**
  * The search path an engine is started with. From the package it is the one
- * Cinch was given. From the standalone executable the stand-in's folder goes
+ * Ropes was given. From the standalone executable the stand-in's folder goes
  * last, so a `bun` the machine has is still the one found first.
  */
 export const enginePath = async (): Promise<string | undefined> => {

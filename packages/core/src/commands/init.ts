@@ -15,7 +15,7 @@ import { readBy, unadopted } from "./rules-adopt.ts";
 import { setupFiles } from "./setup.ts";
 import { inheritedBy, sparing, starterConfig } from "./starter.ts";
 
-/** Puts the config file first in a report about the files Cinch keeps. */
+/** Puts the config file first in a report about the files Ropes keeps. */
 const withConfig = (report: FixReport, config: string): FixReport => ({
   ...report,
   changed: [ROPES_FILE, ...report.changed],
@@ -26,7 +26,7 @@ const withConfig = (report: FixReport, config: string): FixReport => ({
  * Sets a repository up: a starting config when there is none, then every
  * preset that is switched on. The starting config takes the file choices of
  * a config an adapter replaces, except a choice that would leave out a file
- * Cinch keeps, and names the rule packs that apply here. Last, the config files of a tool an adapter replaces are
+ * Ropes keeps, and names the rule packs that apply here. Last, the config files of a tool an adapter replaces are
  * removed, when everything in them was carried over and the setup ended
  * clean. It only shows the change unless `yes` is set, and `dryRun` wins over
  * `yes`. A config that is already there is never rewritten.
@@ -58,7 +58,7 @@ export const init =
     }
     const { adapters, config, plan, present } = planned.value;
     const found = await inheritedBy(adapters, root);
-    // A table carried into the new config can make Cinch keep a file the
+    // A table carried into the new config can make Ropes keep a file the
     // setup did not have yet, and an old exclude must not leave that out.
     const kept = [...paths, ...found.flatMap((one) => one.keeps ?? [])];
     const carried =

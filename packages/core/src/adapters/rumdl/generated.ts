@@ -33,7 +33,7 @@ export const preset = async (): Promise<Wanted> => ({
 
 /**
  * The generated config: the line that extends the preset, then the
- * repository's table as it stands. Cinch does not read the table's keys,
+ * repository's table as it stands. Ropes does not read the table's keys,
  * with one exception: `extends` is the chain itself, so it cannot be set.
  */
 export const generated = (table: ToolTable = {}): Promise<Wanted> => {

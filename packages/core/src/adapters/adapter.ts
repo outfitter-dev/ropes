@@ -69,7 +69,7 @@ export interface PreviewInput {
 export interface Inherited {
   /** The root-relative file the choices came from. */
   readonly from: string;
-  /** Root-relative globs, in the form the Cinch config reads. */
+  /** Root-relative globs, in the form the Ropes config reads. */
   readonly include: readonly string[];
   readonly exclude: readonly string[];
   /** The file endings the replaced config covered, such as `.md`. */
@@ -77,11 +77,11 @@ export interface Inherited {
   /** One line for each choice that could not be carried over. */
   readonly notes: readonly string[];
   /**
-   * Whole lines for the Cinch config that state what the replaced config
+   * Whole lines for the Ropes config that state what the replaced config
    * stated, beyond its file choices. They go in as they are, after the rest.
    */
   readonly tables?: readonly string[];
-  /** Root-relative files Cinch keeps once `tables` are in its config. */
+  /** Root-relative files Ropes keeps once `tables` are in its config. */
   readonly keeps?: readonly string[];
 }
 
@@ -96,7 +96,7 @@ export interface Retired {
    * over. The old files stay unless each of them is part of the run.
    */
   readonly needs: readonly string[];
-  /** Other traces of the old tool, which Cinch reports and does not remove. */
+  /** Other traces of the old tool, which Ropes reports and does not remove. */
   readonly leftovers: readonly string[];
 }
 
@@ -109,7 +109,7 @@ export interface MigrationSource {
   /** A name for the source that is stable across releases. */
   readonly id: string;
   /**
-   * The file choices the source made, for a Cinch config that is about to be
+   * The file choices the source made, for a Ropes config that is about to be
    * written. Null when it made none.
    */
   readonly inherits?: (root: string) => Promise<Inherited | null>;
@@ -164,7 +164,7 @@ export interface Adapter {
   ) => Promise<FactReport>;
   /**
    * Moves the tool's settings between a config a person wrote for it and
-   * its table in the Cinch config. An adapter with no such table has none.
+   * its table in the Ropes config. An adapter with no such table has none.
    */
   readonly relocates?: Relocates;
   /**

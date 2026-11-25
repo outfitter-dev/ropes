@@ -37,7 +37,7 @@ const driftFinding = (adapter: string, fact: Fact, against: Fact): Finding => ({
 
 /**
  * One finding for each distinct source that differs from the first statement
- * of the same fact. The Cinch config's statement comes first when it makes
+ * of the same fact. The Ropes config's statement comes first when it makes
  * one, and otherwise the adapters are held to each other. It knows a fact
  * by its name only.
  */

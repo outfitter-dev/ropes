@@ -21,17 +21,17 @@ export interface ConfigOverride {
   readonly settings: readonly PolicyValue[];
 }
 
-/** Settings for one tool, in that tool's own words. Cinch does not read them. */
+/** Settings for one tool, in that tool's own words. Ropes does not read them. */
 export type ToolTable = Readonly<Record<string, unknown>>;
 
 /** The tables under `tools`, by the name of the tool each one is for. */
 export type ToolTables = Readonly<Record<string, ToolTable>>;
 
 /** What the loader hands to the resolver. Later overrides win. */
-export interface CinchConfig {
+export interface RopesConfig {
   /**
    * The facts about text files the config states. Absent when the file has
-   * no such table, and then Cinch writes them nowhere.
+   * no such table, and then Ropes writes them nowhere.
    */
   readonly editor?: EditorSettings;
   readonly install?: InstallSettings;
@@ -55,7 +55,7 @@ export interface CinchConfig {
   readonly settings: readonly PolicyValue[];
   /**
    * What the file states for each tool. An adapter copies its table into the
-   * config Cinch generates for that tool.
+   * config Ropes generates for that tool.
    */
   readonly tools: ToolTables;
 }
@@ -92,13 +92,13 @@ export type ConfigError =
   | { readonly kind: "conflict"; readonly files: readonly string[] };
 
 export type ConfigResult =
-  | { readonly ok: true; readonly value: CinchConfig }
+  | { readonly ok: true; readonly value: RopesConfig }
   | { readonly ok: false; readonly error: ConfigError };
 
 const DEFAULT: Provenance = { kind: "default" };
 
 /** What applies when a repository has no config file. */
-export const DEFAULT_CONFIG: CinchConfig = {
+export const DEFAULT_CONFIG: RopesConfig = {
   exclude: { source: DEFAULT, value: [] },
   file: null,
   include: { source: DEFAULT, value: ["**/*.md", "**/*.toml"] },

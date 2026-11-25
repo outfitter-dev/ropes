@@ -8,7 +8,7 @@ import type { RulePack } from "../../contracts/rules.ts";
 import type { AdapterDescriptor } from "../descriptor.ts";
 import { shippedFolder } from "../shipped-text.ts";
 
-/** Where this Cinch keeps the rules it ships, one folder for each pack. */
+/** Where this Ropes keeps the rules it ships, one folder for each pack. */
 const SHIPPED = new URL("../../../rules/", import.meta.url);
 const MANIFEST = "pack.toml";
 // An empty template is a deletion. The engine validates the rest of FixConfig.
@@ -81,7 +81,7 @@ export const readPacks = async (folder: URL) => {
 
 const shipped = await readPacks(SHIPPED);
 
-/** The packs this Cinch ships. A rule outside a pack is never run. */
+/** The packs this Ropes ships. A rule outside a pack is never run. */
 export const shippedPacks: readonly RulePack[] = shipped.packs;
 export const shippedDigests = Object.fromEntries(
   [...shipped.texts].map(([id, text]) => [
@@ -105,7 +105,7 @@ export const shippedScopes = Object.fromEntries(
 
 /**
  * The shipped rules with these ids, as one text the engine reads from its
- * command line. Nothing is copied into a repository, so a Cinch version is
+ * command line. Nothing is copied into a repository, so a Ropes version is
  * a rules version and no copy can go stale. Left out, it is every rule of
  * every pack.
  */

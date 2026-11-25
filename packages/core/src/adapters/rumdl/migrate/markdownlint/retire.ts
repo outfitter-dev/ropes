@@ -24,11 +24,11 @@ export interface Setup {
   readonly root: string;
   /** The engine's config in this repository, root-relative. */
   readonly config: string;
-  /** What that config extends once Cinch keeps it. */
+  /** What that config extends once Ropes keeps it. */
   readonly extended: string;
   /** The standard's own text. */
   readonly standard: string;
-  /** What the Cinch config states for the engine. */
+  /** What the Ropes config states for the engine. */
   readonly table?: ToolTable | undefined;
   readonly command?: string;
 }
@@ -77,7 +77,7 @@ const reasons = async (
 
 /**
  * The old Markdown linter's config files, and whether they can go. They can
- * when everything they say is in the config Cinch is about to write. What
+ * when everything they say is in the config Ropes is about to write. What
  * else still names the old linter is reported beside them. Null when the
  * repository has neither.
  */

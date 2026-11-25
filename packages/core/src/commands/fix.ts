@@ -20,7 +20,7 @@ import { CopyError, withCopy } from "./scratch.ts";
 import { setupLinkProblem } from "./setup-links.ts";
 import { prepareSetup } from "./setup.ts";
 
-/** `fix` writes the repository's files, and `doctor` the Cinch setup. */
+/** `fix` writes the repository's files, and `doctor` the Ropes setup. */
 export type WriteMode = "doctor" | "fix" | "init";
 
 /** The text of each file a step may write. Null when it cannot be read. */
@@ -162,7 +162,7 @@ const stopped = (command: "cinch" | "rope"): string => {
 };
 
 /**
- * The setup is checked before anything is written. A config Cinch keeps
+ * The setup is checked before anything is written. A config Ropes keeps
  * that is missing or behind would have an engine fix files by the wrong
  * rules, so `fix` stops and leaves the repair to `doctor --fix`.
  */
@@ -195,7 +195,7 @@ const brokenSetup = async (
 
 /**
  * Fix the repository's own files. This never writes a file
- * Cinch keeps: that is `cinch doctor --fix`.
+ * Ropes keeps: that is `rope doctor --fix`.
  */
 export const runFix = async (
   request: FixRequest,

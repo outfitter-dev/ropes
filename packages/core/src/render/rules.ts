@@ -66,7 +66,7 @@ export const localRulesBlock = (
     ...local.map(({ folder, source }) => `  ${folder}  (${origin(source)})`),
   ].join("\n");
 
-/** What `cinch rules` prints: every pack Cinch ships and how it stands here. */
+/** What `rope rules` prints: every pack Ropes ships and how it stands here. */
 export const renderRules = (
   report: RulesReport,
   config: { readonly file: string; readonly table: string },
@@ -87,7 +87,7 @@ export const renderRules = (
     ...report.notes,
   ].join("\n\n");
 
-/** What `cinch rules adopt` prints: the packs, the change, and what to know. */
+/** What `rope rules adopt` prints: the packs, the change, and what to know. */
 export const renderAdopt = (report: RulesAdoptReport): string => {
   const { adopted, changed, diff, notes, stopped, written } = report;
   if (stopped !== undefined) {

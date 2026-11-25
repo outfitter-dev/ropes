@@ -50,9 +50,9 @@ const OverrideSchema = z.strictObject({
 });
 
 /**
- * Provisional and unstable. The `[editor]` table of the Cinch config: the
+ * Provisional and unstable. The `[editor]` table of the Ropes config: the
  * facts about text files that several tools have to agree on. They are
- * stated once, and Cinch writes them where each tool reads them.
+ * stated once, and Ropes writes them where each tool reads them.
  */
 export const EditorSchema = z.strictObject({
   ...facts,

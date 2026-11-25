@@ -6,7 +6,7 @@ import { runnerIn } from "./source.ts";
 
 const Globs = z.array(z.string());
 
-/** Syntax the old linter's globs have and the Cinch config's do not. */
+/** Syntax the old linter's globs have and the Ropes config's do not. */
 const GROUP = /[@+?!*]\(/u;
 /** A pattern that can only name files: Markdown, or everything below. */
 const FILES_ONLY = /\.(?:md|mdx|mdc|markdown)$|\*\*$/iu;
@@ -31,7 +31,7 @@ const expressible = (pattern: string): boolean =>
 
 /**
  * The old linter reads a pattern that names a directory as everything under
- * it. A Cinch glob matches a whole path, so a pattern that may name a
+ * it. A Ropes glob matches a whole path, so a pattern that may name a
  * directory is written twice: once as it is, and once for what is under it.
  * A dot does not make a name a file (`docs/v1.0`), so only a Markdown
  * extension counts. The second line is harmless when the name is a file.
@@ -76,8 +76,8 @@ const same = (left: readonly string[], right: readonly string[]): boolean =>
 
 /**
  * The files the old Markdown linter was told to check and to leave alone, as
- * `include` and `exclude` globs for a new Cinch config. Null when its config
- * chooses none. An `include` equal to the Cinch default for Markdown is left
+ * `include` and `exclude` globs for a new Ropes config. Null when its config
+ * chooses none. An `include` equal to the Ropes default for Markdown is left
  * out.
  */
 export const chosenFiles = async (root: string): Promise<Inherited | null> => {

@@ -3,7 +3,7 @@ import path from "node:path";
 import type { ToolTable } from "../../../contracts/config.ts";
 import type { ConfigText, Relocation } from "../../relocation.ts";
 import { generated, preset } from "../generated.ts";
-import { CINCH_PATHS, CONFIG_PATH, RUMDL_TABLE, standard } from "../paths.ts";
+import { LEGACY_PATHS, CONFIG_PATH, RUMDL_TABLE, standard } from "../paths.ts";
 import type { MarkdownPaths } from "../paths.ts";
 import { isMarked, isPointer, pointerFor } from "../root-config.ts";
 import { blockOf } from "./block.ts";
@@ -18,7 +18,7 @@ const stop = (...reasons: readonly string[]): Relocation => ({
   reasons,
 });
 
-/** The names of the tables down to the engine's own, in the Cinch config. */
+/** The names of the tables down to the engine's own, in the Ropes config. */
 export const familyOf = (config: ConfigText): string[] => [
   ...config.prefix.split(".").filter((name) => name !== ""),
   "tools",
@@ -26,7 +26,7 @@ export const familyOf = (config: ConfigText): string[] => [
 ];
 
 /**
- * The settings as text for the Cinch config. The file's own lines are used
+ * The settings as text for the Ropes config. The file's own lines are used
  * when they parse to exactly the settings to carry, which keeps its
  * comments. Otherwise the settings are written out afresh.
  */
@@ -99,7 +99,7 @@ const stale = async (
 };
 
 /**
- * Moves what the root config states into the engine's table in the Cinch
+ * Moves what the root config states into the engine's table in the Ropes
  * config, and leaves the root config a pointer. The settings go down one
  * layer and the layers keep their order, so the engine resolves the same.
  */
@@ -107,7 +107,7 @@ export const adopt = async (
   root: string,
   config: ConfigText,
   table: ToolTable = {},
-  paths: MarkdownPaths = CINCH_PATHS
+  paths: MarkdownPaths = LEGACY_PATHS
 ): Promise<Relocation> => {
   const file = Bun.file(path.join(root, CONFIG_PATH));
   const current = (await file.exists()) ? await file.text() : null;

@@ -2,7 +2,7 @@ import path from "node:path";
 
 /**
  * A directory holding one of these is a package. The list is the manifests
- * of the ecosystems Cinch has engines for or expects to.
+ * of the ecosystems Ropes has engines for or expects to.
  */
 const MANIFESTS = ["package.json", "pyproject.toml", "Cargo.toml", "go.mod"];
 

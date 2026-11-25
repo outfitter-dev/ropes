@@ -28,7 +28,7 @@ const preset = (root: string, request: Partial<CommandRequest>) => {
 
 /**
  * A repository with these files and the Markdown preset's own in place. It
- * gets a standalone Cinch config unless the files hold the shared one.
+ * gets a standalone Ropes config unless the files hold the shared one.
  */
 export const repo = async (files: Readonly<Record<string, string>>) => {
   const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-mv-")));

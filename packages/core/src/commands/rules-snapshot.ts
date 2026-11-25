@@ -3,7 +3,7 @@ import path from "node:path";
 import type { ConfigText } from "../adapters/relocation.ts";
 import { parseConfigTable } from "../config/parse.ts";
 import { discoverRoot } from "../config/root.ts";
-import type { CinchConfig } from "../contracts/config.ts";
+import type { RopesConfig } from "../contracts/config.ts";
 import type { Operation, ReadRequest } from "./command.ts";
 import { describeRootError } from "./errors.ts";
 import { prepare } from "./prepare.ts";
@@ -16,7 +16,7 @@ interface PolicySnapshot extends ConfigText {
 
 export const matchesPolicySnapshot = (
   snapshot: ConfigText,
-  config: CinchConfig
+  config: RopesConfig
 ): boolean => {
   try {
     let table: unknown = Bun.TOML.parse(snapshot.text);

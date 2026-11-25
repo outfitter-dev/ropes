@@ -2,7 +2,7 @@ import { loadConfig } from "../config/load.ts";
 import { managedDirFor } from "../config/managed.ts";
 import { discoverRoot } from "../config/root.ts";
 import { DEFAULT_CONFIG } from "../contracts/config.ts";
-import type { CinchConfig } from "../contracts/config.ts";
+import type { RopesConfig } from "../contracts/config.ts";
 import { resolvePlan } from "../policy/resolve.ts";
 import { setupOf } from "../policy/setup.ts";
 import { describeRootError } from "./errors.ts";
@@ -14,7 +14,7 @@ import { settle } from "./settle.ts";
 import { setupLinkProblem } from "./setup-links.ts";
 
 /**
- * The files of the Cinch setup at `root`. An adapter that keeps files needs
+ * The files of the Ropes setup at `root`. An adapter that keeps files needs
  * no pinned tool, so the list does not depend on the repository's pins. It
  * does depend on the config, which can ask for a file to be kept. A config
  * that cannot be read is reported by the plan that follows.
@@ -22,7 +22,7 @@ import { setupLinkProblem } from "./setup-links.ts";
 export const setupFiles = async (
   deps: CommandDeps,
   root: string,
-  starter?: CinchConfig
+  starter?: RopesConfig
 ): Promise<string[]> => {
   const config = await loadConfig(root, starter);
   const stated = config.ok ? config.value : DEFAULT_CONFIG;
@@ -65,7 +65,7 @@ const excludedKept = ({ adapters, plan }: Prepared): string[] =>
   });
 
 /**
- * The plan of the Cinch setup at the root above `cwd`: every file Cinch
+ * The plan of the Ropes setup at the root above `cwd`: every file Ropes
  * keeps there, with only the steps that keep it. It is the same plan
  * `explain` shows for those files, less the steps of other adapters.
  *
@@ -77,7 +77,7 @@ const excludedKept = ({ adapters, plan }: Prepared): string[] =>
 export const prepareSetup = async (
   cwd: string,
   deps: CommandDeps,
-  options?: { readonly starter?: CinchConfig; readonly strict?: boolean }
+  options?: { readonly starter?: RopesConfig; readonly strict?: boolean }
 ): Promise<PrepareResult> => {
   const found = await discoverRoot(cwd);
   if (!found.ok) {

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import type { CinchConfig } from "../src/contracts/config.ts";
+import type { RopesConfig } from "../src/contracts/config.ts";
 import { DEFAULT_CONFIG } from "../src/contracts/config.ts";
 import { parsePlan } from "../src/contracts/parse.ts";
 import type { PolicyValue, Provenance } from "../src/contracts/plan.ts";
@@ -26,7 +26,7 @@ const enabled = (value: boolean, key: string): PolicyValue => ({
   value,
 });
 
-const config: CinchConfig = {
+const config: RopesConfig = {
   exclude: { source: file("exclude"), value: ["vendor/**"] },
   file: "rope.toml",
   include: { source: file("include"), value: ["**/*.md"] },

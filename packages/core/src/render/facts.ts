@@ -9,7 +9,7 @@ const reporterLine = (reporter: FactReporter): string =>
     : `    ${reporter.adapter}  reports ${reporter.reports.join(", ")}`;
 
 /**
- * What `check` compares besides the files: the facts the Cinch config
+ * What `check` compares besides the files: the facts the Ropes config
  * states, and the adapters asked what their tools resolve for them.
  */
 export const factsBlock = (shared: SharedFacts): string =>

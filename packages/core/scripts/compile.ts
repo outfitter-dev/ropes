@@ -6,7 +6,7 @@ import { Glob } from "bun";
 
 /**
  * Builds a CLI as one executable that needs no Bun where it runs. The
- * presets and the rules go in as text, since a Cinch version is a preset
+ * presets and the rules go in as text, since a Ropes version is a preset
  * version and a rules version.
  *
  *   bun run build:rope <outfile> [target]
@@ -61,8 +61,8 @@ export const buildBinary = async (entrypoint: string): Promise<void> => {
   const built = await Bun.build({
     compile: target === undefined ? { outfile } : { outfile, target },
     define: {
-      CINCH_SHIPPED: JSON.stringify(shipped),
-      CINCH_TAPLO_WORKER: JSON.stringify(embedTaplo),
+      ROPES_SHIPPED: JSON.stringify(shipped),
+      ROPES_TAPLO_WORKER: JSON.stringify(embedTaplo),
     },
     entrypoints: [entrypoint],
     // Bun can retain a dynamic import even when its worker is disabled.

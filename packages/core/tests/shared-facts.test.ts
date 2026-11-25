@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import type { Adapter } from "../src/adapters/adapter.ts";
 import { DEFAULT_CONFIG } from "../src/contracts/config.ts";
-import type { CinchConfig } from "../src/contracts/config.ts";
+import type { RopesConfig } from "../src/contracts/config.ts";
 import type { Fact, FactReport } from "../src/contracts/facts.ts";
 import { PlanSchema } from "../src/contracts/plan.ts";
 import {
@@ -17,7 +17,7 @@ import { driftOf } from "../src/runner/facts.ts";
 import { runPlan } from "../src/runner/run.ts";
 import { fakeAdapter } from "./fake-adapter.ts";
 
-const STATED: CinchConfig = {
+const STATED: RopesConfig = {
   ...DEFAULT_CONFIG,
   editor: { indent_size: 2, line_width: 100, overrides: [] },
   file: "rope.toml",

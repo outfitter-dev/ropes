@@ -30,7 +30,7 @@ export type ToolStatus = z.infer<typeof ToolStatusSchema>;
 
 /**
  * Provisional and unstable. What `doctor` found: the run of the steps that
- * keep the Cinch setup, the tools the workspace's plan needs, and, with
+ * keep the Ropes setup, the tools the workspace's plan needs, and, with
  * `--fix`, what was written.
  */
 export const DoctorReportSchema = FixReportSchema.unwrap()
