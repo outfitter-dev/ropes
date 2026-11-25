@@ -110,6 +110,14 @@ const pathBlock =
         ? []
         : [`  layer: ${planned.layer}, ${LAYER[planned.layer]}`]),
       `  package: ${planned.package === "." ? "the workspace" : planned.package}`,
+      ...(planned.delegated ?? []).map(
+        ({ tool, domains, source }) =>
+          `  delegated to ${tool}, not run by Ropes (${domains.join(", ")}; ${origin(source)})`
+      ),
+      ...(planned.protected ?? []).map(
+        ({ tool, source }) =>
+          `  authored config protected for ${tool} (${origin(source)})`
+      ),
       "  policy",
       ...planned.policy.map(policyLine),
       ...(planned.targets ?? []).map(targetLine),

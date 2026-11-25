@@ -97,3 +97,23 @@ test("Taplo and the loader enforce the same local rule folder boundary", async (
   expect(outside.code).toBe(1);
   expect(outside.said).toContain("does not match");
 });
+
+test("delegated config paths reject control characters and parent traversal in both validators", async () => {
+  if (Bun.which("taplo") === null) {
+    console.warn("skipped: taplo is not on PATH, so the schema was not tried");
+    return;
+  }
+  for (const file of [
+    "configs/tool.json",
+    "nested\n/../.editorconfig",
+    "nested\r/file.json",
+    "nested\t/file.json",
+  ]) {
+    const text = `pilot = 0\n[delegates.other]\npaths = ["src/**"]\nconfig = [${JSON.stringify(file)}]\n`;
+    const valid = file === "configs/tool.json";
+    expect(parseConfigTable(Bun.TOML.parse(text), ORIGIN).ok).toBe(valid);
+    // eslint-disable-next-line no-await-in-loop -- exercise each exact authored path against the native validator
+    const checked = await lint(text);
+    expect(checked.code).toBe(valid ? 0 : 1);
+  }
+});

@@ -38,7 +38,7 @@
     }
   ],
   "root": "/repo",
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "selection": {
     "kind": "paths",
     "paths": ["docs/guide.md"]

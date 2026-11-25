@@ -1,3 +1,4 @@
+import type { Domain } from "./delegation.ts";
 import type { EditorSettings } from "./editor.ts";
 import type { InstallSettings } from "./install.ts";
 import type { PolicyValue, Provenance } from "./plan.ts";
@@ -27,8 +28,22 @@ export type ToolTable = Readonly<Record<string, unknown>>;
 /** The tables under `tools`, by the name of the tool each one is for. */
 export type ToolTables = Readonly<Record<string, ToolTable>>;
 
+/** Work handed to an external tool, whose config files stay authored. */
+export interface Delegate {
+  readonly tool: string;
+  readonly domains?: readonly Domain[] | undefined;
+  readonly paths: readonly string[];
+  readonly config?: readonly string[] | undefined;
+  readonly source: {
+    readonly file: string;
+    readonly key: string;
+    readonly kind: "file";
+  };
+}
+
 /** What the loader hands to the resolver. Later overrides win. */
 export interface RopesConfig {
+  readonly delegates?: readonly Delegate[];
   /**
    * The facts about text files the config states. Absent when the file has
    * no such table, and then Ropes writes them nowhere.

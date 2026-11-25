@@ -117,9 +117,24 @@ export const observeFacts = async (
   const asked = await Promise.all(
     reporters.map(async (reporter) => {
       const adapter = await usable(reporter.adapter);
-      const paths = batches
-        .filter((batch) => batch.adapter === reporter.adapter)
-        .flatMap((batch) => batch.paths);
+      const paths = [
+        ...new Set([
+          ...(reporter.paths ?? []),
+          ...batches
+            .filter((batch) => batch.adapter === reporter.adapter)
+            .flatMap((batch) => batch.paths),
+        ]),
+      ];
+      if (adapter === undefined && reporter.paths !== undefined) {
+        return {
+          adapter: reporter.adapter,
+          facts: [],
+          limitations: [],
+          problem:
+            "the tool required to read these delegated settings is unavailable",
+          tool: reporter.tool,
+        };
+      }
       return adapter === undefined
         ? null
         : await ask(reporter, adapter, root, paths);
@@ -180,8 +195,18 @@ export const compareFacts = async (
       const { adapter, probe } = ready(id);
       const found = await probe;
       // Hold tools to the same version ranges as their file steps.
+      const reporter = plan.facts?.reporters.find(
+        (entry) => entry.adapter === id
+      );
       const unfit =
         found?.problem !== undefined ||
+        (reporter?.versionRange !== undefined &&
+          versionProblem(
+            reporter.tool,
+            found?.version,
+            reporter.versionRange,
+            reporter.tolerates
+          ) !== undefined) ||
         plan.batches.some(
           (batch) =>
             batch.adapter === id &&

@@ -7,6 +7,7 @@ import { loadConfig } from "../config/load.ts";
 import { managedDirFor } from "../config/managed.ts";
 import { discoverRoot, toRootRelative } from "../config/root.ts";
 import type { RopesConfig, ToolTables } from "../contracts/config.ts";
+import type { Protected } from "../contracts/delegation.ts";
 import type { EditorSettings } from "../contracts/editor.ts";
 import type { InstallSettings } from "../contracts/install.ts";
 import type { ManagedDir } from "../contracts/managed-config.ts";
@@ -17,14 +18,16 @@ import { unknownEnforcement } from "../policy/enforcement.ts";
 import { unknownOff, unknownPacks } from "../policy/packs.ts";
 import { resolvePlan } from "../policy/resolve.ts";
 import type { Operation, ReadRequest } from "./command.ts";
+import { validatePreparedDelegation } from "./delegates.ts";
 import { describeConfigError, describeRootError } from "./errors.ts";
 import { evaluationAt } from "./evaluation.ts";
 import { filesUnder } from "./files.ts";
 import { packagesAbove } from "./packages.ts";
+import { protectedPathsAt } from "./protected-config.ts";
 import { select } from "./select.ts";
 import { settle } from "./settle.ts";
 import { readTargets } from "./targets.ts";
-import { unreadTable } from "./tool-tables.ts";
+import { protectedTableProblem } from "./tool-tables.ts";
 
 /** What a command needs from outside. Tests pass adapters of their own. */
 export interface CommandDeps {
@@ -39,6 +42,7 @@ export interface CommandDeps {
 }
 
 export interface Prepared {
+  readonly protectedPaths?: ReadonlyMap<string, readonly Protected[]>;
   readonly adapters: readonly Adapter[];
   readonly config: RopesConfig;
   readonly plan: Plan;
@@ -160,6 +164,10 @@ export const prepare = async (
     ...named.filter((_, index) => there[index] === true),
     ...(everything ? walked : await filesUnder(root, "")),
   ];
+  const protectedPaths = await protectedPathsAt(root.root, config.value, [
+    ...all,
+    ...owned,
+  ]);
   const packages = await packagesAbove(root.root, all);
   const resolve = (
     paths: readonly string[],
@@ -174,11 +182,17 @@ export const prepare = async (
       packages,
       paths,
       present,
+      protectedPaths,
       root: root.root,
       selection,
       targets,
     });
-  const unread = unreadTable(config.value, adapters, resolve);
+  const unread = await protectedTableProblem(
+    root.root,
+    config.value,
+    adapters,
+    resolve
+  );
   if (unread !== null) {
     return { error: unread, ok: false };
   }
@@ -228,8 +242,12 @@ export const prepare = async (
           selectedPaths,
           await readTargets(root.root, [...targetRequests.values()])
         );
-  return {
-    ok: true,
-    value: { adapters, config: config.value, plan, present, root },
-  };
+  return await validatePreparedDelegation({
+    adapters,
+    config: config.value,
+    plan,
+    present,
+    protectedPaths,
+    root,
+  });
 };

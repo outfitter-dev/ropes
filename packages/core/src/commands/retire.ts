@@ -2,8 +2,10 @@ import { rm } from "node:fs/promises";
 import path from "node:path";
 
 import type { Adapter, Inherited } from "../adapters/adapter.ts";
+import type { RopesConfig } from "../contracts/config.ts";
 import type { Retired } from "../contracts/init.ts";
 import type { Plan } from "../contracts/plan.ts";
+import { protectedPathsAt } from "./protected-config.ts";
 
 /** What the adapters found, before anything was written. */
 export interface Old {
@@ -36,7 +38,8 @@ const planned = (plan: Plan): Map<string, Set<string>> => {
 export const oldConfigs = async (
   adapters: readonly Adapter[],
   plan: Plan,
-  root: string
+  root: string,
+  config?: RopesConfig
 ): Promise<Old> => {
   const paths = planned(plan);
   const asked = adapters.flatMap((adapter) =>
@@ -64,8 +67,25 @@ export const oldConfigs = async (
     })
   );
   const all = found.flatMap((one) => (one === null ? [] : [one]));
+  const physicalProtection =
+    config === undefined
+      ? undefined
+      : await protectedPathsAt(
+          root,
+          config,
+          all.flatMap((one) => one.files)
+        );
+  const protectedFiles = new Set([
+    ...(physicalProtection?.keys() ?? []),
+    ...plan.paths
+      .filter((entry) => entry.protected !== undefined)
+      .map((entry) => entry.path),
+    ...(config?.delegates ?? []).flatMap((delegate) => delegate.config ?? []),
+  ]);
   return {
-    files: [...new Set(all.flatMap((one) => one.files))],
+    files: [...new Set(all.flatMap((one) => one.files))].filter(
+      (file) => !protectedFiles.has(file)
+    ),
     leftovers: [...new Set(all.flatMap((one) => one.leftovers))],
     reasons: [...new Set(all.flatMap((one) => one.keep))],
   };

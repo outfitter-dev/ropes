@@ -38,7 +38,7 @@ const inputFor = (result: Result): RepairInput => ({
   tools: [],
 });
 
-test.each([2, 3, 4])(
+test.each([2, 3, 4, 5])(
   "the offline reader preserves version %i observations verbatim",
   async (version) => {
     const directory = await mkdtemp(path.join(tmpdir(), "ropes-archive-"));
@@ -103,27 +103,34 @@ test.each([2, 3, 4])(
   }
 );
 
-test("the offline reader rejects an archived result with a different plan version", () => {
-  const parsed = parseResult(resultFixture);
-  if (!parsed.ok) {
-    throw new Error(JSON.stringify(parsed.error));
+test.each([
+  [4, 3],
+  [5, 4],
+  [3, 5],
+])(
+  "the offline reader rejects archived result v%i with plan v%i",
+  (version, planVersion) => {
+    const parsed = parseResult(resultFixture);
+    if (!parsed.ok) {
+      throw new Error(JSON.stringify(parsed.error));
+    }
+    const current = parsed.value;
+    const archived = {
+      ...current,
+      plan: { ...current.plan, schemaVersion: planVersion },
+      schemaVersion: version,
+    };
+    const record = {
+      ...inputFor(current),
+      capturedAt: "2026-11-20T23:00:00.000Z",
+      evidence: "observed",
+      id: "0".repeat(64),
+      original: archived,
+      schemaVersion: 1,
+    };
+    expect(RepairRecordSchema.safeParse(record).success).toBe(false);
   }
-  const current = parsed.value;
-  const archived = {
-    ...current,
-    plan: { ...current.plan, schemaVersion: 3 },
-    schemaVersion: 4,
-  };
-  const record = {
-    ...inputFor(current),
-    capturedAt: "2026-11-20T23:00:00.000Z",
-    evidence: "observed",
-    id: "0".repeat(64),
-    original: archived,
-    schemaVersion: 1,
-  };
-  expect(RepairRecordSchema.safeParse(record).success).toBe(false);
-});
+);
 
 test("repair storage rejects aliases and the entire checkout before creating directories", async () => {
   const history = await realpath(

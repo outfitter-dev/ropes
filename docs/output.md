@@ -4,9 +4,9 @@ Run `rope schema` to list the available schemas. `rope schema explain`, `rope sc
 
 Commands print plain text for people or one structured document with `--json`. `policy snapshot` always prints its JSON artifact. Output can be piped without a terminal.
 
-The current shared output version is 5. Ropes-owned finding IDs are `ropes/managed-file`, `ropes/preset-dependency`, `ropes/fix-conflict`, `ropes/unused-disable`, and `ropes/unknown-disable`. Plans identify Ropes’ built-in setup steps with `tool: "ropes"`.
+The current shared output version is 6. Ropes-owned finding IDs are `ropes/managed-file`, `ropes/preset-dependency`, `ropes/fix-conflict`, `ropes/unused-disable`, and `ropes/unknown-disable`. Plans identify Ropes’ built-in setup steps with `tool: "ropes"`.
 
-`parsePlan` and `parseResult` reject older versions, including version 4 plans and results and version 3 results with `cinch/` finding IDs. Rerun the command to produce current qualification evidence. The offline repair reader preserves version 4, version 3 and version 2 observations and their original IDs verbatim. New repair submissions require current results. Repair records and policy snapshots retain their own version 1 envelopes. Cleanup reports use envelope version 1 and require the current output version for nested plans and results. Rerun cleanup to replace an older report before qualification.
+`parsePlan` and `parseResult` reject older versions, including version 5 and version 4 plans and results and version 3 results with `cinch/` finding IDs. Rerun the command to produce current qualification evidence. The offline repair reader preserves version 5, version 4, version 3 and version 2 observations and their original IDs verbatim. New repair submissions require current results. Repair records and policy snapshots retain their own version 1 envelopes. Cleanup reports use envelope version 1 and require the current output version for nested plans and results. Rerun cleanup to replace an older report before qualification.
 
 ## Text
 
@@ -31,7 +31,7 @@ A command that could not run at all prints nothing on stdout. Its reason goes to
 ```json
 {
   "error": { "message": "no-such-file.md does not exist." },
-  "schemaVersion": 5
+  "schemaVersion": 6
 }
 ```
 

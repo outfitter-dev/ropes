@@ -2,6 +2,56 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "delegates": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "config": {
+            "description": "Authored config files Ropes must never write or retire.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?![A-Za-z]:)(?!(?:[\\s\\S]*\\/)?\\.{1,2}(?:\\/|(?![\\s\\S])))[^\\\\/*?{}\\u005B\\u005D\\p{Cc}]+(?:\\/[^\\\\/*?{}\\u005B\\u005D\\p{Cc}]+)*$"
+            }
+          },
+          "domains": {
+            "description": "Delegated policy domains. Omit to delegate every domain.",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "markdown",
+                "toml",
+                "lint",
+                "format",
+                "typescript",
+                "rules",
+                "editor",
+                "install"
+              ]
+            }
+          },
+          "paths": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Root-relative globs for the work this tool owns."
+          }
+        },
+        "required": ["paths"],
+        "additionalProperties": false
+      }
+    },
     "editor": {
       "description": "Facts about text files that several tools must agree on. Ropes writes the root editor settings file from this table.",
       "type": "object",

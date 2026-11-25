@@ -28,9 +28,14 @@ export type Fact = z.infer<typeof FactSchema>;
 export const FactReporterSchema = z
   .object({
     adapter: z.string().min(1),
+    /** Selected delegated paths whose settings are compared without checking files. */
+    paths: z.array(z.string().min(1)).min(1).readonly().optional(),
     /** The facts it can report. Empty when it cannot report any. */
     reports: z.array(z.string().min(1)).readonly(),
+    tolerates: z.string().min(1).optional(),
     tool: z.string().min(1),
+    /** Declared engine support for a comparison with no file-check batch. */
+    versionRange: z.string().min(1).optional(),
   })
   .readonly();
 export type FactReporter = z.infer<typeof FactReporterSchema>;

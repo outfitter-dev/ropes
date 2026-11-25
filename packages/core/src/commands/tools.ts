@@ -1,5 +1,6 @@
 import type { Adapter } from "../adapters/adapter.ts";
 import type { Plan, PlanStep } from "../contracts/plan.ts";
+import { toStep } from "../policy/batches.ts";
 import type { ToolStatus } from "../render/plan.ts";
 import {
   probeAdapter,
@@ -21,6 +22,21 @@ export const toolStatuses = (
       if (step.incomplete === undefined) {
         steps.set(step.adapter, step);
       }
+    }
+  }
+  for (const reporter of plan.facts?.reporters ?? []) {
+    const descriptor = adapters.find(
+      (adapter) => adapter.descriptor.id === reporter.adapter
+    )?.descriptor;
+    if (descriptor !== undefined && reporter.paths !== undefined) {
+      const { tolerates: _registeredRange, ...step } = toStep(descriptor);
+      steps.set(descriptor.id, {
+        ...step,
+        ...(reporter.tolerates === undefined
+          ? {}
+          : { tolerates: reporter.tolerates }),
+        versionRange: reporter.versionRange ?? descriptor.versionRange,
+      });
     }
   }
   return Promise.all(

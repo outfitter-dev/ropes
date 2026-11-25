@@ -21,7 +21,7 @@
   },
   "docs/config-migration.md": {
     "lines": [
-      "Ropes reads repository policy from `rope.toml` and generates setup files under `.ropes/configs/`. Repository commands exit 2 when they find `cinch.toml`, a `[cinch]` table in `outfitter.toml`, or `.outfitter/configs/`. Run `rope migrate` for a short message with the manual steps. It exits 2 and writes no files. `--json` returns the same guidance in the v5 error envelope.",
+      "Ropes reads repository policy from `rope.toml` and generates setup files under `.ropes/configs/`. Repository commands exit 2 when they find `cinch.toml`, a `[cinch]` table in `outfitter.toml`, or `.outfitter/configs/`. Run `rope migrate` for a short message with the manual steps. It exits 2 and writes no files. `--json` returns the same guidance in the v6 error envelope.",
       "1. Preserve the working policy and tool pointers in a revision you can recover. Move settings from `cinch.toml` to `rope.toml`. For `outfitter.toml`, move only the `[cinch]` settings and keep unrelated tables in the shared file."
     ],
     "reason": "Manual steps identify the retired policy inputs to move."
@@ -55,7 +55,7 @@
   },
   "docs/output.md": {
     "lines": [
-      "`parsePlan` and `parseResult` reject older versions, including version 4 plans and results and version 3 results with `cinch/` finding IDs. Rerun the command to produce current qualification evidence. The offline repair reader preserves version 4, version 3 and version 2 observations and their original IDs verbatim. New repair submissions require current results. Repair records and policy snapshots retain their own version 1 envelopes. Cleanup reports use envelope version 1 and require the current output version for nested plans and results. Rerun cleanup to replace an older report before qualification."
+      "`parsePlan` and `parseResult` reject older versions, including version 5 and version 4 plans and results and version 3 results with `cinch/` finding IDs. Rerun the command to produce current qualification evidence. The offline repair reader preserves version 5, version 4, version 3 and version 2 observations and their original IDs verbatim. New repair submissions require current results. Repair records and policy snapshots retain their own version 1 envelopes. Cleanup reports use envelope version 1 and require the current output version for nested plans and results. Rerun cleanup to replace an older report before qualification."
     ],
     "reason": "Explains how qualification and the offline reader handle old finding IDs."
   },

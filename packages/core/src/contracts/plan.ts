@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { DelegatedSchema, ProtectedSchema } from "./delegation.ts";
 import { SharedFactsSchema } from "./facts.ts";
 import { PackageTargetSchema, TargetDecisionSchema } from "./targets.ts";
 
@@ -8,7 +9,7 @@ import { PackageTargetSchema, TargetDecisionSchema } from "./targets.ts";
  * and the finding together until the shapes are ratified. A consumer that
  * meets a version it does not know must stop, never guess.
  */
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 /** Where a policy value came from. */
 export const ProvenanceSchema = z.discriminatedUnion("kind", [
@@ -130,6 +131,8 @@ export type Layer = z.infer<typeof LayerSchema>;
 
 export const PlannedPathSchema = z
   .object({
+    /** Domains delegated to external owners. These have no Ropes verdict. */
+    delegated: z.array(DelegatedSchema).min(1).readonly().optional(),
     /** Present for a file that is one layer of a tool's config. */
     layer: LayerSchema.optional(),
     /** The package the file is checked with. `.` is the workspace itself. */
@@ -138,6 +141,8 @@ export const PlannedPathSchema = z
     path: z.string().min(1),
     /** The resolved policy for this path, each value with its origin. */
     policy: z.array(PolicyValueSchema).readonly(),
+    /** Exact authored config paths that every Ropes verb leaves alone. */
+    protected: z.array(ProtectedSchema).min(1).readonly().optional(),
     /** Present when the config leaves the path out. Then nothing runs. */
     skipped: SkippedSchema.optional(),
     /** In execution order. Empty means nothing applies to the path. */

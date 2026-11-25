@@ -69,7 +69,7 @@ The copy holds what git would let you commit: tracked files and untracked files 
 
 ## JSON
 
-`rope fix --json` prints one report. It is provisional and carries `schemaVersion: 5`.
+`rope fix --json` prints one report. It is provisional and carries `schemaVersion: 6`.
 
 | Field | Meaning |
 | --- | --- |

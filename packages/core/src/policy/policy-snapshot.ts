@@ -9,6 +9,7 @@ import type {
   PolicyRule,
   PolicySnapshot,
 } from "../contracts/policy-preview.ts";
+import { domainsOf } from "./delegates.ts";
 import { shippedStates } from "./packs.ts";
 import { ruleScope } from "./rule-scope.ts";
 
@@ -47,8 +48,29 @@ const enforcement = (
   };
 };
 
+const delegatedRule = (
+  base: Pick<PolicyRule, "adoption" | "rule">,
+  delegated: PlannedPath["delegated"],
+  descriptor: AdapterDescriptor
+): PolicyRule | undefined => {
+  const owners =
+    delegated?.filter(({ domains }) =>
+      domainsOf(descriptor).some((domain) => domains.includes(domain))
+    ) ?? [];
+  const [owner] = owners;
+  if (owner !== undefined) {
+    return {
+      ...base,
+      reason: `delegated to ${owners.map(({ tool }) => tool).join(", ")}, not run by Ropes`,
+      source: owner.source,
+      state: "exempt",
+    };
+  }
+  return undefined;
+};
+
 const decision = (
-  { path, policy, skipped, steps, targets }: PlannedPath,
+  { delegated, path, policy, skipped, steps, targets }: PlannedPath,
   pack: PackState,
   rule: PackState["rules"][number],
   descriptor: AdapterDescriptor
@@ -74,6 +96,10 @@ const decision = (
           : "the pack is not relevant to this repository",
       state: "inapplicable",
     };
+  }
+  const handoff = delegatedRule(base, delegated, descriptor);
+  if (handoff !== undefined) {
+    return handoff;
   }
   const enabled = policy.find(({ key }) => key === descriptor.enabledBy);
   if (enabled?.value === false) {

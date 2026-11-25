@@ -62,3 +62,13 @@ paths = ["packages/core/presets/tsconfig.json"]
 
 [overrides.rules]
 enabled = false
+
+# These checks run in check:workflows.
+[delegates.actionlint]
+paths = [".github/workflows/**"]
+
+[delegates.zizmor]
+paths = [".github/workflows/**"]
+
+[delegates.pinact]
+paths = [".github/workflows/**"]

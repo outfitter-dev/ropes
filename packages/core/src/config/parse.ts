@@ -12,6 +12,7 @@ import { ENFORCEMENT_PREFIX } from "../contracts/enforcement.ts";
 import type { EnforcementSetting } from "../contracts/enforcement.ts";
 import { InstallSchema } from "../contracts/install.ts";
 import type { PolicyValue, Provenance } from "../contracts/plan.ts";
+import { DelegatesSchema } from "./delegates.ts";
 import {
   Globs,
   OPT_IN,
@@ -37,6 +38,7 @@ const OverrideSchema = z.strictObject({
  * The loader and the published JSON Schema both come from this definition.
  */
 export const ConfigFileSchema = z.strictObject({
+  delegates: DelegatesSchema.optional(),
   editor: EditorSchema.optional().describe(
     "Facts about text files that several tools must agree on. Ropes writes the root editor settings file from this table."
   ),
@@ -176,6 +178,19 @@ const build = (
     }
   );
   return {
+    ...(table.delegates === undefined
+      ? {}
+      : {
+          delegates: Object.entries(table.delegates).map(([tool, scope]) => ({
+            ...scope,
+            source: {
+              file: origin.file,
+              key: `${origin.prefix}delegates.${tool}`,
+              kind: "file",
+            },
+            tool,
+          })),
+        }),
     ...(table.editor === undefined ? {} : { editor: table.editor }),
     ...(table.install === undefined ? {} : { install: table.install }),
     exclude: sourced(

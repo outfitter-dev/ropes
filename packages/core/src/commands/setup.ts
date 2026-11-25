@@ -45,7 +45,7 @@ export const setupFiles = async (
  * excludes while its adapter is on. A preset's files are judged with the
  * preset, which has a name a person can be told.
  */
-const excludedKept = ({ adapters, plan }: Prepared): string[] =>
+const excludedKept = ({ adapters, plan, protectedPaths }: Prepared): string[] =>
   adapters.flatMap(({ descriptor }) => {
     if (descriptor.setup !== true || descriptor.preset !== undefined) {
       return [];
@@ -56,7 +56,9 @@ const excludedKept = ({ adapters, plan }: Prepared): string[] =>
         (setting) =>
           setting.key === descriptor.enabledBy && setting.value === false
       );
-      return entry?.skipped?.reason === "excluded" && off !== true
+      return protectedPaths?.has(file) !== true &&
+        entry?.skipped?.reason === "excluded" &&
+        off !== true
         ? [
             `the Ropes config leaves ${file} out (${settingOf(entry.skipped)}), so Ropes cannot keep it. Take the file out of that setting, then run this again.`,
           ]
@@ -102,6 +104,9 @@ export const prepareSetup = async (
     ...(evaluation === undefined ? {} : { evaluation }),
     packages: [],
     paths,
+    ...(prepared.value.protectedPaths === undefined
+      ? {}
+      : { protectedPaths: prepared.value.protectedPaths }),
     root: found.value.root,
     selection: { kind: "workspace" },
   });
@@ -112,7 +117,11 @@ export const prepareSetup = async (
   const gaps = gapsOf(
     presetsOf(prepared.value.adapters),
     prepared.value.plan
-  ).filter((gap) => gap.why === "left-out");
+  ).filter(
+    (gap) =>
+      gap.why === "left-out" &&
+      prepared.value.protectedPaths?.has(gap.file) !== true
+  );
   const problems = [...gaps.map(describeGap), ...excludedKept(prepared.value)];
   if (problems.length > 0) {
     return { error: problems.join("\n"), ok: false };
