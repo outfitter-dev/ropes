@@ -87,7 +87,7 @@ export const choiceReasons = (
         .filter(choseFiles)
         .map(
           (one) =>
-            `The files ${one.from} chose were not carried over, because a Cinch config is already here. Add them to it by hand.`
+            `The files ${one.from} chose were not carried over, because a Ropes config is already here. Add them to it by hand.`
         )
     : written.flatMap((one) => one.notes.map((note) => `${one.from}: ${note}`));
 

@@ -123,9 +123,7 @@ export const adoptRules = async (
     (name) => !states.some((pack) => pack.name === name)
   );
   if (unknown !== undefined) {
-    return unusable(
-      `${requireConfig ? "Ropes" : "Cinch"} ships no rule pack named "${unknown}".`
-    );
+    return unusable(`Ropes ships no rule pack named "${unknown}".`);
   }
   const adds = chosen(states, request.paths);
   const stopped = adds.filter((pack) => pack.off !== undefined);
@@ -173,7 +171,7 @@ export const adoptRules = async (
   const beyond = await outside(root.root, [{ path: text.file }]);
   if (beyond !== undefined) {
     return unusable(
-      `${beyond} leads outside the repository, so ${requireConfig ? "Ropes" : "Cinch"} will not write it.`
+      `${beyond} leads outside the repository, so Ropes will not write it.`
     );
   }
   const target = path.join(root.root, text.file);
@@ -204,7 +202,7 @@ export const adopt = async (
 ): Promise<CommandResponse> => {
   const ran = await adoptRules(request, deps, false);
   if (!ran.ok) {
-    return { error: `cinch: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
+    return { error: `rope: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
   }
   return {
     exitCode:

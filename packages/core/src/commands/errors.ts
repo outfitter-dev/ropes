@@ -5,7 +5,7 @@ import type { RootError } from "../contracts/root.ts";
 export const describeConfigError = (error: ConfigError): string => {
   switch (error.kind) {
     case "legacy": {
-      return `${error.file} uses retired Cinch configuration. ${error.replacement} Guide: ${CONFIG_MIGRATION_GUIDE}`;
+      return `${error.file} uses retired policy configuration. ${error.replacement} Guide: ${CONFIG_MIGRATION_GUIDE}`;
     }
     case "unreadable": {
       return `${error.file} could not be read: ${error.message}`;

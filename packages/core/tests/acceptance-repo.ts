@@ -69,7 +69,7 @@ const spawn = async (
   searchPath?: string
 ): Promise<Ran> => {
   const userDirectory = await mkdtemp(
-    path.join(tmpdir(), "cinch-fixture-user-")
+    path.join(tmpdir(), "ropes-fixture-user-")
   );
   try {
     const child = Bun.spawn([...command], {
@@ -103,9 +103,9 @@ export const fixtureGit = async (
     [
       "git",
       "-c",
-      "user.name=cinch",
+      "user.name=ropes",
       "-c",
-      "user.email=cinch@example.invalid",
+      "user.email=ropes@example.invalid",
       "-c",
       "commit.gpgsign=false",
       ...args,
@@ -146,7 +146,7 @@ export interface Fixture {
 export const withFixture = async <T>(
   body: (fixture: Fixture) => Promise<T>
 ): Promise<T> => {
-  const base = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-acc-")));
+  const base = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-acc-")));
   const root = path.join(base, "repo");
   const emptyPath = path.join(base, "no-tools");
   try {

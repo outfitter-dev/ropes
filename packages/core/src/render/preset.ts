@@ -10,12 +10,10 @@ const NEEDS_UPDATE = new Set(["stale", "missing"]);
 /** Text for a person: each preset, its files and the state of each. */
 export const renderPresets = (
   report: PresetReport,
-  command: "cinch" | "rope" = "cinch"
+  command = "rope"
 ): string => {
   if (report.presets.length === 0) {
-    return command === "rope"
-      ? "This version of Ropes ships no presets."
-      : "This version of Cinch ships no presets.";
+    return "This version of Ropes ships no presets.";
   }
   const blocks = report.presets.map((preset) =>
     [preset.name, ...preset.files.map(line)].join("\n")

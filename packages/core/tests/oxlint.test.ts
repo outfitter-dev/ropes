@@ -37,7 +37,7 @@ const inRepo = async <T>(
   files: Readonly<Record<string, string>>,
   body: (root: string) => Promise<T>
 ): Promise<T> => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-oxlint-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-oxlint-"));
   try {
     await Promise.all(
       Object.entries({ ".oxlintrc.json": CONFIG, ...files }).map(
@@ -77,7 +77,7 @@ test("the adapter is off until asked for, writes, and follows a pin", () => {
 });
 
 test("a command that is nowhere is not available", async () => {
-  const probe = await oxlintAdapter({ command: "cinch-no-such-lint" }).probe();
+  const probe = await oxlintAdapter({ command: "ropes-no-such-lint" }).probe();
   expect(probe.available).toBe(false);
 });
 
@@ -137,7 +137,7 @@ withEngine("a file that does not parse is a finding, not a pass", async () => {
 test("a file that is not there yet is left to the adapter that keeps it", async () => {
   await inRepo({}, async (root) => {
     const outcome = await checkOne(
-      oxlintAdapter({ command: "cinch-no-such-lint" }),
+      oxlintAdapter({ command: "ropes-no-such-lint" }),
       { path: "kept.ts", root }
     );
     expect(outcome).toEqual({ findings: [], status: "passed" });
@@ -194,7 +194,7 @@ test("an exit code that is not 0 or 1, or a report that cannot be read, is incom
       })
     ).toMatchObject({
       reason:
-        "oxlint ran, but oxlint printed a report Cinch cannot read: Failed to parse config",
+        "oxlint ran, but oxlint printed a report Ropes cannot read: Failed to parse config",
       status: "incomplete",
     });
     const silent = await fake(
@@ -285,14 +285,14 @@ test("a fix checks again every file it could take, when another start could not 
   );
 });
 
-test("the probe asks the repository the run is for, before the place Cinch runs in", async () => {
+test("the probe asks the repository the run is for, before the place Ropes runs in", async () => {
   await inRepo({}, async (root) => {
     const bin = path.join(root, "node_modules", ".bin");
     await mkdir(bin, { recursive: true });
-    const command = path.join(bin, "cinch-only-here");
+    const command = path.join(bin, "ropes-only-here");
     await Bun.write(command, "#!/bin/sh\necho 'Version: 9.8.7'\n");
     await chmod(command, 0o755);
-    const adapter = oxlintAdapter({ command: "cinch-only-here" });
+    const adapter = oxlintAdapter({ command: "ropes-only-here" });
     const elsewhere = await adapter.probe();
     expect(elsewhere.available).toBe(false);
     expect(await adapter.probe(root)).toEqual({

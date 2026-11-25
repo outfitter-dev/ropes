@@ -43,7 +43,7 @@ test("on the real engine every rule passes its cases", async () => {
     );
     return;
   }
-  const dir = await mkdtemp(path.join(tmpdir(), "cinch-rule-cases-"));
+  const dir = await mkdtemp(path.join(tmpdir(), "ropes-rule-cases-"));
   try {
     // The engine reads every YAML file under a rules folder as a rule, so
     // the cases sit in a folder of their own and a config names both.

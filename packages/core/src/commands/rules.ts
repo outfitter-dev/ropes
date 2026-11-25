@@ -125,13 +125,13 @@ export const rules =
     }
     if (action !== "list") {
       return {
-        error: `cinch: unknown rules action "${action}". Use list or adopt.`,
+        error: `rope: unknown rules action "${action}". Use list or adopt.`,
         exitCode: EXIT_CODE.incomplete,
       };
     }
-    const ran = await listRules(request, deps, "cinch.toml");
+    const ran = await listRules(request, deps, "rope.toml");
     if (!ran.ok) {
-      return { error: `cinch: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
+      return { error: `rope: ${ran.error}`, exitCode: EXIT_CODE.incomplete };
     }
     const { report, config } = ran.value;
     return {

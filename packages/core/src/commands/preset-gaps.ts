@@ -52,14 +52,14 @@ export const settingOf = (skipped: Skipped | undefined): string =>
 /** What a person reads about a preset that is off. */
 const describeOff = (preset: Preset): string => {
   if (!preset.optIn) {
-    return `the ${preset.name} preset is switched off: the Cinch config sets \`${preset.enabledBy}\` to false. Remove that line, then run this again.`;
+    return `the ${preset.name} preset is switched off: the Ropes config sets \`${preset.enabledBy}\` to false. Remove that line, then run this again.`;
   }
   const [table, key] = preset.enabledBy.split(".");
-  return `the ${preset.name} preset is off until the Cinch config asks for it. Set \`${key} = true\` under \`[${table}]\`, then run this again.`;
+  return `the ${preset.name} preset is off until the Ropes config asks for it. Set \`${key} = true\` under \`[${table}]\`, then run this again.`;
 };
 
 /** What a person reads when a preset file cannot be kept. */
 export const describeGap = (gap: Gap): string =>
   gap.why === "off"
     ? describeOff(gap.preset)
-    : `the Cinch config leaves ${gap.file} out (${settingOf(gap.skipped)}), so the ${gap.preset.name} preset cannot be kept there. Take the file out of that setting, then run this again.`;
+    : `the Ropes config leaves ${gap.file} out (${settingOf(gap.skipped)}), so the ${gap.preset.name} preset cannot be kept there. Take the file out of that setting, then run this again.`;

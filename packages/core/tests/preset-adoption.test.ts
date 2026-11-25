@@ -16,7 +16,7 @@ const inRoot = async <T>(
   files: Readonly<Record<string, string>>,
   body: (root: string) => Promise<T>
 ): Promise<T> => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-adopt-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-adopt-"));
   try {
     await Promise.all(
       Object.entries(files).map(([name, text]) =>

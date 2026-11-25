@@ -98,7 +98,7 @@ export const readLocal = async (
       };
     }
     for (const id of ids) {
-      const taken = shipped.has(id) ? "a rule Cinch ships" : owner.get(id);
+      const taken = shipped.has(id) ? "a rule Ropes ships" : owner.get(id);
       if (taken !== undefined) {
         return {
           message: `${file}: the id ${id} is already used by ${taken}. Give the rule another id`,

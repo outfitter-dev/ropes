@@ -37,7 +37,7 @@ export const withRepo = async <T>(
   options: FakeOptions,
   body: (bench: Bench) => Promise<T>
 ): Promise<T> => {
-  const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-cmd-")));
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-cmd-")));
   try {
     await Promise.all(
       Object.entries(tree).map(([name, text]) =>

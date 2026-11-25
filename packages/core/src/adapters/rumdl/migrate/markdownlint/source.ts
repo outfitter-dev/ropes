@@ -62,10 +62,10 @@ const CHOOSES: Readonly<Record<string, string>> = {
 const runnerNote = (file: string, key: string): string => {
   const ours = CHOOSES[key];
   if (ours !== undefined) {
-    return `\`${key}\` in ${file} chooses files, which is the Cinch config's job. \`rope init\` writes it as \`${ours}\` in a new Cinch config. Add it by hand to one that is already there.`;
+    return `\`${key}\` in ${file} chooses files, which is the Ropes config's job. \`rope init\` writes it as \`${ours}\` in a new Ropes config. Add it by hand to one that is already there.`;
   }
   return key === "gitignore"
-    ? `\`gitignore\` in ${file} needs no line here: Cinch leaves out the files git ignores.`
+    ? `\`gitignore\` in ${file} needs no line here: Ropes leaves out the files git ignores.`
     : `\`${key}\` in ${file} is a markdownlint-cli2 setting with no equivalent here.`;
 };
 
@@ -87,7 +87,7 @@ const runnerNotes = (
 
 const unreadable = (file: string): Source => ({
   kind: "blocked",
-  message: `Cinch could not read the old Markdown rules in ${file}. Fix or remove that file, or write a .rumdl.toml by hand.`,
+  message: `Ropes could not read the old Markdown rules in ${file}. Fix or remove that file, or write a .rumdl.toml by hand.`,
 });
 
 const packageTable = async (root: string): Promise<unknown> => {
@@ -193,7 +193,7 @@ export const findSource = async (root: string): Promise<Source> => {
   if (script !== undefined) {
     return {
       kind: "blocked",
-      message: `${script} is a script, and Cinch does not run it to read the old Markdown rules. Write the rules this repository still wants into a new .rumdl.toml by hand.`,
+      message: `${script} is a script, and Ropes does not run it to read the old Markdown rules. Write the rules this repository still wants into a new .rumdl.toml by hand.`,
     };
   }
   const runner = await runnerOf(

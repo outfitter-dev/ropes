@@ -7,7 +7,7 @@ import { commands } from "../src/commands/registry.ts";
 import { RelocateReportSchema } from "../src/contracts/relocate.ts";
 import type { RelocateReport } from "../src/contracts/relocate.ts";
 
-export const CINCH = "rope.toml";
+export const POLICY = "rope.toml";
 export const SHARED = "outfitter.toml";
 export const ROOT = ".rumdl.toml";
 export const GENERATED = ".ropes/configs/rumdl.toml";
@@ -31,13 +31,13 @@ const preset = (root: string, request: Partial<CommandRequest>) => {
  * gets a standalone Ropes config unless the files hold the shared one.
  */
 export const repo = async (files: Readonly<Record<string, string>>) => {
-  const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-mv-")));
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-mv-")));
   roots.push(root);
   await mkdir(path.join(root, ".git"));
   await Promise.all(
-    Object.entries(SHARED in files ? files : { [CINCH]: CONFIG, ...files }).map(
-      ([name, text]) => Bun.write(path.join(root, name), text)
-    )
+    Object.entries(
+      SHARED in files ? files : { [POLICY]: CONFIG, ...files }
+    ).map(([name, text]) => Bun.write(path.join(root, name), text))
   );
   await preset(root, { action: "add" });
   return root;

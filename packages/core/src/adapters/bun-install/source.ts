@@ -1,7 +1,7 @@
 import path from "node:path";
 
 import type { MigrationSource } from "../adapter.ts";
-import { BUNFIG, MARK, readInstall, tableOf } from "./read.ts";
+import { BUNFIG, isMarked, readInstall, tableOf } from "./read.ts";
 
 /** A first config inherits only an installer file it can represent completely. */
 export const installSource: MigrationSource = {
@@ -12,7 +12,7 @@ export const installSource: MigrationSource = {
       return null;
     }
     const text = await file.text();
-    if (text.startsWith(MARK)) {
+    if (isMarked(text)) {
       return null;
     }
     try {

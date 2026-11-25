@@ -15,7 +15,7 @@ const withTree = async <T>(
   run: (base: string) => Promise<T>
 ): Promise<T> => {
   const base = await realpath(
-    await mkdtemp(path.join(tmpdir(), "cinch-root-"))
+    await mkdtemp(path.join(tmpdir(), "ropes-root-"))
   );
   try {
     await Promise.all(
@@ -210,9 +210,9 @@ test("a real linked worktree made by git resolves to itself", async () => {
     };
     const identity = [
       "-c",
-      "user.name=cinch",
+      "user.name=ropes",
       "-c",
-      "user.email=cinch@example.invalid",
+      "user.email=ropes@example.invalid",
     ];
     const steps = [
       ["init", "--quiet"],

@@ -60,7 +60,7 @@ const sort = (key: string, value: unknown, into: Sorted): void => {
       side.push(...withContents(pattern));
     } else {
       into.notes.push(
-        `${JSON.stringify(stated)} in \`${key}\` was not carried over, because a Cinch glob cannot say it.`
+        `${JSON.stringify(stated)} in \`${key}\` was not carried over, because a Ropes glob cannot say it.`
       );
     }
   }

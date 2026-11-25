@@ -129,17 +129,17 @@ export const prepare = async (
   }
   const [unknown] = unknownOff(config.value, descriptors);
   if (unknown !== undefined) {
-    const file = config.value.file ?? "the Cinch config";
+    const file = config.value.file ?? "the Ropes config";
     return {
-      error: `${file}: rules.off: Cinch ships no rule pack or rule named "${unknown}".`,
+      error: `${file}: rules.off: Ropes ships no rule pack or rule named "${unknown}".`,
       ok: false,
     };
   }
   const [missing] = unknownPacks(config.value, descriptors);
   if (missing !== undefined) {
-    const file = config.value.file ?? "the Cinch config";
+    const file = config.value.file ?? "the Ropes config";
     return {
-      error: `${file}: rules.packs: Cinch ships no rule pack named "${missing}".`,
+      error: `${file}: rules.packs: Ropes ships no rule pack named "${missing}".`,
       ok: false,
     };
   }

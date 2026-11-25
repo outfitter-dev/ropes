@@ -50,7 +50,7 @@ const packLines = (
 export const rulesBlock = (
   packs: readonly PackState[],
   enabled = true,
-  command = "cinch"
+  command = "rope"
 ): string =>
   [
     "Rule packs",
@@ -70,7 +70,7 @@ export const localRulesBlock = (
 export const renderRules = (
   report: RulesReport,
   config: { readonly file: string; readonly table: string },
-  command: "cinch" | "rope" = "cinch"
+  command = "rope"
 ): string =>
   [
     ...(report.enabled
@@ -79,7 +79,7 @@ export const renderRules = (
           `Rules are not switched on here, so none of these run. Set \`enabled = true\` under \`[${config.table}]\` in ${config.file} to run them.`,
         ]),
     report.packs.length === 0
-      ? `${command === "rope" ? "Ropes" : "Cinch"} ships no rule pack.`
+      ? `Ropes ships no rule pack.`
       : rulesBlock(report.packs, report.enabled, command),
     ...(report.localRules === undefined
       ? []

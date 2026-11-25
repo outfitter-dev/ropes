@@ -87,7 +87,7 @@ test("a pack runs only where the repository has a file it is about", () => {
   expect(parsePlan(structuredClone(plan)).ok).toBe(true);
 });
 
-test("a file Cinch keeps makes no pack relevant", () => {
+test("a file Ropes keeps makes no pack relevant", () => {
   const keeper = describeFake({ id: "keeper", owns: ["kept/tsconfig.json"] });
   const plan = resolvePlan({
     config: asked(),
@@ -132,7 +132,7 @@ test("a pack the config does not name does not run, and the plan says so", () =>
     "a.ts",
   ]);
   expect(plan.batches[0]?.rules).toEqual(["typescript/c"]);
-  expect(rulesBlock(plan.rules ?? [], true, "rope")).toContain(
+  expect(rulesBlock(plan.rules ?? [])).toContain(
     "config  not adopted, and tsconfig.json is here. Run `rope rules adopt config` to run it"
   );
 });
@@ -205,7 +205,7 @@ const explain = async (root: string, ...paths: readonly string[]) => {
 };
 
 test("explain names the shipped packs, and refuses a name nothing has", async () => {
-  const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-pk-")));
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-pk-")));
   try {
     const config = (off: string) =>
       Bun.write(
@@ -226,7 +226,7 @@ test("explain names the shipped packs, and refuses a name nothing has", async ()
     await config("config/nope");
     const refused = await explain(root);
     expect(refused.stderr).toContain(
-      'rope.toml: rules.off: Cinch ships no rule pack or rule named "config/nope".'
+      'rope.toml: rules.off: Ropes ships no rule pack or rule named "config/nope".'
     );
     expect(refused.exitCode).toBe(2);
   } finally {
@@ -235,7 +235,7 @@ test("explain names the shipped packs, and refuses a name nothing has", async ()
 });
 
 test("a named file git ignores still makes its pack relevant", async () => {
-  const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-pk-")));
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-pk-")));
   try {
     const made = Bun.spawnSync(["git", "init", "-q"], { cwd: root, env: ENV });
     expect(made.exitCode).toBe(0);

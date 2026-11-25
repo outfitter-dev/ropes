@@ -40,7 +40,7 @@ test("a selected path outside the root is an error", async () => {
 
 test("a checkout reached through a symlink still matches its physical root", async () => {
   const base = await realpath(
-    await mkdtemp(path.join(tmpdir(), "cinch-link-"))
+    await mkdtemp(path.join(tmpdir(), "ropes-link-"))
   );
   try {
     const repo = path.join(base, "repo");
@@ -66,7 +66,7 @@ test("a checkout reached through a symlink still matches its physical root", asy
 });
 
 test("a start directory that does not exist has no repository", async () => {
-  const from = path.join(tmpdir(), "cinch-missing", "nowhere");
+  const from = path.join(tmpdir(), "ropes-missing", "nowhere");
   expect(await discoverRoot(from)).toEqual({
     error: { from, kind: "no-repo" },
     ok: false,

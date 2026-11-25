@@ -33,7 +33,7 @@ const inRoot = async <T>(
   files: Readonly<Record<string, string>>,
   body: (root: string) => Promise<T>
 ): Promise<T> => {
-  const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-mig-")));
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-mig-")));
   try {
     await mkdir(path.join(root, ".git"));
     await Promise.all(
@@ -85,7 +85,7 @@ for (const [name, text] of FORMS) {
       expect(await written(root)).toBe(
         [
           EXTENDS,
-          `# Carried over from ${name} by Cinch.`,
+          `# Carried over from ${name} by Ropes.`,
           "# Only what differs from the Markdown standard is here.",
           "[MD007]",
           "indent = 4",
@@ -168,7 +168,7 @@ withEngine("init previews the migration and writes nothing", async () => {
     );
     expect(report.dryRun).toBe(true);
     expect(report.diff).toContain(
-      "+# Carried over from .markdownlint.json by Cinch."
+      "+# Carried over from .markdownlint.json by Ropes."
     );
     expect(report.diff).toContain("+indent = 4");
     expect(await Bun.file(path.join(root, CONFIG_PATH)).exists()).toBe(false);
@@ -253,13 +253,13 @@ withEngine(
 );
 
 test("without the engine the step is incomplete, and nothing is written", async () => {
-  const absent = rumdlPresetAdapter({ command: "cinch-test-no-such-rumdl" });
+  const absent = rumdlPresetAdapter({ command: "ropes-test-no-such-rumdl" });
   await inRoot({ ".markdownlint.json": JSON_RULES }, async (root) => {
     const outcome = await fixOne(absent, { path: CONFIG_PATH, root });
     expect(outcome.status).toBe("incomplete");
     expect(outcome.findings).toEqual([]);
     expect(outcome.status === "incomplete" ? outcome.reason : "").toContain(
-      "cinch-test-no-such-rumdl"
+      "ropes-test-no-such-rumdl"
     );
     expect(await Bun.file(path.join(root, CONFIG_PATH)).exists()).toBe(false);
   });

@@ -1,7 +1,7 @@
 import { afterAll, expect, test } from "bun:test";
 
 import {
-  CINCH,
+  POLICY,
   CONFIG,
   EXTENDS,
   ROOT,
@@ -56,11 +56,11 @@ test("the engine resolves the same before, after adopt and after eject", async (
 
   const adopted = await move(root, "adopt", { yes: true });
   expect(adopted.exitCode).toBe(0);
-  expect(await read(root, CINCH)).not.toBe(CONFIG);
+  expect(await read(root, POLICY)).not.toBe(CONFIG);
   expect(await resolved(root)).toBe(before);
 
   const ejected = await move(root, "eject", { yes: true });
   expect(ejected.exitCode).toBe(0);
-  expect(await read(root, CINCH)).toBe(CONFIG);
+  expect(await read(root, POLICY)).toBe(CONFIG);
   expect(await resolved(root)).toBe(before);
 });

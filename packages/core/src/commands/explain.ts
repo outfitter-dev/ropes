@@ -41,7 +41,7 @@ export const explain =
     const ran = await runExplain(request, deps, !request.json);
     if (!ran.ok) {
       return {
-        error: `cinch: ${ran.error}`,
+        error: `rope: ${ran.error}`,
         exitCode: EXIT_CODE.incomplete,
       };
     }

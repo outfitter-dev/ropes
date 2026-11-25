@@ -58,7 +58,7 @@ const commands = createCommands({
           path: KEPT,
           want: async (_current, dir) =>
             (await Bun.file(path.join(dir, "broken")).exists())
-              ? { message: "Cinch cannot keep this file.", ok: false }
+              ? { message: "Ropes cannot keep this file.", ok: false }
               : { ok: true, text: "width = 80\n" },
         },
         {
@@ -84,7 +84,7 @@ const init = async (request: Partial<CommandRequest> = {}) => {
 };
 
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-retire-")));
+  root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-retire-")));
   await mkdir(path.join(root, ".git"));
 });
 afterEach(async () => {
@@ -106,9 +106,9 @@ test("the preview names the old file and leaves it there", async () => {
   expect(await exists(OLD)).toBe(true);
   const shown = await commands.init?.({ cwd: root, json: false, paths: [] });
   expect(shown?.output).toContain(
-    `Old config files \`cinch init --yes\` will remove:\n  ${OLD}`
+    `Old config files scheduled for removal:\n  ${OLD}`
   );
-  expect(shown?.output).toEndWith("Run `cinch init --yes` to write this.");
+  expect(shown?.output).toEndWith("Dry run: nothing was written.");
 });
 
 test("--yes removes an old file that was carried over whole", async () => {
@@ -148,7 +148,7 @@ test("a reason from the adapter keeps the old file, and is given", async () => {
   expect(await exists(OLD)).toBe(true);
   const shown = await commands.init?.({ cwd: root, json: false, paths: [] });
   expect(shown?.output).toContain(
-    `Old config files left in place:\n  ${OLD}\n\nThey stay because:\n  ${HAND}\n\nStill here, and not removed by Cinch:\n  A hook still calls it.`
+    `Old config files left in place:\n  ${OLD}\n\nThey stay because:\n  ${HAND}\n\nStill here, and not removed by Ropes:\n  A hook still calls it.`
   );
 });
 
@@ -158,7 +158,7 @@ test("file choices a config that is already here did not get keep it", async () 
   const retired = await init({ yes: true });
   expect(retired.removed).toBe(false);
   expect(retired.reasons).toEqual([
-    `The files ${OLD} chose were not carried over, because a Cinch config is already here. Add them to it by hand.`,
+    `The files ${OLD} chose were not carried over, because a Ropes config is already here. Add them to it by hand.`,
   ]);
   expect(await exists(OLD)).toBe(true);
 });

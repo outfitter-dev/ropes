@@ -68,7 +68,7 @@ export const doctor = (request: DoctorRequest) => runDoctor(request, deps);
 export const check = (request: ReadRequest) => runCheck(request, deps);
 export const explain = (request: ReadRequest, probeTools = false) =>
   runExplain(request, deps, probeTools);
-export const fix = (request: FixRequest) => runFix(request, deps, "rope");
+export const fix = (request: FixRequest) => runFix(request, deps);
 export const init = (request: InitRequest) => runRopesInit(request, deps);
 export const previewMigration = (_cwd: string) =>
   Promise.resolve(manualMigration());

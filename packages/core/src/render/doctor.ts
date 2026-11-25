@@ -14,8 +14,8 @@ export const doctorOutcome = (report: DoctorReport): Outcome =>
     ? "incomplete"
     : outcomeOf([...report.result.steps, ...(report.settings?.steps ?? [])]);
 
-const verdict = (report: DoctorReport, command: "cinch" | "rope"): string => {
-  const product = command === "rope" ? "Ropes" : "Cinch";
+const verdict = (report: DoctorReport, command: string): string => {
+  const product = "Ropes";
   const repair = `\`${command} doctor --fix\``;
   const outcome = doctorOutcome(report);
   if (outcome === "clean") {
@@ -46,10 +46,7 @@ const written = (report: DoctorReport): string[] => {
     : [["Changed:", ...changed.map((path) => `  ${path}`)].join("\n")];
 };
 
-const packs = (
-  { notAdopted }: DoctorReport,
-  command: "cinch" | "rope"
-): string[] =>
+const packs = ({ notAdopted }: DoctorReport, command: string): string[] =>
   notAdopted.length === 0
     ? []
     : [
@@ -61,10 +58,7 @@ const packs = (
       ];
 
 /** Text for a person: what was written, what is still wrong, and the tools. */
-export const renderDoctor = (
-  report: DoctorReport,
-  command: "cinch" | "rope" = "cinch"
-): string =>
+export const renderDoctor = (report: DoctorReport, command = "rope"): string =>
   [
     ...written(report),
     ...pathBlocks(report.result),

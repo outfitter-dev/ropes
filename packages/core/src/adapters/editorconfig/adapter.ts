@@ -5,17 +5,17 @@ import type { Wanted } from "../managed.ts";
 import { EDITOR_PATH } from "./path.ts";
 import { readFile } from "./read.ts";
 import { editorRelocates } from "./relocate.ts";
-import { MARK, render } from "./render.ts";
+import { isMarked, render } from "./render.ts";
 import { handWritten } from "./source.ts";
 
 export { EDITOR_PATH } from "./path.ts";
 
 const STALE =
-  "This file differs from `[editor]` in the Cinch config. Make the change there, then run `rope doctor --fix`.";
-const BY_HAND = `This file was written by hand, and the Cinch config has an \`[editor]\` table that Cinch writes it from. Run \`rope preset adopt editor\` to see how the two differ, make the table state what you want and delete this file, then run \`rope doctor --fix\`.`;
+  "This file differs from `[editor]` in the Ropes config. Make the change there, then run `rope doctor --fix`.";
+const BY_HAND = `This file was written by hand, and the Ropes config has an \`[editor]\` table that Ropes writes it from. Run \`rope preset adopt editor\` to see how the two differ, make the table state what you want and delete this file, then run \`rope doctor --fix\`.`;
 
 const SAME =
-  "This file was written by hand and states what `[editor]` in the Cinch config states. Run `rope doctor --fix` to have Cinch write it from the table.";
+  "This file was written by hand and states what `[editor]` in the Ropes config states. Run `rope doctor --fix` to have Ropes write it from the table.";
 
 /** A file a person wrote: replaced only when nothing in it would be lost. */
 const byHand = (current: string, settings: EditorSettings): Wanted => {
@@ -41,7 +41,7 @@ const want = (current: string | null, settings: EditorSettings): Wanted => {
   if (current === null) {
     return { ok: true, text: render(settings) };
   }
-  return current.startsWith(MARK)
+  return isMarked(current)
     ? { ok: true, text: render(settings), why: STALE }
     : byHand(current, settings);
 };

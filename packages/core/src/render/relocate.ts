@@ -6,7 +6,7 @@ const files = (title: string, paths: readonly string[]): string =>
 /** Text for a person: the files, the change, and what to know about it. */
 export const renderRelocate = (
   report: RelocateReport,
-  command: "cinch" | "rope" = "cinch"
+  command = "rope"
 ): string => {
   const { action, changed, diff, notes, preset, stopped, written } = report;
   if (stopped !== undefined) {

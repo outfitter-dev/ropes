@@ -4,7 +4,7 @@ import { EditorSchema } from "../../contracts/editor.ts";
 import type { ConfigText, Relocates, Relocation } from "../relocation.ts";
 import { EDITOR_PATH } from "./path.ts";
 import { readFile } from "./read.ts";
-import { MARK, render } from "./render.ts";
+import { isMarked, render } from "./render.ts";
 import { tableOf } from "./source.ts";
 
 const stop = (...reasons: string[]): Relocation => ({ ok: false, reasons });
@@ -23,7 +23,7 @@ const stated = (config: ConfigText): unknown => {
   return at;
 };
 
-const WRITTEN = `Cinch now writes ${EDITOR_PATH} from the table. Change the table, then run \`rope doctor --fix\`.`;
+const WRITTEN = `Ropes now writes ${EDITOR_PATH} from the table. Change the table, then run \`rope doctor --fix\`.`;
 
 /**
  * Reads the file a person wrote into the `[editor]` table and hands back
@@ -37,7 +37,7 @@ const adopt = async (root: string, config: ConfigText): Promise<Relocation> => {
     return stop(`There is no ${EDITOR_PATH} here to adopt.`);
   }
   const text = await file.text();
-  if (text.startsWith(MARK)) {
+  if (isMarked(text)) {
     return { files: [], notes: [], ok: true };
   }
   const read = readFile(text);
@@ -84,8 +84,8 @@ const adopt = async (root: string, config: ConfigText): Promise<Relocation> => {
 const eject = (_root: string, config: ConfigText): Promise<Relocation> =>
   Promise.resolve(
     stop(
-      `Cinch writes ${EDITOR_PATH} only from \`[editor]\`, so there is nothing to move.`,
-      `To keep the file by hand, delete the \`[editor]\` table from ${config.file} and the first two lines of ${EDITOR_PATH}. Cinch then leaves the file alone.`
+      `Ropes writes ${EDITOR_PATH} only from \`[editor]\`, so there is nothing to move.`,
+      `To keep the file by hand, delete the \`[editor]\` table from ${config.file} and the first two lines of ${EDITOR_PATH}. Ropes then leaves the file alone.`
     )
   );
 

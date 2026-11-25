@@ -10,7 +10,7 @@ const inRoot = async <T>(
   files: Readonly<Record<string, string>>,
   body: (root: string) => Promise<T>
 ): Promise<T> => {
-  const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-lft-")));
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-lft-")));
   try {
     await Promise.all(
       Object.entries(files).map(async ([name, text]) => {
@@ -31,15 +31,15 @@ test("a repository that never used the old linter has none", async () => {
   expect(
     await found({
       "lefthook.yml":
-        "pre-commit:\n  commands:\n    lint:\n      run: cinch check\n",
-      "package.json": JSON.stringify({ scripts: { lint: "cinch check" } }),
+        "pre-commit:\n  commands:\n    lint:\n      run: rope check\n",
+      "package.json": JSON.stringify({ scripts: { lint: "rope check" } }),
     })
   ).toEqual([]);
 });
 
 test("the ignore list is named, with where its lines go", async () => {
   expect(await found({ ".markdownlintignore": "vendor/\n" })).toEqual([
-    ".markdownlintignore lists files the old linter skipped. Add the ones that still matter to `exclude` in the Cinch config, then delete it.",
+    ".markdownlintignore lists files the old linter skipped. Add the ones that still matter to `exclude` in the Ropes config, then delete it.",
   ]);
 });
 

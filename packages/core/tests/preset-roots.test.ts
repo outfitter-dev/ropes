@@ -18,7 +18,7 @@ const commands = createCommands({ adapters: adaptersFor });
 
 let root = "";
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-roots-")));
+  root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-roots-")));
   await mkdir(path.join(root, ".git"));
   await Bun.write(path.join(root, "rope.toml"), ON);
   await Bun.write(
@@ -94,7 +94,7 @@ test.each(["oxlint.config.ts", "oxfmt.config.ts"])(
     await put(file, own);
     const [finding = ""] = await about(file);
     expect(finding).toStartWith(`false: ${file} is the repository's own`);
-    expect(finding).toContain("It does not import the preset Cinch keeps.");
+    expect(finding).toContain("It does not import the preset Ropes keeps.");
     const fixed = await doctor({ fix: true });
     expect(fixed.exitCode).toBe(1);
     expect(await text(file)).toBe(own);
@@ -186,7 +186,7 @@ test("a bare preset path is a package specifier, not a relative extends", async 
   const own = JSON.stringify({ extends: TS_PRESET.slice(2) });
   await put("tsconfig.json", own);
   const [finding = ""] = await about("tsconfig.json");
-  expect(finding).toContain("not the preset Cinch keeps");
+  expect(finding).toContain("not the preset Ropes keeps");
   await doctor({ fix: true });
   expect(await text("tsconfig.json")).toBe(own);
 });
@@ -200,7 +200,7 @@ test("an existing extensionless config takes precedence over the preset", async 
   await put(".gitignore", `${exact.slice(2)}\nnode_modules\n`);
   await fixtureGit(root, "check-ignore", "--quiet", exact);
   const [finding = ""] = await about("tsconfig.json");
-  expect(finding).toContain("not the preset Cinch keeps");
+  expect(finding).toContain("not the preset Ropes keeps");
   const preview = await checkoutAt(root).rope([
     "doctor",
     "--fix",
@@ -212,7 +212,7 @@ test("an existing extensionless config takes precedence over the preset", async 
   const previewFinding = result.steps
     .flatMap((step) => step.findings)
     .find((item) => item.path === "tsconfig.json");
-  expect(previewFinding?.message).toContain("not the preset Cinch keeps");
+  expect(previewFinding?.message).toContain("not the preset Ropes keeps");
 });
 
 test("a tsconfig.json that extends something else is left for a person", async () => {

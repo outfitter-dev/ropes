@@ -43,7 +43,7 @@ export interface RopesConfig {
   readonly overrides: readonly ConfigOverride[];
   /**
    * What comes before a key of the config inside its file, when its tables
-   * are nested there: `cinch.` in the shared file. Absent when they are not.
+   * are nested there. Absent when they are not.
    */
   readonly prefix?: string;
   /** Root-relative folders of the repository's own rules. */

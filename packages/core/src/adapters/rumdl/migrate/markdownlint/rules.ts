@@ -45,7 +45,7 @@ const ask = async (
  * rules are written to a temporary one, whichever form they came in.
  */
 const imported = async (command: string, rules: Rules): Promise<unknown> => {
-  const dir = await mkdtemp(path.join(tmpdir(), "cinch-import-"));
+  const dir = await mkdtemp(path.join(tmpdir(), "ropes-import-"));
   try {
     const file = path.join(dir, ".markdownlint.json");
     // The engine never follows `extends`, and here it would point nowhere.
@@ -150,7 +150,7 @@ export const gathered = async (
   const standard = SectionsSchema.safeParse(Bun.TOML.parse(preset));
   if (!sections.success || !known.success || !standard.success) {
     return {
-      message: `Cinch needs ${command} on PATH to carry over the Markdown rules in ${source.file}, and it did not run. Install it and run this again.`,
+      message: `Ropes needs ${command} on PATH to carry over the Markdown rules in ${source.file}, and it did not run. Install it and run this again.`,
       ok: false,
       unknown: true,
     };

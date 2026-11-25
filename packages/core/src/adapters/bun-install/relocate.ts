@@ -2,7 +2,7 @@ import path from "node:path";
 
 import { InstallSchema } from "../../contracts/install.ts";
 import type { ConfigText, Relocates, Relocation } from "../relocation.ts";
-import { BUNFIG, MARK, readInstall, render, tableOf } from "./read.ts";
+import { BUNFIG, isMarked, readInstall, render, tableOf } from "./read.ts";
 
 const Table = InstallSchema.optional();
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -27,7 +27,7 @@ const adopt = async (root: string, config: ConfigText): Promise<Relocation> => {
     const settings = readInstall(text);
     const previous = Table.parse(stated(config));
     const generated = { path: BUNFIG, text: render(settings) };
-    if (text.startsWith(MARK) && text === generated.text) {
+    if (isMarked(text) && text === generated.text) {
       return { files: [], notes: [], ok: true };
     }
     if (previous !== undefined && render(previous) !== generated.text) {

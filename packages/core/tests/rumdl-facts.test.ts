@@ -75,7 +75,7 @@ const REPO = {
 };
 
 const drift = async (authored: string | null): Promise<string[]> => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-facts-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-facts-"));
   try {
     await Promise.all(
       Object.entries(REPO).map(([name, text]) =>

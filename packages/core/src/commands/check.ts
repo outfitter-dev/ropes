@@ -26,7 +26,7 @@ export const check =
     const ran = await runCheck(request, deps);
     if (!ran.ok) {
       return {
-        error: `cinch: ${ran.error}`,
+        error: `rope: ${ran.error}`,
         exitCode: EXIT_CODE.incomplete,
       };
     }

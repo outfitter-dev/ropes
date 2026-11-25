@@ -119,7 +119,7 @@ test("rope previews and adopts packs in the active policy without changing the i
     const legacy = await run("rules", "adopt", "config", "--yes", "--json");
     expect(legacy.exitCode).toBe(2);
     expect(legacy.stdout).toBe("");
-    expect(legacy.stderr).toContain("uses retired Cinch configuration");
+    expect(legacy.stderr).toContain("uses retired policy configuration");
     expect(await Bun.file(path.join(root, "cinch.toml")).text()).toBe(policy);
     expect(await Bun.file(path.join(root, "rope.toml")).exists()).toBe(false);
   } finally {

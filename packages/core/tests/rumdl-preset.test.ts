@@ -30,7 +30,7 @@ const inRepo = async <T>(
   text: string,
   body: (root: string, read: () => Promise<string>) => Promise<T>
 ): Promise<T> => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-preset-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-preset-"));
   try {
     await Bun.write(path.join(root, ".rumdl.toml"), CONFIG);
     await Bun.write(path.join(root, "a.md"), text);

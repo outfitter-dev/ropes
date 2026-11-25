@@ -38,7 +38,7 @@ const engine = (probe?: () => Promise<{ available: false; reason: string }>) =>
 
 let root = "";
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-doctor-")));
+  root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-doctor-")));
   await mkdir(path.join(root, ".git"));
   await Bun.write(path.join(root, "rope.toml"), "pilot = 0\n");
   await Bun.write(path.join(root, "a.md"), "TODO\n");
@@ -76,7 +76,7 @@ test("fix writes nothing while the setup is broken, and says who repairs it", as
     const report = FixReportSchema.parse(JSON.parse(response.output ?? ""));
     expect(response.exitCode).toBe(1);
     expect(report.changed).toEqual([]);
-    expect(report.stopped).toContain("cinch doctor --fix");
+    expect(report.stopped).toContain("rope doctor --fix");
     expect(report.result.steps.map((step) => step.path)).toEqual([KEPT]);
   }
   expect(await text("a.md")).toBe("TODO\n");
@@ -97,7 +97,7 @@ test("doctor reports the setup and writes nothing without --fix", async () => {
   expect(report.tools).toEqual([{ tool: "fake-tool", versionRange: "*" }]);
   expect(await exists(KEPT)).toBe(false);
   const plain = await run("doctor", { json: false });
-  expect(plain.output).toContain("Run `cinch doctor --fix`. Exit code 1.");
+  expect(plain.output).toContain("Run `rope doctor --fix`. Exit code 1.");
 });
 
 test("doctor --fix writes the setup and nothing of the repository's own", async () => {
@@ -155,7 +155,7 @@ test("a tool that cannot run leaves doctor incomplete", async () => {
 
 test("doctor refuses paths, and a kept file the config leaves out", async () => {
   expect(await run("doctor", { paths: ["a.md"] })).toMatchObject({
-    error: "cinch: doctor checks the whole setup, so it takes no paths.",
+    error: "rope: doctor checks the whole setup, so it takes no paths.",
     exitCode: 2,
   });
   await Bun.write(

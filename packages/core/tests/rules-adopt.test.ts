@@ -37,7 +37,7 @@ const packsOf = (text: string, packs: readonly string[], prefix = "") => {
 };
 
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-adopt-")));
+  root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-adopt-")));
   await mkdir(path.join(root, ".git"));
   await put("tsconfig.json", "{}\n");
 });
@@ -100,7 +100,7 @@ test("a name nothing has is refused, and a pack that is off is not adopted", asy
   await put("rope.toml", 'pilot = 0\n\n[rules]\noff = ["config"]\n');
   const unknown = await run({ paths: ["nope"] });
   expect(unknown.exitCode).toBe(2);
-  expect(unknown.error).toBe('cinch: Cinch ships no rule pack named "nope".');
+  expect(unknown.error).toBe('rope: Ropes ships no rule pack named "nope".');
   const none = await report();
   expect(none.adopted).toEqual([]);
   const off = await run({ paths: ["config"], yes: true });
@@ -183,7 +183,7 @@ test("an empty list without the switch gets the switch with its packs", () => {
 
 test("a config that leads out of the repository is not written", async () => {
   const elsewhere = await realpath(
-    await mkdtemp(path.join(tmpdir(), "cinch-out-"))
+    await mkdtemp(path.join(tmpdir(), "ropes-out-"))
   );
   try {
     const real = path.join(elsewhere, "rope.toml");
@@ -193,7 +193,7 @@ test("a config that leads out of the repository is not written", async () => {
     const response = await run({ yes: true });
     expect(response.exitCode).toBe(2);
     expect(response.error).toBe(
-      "cinch: rope.toml leads outside the repository, so Cinch will not write it."
+      "rope: rope.toml leads outside the repository, so Ropes will not write it."
     );
     expect(await Bun.file(real).text()).toBe(before);
   } finally {
@@ -211,7 +211,7 @@ test("a config with CRLF endings keeps them on every line", () => {
     'pilot = 0\r\n\r\n[rules]\r\nenabled = true\r\npacks = ["config"]\r\n'
   );
   expect(packsOf("pilot = 0\r\n\n[rules]\n", ["config"])).toStartWith(
-    "The file mixes line endings, so Cinch will not edit it."
+    "The file mixes line endings, so Ropes will not edit it."
   );
 });
 
@@ -250,7 +250,7 @@ test("the same note is given from a directory under the root", async () => {
   ]);
 });
 
-test("a file Cinch keeps does not stand in for the repository's own", async () => {
+test("a file Ropes keeps does not stand in for the repository's own", async () => {
   await put(
     "rope.toml",
     "pilot = 0\n\n[typescript]\npreset = true\n\n[rules]\nenabled = true\n"

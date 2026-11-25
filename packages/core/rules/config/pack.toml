@@ -1,4 +1,4 @@
 name = "config"
-about = "A config a tool reads builds on the one Cinch keeps for it."
+about = "A config a tool reads builds on the one Ropes keeps for it."
 relevant = ["**/tsconfig.json"]
 singleJsonDocument = ["tsconfig-extends"]

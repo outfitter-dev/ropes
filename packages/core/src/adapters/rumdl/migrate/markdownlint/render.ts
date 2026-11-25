@@ -26,7 +26,7 @@ export const render = (
   const parts = [
     differs
       ? `${comment([
-          `Carried over from ${file} by Cinch.`,
+          `Carried over from ${file} by Ropes.`,
           "Only what differs from the Markdown standard is here.",
         ])}${body(result.sections)}`
       : "",

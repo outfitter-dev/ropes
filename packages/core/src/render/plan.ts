@@ -83,8 +83,8 @@ const stepLine =
     ].join("\n");
 
 const LAYER = {
-  generated: "generated from the Cinch config, and extends the preset",
-  preset: "the preset this Cinch ships",
+  generated: "generated from the Ropes config, and extends the preset",
+  preset: "the preset this Ropes ships",
   root: "the config the tool reads first, which extends the generated one",
 } satisfies Record<NonNullable<PlannedPath["layer"]>, string>;
 

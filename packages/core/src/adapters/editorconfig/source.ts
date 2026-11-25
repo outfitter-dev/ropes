@@ -4,7 +4,7 @@ import type { EditorFacts } from "../../contracts/editor.ts";
 import type { Inherited, MigrationSource } from "../adapter.ts";
 import { EDITOR_PATH } from "./path.ts";
 import { readFile } from "./read.ts";
-import { MARK } from "./render.ts";
+import { isMarked } from "./render.ts";
 
 const pairs = (facts: EditorFacts): string[] =>
   Object.entries(facts).map(
@@ -16,7 +16,7 @@ export const tableOf = (text: string, prefix = ""): string[] => {
   const { dropped, settings } = readFile(text);
   const { overrides = [], ...base } = settings;
   return [
-    `# The facts ${EDITOR_PATH} stated, carried over by Cinch.`,
+    `# The facts ${EDITOR_PATH} stated, carried over by Ropes.`,
     ...dropped.map((one) => `# Not carried over: ${one}.`),
     `[${prefix}editor]`,
     ...pairs(base),
@@ -37,7 +37,7 @@ const inherits = async (root: string): Promise<Inherited | null> => {
   }
   const text = await file.text();
   // A generated file has a table already, in a config `init` cannot see.
-  return text.startsWith(MARK)
+  return isMarked(text)
     ? null
     : {
         exclude: [],

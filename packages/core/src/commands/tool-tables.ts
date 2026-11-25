@@ -21,7 +21,7 @@ export const unreadTable = (
   adapters: readonly Adapter[],
   planOf: (paths: readonly string[]) => Plan
 ): string | null => {
-  const file = config.file ?? "the Cinch config";
+  const file = config.file ?? "the Ropes config";
   const readers = adapters.flatMap(({ descriptor }) =>
     descriptor.table === undefined ? [] : [descriptor]
   );
@@ -29,7 +29,7 @@ export const unreadTable = (
     const reader = readers.find((descriptor) => descriptor.table === name);
     if (reader === undefined) {
       const known = readers.map((descriptor) => descriptor.table).join(", ");
-      return `${file}: tools.${name}: Cinch generates no config for "${name}". It does for: ${known || "none"}.`;
+      return `${file}: tools.${name}: Ropes generates no config for "${name}". It does for: ${known || "none"}.`;
     }
     const kept = planOf(reader.owns ?? []).paths;
     if (!kept.some((entry) => isOn(entry, reader.enabledBy))) {

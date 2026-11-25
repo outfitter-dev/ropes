@@ -17,7 +17,7 @@ export const factsBlock = (shared: SharedFacts): string =>
     "Shared facts",
     ...(shared.stated.length === 0
       ? [
-          "  the Cinch config states none, so tools are compared with each other",
+          "  the Ropes config states none, so tools are compared with each other",
         ]
       : ["  stated", ...shared.stated.map(statedLine)]),
     "  compared with",

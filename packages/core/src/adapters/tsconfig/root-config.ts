@@ -5,8 +5,8 @@ import { ROOT_PATH } from "./paths.ts";
 
 const KEY = "extends";
 
-const OWN = `${ROOT_PATH} is the repository's own, so Cinch will not rewrite it.`;
-const OFF = "set `preset = false` under `[typescript]` in the Cinch config";
+const OWN = `${ROOT_PATH} is the repository's own, so Ropes will not rewrite it.`;
+const OFF = "set `preset = false` under `[typescript]` in the Ropes config";
 
 /** The file as an object, or null when it is not one. Comments are allowed. */
 const parse = (text: string): Record<string, unknown> | null => {
@@ -86,7 +86,7 @@ const want = async (
   const parsed = parse(current);
   if (parsed === null) {
     return {
-      message: `${OWN} It could not be read, so Cinch cannot tell whether it extends ${preset}.`,
+      message: `${OWN} It could not be read, so Ropes cannot tell whether it extends ${preset}.`,
       ok: false,
     };
   }
@@ -103,7 +103,7 @@ const want = async (
   }
   if (named !== undefined) {
     return {
-      message: `${OWN} It extends ${JSON.stringify(named)}, not the preset Cinch keeps. Make \`${KEY}\` a list with \`"${target}"\` first, so what the repository extends today still wins, or ${OFF}.`,
+      message: `${OWN} It extends ${JSON.stringify(named)}, not the preset Ropes keeps. Make \`${KEY}\` a list with \`"${target}"\` first, so what the repository extends today still wins, or ${OFF}.`,
       ok: false,
     };
   }
@@ -113,7 +113,7 @@ const want = async (
     : {
         ok: true,
         text: added,
-        why: `${OWN} It does not extend the preset Cinch keeps. Add \`${line}\`, or run \`rope doctor --fix\`, which adds it and changes nothing else.`,
+        why: `${OWN} It does not extend the preset Ropes keeps. Add \`${line}\`, or run \`rope doctor --fix\`, which adds it and changes nothing else.`,
       };
 };
 

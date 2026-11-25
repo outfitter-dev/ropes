@@ -79,7 +79,7 @@ export const parseOutput = (
 ): ParsedRun => {
   const parsed = OutputSchema.safeParse(jsonIn(stdout));
   if (!parsed.success) {
-    return { message: `${ID} printed a report Cinch cannot read`, ok: false };
+    return { message: `${ID} printed a report Ropes cannot read`, ok: false };
   }
   const files = new Map<string, Finding[]>(
     context.paths.map((file) => [file, []])

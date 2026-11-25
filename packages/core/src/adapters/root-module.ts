@@ -34,7 +34,7 @@ const importsPreset = (text: string, options: ModuleRoot): boolean => {
 };
 
 const off = (options: ModuleRoot): string =>
-  `set \`preset = false\` under \`[${options.table}]\` in the Cinch config`;
+  `set \`preset = false\` under \`[${options.table}]\` in the Ropes config`;
 
 const fresh = async (root: string, options: ModuleRoot): Promise<Wanted> => {
   const found = await Promise.all(
@@ -44,7 +44,7 @@ const fresh = async (root: string, options: ModuleRoot): Promise<Wanted> => {
   return other === undefined
     ? { ok: true, text: options.fresh }
     : {
-        message: `This repository keeps its config in ${other}, which cannot build on the preset Cinch keeps, and Cinch will not write ${options.path} beside it. Move those settings into ${options.path}, or ${off(options)}.`,
+        message: `This repository keeps its config in ${other}, which cannot build on the preset Ropes keeps, and Ropes will not write ${options.path} beside it. Move those settings into ${options.path}, or ${off(options)}.`,
         ok: false,
       };
 };
@@ -62,20 +62,20 @@ export const moduleRoot = (options: ModuleRoot): ManagedFile => ({
     if (current === null) {
       return await fresh(root, options);
     }
-    const own = `${options.path} is the repository's own, so Cinch will not rewrite it.`;
+    const own = `${options.path} is the repository's own, so Ropes will not rewrite it.`;
     let imported = false;
     try {
       imported = importsPreset(current, options);
     } catch {
       return {
-        message: `${own} It is not valid TypeScript, so Cinch cannot tell whether it builds on the preset.`,
+        message: `${own} It is not valid TypeScript, so Ropes cannot tell whether it builds on the preset.`,
         ok: false,
       };
     }
     return imported
       ? { ok: true, text: current }
       : {
-          message: `${own} It does not import the preset Cinch keeps. Add \`import preset from "./${options.preset}";\` and ${options.use}, or ${off(options)}.`,
+          message: `${own} It does not import the preset Ropes keeps. Add \`import preset from "./${options.preset}";\` and ${options.use}, or ${off(options)}.`,
           ok: false,
         };
   },

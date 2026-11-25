@@ -58,7 +58,7 @@ const excludedKept = ({ adapters, plan }: Prepared): string[] =>
       );
       return entry?.skipped?.reason === "excluded" && off !== true
         ? [
-            `the Cinch config leaves ${file} out (${settingOf(entry.skipped)}), so Cinch cannot keep it. Take the file out of that setting, then run this again.`,
+            `the Ropes config leaves ${file} out (${settingOf(entry.skipped)}), so Ropes cannot keep it. Take the file out of that setting, then run this again.`,
           ]
         : [];
     });
@@ -115,7 +115,7 @@ export const prepareSetup = async (
   ).filter((gap) => gap.why === "left-out");
   const problems = [...gaps.map(describeGap), ...excludedKept(prepared.value)];
   if (problems.length > 0) {
-    return { error: problems.join("\ncinch: "), ok: false };
+    return { error: problems.join("\n"), ok: false };
   }
   return {
     ok: true,

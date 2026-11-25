@@ -157,7 +157,7 @@ test("on the real engine a fragment passes with the marker and fails without it"
     );
     return;
   }
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-marker-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-marker-"));
   try {
     await Bun.write(
       path.join(root, ".rumdl.toml"),

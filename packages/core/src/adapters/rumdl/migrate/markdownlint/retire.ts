@@ -52,7 +52,7 @@ const reasons = async (
   }
   if (found === setup.extended) {
     return [
-      `${setup.config} was set up before this run, so Cinch cannot tell what was carried over from ${files.join(", ")}. Remove what is no longer wanted by hand.`,
+      `${setup.config} was set up before this run, so Ropes cannot tell what was carried over from ${files.join(", ")}. Remove what is no longer wanted by hand.`,
     ];
   }
   const carried = await gathered(

@@ -38,7 +38,7 @@ const inRoot = async <T>(
   files: Readonly<Record<string, string>>,
   body: (root: string) => Promise<T>
 ): Promise<T> => {
-  const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-ret-")));
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-ret-")));
   try {
     await mkdir(path.join(root, ".git"));
     await Promise.all(
@@ -77,7 +77,7 @@ test("a config set up before this run keeps the old file", async () => {
     [OLD]: RULES,
   });
   expect(found?.keep).toEqual([
-    `${CONFIG_PATH} was set up before this run, so Cinch cannot tell what was carried over from ${OLD}. Remove what is no longer wanted by hand.`,
+    `${CONFIG_PATH} was set up before this run, so Ropes cannot tell what was carried over from ${OLD}. Remove what is no longer wanted by hand.`,
   ]);
 });
 

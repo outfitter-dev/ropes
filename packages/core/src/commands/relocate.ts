@@ -15,7 +15,6 @@ import { prepare } from "./prepare.ts";
 import type { CommandDeps } from "./prepare.ts";
 import { describeGap, gapsOf } from "./preset-gaps.ts";
 import type { PresetRequest } from "./preset-operation.ts";
-import { ropesPresetAdvice } from "./preset-options.ts";
 import type { Preset } from "./presets.ts";
 import { STARTER_CONFIG } from "./starter.ts";
 
@@ -67,12 +66,12 @@ const planned = async (
       (gap.why === "left-out" && gap.skipped?.reason === "excluded")
   );
   if (gaps.length > 0) {
-    return { error: gaps.map(describeGap).join("\ncinch: ") };
+    return { error: gaps.map(describeGap).join("\n") };
   }
   const relocates = keeper?.relocates;
   if (relocates === undefined) {
     return {
-      error: `the ${preset.name} preset has no table in the Cinch config, so there is nothing to ${action}.`,
+      error: `the ${preset.name} preset has no table in the Ropes config, so there is nothing to ${action}.`,
     };
   }
   const config = await configText(root);
@@ -111,7 +110,7 @@ export const outside = async (
 };
 
 const UNSETTLED =
-  "The Cinch setup is not clean after the move. Run `cinch doctor` to see why.";
+  "The Ropes setup is not clean after the move. Run `rope doctor` to see why.";
 
 const respond = (
   report: RelocateReport,
@@ -134,8 +133,7 @@ export const runRelocate = async (
   request: PresetRequest,
   deps: CommandDeps,
   root: string,
-  moving: Moving,
-  command: "cinch" | "rope" = "cinch"
+  moving: Moving
 ): Promise<
   Operation<{ readonly report: RelocateReport; readonly outcome: Outcome }>
 > => {
@@ -156,10 +154,7 @@ export const runRelocate = async (
         changed: [],
         diff: "",
         notes: [],
-        stopped:
-          command === "rope"
-            ? moved.reasons.map(ropesPresetAdvice)
-            : moved.reasons,
+        stopped: moved.reasons,
         written: false,
       },
       "findings"
@@ -168,7 +163,7 @@ export const runRelocate = async (
   const beyond = await outside(root, moved.files);
   if (beyond !== undefined) {
     return {
-      error: `${beyond} leads outside the repository, so Cinch will not write it.`,
+      error: `${beyond} leads outside the repository, so Ropes will not write it.`,
       ok: false,
     };
   }
@@ -197,12 +192,7 @@ export const runRelocate = async (
       ...base,
       changed: changes.map((file) => file.path),
       diff,
-      notes: clean
-        ? moved.notes
-        : [
-            ...moved.notes,
-            command === "rope" ? ropesPresetAdvice(UNSETTLED) : UNSETTLED,
-          ],
+      notes: clean ? moved.notes : [...moved.notes, UNSETTLED],
       written,
     },
     outcome

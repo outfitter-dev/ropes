@@ -17,9 +17,3 @@ export const presetOptionProblem = (
   }
   return undefined;
 };
-
-/** Preserve the legacy diagnostic while making the public recovery runnable. */
-export const ropesPresetAdvice = (text: string): string =>
-  text
-    .replaceAll("`cinch doctor --fix`", "`rope doctor --fix`")
-    .replaceAll("`cinch doctor`", "`rope doctor`");

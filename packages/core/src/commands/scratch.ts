@@ -168,7 +168,7 @@ export const withCopy = async <T>(
   body: (copy: string) => Promise<T>,
   inputs: readonly PreviewInput[] = []
 ): Promise<T> => {
-  const base = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-dry-")));
+  const base = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-dry-")));
   try {
     const copy = await nest(root.root, base);
     const files = [...new Set([...(await filesUnder(root, "")), ...also])];

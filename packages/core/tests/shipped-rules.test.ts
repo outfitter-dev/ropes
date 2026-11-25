@@ -35,7 +35,7 @@ test("the adapter is off until asked for, defaults to read-only, and follows the
 });
 
 test("a shipped folder is read where its path has a space in it", async () => {
-  const dir = await mkdtemp(path.join(tmpdir(), "cinch shipped "));
+  const dir = await mkdtemp(path.join(tmpdir(), "ropes shipped "));
   try {
     await Bun.write(path.join(dir, "pack", "rule.yml"), "id: pack/rule\n");
     const files = await shippedFolder(pathToFileURL(`${dir}/`));
@@ -97,13 +97,13 @@ test("output that is not the expected JSON is refused", () => {
 });
 
 test("a command that is not on PATH is not available, and its steps are incomplete", async () => {
-  const adapter = rulesAdapter({ command: "cinch-no-such-engine" });
+  const adapter = rulesAdapter({ command: "ropes-no-such-engine" });
   const probed = await adapter.probe();
   expect(probed.available).toBe(false);
   const outcome = await checkOne(adapter, { path: "tsconfig.json", root: "." });
   expect(outcome).toEqual({
     findings: [],
-    reason: "cinch-no-such-engine is not on PATH",
+    reason: "ropes-no-such-engine is not on PATH",
     status: "incomplete",
   });
 });
@@ -115,7 +115,7 @@ test("on the real engine a compiler config that builds on nothing is a finding",
     );
     return;
   }
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-rules-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-rules-"));
   try {
     const check = async (file: string, text: string) => {
       await Bun.write(path.join(root, file), text);

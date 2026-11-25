@@ -21,7 +21,7 @@ afterAll(() =>
 );
 
 const repo = async (files: Readonly<Record<string, string>>) => {
-  const root = await realpath(await mkdtemp(path.join(tmpdir(), "cinch-cf-")));
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), "ropes-cf-")));
   roots.push(root);
   await Promise.all(
     Object.entries(files).map(([name, text]) =>

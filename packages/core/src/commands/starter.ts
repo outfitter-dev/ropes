@@ -3,7 +3,7 @@ import { DEFAULT_CONFIG } from "../contracts/config.ts";
 import { compileGlob } from "../policy/glob.ts";
 
 const HEAD = [
-  "# Cinch config. This is the unstable pilot format and will change.",
+  "# Ropes config. This is the unstable pilot format and will change.",
   "pilot = 0",
   "",
 ];
@@ -57,7 +57,7 @@ const carried = (
     (one) => one.include.length + one.exclude.length > 0
   );
   return [
-    ...(wasChosen ? [`# The files ${from} chose, carried over by Cinch.`] : []),
+    ...(wasChosen ? [`# The files ${from} chose, carried over by Ropes.`] : []),
     ...(read.length > 0
       ? ["# The files the rule packs named below read are included too."]
       : []),
@@ -146,7 +146,7 @@ const spared = (one: Inherited, kept: readonly string[]): Inherited => ({
       return file === undefined
         ? []
         : [
-            `${JSON.stringify(glob)} was not carried over, because it would leave out ${file}, which Cinch keeps.`,
+            `${JSON.stringify(glob)} was not carried over, because it would leave out ${file}, which Ropes keeps.`,
           ];
     }),
   ],

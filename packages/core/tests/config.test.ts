@@ -12,7 +12,7 @@ const withFiles = async <T>(
   files: Readonly<Record<string, string>>,
   run: (root: string) => Promise<T>
 ): Promise<T> => {
-  const root = await mkdtemp(path.join(tmpdir(), "cinch-config-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ropes-config-"));
   try {
     await Promise.all(
       Object.entries(files).map(([name, text]) =>

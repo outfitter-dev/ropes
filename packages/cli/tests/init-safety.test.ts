@@ -36,7 +36,7 @@ const hasRumdl = (): boolean => {
   return false;
 };
 
-test("rejected initialization keeps implicit Cinch setup in place", async () => {
+test("rejected initialization keeps retired managed setup in place", async () => {
   await inRepo(async (root) => {
     await Bun.write(
       path.join(root, ".outfitter/configs/rumdl.toml"),
@@ -92,3 +92,26 @@ test.each([
     });
   }
 );
+
+test("public init imports markdownlint settings and keeps the source on apply", async () => {
+  if (!hasRumdl()) {
+    return;
+  }
+  await inRepo(async (root) => {
+    const source = path.join(root, ".markdownlint.json");
+    const original = '{"MD007":{"indent":4}}\n';
+    await Bun.write(source, original);
+    const preview = await runEntry(cli, ["init", "--json"], root);
+    expect(preview.exitCode).toBe(0);
+    const proposed = FixReportSchema.parse(JSON.parse(preview.stdout));
+    expect(proposed.diff).toContain("indent = 4");
+    expect(await readFile(source, "utf-8")).toBe(original);
+
+    const applied = await runEntry(cli, ["init", "--yes", "--json"], root);
+    expect(applied.exitCode).toBe(0);
+    expect(FixReportSchema.parse(JSON.parse(applied.stdout)).diff).toBe(
+      proposed.diff
+    );
+    expect(await readFile(source, "utf-8")).toBe(original);
+  });
+});

@@ -203,13 +203,13 @@ test("the range that counts is the plan's, not the registered adapter's", async 
 test("a config nested in the shared file names its keys as that file has them", () => {
   const plan = planFor([reporter("one", { facts: [], ok: true })], {
     ...STATED,
-    file: "outfitter.toml",
-    prefix: "cinch.",
+    file: "workspace.toml",
+    prefix: "quality.",
   });
   expect(plan.facts?.stated.map((fact) => `${fact.file}: ${fact.key}`)).toEqual(
     [
-      "outfitter.toml: cinch.editor.indent_size",
-      "outfitter.toml: cinch.editor.line_width",
+      "workspace.toml: quality.editor.indent_size",
+      "workspace.toml: quality.editor.line_width",
     ]
   );
 });
@@ -239,6 +239,6 @@ test("explain shows what is compared, and says when an adapter cannot report", (
     tools: [],
   });
   expect(none).toContain(
-    "the Cinch config states none, so tools are compared with each other"
+    "the Ropes config states none, so tools are compared with each other"
   );
 });
